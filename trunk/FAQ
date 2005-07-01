@@ -1,0 +1,105 @@
+AMANITH FRAMEWORK F.A.Q.
+************************
+
+1.  What is Amanith Framework ?
+===============================
+    Amanith Framework is a crossplatform opensource ansi C++ framework aimed to handle 2d and 3d vector graphic.
+    The most important difference that you have to understand when you compare Amanith with other similar projects is
+    that Amanith isn't a scenegraph; with Amanith you can manipulate graphics elements (like lines, curves, meshes,
+    and so on...) with powerful operators (like cut, join, and so on...). So if you are trying to do a CAD or a
+    modelling tool (that don't requires high computational precision) you are, without any doubt, on the right way.
+    One of Amanith's strenght points is the highly customization capability that make possible to compile the framework
+    with a wide options range (like the possibility to choose, for example, between double or float as real numbers
+    rappresentation, without change anything into code sources) and including/excluding many modules to add/subtract
+    various features (a.e.: jpeg and png picture format support); in addition you can choose to compile all modules as
+    plugins, so, thanks to the Amanith kernel-plugins system, you can load/unload them at runtime, saving a lot of ram for
+    other tasks.
+    Another important thing that you have to keep in mind when you look Amanith is that all the framework has been written
+    using only ANSI C++, that grants stability and reliability beside the portability on many hw/sw architectures.
+    Currently Amanith compiles without any problems under many Unix environments (a.e.: linux, bsd, irix), Windows, and
+    MacOS X, with different compilers like VisualStudio, Xcode and Gcc.
+
+
+2.  Which prerequirements must be satisfied to compile Amanith Framework ?
+==========================================================================
+    Obviously, you need a machine with an operating system installed and a C/C++ compiler.
+    We have personally tested Amanith (and its compilation process) on the environments listed below :
+
+        -> Windows 2000, XP, 2003 (Visual Studio .net, Visual Studio 6)
+        -> MacOs X Panther, Tiger (Xcode 1.x)
+        -> Linux all flavours (Gcc 2.95+)
+        -> Irix 6.5 (Gcc 2.95+)
+
+    The entire Amanith building system is strongly based on the wonderful Qmake tool from Trolltech, you can find it as
+    a part of the QT libraries (available for many different environments, and released under QPL/GPL licence) here:
+    http://www.trolltech.com/download/opensource.html. The Amanith Framework core has no dependancy from QT, but
+    the examples and tools distributed with Amanith depends on the QT libs for the gui & widgets, so if you want to
+    compile them, first install the QT libs.
+    If you need to use (and compile) Amanith under a different environment unsupported by Qmake, don't despair, you can
+    try to manually edit the makefile in accordance with your requirements (don't forget that Amanith has been written
+    in pure ANSI C++) and remember to inform us at develop@amanith.org if the operation had a successful ending.
+
+
+3. Where I can find the latest Amanith Framework official release ?
+===================================================================
+    You can find the latest release in the Amanith Website downloads section at http://www.amanith.org/download
+
+
+4. Where I can find the Amanith Framework CVS/SVN source tree ?
+===============================================================
+    You can find the official Amanith Framework subversion repository at http://developer.berlios.de/svn/?group_id=3656
+
+
+5.  For which kind of projects is Amanith Framework suitable ?
+==============================================================
+    Amanith Framework born as optimal solution to handle vector graphic in realtime, therefore we have chosen to develop
+    our Framework without use slow exact mathematic libraries (like CGAL or LEDA, as example), the result is a more
+    fast (but less precise) product; keep in mind this fact when you evaluate the possibility to use Amanith for your
+    projects. We would like to be sure that anyone have the idea to develop a CAD for bridges planning with Amanith.
+    The Framework is instead suitable for projects that don't require particular computations precision (like a SVG or
+    SWF editor); F4L (Flash for Linux) is only one of the projects that have chosen Amanith as geometrical core.
+
+
+6.  Can I port Amanith under a different os/architecture/compiler ?
+===================================================================
+    You can try to do this. Amanith Framework has been written in pure ANSI C++ (with massive use of STL containers and
+    algorithms) and its core is independent from third parts libraries (that are still necessary to build plugins, tools
+    and examples), therefore the portability is insured enough. Don't forget to inform us if the operation succeeds, just
+    mail us at develop@amanith.org. We have just in plan to do some ports (we think expecially to mobile/embedded world
+    like WindowsCE, SymbianOS, and so on...) so if you have in mind to compile Amanith on those platforms please contact
+    us without screw around.
+
+
+7.  Can I give an active contribute to the Amanith Framework development ?
+==========================================================================
+    Sure you can. If you are skilled in coding art and would like to collaborate in Amanith Framework development don't
+    esitate to contact us at develop@amanith.org. We will grant to you all the support you need.
+
+
+8.  If I need a particular feature, can You implement this just for me ?
+========================================================================
+    First you can contact us at develop@amanith.org to know if the feature you want has just been scheduled for a next
+    release of Amanith Framework, then you can take a look to the "feature request" service available on the Amanith Homepage.
+    If you are skilled in coding art why don't consider to implement the features by yourself ? in this case we can grant
+    every kind of support to you, and we will make this feature available for all Amanith users, including your implementation
+    into the next release of the our Framework.
+
+
+9.  Can I use Amanith Framework to develop a non OpenSource project ?
+=====================================================================
+    You can't do this with the Amanith Framework QPL distribution. You need a more suitable licence for commercial purpose;
+    we have just in plan to release a commercial version of Amanith Framework in the near future, please contact us at
+    sales@mazatech.com to know more details about this.
+
+
+10.  Can I write a plugin & release it under a licence different from QPL ?
+===========================================================================
+    You can't do this with the Amanith Framework QPL distribution. All the plugins developed using the QPL version of our
+    Framework must be released under the same licence terms. If you need to release your plugin under another licence terms
+    please contact us at develop@amanith.org.
+
+
+11.  In which ways can I help Amanith Community ?
+=================================================
+    You can help Amanith Community in many ways like Donations, Bug Reporting, Feedbacks, Code & Algorithms, Helping 
+    inexperienced users, Partecipating in forum discussion boards, and so on...

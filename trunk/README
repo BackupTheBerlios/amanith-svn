@@ -1,0 +1,76 @@
+AMANITH FRAMEWORK README
+************************
+Crossplatform, Opensource, Ansi C++, Framework aimed to handle 2d and 3d Vector Graphic.
+
+ =------------------------=
+ | Version: 1.0b          |
+ | Released: 30 June 2005 |
+ | Licence: QPL           |
+ | Url: www.amanith.org   |
+ =------------------------=
+
+Contents of the package
+=======================
+
+ |-----> 3rdpart
+ |       |-----> freetype2
+ |       |-----> libjpeg
+ |       |-----> lipng
+ |       |-----> zlib
+ |
+ |-----> build
+ |-----> config
+ |-----> data
+ |-----> doc
+ |-----> examples
+ |       |-----> opengl
+ |       |       |-----> bezier2d
+ |       |       |-----> bspline2d
+ |       |       |-----> delaunay2d
+ |       |       |-----> font2d
+ |       |       |-----> hermite2d
+ |       |       |-----> path2d
+ |       |       |-----> polyline2d
+ |       |       |-----> testglext
+ |       |       |-----> testshaders
+ |       |       |-----> vectorizer
+ |       |
+ |       |-----> others
+ |       |       |-----> lowlevel_stuff
+ |       |
+ |       |-----> viewimage
+ |
+ |-----> include
+ |       |-----> amanith
+ |       |-----> GL
+ |
+ |-----> lib
+ |-----> plugins
+ |       |-----> fonts
+ |       |-----> jpeg
+ |       |-----> png
+ |
+ |-----> src
+ |       |-----> 2d
+ |       |-----> 3d
+ |       |-----> geometry
+ |       |-----> numerics
+ |       |-----> support
+ |
+ |-----> tools
+ |       |-----> plugwizard
+ |       |-----> uuid_gen
+ *
+ 
+Third parts libraries
+=====================
+
+FreeType2 v2.1.10 (www.freetype.org)
+
+LibJpeg v6b (ftp.uu.net/graphics/jpeg/)
+
+LibPng v1.2.7 (www.libpng.org/pub/png/)
+
+ZLib v1.2.2 (http://www.gzip.org/zlib/)
+
+Glew v1.3.3 (glew.sourceforge.net)

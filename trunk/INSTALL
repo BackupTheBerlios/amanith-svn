@@ -1,0 +1,166 @@
+AMANITH FRAMEWORK INSTALLATION GUIDE
+
+_______________________________________________________________________________________________________________________________________________
+:: UNIX
+===============================================================================================================================================
+
+1.Extract all files into a directory (Es: tar -xzf amanith.tar.gz).
+
+2.Export the environment variable AMANITHDIR in according with the directory where you have extracted all files (Es: /home/frank/amanith)
+  Add $AMANITHDIR/lib path to the LD_LIBRARY_PATH variable.
+
+    2a.For bash/ksh/zsh/sh shells this can be easily done editing the file ~/.profile (See below)
+
+        ...
+        QTDIR=/usr/local/qt
+        MANPATH=$QTDIR/doc/man:$MANPATH
+        PATH=$QTDIR/bin:$PATH
+        AMANITHDIR=/home/frank/amanith
+        LD_LIBRARY_PATH=$QTDIR/lib:$AMANITHDIR/lib:$LD_LIBRARY_PATH
+        export AMANITHDIR QTDIR PATH MANPATH LD_LIBRARY_PATH
+        ...
+
+    2b.For csh/tcsh shells edit the file ~/.login (See below)
+    
+        ...
+        setenv QTDIR /usr/local/qt
+        setenv MANPATH $QTDIR/doc/man:$MANPATH
+        setenv PATH $QTDIR/bin:$PATH
+        setenv AMANITHDIR /home/frank/amanith
+        setenv LD_LIBRARY_PATH $QTDIR/lib:$AMANITHDIR/lib:$LD_LIBRARY_PATH
+        ...
+
+ After you have done this, you will need to login again, or re-source the profile before continuing, so that at least $AMANITHDIR is set.
+ 
+ Note that under IRIX the additional LD_LIBRARYN32_PATH and LD_LIBRARY64_PATH variables are used for specifying library search paths.
+ Set the variable that matches your configuration, or see the rld(5) man page for more information.
+
+ On AIX set LIBPATH and on HP-UX set SHLIB_PATH instead of LD_LIBRARY_PATH.
+ After these settings reboot the system and you have done.
+
+3.Now you are ready to compile the entire framework.
+  Note that QMAKE is needed to build AMANITH CORE and QT is needed to build all EXAMPLES and TOOLS.
+  First check the file $AMANITHDIR/config/settings.conf, this file contains the settings that you can change to match your preferences.
+  When done follow those steps :
+  
+    CD $AMANITHDIR
+    QMAKE amanith.pro
+    MAKE
+
+4.If all operations have been a successful ending, you can found compiled libs into $AMANITHDIR/lib, plugins in $AMANITHDIR/plugins and
+  tools in $AMANITHDIR/tools.
+  You can start looking some examples in $AMANITHDIR/examples directory or just visit http://www.amanith.org to get tutorials, documentation
+  and support.
+
+5.Don't forget to read LICENSE.QPL to understand the license terms.
+
+
+_______________________________________________________________________________________________________________________________________________
+:: MACOS X
+===============================================================================================================================================
+
+1.Extract all files into a directory (Es: tar -xzf amanith.tar.gz).
+
+2.Export the environment variable AMANITHDIR in according with the directory where you have extracted all files (Es: /Users/frank/amanith)
+  Add $AMANITHDIR/lib path to the DYLD_LIBRARY_PATH variable.
+
+    2a.For bash shell this can be easily done editing the file ~/.profile (See below)
+
+        ...
+        QTDIR=/Developer/qt
+        PATH=$QTDIR/bin:$PATH
+        AMANITHDIR=/Users/frank/amanith
+        DYLD_LIBRARY_PATH=$QTDIR/lib:$AMANITHDIR/lib:$DYLD_LIBRARY_PATH
+        export AMANITHDIR QTDIR PATH LD_LIBRARY_PATH
+        ...
+
+    2b.For csh/tcsh shells edit the file ~/.login (See below)
+
+        ...
+        setenv QTDIR /Developer/qt
+        setenv MANPATH $QTDIR/doc/man:$MANPATH
+        setenv PATH $QTDIR/bin:$PATH
+        setenv AMANITHDIR /Users/frank/amanith
+        setenv LD_LIBRARY_PATH $QTDIR/lib:$AMANITHDIR/lib:$LD_LIBRARY_PATH
+        ...
+
+3.Set the environment variables for the Finder, so all programs that use Amanith can be executed without problems through Finder.
+  Apple provides a mechanism for this via a special file, ~/.MacOSX/environment.plist (Careful, it's case sensitive, of course). This XML file
+  can be created with the Property List editor, or your favorite text editor. Here's a sample:
+
+    <?xml version="1.0" encoding="UTF-8"?>
+    <!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+    <plist version="1.0">
+        <dict>
+            <key>QTDIR</key>
+            <string>/Developer/qt</string>
+            <key>AMANITHDIR</key>
+            <string>/Users/frank/amanith</string>
+            <key>DYLD_LIBRARY_PATH</key>
+            <string>/usr/local/lib:/Developer/qt/lib:/Users/frank/amanith</string>
+        </dict>
+    </plist>
+
+  After these settings reboot the system and you have done.
+
+4.Now you are ready to compile the entire framework.
+  Note that QMAKE is needed to build AMANITH CORE and QT is needed to build all EXAMPLES and TOOLS.
+  First check the file $AMANITHDIR/config/settings.conf, this file contains the settings that you can change to match your preferences.
+  When done follow those steps :
+  
+    CD $AMANITHDIR
+    QMAKE amanith.pro
+    MAKE
+
+5.If all operations have been a successful ending, you can found compiled libs into $AMANITHDIR/lib, plugins in $AMANITHDIR/plugins and
+  tools in $AMANITHDIR/tools.
+  You can start looking some examples in $AMANITHDIR/examples directory or just visit http://www.amanith.org to get tutorials, documentation
+  and support.
+
+6.Don't forget to read LICENSE.QPL to understand the license terms.
+
+
+_______________________________________________________________________________________________________________________________________________
+:: WINDOWS
+===============================================================================================================================================
+
+1.Extract all files into a directory (Es: C:\Amanith).
+
+2.Export the environment variable AMANITHDIR in according with the directory where you have extracted all files, this can be easily done with
+  regedit.exe following those steps :
+
+    search key HKEY_CURRENT_USER\Environment
+    add new Expandible String (REG_EXPAND_SZ)
+    rename this to "AMANITHDIR"
+    set the value to "C:\Amanith"
+
+  now add AMANITHDIR\lib to the PATH
+
+    add the value "C:\Amanith\lib" to "PATH"
+
+  After this, the key HKEY_CURRENT_USER\Environment can be look like this:
+
+    ...
+    "LIB"="C:\Programs\Microsoft Visual Studio .NET 2003\SDK\v1.1\Lib\"
+    "INCLUDE"="C:\Programs\Microsoft Visual Studio .NET 2003\SDK\v1.1\include\"
+    "PATH"="C:\Qt\3.3.1\bin;C:\Amanith\lib"
+    "QTDIR"="C:\Qt\3.3.1"
+    "QMAKESPEC"="win32-msvc.net"
+    "AMANITHDIR"="C:\Amanith"
+    ...
+
+3.Now you are ready to compile the entire framework.
+  Note that QMAKE is needed to build AMANITH CORE and QT is needed to build all EXAMPLES and TOOLS.
+  First check the file %AMANITHDIR%/config/settings.conf, this file contains the settings that you can change to match your preferences.
+  When done follow those steps :
+  
+    CD %AMANITHDIR%
+    QMAKE amanith.pro
+    NMAKE
+
+4.If all operations have been a successful ending, you can found compiled libs into %AMANITHDIR%/lib, plugins in %AMANITHDIR%/plugins and
+  tools in %AMANITHDIR%/tools.
+  You can start looking some examples in %AMANITHDIR%/examples directory or just visit http://www.amanith.org to get tutorials, documentation
+  and support.
+  
+5.Don't forget to read LICENSE.QPL to understand the license terms.

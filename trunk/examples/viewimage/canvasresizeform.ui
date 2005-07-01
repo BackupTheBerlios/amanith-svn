@@ -1,0 +1,207 @@
+<!DOCTYPE UI><UI version="3.3" stdsetdef="1">
+<class>CanvasResizeForm</class>
+<widget class="QDialog">
+    <property name="name">
+        <cstring>CanvasResizeForm</cstring>
+    </property>
+    <property name="geometry">
+        <rect>
+            <x>0</x>
+            <y>0</y>
+            <width>208</width>
+            <height>189</height>
+        </rect>
+    </property>
+    <property name="caption">
+        <string>Canvas resize</string>
+    </property>
+    <widget class="QLabel">
+        <property name="name">
+            <cstring>TopLabel</cstring>
+        </property>
+        <property name="geometry">
+            <rect>
+                <x>20</x>
+                <y>20</y>
+                <width>100</width>
+                <height>20</height>
+            </rect>
+        </property>
+        <property name="text">
+            <string>Top border:</string>
+        </property>
+    </widget>
+    <widget class="QSpinBox">
+        <property name="name">
+            <cstring>BottomSpinBox</cstring>
+        </property>
+        <property name="geometry">
+            <rect>
+                <x>130</x>
+                <y>50</y>
+                <width>60</width>
+                <height>21</height>
+            </rect>
+        </property>
+        <property name="maxValue">
+            <number>1000</number>
+        </property>
+        <property name="minValue">
+            <number>-1000</number>
+        </property>
+    </widget>
+    <widget class="QLabel">
+        <property name="name">
+            <cstring>BottomLabel</cstring>
+        </property>
+        <property name="geometry">
+            <rect>
+                <x>20</x>
+                <y>50</y>
+                <width>100</width>
+                <height>20</height>
+            </rect>
+        </property>
+        <property name="text">
+            <string>Bottom border:</string>
+        </property>
+    </widget>
+    <widget class="QSpinBox">
+        <property name="name">
+            <cstring>LeftSpinBox</cstring>
+        </property>
+        <property name="geometry">
+            <rect>
+                <x>130</x>
+                <y>80</y>
+                <width>60</width>
+                <height>21</height>
+            </rect>
+        </property>
+        <property name="maxValue">
+            <number>1000</number>
+        </property>
+        <property name="minValue">
+            <number>-1000</number>
+        </property>
+    </widget>
+    <widget class="QLabel">
+        <property name="name">
+            <cstring>LeftLabel</cstring>
+        </property>
+        <property name="geometry">
+            <rect>
+                <x>20</x>
+                <y>80</y>
+                <width>100</width>
+                <height>20</height>
+            </rect>
+        </property>
+        <property name="text">
+            <string>Left border:</string>
+        </property>
+    </widget>
+    <widget class="QSpinBox">
+        <property name="name">
+            <cstring>RightSpinBox</cstring>
+        </property>
+        <property name="geometry">
+            <rect>
+                <x>130</x>
+                <y>110</y>
+                <width>60</width>
+                <height>21</height>
+            </rect>
+        </property>
+        <property name="maxValue">
+            <number>1000</number>
+        </property>
+        <property name="minValue">
+            <number>-1000</number>
+        </property>
+    </widget>
+    <widget class="QPushButton">
+        <property name="name">
+            <cstring>CancelButton</cstring>
+        </property>
+        <property name="geometry">
+            <rect>
+                <x>110</x>
+                <y>150</y>
+                <width>80</width>
+                <height>26</height>
+            </rect>
+        </property>
+        <property name="text">
+            <string>Cnacel</string>
+        </property>
+    </widget>
+    <widget class="QLabel">
+        <property name="name">
+            <cstring>RightLabel</cstring>
+        </property>
+        <property name="geometry">
+            <rect>
+                <x>20</x>
+                <y>110</y>
+                <width>100</width>
+                <height>20</height>
+            </rect>
+        </property>
+        <property name="text">
+            <string>Right border:</string>
+        </property>
+    </widget>
+    <widget class="QPushButton">
+        <property name="name">
+            <cstring>OkButton</cstring>
+        </property>
+        <property name="geometry">
+            <rect>
+                <x>10</x>
+                <y>150</y>
+                <width>80</width>
+                <height>26</height>
+            </rect>
+        </property>
+        <property name="text">
+            <string>Ok</string>
+        </property>
+    </widget>
+    <widget class="QSpinBox">
+        <property name="name">
+            <cstring>TopSpinBox</cstring>
+        </property>
+        <property name="geometry">
+            <rect>
+                <x>130</x>
+                <y>20</y>
+                <width>60</width>
+                <height>21</height>
+            </rect>
+        </property>
+        <property name="maxValue">
+            <number>1000</number>
+        </property>
+        <property name="minValue">
+            <number>-1000</number>
+        </property>
+    </widget>
+</widget>
+<connections>
+    <connection>
+        <sender>OkButton</sender>
+        <signal>clicked()</signal>
+        <receiver>CanvasResizeForm</receiver>
+        <slot>accept()</slot>
+    </connection>
+    <connection>
+        <sender>CancelButton</sender>
+        <signal>clicked()</signal>
+        <receiver>CanvasResizeForm</receiver>
+        <slot>reject()</slot>
+    </connection>
+</connections>
+<pixmapinproject/>
+<layoutdefaults spacing="6" margin="11"/>
+</UI>
