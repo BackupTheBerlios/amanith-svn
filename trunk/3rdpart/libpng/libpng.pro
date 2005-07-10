@@ -34,11 +34,22 @@ CONFIG += staticlib
 CONFIG -= qt stl
 
 unix: {
-  TARGET = png
-  LIBS += $$AMANITH_DIR/lib/libzlib.a
+    TARGET = png
+    LIBS += $$AMANITH_DIR/lib/libzlib.a
 }
 
 win32: {
-  TARGET = libpng
-  LIBS += $$AMANITH_DIR/lib/libzlib.lib
+
+    !contains(DEFINES, WIN32_MINGW) {
+        TARGET = libpng
+        LIBS += $$AMANITH_DIR/lib/libzlib.lib
+    }
+
+    # Windows MinGW support
+    contains(DEFINES, WIN32_MINGW) {
+        TARGET = png
+        LIBS += $$AMANITH_DIR/lib/libzlib.a
+    }
 }
+
+

@@ -411,9 +411,9 @@ namespace Amanith {
 	}
 
 	/*!
-		* Multiplies v1 by a scalar value and stores the result in v1. This is equivalent to the expression v1 = v1 * scalar.
+		Multiplies v1 by a scalar value and stores the result in v1. This is equivalent to the expression v1 = v1 * scalar.
 
-		\param v1  the vector to scale
+		\param v1 the vector to scale
 		\param scalar the amount by which to scale v1
 	*/
 	template<typename DATA_TYPE, GUInt32 SIZE, typename SCALAR_TYPE>

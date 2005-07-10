@@ -28,28 +28,49 @@
 
 #include "classtreeform.h"
 #include <qpushbutton.h>
-#include <qlistview.h>
-#include <qvaluevector.h>
 #include <qdialog.h>
-#include <qheader.h>
 #include <qwidget.h>
+
+// QT4 support
+#ifdef USE_QT4
+	#include <q3header.h>
+	#include <q3listview.h>
+	#include <q3valuevector.h>
+#else
+	#include <qheader.h>
+	#include <qlistview.h>
+	#include <qvaluevector.h>
+#endif
+
 
 GBool ClassTreeForm::ShowClassTree(const GKernel &kernel, QString &selected) {
 
 	GDynArray<GProxyState> roots;
 	GDynArray<GProxyState> childs;
+#ifdef USE_QT4
+	Q3ListViewItem *lvi;
+#else
 	QListViewItem *lvi;
+#endif
 	GInt32 i, j, k;
 
 	// QListView settings (list view of classes)
 	classView->setRootIsDecorated(true);
+#ifdef USE_QT4
+	classView->setColumnWidthMode(0, Q3ListView::Maximum);
+#else
 	classView->setColumnWidthMode(0, QListView::Maximum);
+#endif
 	classView->header()->setHidden(true);
 
 	kernel.RootClassProxies(roots); // get root class proxies
 	k = (GInt32)roots.size();
 	for(i = 0; i < k; i++) {
+	#ifdef USE_QT4
+		lvi = new Q3ListViewItem(classView);
+	#else
 		lvi = new QListViewItem(classView);
+	#endif
 		// if it's an external plugin we can't select it
 		if (roots[i].External())
 			lvi->setEnabled(FALSE);
@@ -62,11 +83,15 @@ GBool ClassTreeForm::ShowClassTree(const GKernel &kernel, QString &selected) {
 	}
 
 	lvi = classView->findItem(selected, 0);
-	if(lvi != NULL) {
+	if (lvi != NULL) {
 		classView->setSelected(lvi, true);
 		do {
 			lvi->setOpen(true);
-			lvi = (QListViewItem*)lvi->parent();
+		#ifdef USE_QT4
+			lvi = (Q3ListViewItem *)lvi->parent();
+		#else
+			lvi = (QListViewItem *)lvi->parent();
+		#endif
 		} while(lvi != NULL);
 	}
 
@@ -80,17 +105,27 @@ GBool ClassTreeForm::ShowClassTree(const GKernel &kernel, QString &selected) {
 }
 
 // set list view
-void ClassTreeForm::SetChildItems(QListViewItem &father, 
-								  const GKernel &kernel,
-								  GDynArray<GProxyState> childs) {
+#ifdef USE_QT4
+void ClassTreeForm::SetChildItems(Q3ListViewItem &father, const GKernel &kernel, GDynArray<GProxyState> childs) {
+#else
+void ClassTreeForm::SetChildItems(QListViewItem &father, const GKernel &kernel, GDynArray<GProxyState> childs) {
+#endif
 	
 	GDynArray<GProxyState> newChilds;
+#ifdef USE_QT4
+	Q3ListViewItem *lvi;
+#else
 	QListViewItem *lvi;
+#endif
 	GInt32 i, j, k;
 
 	k = (GInt32)childs.size();
 	for (i = 0; i < k; i++) {
+	#ifdef USE_QT4
+		lvi = new Q3ListViewItem(&father);
+	#else
 		lvi = new QListViewItem(&father);
+	#endif
 		// if it's an external plugin we can't select it
 		if (childs[i].External())
 			lvi->setEnabled(FALSE);
@@ -102,10 +137,17 @@ void ClassTreeForm::SetChildItems(QListViewItem &father,
 			SetChildItems(*lvi, kernel, newChilds);
 	}
 }
-
+#ifdef USE_QT4
+void ClassTreeForm::SetOpen(Q3ListViewItem &i) {
+#else
 void ClassTreeForm::SetOpen(QListViewItem &i) {
+#endif
 
+#ifdef USE_QT4
+	Q3ListViewItem *aux;
+#else
 	QListViewItem *aux;
+#endif
 
 	i.setOpen(true);
 	aux = i.firstChild();
@@ -117,7 +159,11 @@ void ClassTreeForm::SetOpen(QListViewItem &i) {
 
 void ClassTreeForm::OpenAll() {
 
+#ifdef USE_QT4
+	Q3ListViewItem *aux;
+#else
 	QListViewItem *aux;
+#endif
 
 	aux = classView->firstChild();
 	while(aux != NULL) {

@@ -121,8 +121,6 @@ GError GBSplineCurve2D::SetPoints(const GDynArray<GPoint2>& NewPoints, const GIn
 		return G_INVALID_PARAMETER;
 	// copy new points
 	gPoints = NewPoints;
-	// copy knots
-	//gKnots = Knots;
 	// set degree (must be less or equal to number of points)
 	gDegree = Degree;
 	// set opened flag
@@ -183,7 +181,7 @@ GError GBSplineCurve2D::SetPoints(const GDynArray<GPoint2>& NewPoints, const GDy
 	return G_NO_ERROR;
 }
 
-// return true if bspline is clamped (first and last knots have a multiplicity greater or equal to
+// return true if B-spline is clamped (first and last knots have a multiplicity greater or equal to
 // the degree)
 GBool GBSplineCurve2D::IsClamped() const {
 
@@ -201,7 +199,7 @@ GBool GBSplineCurve2D::IsClamped() const {
 }
 
 // returns numer of intersection between control polygon and a ray
-GInt32 GBSplineCurve2D::CrossingCount(const GRay2& NormalizedRay) const {
+GInt32 GBSplineCurve2D::CrossingCount(const GRay2& Ray) const {
 
 	GBool intersected;
 	GInt32 i, k;
@@ -213,7 +211,7 @@ GInt32 GBSplineCurve2D::CrossingCount(const GRay2& NormalizedRay) const {
 	for (i = 0; i < gDegree; i++) {
 		seg.SetStartPoint(gPoints[i]);
 		seg.SetEndPoint(gPoints[i + 1]);
-		intersected = Intersect(NormalizedRay, seg, intersFlags, localIntersParams);
+		intersected = Intersect(Ray, seg, intersFlags, localIntersParams);
 		if (intersected)
 			k++;
 	}

@@ -88,7 +88,7 @@ GError GMultiCurve2D::SetPointParameter(const GUInt32 Index, const GReal NewPara
 
 	err = DoSetPointParameter(Index, NewParamValue, NewIndex, AlreadyExists);
 	if (err == G_NO_ERROR) {
-		// we have to update parameter interval in the case that point has been front/back "appended"
+		// we have to update domain interval in the case that point has been front/back "appended"
 		if (NewParamValue < DomainStart() - G_EPSILON)
 			err = GCurve2D::SetDomain(NewParamValue, DomainEnd());
 		else

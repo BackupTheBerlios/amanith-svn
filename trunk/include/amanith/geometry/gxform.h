@@ -32,6 +32,10 @@
 /*!
 	\file gxform.h
 	\brief Header file for transformations (vector, matrix and quaternions).
+
+	Due to a <b>doxygen bug</b>, a lot of similar function (same name but different parameters) are present
+	into this file, but they cannot be documented. Please refer to source file for the full list of functions
+	available.
 */
 
 #include "amanith/gglobal.h"
@@ -42,7 +46,7 @@
 
 namespace Amanith {
 	   
-	/*!
+	/*
 		Transform a vector by a rotation quaternion.
 		\pre give a vector, and a rotation quaternion (by definition, a rotation quaternion is normalized).
 		\param result the vector to write the result into
@@ -59,7 +63,7 @@ namespace Amanith {
 	*/
 	template <typename DATA_TYPE>
 	inline GVect<DATA_TYPE, 3>& XForm(GVect<DATA_TYPE, 3>& result, const GQuat<DATA_TYPE>& rot,
-									const GVect<DATA_TYPE, 3>& vector) {
+									  const GVect<DATA_TYPE, 3>& vector) {
 		// check preconditions...
 		G_ASSERT(GMath::IsEqual(Length(rot), (DATA_TYPE)1.0, (DATA_TYPE)G_EPSILON) && "must pass a rotation quaternion to xform(result,quat,vec) - by definition, a rotation quaternion is normalized).  if you need non-rotation quaternion support, let us know.");
 
@@ -84,13 +88,16 @@ namespace Amanith {
 		return result;
 	}
 
-	/** transform a vector by a rotation quaternion.
-	 * \pre give a vector, and a rotation quaternion (by definition, a rotation quaternion is normalized).
-	 * \param rot        The quaternion
-	 * \param vector     The original vector to transform
-	 * \return  the resulting vector transformed by the quaternion
-	 * \post v' = q P(v) q*  (where result is v', rot is q, and vector is v.  q* is conj(q), and P(v) is pure quaternion made from v)
-	 */
+	/*
+		Transform a vector by a rotation quaternion.
+
+		\pre give a vector, and a rotation quaternion (by definition, a rotation quaternion is normalized).
+		\param rot the quaternion.
+		\param vector the original vector to transform.
+		\return the resulting vector transformed by the quaternion.
+		\post v' = q P(v) q*  (where result is v', rot is q, and vector is v.  q* is conj(q), and P(v) is pure
+		quaternion made from v).
+	*/
 	template <typename DATA_TYPE>
 	inline GVect<DATA_TYPE, 3> operator *(const GQuat<DATA_TYPE>& rot, const GVect<DATA_TYPE, 3>& vector) {
 		GVect<DATA_TYPE, 3> temporary;
@@ -98,12 +105,15 @@ namespace Amanith {
 	}
 
 
-	/** transform a vector by a rotation quaternion.
-	 * \pre give a vector, and a rotation quaternion (by definition, a rotation quaternion is normalized).
-	 * \param rot        The quaternion
-	 * \param vector     The original vector to transform
-	 * \post v' = q P(v) q*  (where result is v', rot is q, and vector is v.  q* is conj(q), and P(v) is pure quaternion made from v)
-	 */   
+	/*
+		Transform a vector by a rotation quaternion.
+
+		\pre give a vector, and a rotation quaternion (by definition, a rotation quaternion is normalized).
+		\param rot the quaternion.
+		\param vector the original vector to transform
+		\post v' = q P(v) q*  (where result is v', rot is q, and vector is v. q* is conj(q), and P(v) is pure
+		quaternion made from v).
+	*/   
 	template <typename DATA_TYPE>
 	inline GVect<DATA_TYPE, 3> operator *=(GVect<DATA_TYPE, 3>& vector, const GQuat<DATA_TYPE>& rot) {
 		GVect<DATA_TYPE, 3> temporary = vector;
@@ -111,16 +121,20 @@ namespace Amanith {
 	}
 
 
-	/** xform a vector by a matrix.
-	 *  Transforms a vector with a matrix, uses multiplication of [m x k] matrix by a [k x 1] matrix (the later also known as a Vector...).
-	 *  \param result        the vector to write the result in
-	 *  \param matrix        the transform matrix
-	 *  \param vector        the original vector
-	 *  \post This results in a rotational xform of the vector (assumes you know what you are doing -
-	 *  i.e. that you know that the last component of a vector by definition is 0.0, and changing
-	 *  this might make the xform different than what you may expect).
-	 *  \post returns a point same size as the matrix rows...  (v[r][1] = m[r][k] * v[k][1])
-	 */
+	/*
+		Transform  a vector by a matrix.
+
+		Transforms a vector with a matrix, uses multiplication of [m x k] matrix by a [k x 1] matrix (the later also
+		known as a vector).
+
+		\param result the vector to write the result in.
+		\param matrix the transform matrix.
+		\param vector the original vector.
+		\post This results in a rotational xform of the vector (assumes you know what you are doing -
+		i.e. that you know that the last component of a vector by definition is 0.0, and changing
+		this might make the xform different than what you may expect).
+		\post returns a point same size as the matrix rows.
+	*/
 	template <typename DATA_TYPE, GUInt32 ROWS, GUInt32 COLS>
 	inline GVect<DATA_TYPE, COLS>& XForm(GVect<DATA_TYPE, COLS>& result,
 										const GMatrix<DATA_TYPE, ROWS, COLS>& matrix,
@@ -136,16 +150,18 @@ namespace Amanith {
 	}
 
 
-	/** matrix * vector xform.
-	 *  multiplication of [m x k] matrix by a [k x 1] matrix (also known as a Vector...).
-	 *  \param matrix    the transform matrix
-	 *  \param vector    the original vector
-	 *  \return  the vector transformed by the matrix
-	 *  \post This results in a full matrix xform of the vector (assumes you know what you are doing -
-	 *  i.e. that you know that the last component of a vector by definition is 0.0, and changing
-	 *  this might make the xform different that what you may expect).
-	 *  \post returns a vec same size as the matrix rows...  (v[r][1] = m[r][k] * v[k][1])
-	 */
+	/*
+		Matrix * vector transformation.
+		Mmultiplication of [m x k] matrix by a [k x 1] matrix (also known as a vector).
+	 
+		\param matrix the transform matrix
+		\param vector the original vector
+		\return the vector transformed by the matrix
+		\post This results in a full matrix xform of the vector (assumes you know what you are doing -
+		i.e. that you know that the last component of a vector by definition is 0.0, and changing
+		this might make the xform different that what you may expect).
+		\post returns a vector same size as the matrix rows.
+	*/
 	template <typename DATA_TYPE, GUInt32 ROWS, GUInt32 COLS>
 	inline GVect<DATA_TYPE, COLS> operator *(const GMatrix<DATA_TYPE, ROWS, COLS>& matrix,
 											const GVect<DATA_TYPE, COLS>& vector) {
@@ -156,7 +172,7 @@ namespace Amanith {
 
 
 
-	/** partially transform a partially specified vector by a matrix, assumes last elt of vector is 0 (the 0 makes it only partially transformed).
+	/* partially transform a partially specified vector by a matrix, assumes last elt of vector is 0 (the 0 makes it only partially transformed).
 	 *  Transforms a vector with a matrix, uses multiplication of [m x k] matrix by a [k-1 x 1] matrix (also known as a Vector [with w == 0 for vectors by definition]).
 	 *  \param result        the vector to write the result in
 	 *  \param matrix        the transform matrix
@@ -186,7 +202,7 @@ namespace Amanith {
 		return result;
 	}
 
-	/** matrix * partial vector, assumes last elt of vector is 0 (partial transform).
+	/* matrix * partial vector, assumes last elt of vector is 0 (partial transform).
 	 *  \param matrix        the transform matrix
 	 *  \param vector        the original vector
 	 *  \return  the vector transformed by the matrix
@@ -202,7 +218,7 @@ namespace Amanith {
 	}
 
 
-	/** transform point by a matrix.
+	/* transform point by a matrix.
 	 *  multiplication of [m x k] matrix by a [k x 1] matrix (also known as a Point).
 	 *  \param result        the point to write the result in
 	 *  \param matrix        the transform matrix
@@ -226,7 +242,7 @@ namespace Amanith {
 		return result;
 	}
 
-	/** matrix * point.
+	/* matrix * point.
 	 *  multiplication of [m x k] matrix by a [k x 1] matrix (also known as a Point...).
 	 *  \param matrix        the transform matrix
 	 *  \param point         the original point
@@ -242,7 +258,7 @@ namespace Amanith {
 	}
 
 
-	/** transform a partially specified point by a matrix, assumes last element of point is 1.
+	/* transform a partially specified point by a matrix, assumes last element of point is 1.
 	 *  Transforms a point with a matrix, uses multiplication of [m x k] matrix by a [k-1 x 1] matrix (also known as a Point [with w == 1 for points by definition]).
 	 *  \param result        the point to write the result in
 	 *  \param matrix        the transform matrix
@@ -272,7 +288,7 @@ namespace Amanith {
 		return result;
 	}
 
-	/** matrix * partially specified point.
+	/* matrix * partially specified point.
 	 *  multiplication of [m x k] matrix by a [k-1 x 1] matrix (also known as a Point [with w == 1 for points by definition]).
 	 *  \param matrix        the transform matrix
 	 *  \param point         the original point
@@ -287,7 +303,7 @@ namespace Amanith {
 		return XForm(temporary, matrix, point);
 	}
 
-	/** point * a matrix
+	/* point * a matrix
 	 *  multiplication of [m x k] matrix by a [k x 1] matrix (also known as a Point [with w == 1 for points by definition]).
 	 *  \param matrix        the transform matrix
 	 *  \param point         the original point
@@ -302,7 +318,7 @@ namespace Amanith {
 	}
 
 
-	/** point *= a matrix
+	/* point *= a matrix
 	 *  multiplication of [m x k] matrix by a [k x 1] matrix (also known as a Point [with w == 1 for points by definition]).
 	 *  \param matrix        the transform matrix
 	 *  \param point         the original point
@@ -316,7 +332,7 @@ namespace Amanith {
 		return XForm(point, matrix, temporary);
 	}
 
-	/** partial point *= a matrix
+	/* partial point *= a matrix
 	 *  multiplication of [m x k] matrix by a [k-1 x 1] matrix (also known as a Point [with w == 1 for points by definition]).
 	 *  \param matrix        the transform matrix
 	 *  \param point         the original point
@@ -333,7 +349,7 @@ namespace Amanith {
 
 
 
-	/** transform ray by a matrix.
+	/* transform ray by a matrix.
 	 *  multiplication of [m x k] matrix by two [k x 1] matrices (also known as a ray...).
 	 *  \param result        the ray to write the result in
 	 *  \param matrix        the transform matrix
@@ -352,7 +368,7 @@ namespace Amanith {
 		return result;
 	}
 
-	/** ray * a matrix
+	/* ray * a matrix
 	 *  multiplication of [m x k] matrix by a ray.
 	 *  \param matrix        the transform matrix
 	 *  \param ray           the original ray
@@ -366,7 +382,7 @@ namespace Amanith {
 		return XForm(temporary, matrix, ray);
 	}
 
-	/** ray *= a matrix
+	/* ray *= a matrix
 	 *  multiplication of [m x k] matrix by a ray.
 	 *  \param matrix        the transform matrix
 	 *  \param ray           the original ray
@@ -380,7 +396,7 @@ namespace Amanith {
 		return XForm(ray, matrix, temporary);
 	}
 
-	/** transform seg by a matrix.
+	/* transform seg by a matrix.
 	 *  multiplication of [m x k] matrix by two [k x 1] matrices (also known as a seg...).
 	 *  \param result        the seg to write the result in
 	 *  \param matrix        the transform matrix
@@ -399,7 +415,7 @@ namespace Amanith {
 		return result;
 	}
 
-	/** seg * a matrix
+	/* seg * a matrix
 	 *  multiplication of [m x k] matrix by a seg.
 	 *  \param matrix        the transform matrix
 	 *  \param seg         the original ray
@@ -414,7 +430,7 @@ namespace Amanith {
 	}
 
 
-	/** seg *= a matrix
+	/* seg *= a matrix
 	 *  multiplication of [m x k] matrix by a seg.
 	 *  \param matrix        the transform matrix
 	 *  \param seg         the original point
@@ -434,6 +450,13 @@ namespace Amanith {
 		return Dot(matrix * v, v);
 	}
 
+	/*!
+		Quadratic form.
+
+		\param matrix the characteristic matrix that describes quadratic form.
+		\param p the point used to evaluate quadratic form value.
+		\return the quadratic form evaluated at specified point.
+	*/
 	template <typename DATA_TYPE, GUInt32 SIZE, GUInt32 POINT_SIZE>
 	inline DATA_TYPE QuadraticForm(const GMatrix<DATA_TYPE, SIZE, SIZE>& matrix,
 									const GPoint<DATA_TYPE, POINT_SIZE>& p) {

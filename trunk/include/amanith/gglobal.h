@@ -363,7 +363,7 @@ namespace Amanith {
 	#define G_FALSE false
 
 	// dynamic library build: platform-specific settings
-	#if defined(G_OS_WIN)
+	#if defined(G_OS_WIN) && !defined(__CYGWIN__)
 	#  if defined(G_NO_DLL)
 	#    undef G_MAKE_DLL
 	#    undef G_USE_DLL
@@ -397,7 +397,7 @@ namespace Amanith {
 
 
 	// dynamic plugin build: platform-specific settings
-	#if defined(G_OS_WIN)
+	#if defined(G_OS_WIN) && !defined(__CYGWIN__)
 	#  if defined(G_MAKE_PLUGIN)
 	#    if defined(G_USE_PLUGIN)
 	#      undef G_USE_PLUGIN
@@ -442,7 +442,8 @@ namespace Amanith {
 
 	// just for safe float operations
 	#if defined(G_OS_DARWIN) || defined(G_OS_MAC) || defined(G_OS_HPUX) || defined(G_OS_SOLARIS) || \
-		defined(_XOPEN_SOURCE) || defined(G_OS_LINUX) || defined(G_OS_BSDLIKE) || defined(G_OS_IRIX)
+		defined(_XOPEN_SOURCE) || defined(G_OS_LINUX) || defined(G_OS_BSDLIKE) || defined(G_OS_IRIX) || \
+		defined(__CYGWIN__) || defined(__GNUC__)
 		#define G_NO_ACOSF 1
 		#define G_NO_ASINF 1
 		#define G_NO_TANF 1

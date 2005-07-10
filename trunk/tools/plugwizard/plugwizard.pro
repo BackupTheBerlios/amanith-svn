@@ -16,3 +16,8 @@ SOURCES     += main.cpp \
 FORMS        = mainformbase.ui \
                classtreeformbase.ui
 
+# Qt4 support
+contains(DEFINES, USE_QT4) {
+    QT += qt3support
+    CONFIG += uic3
+}

@@ -73,6 +73,14 @@ unix: {
 }
 
 win32: {
-  TARGET = libfreetype2
-  LIBS += $$AMANITH_DIR/lib/zlib.lib
+    !contains(DEFINES, WIN32_MINGW) {
+        TARGET = libfreetype2
+        LIBS += $$AMANITH_DIR/lib/zlib.lib
+    }
+
+    # Windows MinGW support
+    contains(DEFINES, WIN32_MINGW) {
+        TARGET = freetype2
+        LIBS += $$AMANITH_DIR/lib/libzlib.a
+    }
 }

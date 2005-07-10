@@ -2,8 +2,13 @@
 #include <qmessagebox.h>
 #include "testext.h"
 
+// QT4 support
+#ifdef USE_QT4
+	#include <QKeyEvent>
+#endif
+
 // constructor
-QGLWidgetTest::QGLWidgetTest(QWidget * parent, const GChar8 *name) : QGLWidget(parent, name) {
+QGLWidgetTest::QGLWidgetTest(QWidget * parent) : QGLWidget(parent) {
 }
 
 // destructor
@@ -21,66 +26,6 @@ void QGLWidgetTest::initializeGL() {
 	gExtManager = new GOpenglExt();
 
 	glClear(GL_COLOR_BUFFER_BIT);
-
-	GUInt32 numFunc = gExtManager->SupportedFunctions().size();
-	G_DEBUG("Number of GL functions supported over OpenGL 1.1 standard: " + StrUtils::ToString(numFunc));
-
-	G_DEBUG("TextureUnitsCount: " + StrUtils::ToString(gExtManager->TextureUnitsCount()));
-        
-	if (gExtManager->IsFunctionSupported("glcopYTexSubImage3D"))
-		G_DEBUG("glcopYTexSubImage3D is supported");
-	else
-		G_DEBUG("glcopYTexSubImage3D isn't supported");
-
-	if (gExtManager->IsGLVersionSupported("1.3"))
-		G_DEBUG("OpenGL 1.3 is supported");
-	else
-		G_DEBUG("OpenGL 1.3 isn't supported");
-
-	if (gExtManager->IsGLVersionSupported(1, 3))
-		G_DEBUG("OpenGL (1, 3) is supported");
-	else
-		G_DEBUG("OpenGL (1, 3) isn't supported");
-
-	if (gExtManager->IsGLVersionSupported(2, 0))
-		G_DEBUG("OpenGL (2, 0) is supported");
-	else
-		G_DEBUG("OpenGL (2, 0) isn't supported");
-
-	if (gExtManager->IsGLVersionSupported("1.X"))
-		G_DEBUG("OpenGL 1.X is supported");
-	else
-		G_DEBUG("OpenGL 1.X isn't supported");
-
-	if (gExtManager->IsGLVersionSupported("1.*"))
-		G_DEBUG("OpenGL 1.* is supported");
-	else
-		G_DEBUG("OpenGL 1.* isn't supported");
-
-	if (gExtManager->IsMultitextureSupported())
-		G_DEBUG("Multitexture is supported");
-	else
-		G_DEBUG("Multitexture isn't supported");
-
-	if (gExtManager->IsCubemapSupported())
-		G_DEBUG("Cubemap is supported");
-	else
-		G_DEBUG("Cubemap isn't supported");
-
-	if (gExtManager->IsArbProgramsSupported())
-		G_DEBUG("ArbPrograms are supported");
-	else
-		G_DEBUG("ArbPrograms aren't supported");
-
-	if (gExtManager->IsArbShadersSupported())
-		G_DEBUG("ArbShaders are supported");
-	else
-		G_DEBUG("ArbShaders aren't supported");
-
-	if (gExtManager->IsOcclusionQuerySupported())
-		G_DEBUG("OcclusionQuery is supported");
-	else
-		G_DEBUG("OcclusionQuery isn't supported");
 }
 
 // keyboard event handler

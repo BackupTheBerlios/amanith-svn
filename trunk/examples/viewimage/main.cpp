@@ -1,19 +1,19 @@
 #include <qapplication.h>
-#include "drawer.h"
+#ifdef USE_QT4
+	#include "drawer_qt4.h"
+#else
+	#include "drawer.h"
+#endif
 
 int main(int argc, char ** argv) {
 
     QApplication app(argc, argv);
-    //QPixmapViewer *test = new QPixmapViewer();
-
-	/*app.setMainWidget(test);
-	// if you want fullscreen support, plese uncomment the following line
-	// test.setWindowState(test.windowState() ^ Qt::WindowFullScreen);
-	test->show();
-	test->setFocus();*/
 
 	ImageViewer *w =  new ImageViewer(0, "New window", Qt::WDestructiveClose | Qt::WResizeNoErase);
+
+#if QT_VERSION < 0x040000
 	w->setIcon(QPixmap::fromMimeSource("amanith32.png"));
+#endif
 
 	app.setMainWidget(w);
 	w->setCaption("Amanith - Image Example");

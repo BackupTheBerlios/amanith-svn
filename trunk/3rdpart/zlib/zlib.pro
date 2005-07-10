@@ -1,7 +1,18 @@
 
 include(../../config/settings.conf)
 
-win32: TARGET = libzlib
+win32: {
+
+    !contains(DEFINES, WIN32_MINGW) {
+        TARGET = libzlib
+    }
+
+    # Windows MinGW support
+    contains(DEFINES, WIN32_MINGW) {
+        TARGET = zlib
+    }
+}
+
 unix: TARGET = zlib
 
 TEMPLATE = lib

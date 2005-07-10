@@ -4,12 +4,19 @@
 #include <qfile.h>
 #include <qmessagebox.h>
 
+// QT4 support
+#ifdef USE_QT4
+	#include <QTimerEvent>
+	#include <QTextStream>
+	#include <QKeyEvent>
+#endif
+
 #define PrintOpenGLError() gExtManager->PrintOglError(__FILE__, __LINE__)
 
 static int timer_interval = 0;			// timer interval (millisec)
 
 // constructor
-QGLWidgetTest::QGLWidgetTest(QWidget * parent, const char * name) : QGLWidget(parent, name) {
+QGLWidgetTest::QGLWidgetTest(QWidget * parent) : QGLWidget(parent) {
 
 	GString s;
 	gKernel = new GKernel();
@@ -334,7 +341,12 @@ GLhandleARB QGLWidgetTest::useShader(const GChar8 *vShader, const GChar8 *fShade
 	QString fShaderData;
 
     QFile file(vShader);
+	// QT4 support
+#ifdef USE_QT4
+	if (file.open(QIODevice::ReadOnly)) {
+#else
     if (file.open(IO_ReadOnly)) {
+#endif
         QTextStream stream(&file);
 		vShaderData = stream.read();
         file.close();
@@ -346,7 +358,11 @@ GLhandleARB QGLWidgetTest::useShader(const GChar8 *vShader, const GChar8 *fShade
 	}
 
 	QFile f(fShader);
+#ifdef USE_QT4
+	if (f.open(QIODevice::ReadOnly)) {
+#else
     if (f.open(IO_ReadOnly)) {
+#endif
         QTextStream stream( &f );
 		fShaderData= stream.read();
         f.close();
@@ -721,7 +737,7 @@ void QGLWidgetTest::drawCubeWithProgShader() {
 
 	drawCube(false, false, 2);
 
-	glUseProgramObjectARB(NULL);
+	glUseProgramObjectARB((GLhandleARB)0);
 	deactiveTextureUnit(GL_TEXTURE1_ARB);
 	deactiveTextureUnit(GL_TEXTURE0_ARB);
 	setDefaultTextureUnitStates(GL_TEXTURE1_ARB);

@@ -217,6 +217,9 @@ namespace Amanith {
 		virtual GInt32 Version() const {
 			return G_AMANITH_VERSION;
 		}
+		//! Destructor, this empty virtual declaration make gcc 4.0 happy with warnings.
+		virtual ~GElementProxy() {
+		}
 	};
 
 	//! Static proxy for GElement class.

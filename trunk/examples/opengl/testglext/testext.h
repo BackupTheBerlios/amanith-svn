@@ -19,7 +19,7 @@ protected:
 
 public:
 	// constructor
-	QGLWidgetTest(QWidget * parent = 0, const GChar8 *name = 0);
+	QGLWidgetTest(QWidget * parent = 0);
 	// destructor
 	~QGLWidgetTest();
 };

@@ -1,4 +1,8 @@
-#include "drawer.h"
+#ifdef USE_QT4
+	#include "drawer_qt4.h"
+#else
+	#include "drawer.h"
+#endif
 #include <amanith/gimpexp.h>
 #include "resizeform.h"
 #include "canvasresizeform.h"
@@ -6,9 +10,19 @@
 #include <qspinbox.h>
 #include <qcombobox.h>
 
-// constructor
-QPixmapViewer::QPixmapViewer(QWidget *parent, const char *name, int wFlags ) : QScrollView(parent, name, wFlags) {
+// QT4 support
+#ifdef USE_QT4
+	#include <QPixmap>
+	#include <QResizeEvent>
+	#include <Q3PopupMenu>
+#endif
 
+// constructor
+#ifdef USE_QT4
+QPixmapViewer::QPixmapViewer(QWidget *parent, const char *name, Qt::WFlags wFlags) : Q3ScrollView(parent, name, wFlags) {
+#else
+QPixmapViewer::QPixmapViewer(QWidget *parent, const char *name, Qt::WFlags wFlags) : QScrollView(parent, name, wFlags) {
+#endif
 	gPixmap = NULL;
 }
 //------------------------------------------------------------
@@ -48,8 +62,11 @@ void QPixmapViewer::drawContents(QPainter *p, int clipx, int clipy, int clipw, i
 
 //----------------------------------------------------------------------
 
-ImageViewer::ImageViewer( QWidget *parent, const char *name, int wFlags ): QMainWindow(parent, name, wFlags) {
-
+#ifdef USE_QT4
+ImageViewer::ImageViewer(QWidget *parent, const char *name, Qt::WFlags wFlags): Q3MainWindow(parent, name, wFlags) {
+#else
+ImageViewer::ImageViewer(QWidget *parent, const char *name, Qt::WFlags wFlags): QMainWindow(parent, name, wFlags) {
+#endif
 	GError err;
 	GUInt32 i, j, k, w;
 
@@ -90,15 +107,22 @@ ImageViewer::ImageViewer( QWidget *parent, const char *name, int wFlags ): QMain
 	menubar = new QMenuBar(this);
 	menubar->setSeparator(QMenuBar::InWindowsStyle);
 
-	file = new QPopupMenu( menubar );
-	menubar->insertItem( "&File", file );
-	file->insertItem( "&Open...", this, SLOT(OpenFile()), CTRL + Key_O);
-	file->insertItem( "&Save...", this, SLOT(SaveFile()), CTRL + Key_S);
+#ifdef USE_QT4
+	file = new Q3PopupMenu(menubar);
+#else
+	file = new QPopupMenu(menubar);
+#endif
+	menubar->insertItem("&File", file);
+	file->insertItem("&Open...", this, SLOT(OpenFile()), Qt::CTRL + Qt::Key_O);
+	file->insertItem("&Save...", this, SLOT(SaveFile()), Qt::CTRL + Qt::Key_S);
 	file->insertSeparator();
-	//file->insertItem( "E&xit", qApp, SLOT(quit()), CTRL + Key_Q);
-	file->insertItem( "E&xit", this, SLOT(close()), CTRL + Key_Q);
+	file->insertItem("E&xit", this, SLOT(close()), Qt::CTRL + Qt::Key_Q);
 
-	edit =  new QPopupMenu( menubar );
+#ifdef USE_QT4
+	edit =  new Q3PopupMenu(menubar);
+#else
+	edit =  new QPopupMenu(menubar);
+#endif
 	menubar->insertItem( "&Edit", edit );
 	edit->insertItem("&Horizontal flip", this, SLOT(HorizontalFlip()));
 	edit->insertItem("&Vertical flip", this, SLOT(VerticalFlip()));
@@ -140,8 +164,11 @@ void ImageViewer::OpenFile() {
 	}
 
 	GString filter = "Images (" + gLoadFilter + ")";
-
+#ifdef USE_QT4
+	QString newfilename = Q3FileDialog::getOpenFileName(StrUtils::ToAscii(gDataPath), StrUtils::ToAscii(filter), this);
+#else
 	QString newfilename = QFileDialog::getOpenFileName(StrUtils::ToAscii(gDataPath), StrUtils::ToAscii(filter), this);
+#endif
 	if (!newfilename.isEmpty()) {
 		LoadImage(newfilename);
 		repaint();
@@ -184,7 +211,7 @@ GError ImageViewer::LoadImage(const QString& FileName) {
 	GError err;
 
 	if (!FileName.isEmpty()) {
-		QApplication::setOverrideCursor(waitCursor);
+		QApplication::setOverrideCursor(Qt::waitCursor);
 
 		err = gPixMap->Load(FileName.ascii(), "expandpalette=true");
 		if (err == G_NO_ERROR) {
@@ -258,7 +285,7 @@ void ImageViewer::NegativeImage() {
 void ImageViewer::TraceContours() {
 
 	if (gPixMap && gPixMap->PixelsCount() > 0) {
-		QApplication::setOverrideCursor(waitCursor);
+		QApplication::setOverrideCursor(Qt::waitCursor);
 		gPixMap->TraceContours(20, G_FALSE);
 		ConvertPixmap();
 		QApplication::restoreOverrideCursor();
@@ -305,7 +332,7 @@ void ImageViewer::FilteredResize() {
 
 			GInt32 w = f.NewWidth->value();
 			GInt32 h = f.NewHeight->value();
-			QApplication::setOverrideCursor(waitCursor);
+			QApplication::setOverrideCursor(Qt::waitCursor);
 
 			switch (f.FilterComboBox->currentItem()) {
 				case 0:
@@ -360,7 +387,7 @@ void ImageViewer::FilteredResize() {
 void ImageViewer::EdgeEnhance() {
 
 	if (gPixMap && gPixMap->PixelsCount() > 0) {
-		QApplication::setOverrideCursor(waitCursor);
+		QApplication::setOverrideCursor(Qt::waitCursor);
 		gPixMap->EdgeEnhance();
 		ConvertPixmap();
 		QApplication::restoreOverrideCursor();
@@ -373,7 +400,7 @@ void ImageViewer::EdgeEnhance() {
 void ImageViewer::EdgePreservingSmooth() {
 
 	if (gPixMap && gPixMap->PixelsCount() > 0) {
-		QApplication::setOverrideCursor(waitCursor);
+		QApplication::setOverrideCursor(Qt::waitCursor);
 		gPixMap->EdgePreservingSmooth();
 		ConvertPixmap();
 		QApplication::restoreOverrideCursor();
@@ -393,8 +420,11 @@ void ImageViewer::SaveFile() {
 		}
 
 		GString filter = "Images (" + gSaveFilter + ")";
-
+#ifdef USE_QT4
+		QString newfilename = Q3FileDialog::getSaveFileName(StrUtils::ToAscii(gDataPath), StrUtils::ToAscii(filter), this);
+#else
 		QString newfilename = QFileDialog::getSaveFileName(StrUtils::ToAscii(gDataPath), StrUtils::ToAscii(filter), this);
+#endif
 		if (!newfilename.isEmpty()) {
 			if (!LittleEndian)
 				gPixMap->ReverseChannels(G_TRUE);

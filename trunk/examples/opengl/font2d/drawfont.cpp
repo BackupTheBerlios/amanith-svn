@@ -2,12 +2,18 @@
 #include <amanith/2d/gtesselator2d.h>
 #include <qmessagebox.h>
 
+// QT4 support
+#ifdef USE_QT4
+	#include <QTimerEvent>
+	#include <QKeyEvent>
+#endif
+
 #define PrintOpenGLError() gExtManager->PrintOglError(__FILE__, __LINE__)
 
 static int timer_interval = 0;			// timer interval (millisec)
 
 // constructor
-QGLWidgetTest::QGLWidgetTest(QWidget * parent, const char * name) : QGLWidget(parent, name) {
+QGLWidgetTest::QGLWidgetTest(QWidget * parent) : QGLWidget(parent) {
 
 	GString s;
 
@@ -39,8 +45,6 @@ QGLWidgetTest::QGLWidgetTest(QWidget * parent, const char * name) : QGLWidget(pa
 // destructor
 QGLWidgetTest::~QGLWidgetTest() {
 
-	this->killTimers();
-
 	if (gExtManager)
 		delete gExtManager;
 	if (gFont)
@@ -56,7 +60,7 @@ void QGLWidgetTest::GenerateTessellation(const GFontChar2D* Char, const GReal De
 	if (Char == NULL)
 		return;
 
-	GInt32 i, j, ofs;
+	GInt32 i, j;
 	GDynArray<GPoint2> tmpPts;
 	GDynArray<GInt32> tmpIndex;
 	GTesselator2D tesselator;
@@ -68,7 +72,6 @@ void QGLWidgetTest::GenerateTessellation(const GFontChar2D* Char, const GReal De
 	for (i = 0; i < j; i++) {
 		tmpPts.clear();
 		tmpIndex.clear();
-		ofs = 0;
 
 		Char->DrawOutline(i, tmpPts, tmpIndex, Deviation);
 

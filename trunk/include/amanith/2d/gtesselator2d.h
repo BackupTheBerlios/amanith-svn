@@ -43,6 +43,31 @@ namespace Amanith {
 	// *********************************************************************
 	//                          GTesselator2D
 	// *********************************************************************
+
+	/*!
+		\class GTesselator2D
+		\brief This class implements a 2D shape triangulator.
+
+		Amanith triangulator handles holes and non-simple contours. Some common degenerations are supported too, for example
+		repeated points, coincident points and (partially)overlapping edges.
+		The implemented algorithm is a robust sweep-line. It consist of two main steps:\n\n
+
+		-# Decompose the 'interior' region (the plane region that will be solid/filled) into X-axis monotone disjointed
+		regions.
+		-# Triangulate each monotone piece with a greedy linear (in time complexity) algorithm.\n\n
+
+		The general step is to sweep a vertical line, as the classic Bentley-Ottmann algorithm do. The so called
+		Y-structure (also known as edges dictionary) is an AVL tree (maybe next version will use a skip list), and the
+		so called X-structure is a priority queue (implemented as a simple sorted list).\n
+		The overall complexity is (N + K)Log2(N), where N is the total number of segments, K is the number of
+		intersections that occur between segments (intersections can derive from non simple contours or they can be due
+		to contours intersections), and Log2 is the logarithm to base 2 function.
+		Internally, the topology of generated monotone regions, is maintained by a GMesh2D, that is used to quickly
+		manage adjacencies and split/merge operations.\n
+		For a simple triangulation history and theory you can check this clear
+		document (we have based out work also on this paper):
+		http://www.cs.ucsb.edu/~suri/cs235/Triangulation.pdf
+	*/
 	class G_EXPORT GTesselator2D {
 
 	private:
@@ -189,11 +214,47 @@ namespace Amanith {
 													const GPoint2& Origin, const GPoint2& Destination);
 
 	public:
-		// constructor
+		//! Default constructor.
 		GTesselator2D();
-		// destructor
+		//! Destructor.
 		~GTesselator2D();
-		// tessellation routine
+		/*!
+			Build a valid triangulation of given contours and holes.
+			The triangulation is based on a robust sweep-line algorithm, see GTesselator2D class reference
+			for more details and use example. Unlike other triangulators, Amanith tesselator does not require
+			that contours (be they holes or not) must be given in ccw or cw order. This make Amanith tesselator
+			more general and adaptable to other high-level libraries.
+			Here's an example of the typical use:
+\code
+	GDynArray<GPoint2> pts;
+	GDynArray<GInt32> idx;
+
+	// push point for a square
+	pts.push_back(GPoint2(0, 0));
+	pts.push_back(GPoint2(10, 0));
+	pts.push_back(GPoint2(10, 10));
+	pts.push_back(GPoint2(0, 10));
+	idx.push_back(4);
+	// push points for a triangle hole (inside the previous square).
+	pts.push_back(GPoint2(3, 3));
+	pts.push_back(GPoint2(7, 3));
+	pts.push_back(GPoint2(5, 8));
+	idx.push_back(3);
+
+	GDynArray<GPoint2> triPoints;
+	GTesselator2D tesselator;
+
+	tesselator.Tesselate(pts, idx, triPoints);
+	for (GUInt32 i = 0; i < triPoints.size(); i+=3)
+		DrawTriangle(triPoints[i], triPoints[i + 1], triPoints[i + 2]);
+\endcode
+			\param Points the array containing the contours points.
+			\param PointsPerContour an array containing the number of point for every contour.
+			\param Triangles the outputted array of triangles. Every triangle is built by 3 vertexes.
+			\param OddFill the filling rule.
+			\return G_NO_ERROR if operation succeeds, an error code otherwise.
+			\note Please keep OddFill parameter G_TRUE. This is the only supported mode for this version.
+		*/
 		GError Tesselate(const GDynArray<GPoint2>& Points, const GDynArray<GInt32>& PointsPerContour,
 						 GDynArray<GPoint2>& Triangles, const GBool OddFill = G_TRUE);
 

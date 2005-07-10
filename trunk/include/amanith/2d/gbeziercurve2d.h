@@ -50,7 +50,38 @@ namespace Amanith {
 
 	/*!
 		\class GBezierCurve2D
-		\brief A generic degree 2D Bèzier curve.
+		\brief A generic degree 2D Bezier curve.
+
+		Originally developed by Pierre Bezier in the 1970's for CAD/CAM operations, this kind of parametric curves is
+		very famous soon (for example, they are the underpinnings of the entire Adobe PostScript drawing model).
+		The Bezier curve is a parametric function of N points; two endpoints and N-2 'internal' control points. The curve
+		connects the endpoints, but doesn't necessarily touch other control points. The general form Bezier equation, which
+		describes each point on the curve as a function of domain parameter t, is:
+
+		\f[
+			C(t) = \sum_{i=0}^{N} B_{i, N}(t)P_{i}
+		\f]
+
+		with the Bernstein basis polynomials defined as:
+
+		\f[
+		B_{i, N}(t) = \left( \begin {array}{c}
+		N \\
+		i \end{array} \right) t^{i}(1-t)^{N-i}
+		\f]
+
+		Bezier curves are widely used in computer graphics to model smooth curves. As the curve is completely contained
+		in the convex hull of its control points, the points can be graphically displayed and used to manipulate the
+		curve intuitively. Affine transformations such as translation, scaling and rotation can be applied on the curve
+		by applying the respective transform on the control points of the curve.\n
+		The most important Bezier curves are quadratic and cubic curves. Higher degree curves are more expensive to
+		evaluate and there is no analytic formula to calculate the roots of polynomials of degree 5 and higher.\n
+		Like other Amanith curves, Bezier curves can be flattened using squared chordal distance threshold, and two
+		optimized non-recursive flattening schemes were implemented for quadratics and cubics Bezier curves. These optimized
+		versions are terrible fast and produce about 34% less segments than classic recursive schemes.
+		
+		For more details about Bezier curve, please check this
+		site: http://astronomy.swin.edu.au/~pbourke/curves/bezier/
 	*/
 	class G_EXPORT GBezierCurve2D : public GCurve2D {
 
@@ -71,7 +102,7 @@ namespace Amanith {
 		GBool FindInflectionPoints(const GReal Ax, const GReal Bx, const GReal Cx,
 								   const GReal Ay, const GReal By, const GReal Cy,
 								   GReal& Flex1, GReal& Flex2, GReal& Cuspid) const;
-		//! Excise inflection points of a cubic Bèzier curve; used by Flatten3() method.
+		//! Excise inflection points of a cubic Bezier curve; used by Flatten3() method.
 		void ExciseInflectionPoint(const GReal Flex, const GReal Flatness, GReal& ParamMinus, GReal& ParamPlus) const;
 		//! Flatten a cubic Bezier curve, using parabolic approximation (it presupposes no inflection points)
 		void ParabolicApproxBezierPointsNoInflPts(const GReal Flatness, GDynArray<GPoint2>& Contour) const;
@@ -105,7 +136,7 @@ namespace Amanith {
 			Brent's method, pleas check this site http://mathworld.wolfram.com/BrentsMethod.html.
 		*/
 		GBool IntersectXRay(GDynArray<GVector2>& Intersections, const GReal Precision, const GInt32 MaxIterations) const;
-		//! Cloning function, copies (physically) a Source Bèzier curve into this curve.
+		//! Cloning function, copies (physically) a Source Bezier curve into this curve.
 		GError BaseClone(const GElement& Source);
 		/*!
 			Curve subdivision.
@@ -137,7 +168,7 @@ namespace Amanith {
 
 			It can be shown that Max |B(t) - L(t)|^2 is at t = 1/2. This kind of distance can be assumed to be the
 			squared chordal distance.\n
-			Now, we wanna find a 't' value where to cut the Bèzier curve, so that left arc will have a maximum squared
+			Now, we wanna find a 't' value where to cut the Bezier curve, so that left arc will have a maximum squared
 			chordal distance less then a specified epsilon (so a straight line between its start and end points is a
 			good flat segment). This leads to:\n\n
 
@@ -188,13 +219,13 @@ namespace Amanith {
 		GError Flatten3(GDynArray<GPoint2>& Contour, const GReal MaxDeviation, const GBool IncludeLastPoint) const;
 
 	public:
-		//! Default constructor
+		//! Default constructor, creates an empty Bezier.
 		GBezierCurve2D();
-		//! Constructor with owner (kernel) parameter
+		//! Constructor with owner (kernel) parameter, creates an empty Bezier.
 		GBezierCurve2D(const GElement* Owner);
 		//! Destructor
 		virtual ~GBezierCurve2D();
-		// Clear the curve (remove control points and free internal structures)
+		//! Clear the curve (remove control points, free internal structures and set an empty domain).
 		void Clear();
 		//! Returns number of control points.
 		GInt32 PointsCount() const;
@@ -311,7 +342,7 @@ namespace Amanith {
 		*/
 		GError LowerDegree(GBezierCurve2D& OutputCurve) const;
 		/*!
-			Intersect the Bezier curve with a ray, and returns a list of intersections.
+			Intersect the Bezier curve with a normalized ray, and returns a list of intersections.
 
 			Here's the implemented algorithm:\n
 
@@ -343,11 +374,15 @@ namespace Amanith {
 		*/
 		GBool IntersectRay(const GRay2& NormalizedRay, GDynArray<GVector2>& Intersections,
 						   const GReal Precision = G_EPSILON, const GInt32 MaxIterations = 100) const;
-		/*!
-			Returns number of intersection between control polygon and a ray.
-		*/
+		//!	Returns number of intersection between control polygon and a ray.
 		GInt32 CrossingCount(const GRay2& Ray) const;
-		//! Returns control polygon length
+		/*!
+			Returns control polygon length.
+
+			\param FromIndex lower index of considered control points.
+			\param ToIndex upper index of considered control points.
+			\return control polygon length, for specified control points range.
+		*/
 		GReal ControlPolygonLength(const GInt32 FromIndex, const GInt32 ToIndex) const;
 		/*!
 			Flats the curve specifying a max error/variation (squared chordal distance).
@@ -371,8 +406,8 @@ namespace Amanith {
 		/*!
 			Return the curve derivative calculated at specified domain parameter.
 
+			\param Order the order of derivative.
 			\param u the domain parameter at witch we wanna evaluate curve derivative.
-			\param Order the order of derivative
 			\note specified domain parameter is clamped by domain interval.
 		*/
 		GVector2 Derivative(const GDerivativeOrder Order, const GReal u) const;
@@ -380,7 +415,7 @@ namespace Amanith {
 			Cubic Bezier to Hermite conversion.
 
 			This method converts a cubic Bezier trait into an Hermite representation. The conversion can be
-			easily derived equaling they power series representation.
+			easily derived equaling their power series representations.
 
 			\return G_NO_ERROR in operation succeeds, an error code otherwise.
 			\note if this Bezier curve is not cubic an G_INVALID_OPERATION error code is returned.
@@ -390,7 +425,7 @@ namespace Amanith {
 		inline const GClassID& ClassID() const {
 			return G_BEZIERCURVE2D_CLASSID;
 		}
-		//! Get base class (father class) descriptor
+		//! Get base class (father class) descriptor.
 		inline const GClassID& DerivedClassID() const {
 			return G_CURVE2D_CLASSID;
 		}

@@ -110,7 +110,7 @@ namespace Amanith {
 		- 16-bpp images: they can be with (G_A1R5G5B5) and without (G_R5G6B5) alpha channel. In the first case the most significant
 		bit is an alpha value, and then come (from most to least significants bits positions) 5bits red, 5bits green and
 		5 bits blue values.\n\n
-		24/32-bpp images: they can be with (G_A8R8G8B8) and without (G_R8G8B8) alpha channel. In the first case the
+		- 24/32-bpp images: they can be with (G_A8R8G8B8) and without (G_R8G8B8) alpha channel. In the first case the
 		most significant byte is an 8bits alpha value, and then come (from most to least significant bytes) 8bits red, 8bits
 		green and 8 bits blue values. Internally each pixel is always maintained as a (4 bytes long) integer.
 

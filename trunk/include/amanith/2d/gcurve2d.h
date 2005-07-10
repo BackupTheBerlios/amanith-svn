@@ -124,7 +124,7 @@ namespace Amanith {
 			This method must be implemented	by every derived classes.
 		*/
 		virtual GError DoCut(const GReal u, GCurve2D *RightCurve, GCurve2D *LeftCurve) const = 0;
-		//! Cloning function
+		//! Cloning function; this implementation copies the domain.
 		GError BaseClone(const GElement& Source);
 		//! Static speed evaluation callback (for Length() evaluation).
 		static GReal SpeedEvaluationCallBack(const GReal u, void *Data);
@@ -157,12 +157,12 @@ namespace Amanith {
 		virtual GInt32 PointsCount() const = 0;
 		/*!
 			Clear the curve (remove control points and internal structures)
-			\note this method must be implemented by all derived classes.
+			\note <b>this method must be implemented by all derived classes</b>.
 		*/
 		virtual void Clear() = 0;
-		//! Get Index-th point. This method must be implemented by all derived classes.
+		//! Get Index-th point. <b>This method must be implemented by all derived classes</b>.
 		virtual GPoint2 Point(const GInt32 Index) const = 0;
-		//! Set Index-th point. This method must be implemented by all derived classes.
+		//! Set Index-th point. <b>This method must be implemented by all derived classes</b>.
 		virtual GError SetPoint(const GInt32 Index, const GPoint2& NewValue) = 0;
 		/*!
 			Intersect the curve with a ray, and returns a list of intersections.
@@ -179,7 +179,7 @@ namespace Amanith {
 			next found solution.
 			The more this value is, the more is the accuracy of each solution (and the more is the time taken from this
 			method).
-			\note this method must be implemented by all derived classes.
+			\note <b>this method must be implemented by all derived classes</b>.
 		*/
 		virtual GBool IntersectRay(const GRay2& NormalizedRay, GDynArray<GVector2>& Intersections,
 								   const GReal Precision = G_EPSILON, const GInt32 MaxIterations = 100) const = 0;
@@ -197,15 +197,15 @@ namespace Amanith {
 			Return the curve value calculated at specified domain parameter.
 			
 			\param u the domain parameter at witch we wanna evaluate curve value.
-			\note this method must be implemented by all derived classes.
+			\note <b>this method must be implemented by all derived classes</b>.
 		*/
 		virtual GPoint2 Evaluate(const GReal u) const = 0;
 		/*! 
 			Return the curve derivative calculated at specified domain parameter.
 
-			\param u the domain parameter at witch we wanna evaluate curve derivative.
 			\param Order the order of derivative
-			\note this method must be implemented by all derived classes.
+			\param u the domain parameter at witch we wanna evaluate curve derivative.
+			\note <b>this method must be implemented by all derived classes</b>.
 		*/
 		virtual GVector2 Derivative(const GDerivativeOrder Order, const GReal u) const = 0;
 		/*!

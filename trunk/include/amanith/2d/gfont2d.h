@@ -52,7 +52,7 @@ namespace Amanith {
 		Internally a contour is compactly described by its "main" points and a sequence of flags, associated with main
 		points, that clarify each point "degree". A such contour can be flattened using the well know maximum
 		deviation schema.\n.
-		If one would pass to a classic piecewise Bèzier form, just call DecomposeBezier() function. As said before, internal
+		If one would pass to a classic piecewise Bezier form, just call DecomposeBezier() function. As said before, internal
 		representation is more compact, and requires less memory.
 		Each point flag has the following format (there's a 1-1 correspondence between points and flags):
 
@@ -161,7 +161,7 @@ Legend:  O on curve  + off curve
 		*/
 		void DrawContour(GDynArray<GPoint2>& Points, const GReal Variation,	const GMatrix23& Transformation) const;
 		/*!
-			Convert the internal compact contour representation, into a piecewise Bèzier form.
+			Convert the internal compact contour representation, into a piecewise Bezier form.
 
 			For example, if the contour is converted into 3 Bezier quadratics and a line, this method will append
 			11 points (3 for every quadratics and 2 for the line) to Points array, and it will append the values 3, 3, 3 and

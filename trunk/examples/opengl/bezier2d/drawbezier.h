@@ -33,7 +33,7 @@ protected:
 
 public:
 	// constructor
-	QGLWidgetTest(QWidget *parent = 0, const char *name = 0);
+	QGLWidgetTest(QWidget *parent = 0);
 	// destructor
 	~QGLWidgetTest();
 	void timerEvent(QTimerEvent* e);

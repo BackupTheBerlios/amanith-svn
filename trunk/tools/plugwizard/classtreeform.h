@@ -31,21 +31,32 @@
 
 #include "classtreeformbase.h"
 #include <qpushbutton.h>
-#include <qlistview.h>
-#include <qvaluevector.h>
+// QT4 support
+#ifdef USE_QT4
+	#include <q3listview.h>
+	#include <q3valuevector.h>
+#else
+	#include <qlistview.h>
+	#include <qvaluevector.h>
+#endif
 #include <amanith/gglobal.h>
 #include <amanith/gkernel.h>
 
 using namespace Amanith;
 
 class ClassTreeForm : public ClassTreeFormBase {
+
 	Q_OBJECT
 
 protected:
-	void SetChildItems(QListViewItem &father,
-		               const GKernel &kernel,
-		               GDynArray<GProxyState> childs);
+// QT4 support
+#ifdef USE_QT4
+	void SetChildItems(Q3ListViewItem &father, const GKernel &kernel, GDynArray<GProxyState> childs);
+	void SetOpen(Q3ListViewItem &i);
+#else
+	void SetChildItems(QListViewItem &father, const GKernel &kernel, GDynArray<GProxyState> childs);
 	void SetOpen(QListViewItem &i);
+#endif
 
 public:
 	ClassTreeForm(QWidget *parent) : ClassTreeFormBase(parent, "ClassTreeForm", true) { 

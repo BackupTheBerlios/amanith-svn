@@ -2,12 +2,18 @@
 #include <amanith/geometry/gxform.h>
 #include <qmessagebox.h>
 
+// QT4 support
+#ifdef USE_QT4
+	#include <QTimerEvent>
+	#include <QKeyEvent>
+#endif
+
 #define PrintOpenGLError() gExtManager->PrintOglError(__FILE__, __LINE__)
 
 static int timer_interval = 0;			// timer interval (millisec)
 
 // constructor
-QGLWidgetTest::QGLWidgetTest(QWidget * parent, const char * name) : QGLWidget(parent, name) {
+QGLWidgetTest::QGLWidgetTest(QWidget * parent) : QGLWidget(parent) {
 
 	GDynArray<GPoint2> points;
 
@@ -42,8 +48,6 @@ QGLWidgetTest::QGLWidgetTest(QWidget * parent, const char * name) : QGLWidget(pa
 
 // destructor
 QGLWidgetTest::~QGLWidgetTest() {
-
-	this->killTimers();
 
 	if (gExtManager)
 		delete gExtManager;
@@ -102,8 +106,8 @@ void QGLWidgetTest::DrawPolyLine(const GPolyLineCurve2D* Curve) {
 
 	glDisable(GL_LINE_SMOOTH);
 	glLineWidth(2.0f);
-	glBegin(GL_LINES);
 	glColor3f(1.0f, 0.7f, 0.25f);
+	glBegin(GL_LINES);
 	numSegs = (GInt32)points.size() - 1;
 	for (i = 0; i < numSegs; i++) {
 		p1 = points[i];
@@ -114,16 +118,16 @@ void QGLWidgetTest::DrawPolyLine(const GPolyLineCurve2D* Curve) {
 	glEnd();
 	// draw ray used for intersection test
 	glLineWidth(1.0f);
-	glBegin(GL_LINES);
 	glColor3f(1.0f, 0.3f, 0.1f);
+	glBegin(GL_LINES);
 	glVertex3f(gIntersectionRay.Origin()[G_X], gIntersectionRay.Origin()[G_Y], 1.0f);
 	glVertex3f(gIntersectionRay.Origin()[G_X] + 20 * gIntersectionRay.Direction()[G_X],
-		gIntersectionRay.Origin()[G_Y] + 20 * gIntersectionRay.Direction()[G_Y], 1.0f);
+			gIntersectionRay.Origin()[G_Y] + 20 * gIntersectionRay.Direction()[G_Y], 1.0f);
 	glEnd();
 	// draw intersection points
 	glPointSize(5.0);
-	glBegin(GL_POINTS);
 	glColor3f(0.0f, 1.0f, 0.3f);
+	glBegin(GL_POINTS);
 	j = gIntersectionPoints.size();
 	for (i = 0; i < j; i++) {
 		p1 = Curve->Evaluate(gIntersectionPoints[i][G_X]);

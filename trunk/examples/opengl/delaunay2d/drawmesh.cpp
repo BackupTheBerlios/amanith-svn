@@ -4,6 +4,12 @@
 #include <amanith/geometry/gintersect.h>
 #include <qmessagebox.h>
 
+// QT4 support
+#ifdef USE_QT4
+	#include <QTimerEvent>
+	#include <QKeyEvent>
+#endif
+
 #define PrintOpenGLError() gExtManager->PrintOglError(__FILE__, __LINE__)
 
 static int timer_interval = 0;			// timer interval (millisec)
@@ -23,7 +29,7 @@ void QGLWidgetTest::BuildNewMesh() {
 }
 
 // constructor
-QGLWidgetTest::QGLWidgetTest(QWidget * parent, const char * name) : QGLWidget(parent, name) {
+QGLWidgetTest::QGLWidgetTest(QWidget * parent) : QGLWidget(parent) {
 
 	gKernel = new GKernel();
 	gMesh = (GMesh2D *)gKernel->CreateNew(G_MESH2D_CLASSID);
@@ -51,13 +57,10 @@ QGLWidgetTest::QGLWidgetTest(QWidget * parent, const char * name) : QGLWidget(pa
 // destructor
 QGLWidgetTest::~QGLWidgetTest() {
 
-	this->killTimers();
-
 	if (gExtManager)
 		delete gExtManager;
 	if (gMesh)
 		delete gMesh;
-
 	if (gKernel)
 		delete gKernel;
 }

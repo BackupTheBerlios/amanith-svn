@@ -4,9 +4,15 @@
 #include <amanith/2d/gtesselator2d.h>
 #include <qmessagebox.h>
 
+// QT4 support
+#ifdef USE_QT4
+	#include <QTimerEvent>
+	#include <QKeyEvent>
+#endif
+
 static int timer_interval = 0;			// timer interval (millisec)
 
-QGLWidgetTest::QGLWidgetTest(QWidget * parent, const char * name) : QGLWidget(parent, name) {
+QGLWidgetTest::QGLWidgetTest(QWidget * parent) : QGLWidget(parent) {
 
 	GString s;
 	GError err;

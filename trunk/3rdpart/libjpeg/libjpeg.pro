@@ -4,7 +4,16 @@ include(../../config/settings.conf)
 TEMPLATE = lib
 
 unix: TARGET = jpeg
-win32: TARGET = libjpeg
+win32: {
+    !contains(DEFINES, WIN32_MINGW) {
+        TARGET = libjpeg
+    }
+
+    # Windows MinGW support
+    contains(DEFINES, WIN32_MINGW) {
+        TARGET = jpeg
+    }
+}
 
 INCLUDEPATH = ./
 

@@ -5,11 +5,6 @@
 #include <amanith/2d/gpixelmap.h>
 #include <amanith/2d/gtracer2d.h>
 #include <amanith/gopenglext.h>
-
-#include <qscrollview.h>
-#include <qpainter.h>
-#include <qpixmap.h>
-#include <qimage.h>
 #include <qgl.h>
 
 using namespace Amanith;
@@ -42,7 +37,7 @@ protected:
 
 public:
 	// constructor
-	QGLWidgetTest(QWidget *parent = 0, const char *name = 0);
+	QGLWidgetTest(QWidget *parent = 0);
 	// destructor
 	~QGLWidgetTest();
 	void QGLWidgetTest::timerEvent(QTimerEvent *e);

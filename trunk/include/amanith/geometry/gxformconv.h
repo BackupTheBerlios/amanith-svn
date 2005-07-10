@@ -52,23 +52,6 @@ namespace Amanith {
 			Result[i][COLS - 1] = Translation[i];
 	}
 	
-	//! Build a 2D rotation matrix, specifying the rotation amount (in radians).
-	template <typename DATA_TYPE, GUInt32 ROWS, GUInt32 COLS>
-	void RotationToMatrix(GMatrix<DATA_TYPE, ROWS, COLS>& Result, const GReal RadAngle) {
-
-		G_ASSERT((ROWS >= 2) && (COLS >= 2));
-		GReal c, s;
-
-		Identity(Result);
-		c = GMath::Cos(RadAngle);
-		s = GMath::Sin(RadAngle);
-
-		Result[0][0] = c;
-		Result[0][1] = -s;
-		Result[1][0] = s;
-		Result[1][1] = c;
-	}
-
 	/*!
 		Construct matrix from Euler angles. For examples:
 \code
@@ -88,7 +71,9 @@ namespace Amanith {
 		\param ApplicationOrder rotations application order.
 		\param RightOrder specify if specified ApplicationOrder must be "seen" from right to left (G_TRUE value) or
 		from left to right (G_FALSE value).
-		\note taken from Graphics Gems IV "Euler Angle Conversion"
+		\note Adapted from Graphics Gems IV "Euler Angle Conversion". Due to a <b>doxygen bug</b>, similar function (same name
+		but different parameters) are still present into source code, but they cannot be documented. Please refer to
+		source file for the full list of RotationToMatrix() versions.
 	*/
 	template <typename DATA_TYPE, GUInt32 ROWS, GUInt32 COLS>
 	void RotationToMatrix(GMatrix<DATA_TYPE, ROWS, COLS>& Result,
@@ -241,6 +226,40 @@ namespace Amanith {
 		#undef EulParOdd
 	}
 
+	//! Build a 2D rotation matrix, specifying the rotation amount (in radians).
+	template <typename DATA_TYPE, GUInt32 ROWS, GUInt32 COLS>
+	void RotationToMatrix(GMatrix<DATA_TYPE, ROWS, COLS>& Result, const GReal RadAngle) {
+
+		G_ASSERT((ROWS >= 2) && (COLS >= 2));
+		GReal c, s;
+
+		Identity(Result);
+		c = GMath::Cos(RadAngle);
+		s = GMath::Sin(RadAngle);
+
+		Result[0][0] = c;
+		Result[0][1] = -s;
+		Result[1][0] = s;
+		Result[1][1] = c;
+	}
+
+	/*!
+		Build a scale matrix, specifying scaling factors.
+
+		\note due to a <b>doxygen bug</b>, similar function (same name but different parameters) are still present
+		into source code, but they cannot be documented. Please refer to source file for the full list of
+		ScaleToMatrix() versions.
+	*/
+	template <typename DATA_TYPE, GUInt32 ROWS, GUInt32 COLS, GUInt32 SIZE>
+	void ScaleToMatrix(GMatrix<DATA_TYPE, ROWS, COLS>& Result,	const GVect<DATA_TYPE, SIZE>& ScaleFactors) {
+
+		GUInt32 i, j = GMath::Min(ROWS, COLS, SIZE);
+
+		Identity(Result);
+		for (i = 0; i < j; i++)
+			Result[i][i] = ScaleFactors[i];
+	}
+
 	//! Build a uniform scale matrix.
 	template <typename DATA_TYPE, GUInt32 ROWS, GUInt32 COLS>
 	void ScaleToMatrix(GMatrix<DATA_TYPE, ROWS, COLS>& Result, const DATA_TYPE ScaleFactor) {
@@ -252,22 +271,15 @@ namespace Amanith {
 			Result[i][i] = ScaleFactor;
 	}
 
-	//! Build a scale matrix, specifying scaling factors.
-	template <typename DATA_TYPE, GUInt32 ROWS, GUInt32 COLS, GUInt32 SIZE>
-	void ScaleToMatrix(GMatrix<DATA_TYPE, ROWS, COLS>& Result,	const GVect<DATA_TYPE, SIZE>& ScaleFactors) {
-
-		GUInt32 i, j = GMath::Min(ROWS, COLS, SIZE);
-
-		Identity(Result);
-		for (i = 0; i < j; i++)
-			Result[i][i] = ScaleFactors[i];
-	}
-
 	/*!
 		Convert a matrix to a quaternion representation.
 		Sets the rotation quaternion using the given matrix; this algorithm avoids
 		near-zero divides by looking for a large component
 		(3x3, 3x4, 4x3, or 4x4 are all valid sizes. In general n x m are valid if n and m are >= 3).
+
+		\note due to a <b>doxygen bug</b>, similar function (same name but different parameters) are still present
+		into source code, but they cannot be documented. Please refer to source file for the full list of
+		MatrixToRotation() versions.
     */
 	template <typename DATA_TYPE, GUInt32 ROWS, GUInt32 COLS>
 	void MatrixToRotation(GQuat<DATA_TYPE>& Result, const GMatrix<DATA_TYPE, ROWS, COLS>& M) {
@@ -340,7 +352,7 @@ namespace Amanith {
 	/*!
 		Convert matrix to Euler angles (in radians).
 
-		\note taken from Graphics Gems IV "Euler Angle Conversion"
+		\note Adapted from Graphics Gems IV "Euler Angle Conversion".
 	*/
 	template <typename DATA_TYPE, GUInt32 ROWS, GUInt32 COLS>
 	GError MatrixToRotation(DATA_TYPE& RadAngle1, DATA_TYPE& RadAngle2, DATA_TYPE& RadAngle3,

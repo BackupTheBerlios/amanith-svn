@@ -33,18 +33,20 @@
 #include <algorithm>
 #include <cstring>
 // now ensure includes for ScanPath function
-#if defined(G_OS_WIN) && !defined(__CYGWIN__)
+#if defined(G_OS_WIN) && !defined(__CYGWIN__) && !defined(__GNUC__)
 	#include <wbemidl.h>
 	#include <comdef.h>
 #elif defined(G_OS_IRIX)
 	#include <sys/types.h>
 	#include <sys/dir.h>
 #else
+    // standard unix and also MinGW for windows has opendir() function here
 	#include <dirent.h>
 #endif
 
 // now ensure includes for FileExists function
 #if defined(G_OS_WIN) && !defined(__CYGWIN__)
+    // MinGW for windows has access() function in io.h
 	#include <io.h>
 #else
 	// POSIX, UNIX and so on..
@@ -65,7 +67,7 @@ GSystemInfo SysUtils::gStaticSystemInfo;
 //                            System utilities
 // *********************************************************************
 
-#if defined(G_OS_WIN) && !defined(__CYGWIN__)
+#if defined(G_OS_WIN) && !defined(__CYGWIN__) && !defined(__GNUC__)
 GError GetWindowsVersion(GInt32& Major, GInt32& Minor, GInt32& Build, GInt32& PlatformID,
 						 GString& OSDescription) {
 
@@ -177,7 +179,7 @@ GError GetWindowsVersion(GInt32& Major, GInt32& Minor, GInt32& Build, GInt32& Pl
 */
 GError SysUtils::MachineGUID(GString& Identifier) {
 
-	#if defined(G_OS_WIN) && !defined(__CYGWIN__)
+	#if defined(G_OS_WIN) && !defined(__CYGWIN__) && !defined(__GNUC__)
 
 		GInt32 maj, min, build, platfID;
 		GUInt32 i, j, k;
@@ -373,7 +375,7 @@ GBool SysUtils::SystemInfo(GSystemInfo& SysInfo) {
 			gStaticSystemInfo.TrailerPathDelimiter = '/';
 		#endif
 		// dynamic library file extension
-		#if defined(G_OS_WIN)
+		#if defined(G_OS_WIN) && !defined(__CYGWIN__)
 			gStaticSystemInfo.DynamicLibExtension = "dll";
 		#elif defined(G_OS_MAC)
 			gStaticSystemInfo.DynamicLibExtension = "dylib";
@@ -950,7 +952,7 @@ GError FileUtils::ScanPath(GStringList& FoundFiles, const GChar8 *Directory, con
 	GString fixedPath = StrUtils::OSFixPath(sPath, G_TRUE);
 	sPath = fixedPath;
 
-	#if defined(G_OS_WIN) && !defined(__CYGWIN__)
+	#if defined(G_OS_WIN) && !defined(__CYGWIN__) && !defined(__GNUC__)
 		// search for all files
 		sPath += '*';
 		WIN32_FIND_DATAA data;
@@ -994,10 +996,58 @@ GError FileUtils::ScanPath(GStringList& FoundFiles, const GChar8 *Directory, con
 		} while (FindNextFileA(handle, &data) != 0);
 		FindClose(handle);
 		return G_NO_ERROR;
+	// IRIX does not have a d_type field, so the only possible solution is
+	// to try to enter into a single file entry (as if it would be a directory)
 	#elif defined(G_OS_IRIX)
 		DIR *handle = opendir(StrUtils::ToAscii(fixedPath));
 		if (handle) {
 			direct *rc;
+			while((rc = readdir(handle)) != NULL) {
+				// first check if this is a directory entry
+				checkPath = rc->d_name;
+				DIR *tmpHandle = opendir(StrUtils::ToAscii(fixedPath + checkPath));
+				if (tmpHandle) {
+					closedir(tmpHandle);
+					if (ScanRecursively == G_TRUE) {
+						// we don't wanna 'current' and 'previous' directory
+						if ((checkPath != ".") && (checkPath != "..")) {
+							err = ScanPath(FoundFiles, StrUtils::ToAscii(fixedPath + checkPath), ScanRecursively, AddPath, FileExt);
+							if (err != G_NO_ERROR)
+								return err;
+						}
+					}
+				}
+				else {
+					fName = rc->d_name;
+					if (FileExt) {
+						fExt = StrUtils::ExtractFileExt(fName);
+						if (StrUtils::SameText(fExt, FileExt)) {
+							// add full path, if specified
+							if (AddPath)
+								FoundFiles.push_back(fixedPath + fName);
+							else
+								FoundFiles.push_back(fName);
+						}
+					}
+					else {
+						// add full path, if specified
+						if (AddPath)
+							FoundFiles.push_back(fixedPath + fName);
+						else
+							FoundFiles.push_back(fName);
+					}
+				}
+			}
+			closedir(handle);
+			return G_NO_ERROR;
+		}
+		return G_READ_ERROR;
+	#elif defined(G_OS_WIN) && defined(__GNUC__)
+		// MinGW (windows) does not have a d_type field, so the only possible solution is
+		// to try to enter into a single file entry (as if it would be a directory)
+		DIR *handle = opendir(StrUtils::ToAscii(fixedPath));
+		if (handle) {
+			dirent *rc;
 			while((rc = readdir(handle)) != NULL) {
 				// first check if this is a directory entry
 				checkPath = rc->d_name;

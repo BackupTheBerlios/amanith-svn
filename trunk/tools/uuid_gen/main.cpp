@@ -29,14 +29,14 @@
 #include <qapplication.h>
 #include "uuidgenfrm.h"
 
-int main(int argc, char ** argv)
+int main(int argc, char **argv)
 {
-    QApplication a(argc, argv);
+    QApplication app(argc, argv);
 
     UuidGenFrm frm;
-	a.setMainWidget(&frm);
+	app.setMainWidget(&frm);
 	frm.show();
 
-    a.connect( &a, SIGNAL( lastWindowClosed() ), &a, SLOT( quit() ) );
-    return a.exec();
+    app.connect(&app, SIGNAL(lastWindowClosed()), &app, SLOT(quit()));
+    return app.exec();
 }

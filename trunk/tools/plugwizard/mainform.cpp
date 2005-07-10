@@ -29,16 +29,23 @@
 #include "mainform.h"
 #include <qlineedit.h>
 #include <qpushbutton.h>
-#include <qfiledialog.h>
 #include <qcombobox.h>
 #include <qcheckbox.h>
 #include <quuid.h>
 #include <qmessagebox.h>
-#include <qlistbox.h>
 #include <qdir.h>
 #include <qfile.h>
 #include <qtextstream.h>
 #include <qdatetime.h>
+
+// QT4 support
+#ifdef USE_QT4
+	#include <q3filedialog.h>
+	#include <q3listbox.h>
+#else
+	#include <qfiledialog.h>
+	#include <qlistbox.h>
+#endif
 
 #include "classtreeform.h"
 
@@ -50,28 +57,44 @@ MainForm::MainForm() : mainFormBase() {
 	GError err;
 	QString s;
 	GInt32 numC;
-	const QListBox *lbox;
-	QListBoxItem *lbItem;
+	QStringList list;
+
+#ifdef USE_QT4
+#else
+	const QListBox *lbox = baseClass->listBox();
+	//QListBoxItem *lbItem;
+#endif
 
 	gKernel = new GKernel();
 
-	lbox = baseClass->listBox();
 	numC = gKernel->ProxiesCount();
 
 	for (i = 0; i < numC; i++) {
 		err = gKernel->Proxy(i, p);
 		if (err == G_NO_ERROR) {
-			baseClass->insertItem(p.Proxy()->ClassID().IDName());
-			lbItem = lbox->item(i);
+
+			if (!p.External())
+				list.push_back(p.Proxy()->ClassID().IDName());
+			//baseClass->insertItem(p.Proxy()->ClassID().IDName());
+			//lbItem = lbox->item(i);
 			// if it's an external plugin we can't select it
-			if (p.External())
-				lbItem->setSelectable(FALSE);
+			//if (p.External())
+			//	lbItem->setSelectable(FALSE);
 		}
 	}
 
-	baseClass->listBox()->sort();
+	//baseClass->listBox()->sort();
+	list.sort();
+
+	baseClass->insertStringList(list);
+
+#ifdef USE_QT4
+	i = baseClass->findText("GElement");
+	baseClass->setCurrentIndex(i);
+#else
 	i = lbox->index(lbox->findItem("GElement"));
 	baseClass->setCurrentItem(i);
+#endif
 
 	// License
 	gLicense = "";
@@ -134,7 +157,11 @@ void MainForm::genUuid() {
 void MainForm::selectDir() {
 
 	dirButton->setEnabled(false);
+#ifdef USE_QT4
+	QString dir = Q3FileDialog::getExistingDirectory(QDir::currentDirPath());
+#else
 	QString dir = QFileDialog::getExistingDirectory(QDir::currentDirPath());
+#endif
 	dirEdit->setText(dir);
 	dirButton->setEnabled(true);
 }
@@ -154,7 +181,11 @@ void MainForm::create() {
 	// Include license
 	if (license->isChecked()) {
 		QFile f("fileheader.txt");
+#ifdef USE_QT4
+		if (f.open(QIODevice::ReadOnly)) {
+#else
 		if (f.open(IO_ReadOnly)) {
+#endif
 			QTextStream stream(&f);
 			gLicense = stream.read();
 			f.close();
@@ -289,7 +320,11 @@ void MainForm::createDotH() {
 	}
 
 	QFile file( filePath );
+#ifdef USE_QT4
+	if (file.open(QIODevice::WriteOnly)) {
+#else
     if (file.open(IO_WriteOnly)) {
+#endif
         QTextStream stream(&file);
 		stream << h;
         file.close();
@@ -360,7 +395,11 @@ void MainForm::createDotCPP() {
 	}
 
 	QFile file(filePath);
+#ifdef USE_QT4
+	if (file.open(QIODevice::WriteOnly)) {
+#else
     if (file.open(IO_WriteOnly)) {
+#endif
         QTextStream stream( &file );
 		stream << cpp;
         file.close();

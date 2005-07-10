@@ -20,7 +20,7 @@ SOURCES = gelement.cpp \
           gkernel.cpp \
           gerror.cpp \
           gimpexp.cpp \
-          gpluglib.cpp \     
+          gpluglib.cpp \
           2d/gcurve2d.cpp \
           2d/gmulticurve2d.cpp \
           2d/gbeziercurve2d.cpp \
@@ -47,8 +47,13 @@ SOURCES = gelement.cpp \
 #
 #*********************************************************
 contains(DEFINES, _OPENGLEXT_PLUGIN) {
-        SOURCES += support/glew.c gopenglext.cpp
-        CONFIG += opengl
+    SOURCES += support/glew.c gopenglext.cpp
+    CONFIG += opengl
+
+    # Qt4 syntax
+    contains(DEFINES, USE_QT4) {
+        QT += opengl
+    }
 }
 
 
@@ -106,18 +111,26 @@ contains(DEFINES, _FONTS_PLUGIN) {
  }
 
 contains(BUILD_MODE, dynamic) {
-  CONFIG -= staticlib
-  CONFIG += dll
-  DEFINES += G_MAKE_DLL GLEW_BUILD G_MAKE_PLUGIN
-  DEFINES -= G_USE_DLL G_NO_DLL GLEW_STATIC
-  unix: LIBS += -L$$(AMANITHDIR)/lib
+    CONFIG -= staticlib
+    CONFIG += dll
+    DEFINES += G_MAKE_DLL GLEW_BUILD G_MAKE_PLUGIN
+    DEFINES -= G_USE_DLL G_NO_DLL GLEW_STATIC
+
+    # Windows MinGW support
+    contains(DEFINES, WIN32_MINGW) {
+        win32: LIBS += -L$$(AMANITHDIR)/lib
+    }
+    unix: LIBS += -L$$(AMANITHDIR)/lib
 }
 
 contains(BUILD_MODE, static) {
-  CONFIG -= dll
-  CONFIG += staticlib
-  DEFINES += G_NO_DLL GLEW_STATIC
-  DEFINES -= G_MAKE_DLL G_USE_DLL GLEW_BUILD
+    CONFIG -= dll
+    CONFIG += staticlib
+    DEFINES += G_NO_DLL GLEW_STATIC
+    DEFINES -= G_MAKE_DLL G_USE_DLL GLEW_BUILD
 }
 
-win32: LIBS += wbemuuid.lib
+# link options for Windows (no MinGW!)
+!contains(DEFINES, WIN32_MINGW) {
+    win32: LIBS += wbemuuid.lib
+}

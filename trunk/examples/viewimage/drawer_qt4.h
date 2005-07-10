@@ -25,7 +25,7 @@
 
 using namespace Amanith;
 
-class QPixmapViewer : public QScrollView {
+class QPixmapViewer : public Q3ScrollView {
 
 protected:
 	void drawContents(QPainter *p, int clipx, int clipy, int clipw, int cliph);
@@ -39,7 +39,8 @@ public:
 	~QPixmapViewer();
 };
 
-class ImageViewer : public QMainWindow {
+// QT4 support
+class ImageViewer : public Q3MainWindow {
 
 	Q_OBJECT
 
@@ -69,8 +70,8 @@ private:
 
 	QMenuBar   *menubar;
 
-	QPopupMenu  *file;
-	QPopupMenu  *edit;
+	Q3PopupMenu  *file;
+	Q3PopupMenu  *edit;
 
 private slots:
 

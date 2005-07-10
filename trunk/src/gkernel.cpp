@@ -98,7 +98,7 @@ void FunFunction() {
 
 GBezierCurve2D *tmpBezier1 = kernel->CreateNew(G_BEZIERCURVE2D_CLASSID);
 
-if (tmpBezier1->IsOfType(G_BEZIERCURVE2D_CLASSID)) {
+if (tmpBezier1->IsOfType(G_CURVE2D_CLASSID)) {
 	// now cast is type-safe
 	GCurve2D *curve = tmpBezier1;
 }
