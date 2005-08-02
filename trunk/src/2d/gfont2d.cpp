@@ -312,11 +312,17 @@ void GFontCharContour2D::DrawContour(const GDynArray<GPoint2>& ContourPoints, co
 
 void GFontCharContour2D::DrawContour(GDynArray<GPoint2>& Points, const GReal Variation) const {
 
+	if (Variation <= 0)
+		return;
+
 	DrawContour(gPoints, gPointsFlags, Points, Variation);
 }
 
 void GFontCharContour2D::DrawContour(GDynArray<GPoint2>& Points, const GReal Variation,
-								   const GMatrix23& Transformation) const {
+								   const GMatrix33& Transformation) const {
+
+	if (Variation <= 0)
+	   return;
 
 	GInt32 i, j = (GInt32)gPoints.size();
 	GDynArray<GPoint2> tmpPoints(j);
@@ -449,7 +455,7 @@ GPoint2 GFontCharContour2D::PickPointOnCurve() const {
 	isCubic = gPointsFlags[0] & 2;
 	if (isCubic) {
 		// in this case we are sure that an on point will be found
-		j = gPoints.size();
+		j = (GUInt32)gPoints.size();
 		for (i = 3; i < j; i++) {
 			oni = gPointsFlags[i] & 1;
 			if (oni)
@@ -471,7 +477,7 @@ GInt32 GFontCharContour2D::FindLeftArc(const GDynArray<GPoint2>& Points, const G
 	 GUInt32 i, j, ofs0, k, q;
 	 GPoint2 p, p1, p2;
 
-	 j = Index.size();
+	 j = (GUInt32)Index.size();
 	 ofs0 = 0;
 	 for (i = 0; i < j; i++) {
 		 k = Index[i];
@@ -525,8 +531,8 @@ GInt32 GFontCharContour2D::IntersectionsCount(const GRay2& NormalizedRay) const 
 	//arcIdx++;
 	ofs0 = ofs;
 
-	j = tmpIndex.size();
-	ww = tmpPoints.size();
+	j = (GUInt32)tmpIndex.size();
+	ww = (GUInt32)tmpPoints.size();
 	for (i = (GUInt32)arcIdx; i < j + (GUInt32)arcIdx; i++) {
 		hh = i % j;
 		k = tmpIndex[hh];
@@ -579,7 +585,7 @@ GInt32 GFontCharContour2D::IntersectionsCount(const GRay2& NormalizedRay) const 
 				bInt = tmpBezier.IntersectRay(NormalizedRay, tmpIntersections);
 				if (!bInt)
 					goto nextArc;
-				bezCount = tmpIntersections.size();
+				bezCount = (GUInt32)tmpIntersections.size();
 				a = p1[G_Y] + p2[G_Y] - 3 * p3[G_Y] + p4[G_Y];
 				b = 2 * (p3[G_Y] - p2[G_Y]);
 				c = p2[G_Y] - p1[G_Y];
@@ -645,7 +651,7 @@ GInt32 GFontCharContour2D::IntersectionsCount(const GRay2& NormalizedRay) const 
 				bInt = tmpBezier.IntersectRay(NormalizedRay, tmpIntersections);
 				if (!bInt)
 					goto nextArc;
-				bezCount = tmpIntersections.size();
+				bezCount = (GUInt32)tmpIntersections.size();
 				// we have to update sign of last intersection
 				if (bezCount == 2) {
 					den = p1[G_Y] - 2 * p2[G_Y] + p3[G_Y];
@@ -701,7 +707,7 @@ GError GFontCharContour2D::ConvertToPath(GPath2D& Path) const {
 
 	DecomposeBezier(pts, idx);
 	Path.Clear();
-	j = idx.size();
+	j = (GInt32)idx.size();
 
 	u = 0;
 	step = (GReal)1 / (GReal)j;
@@ -756,8 +762,8 @@ GError GFontCharContour2D::ConvertToPath(GPath2D& Path) const {
 
 void GFontCharContour2D::MirrorPoints() const {
 
-	ReverseArray(gPoints, 1, gPoints.size() - 1); 
-	ReverseArray(gPointsFlags, 1, gPointsFlags.size() - 1); 
+	ReverseArray(gPoints, 1, (GUInt32)(gPoints.size() - 1));
+	ReverseArray(gPointsFlags, 1, (GUInt32)(gPointsFlags.size() - 1));
 }
 
 // *********************************************************************
@@ -770,7 +776,6 @@ GFontChar2D::GFontChar2D(const GFontChar2D& Source) {
 	gFont = Source.gFont;
 	gContours = Source.gContours;
 	gSubChars = Source.gSubChars;
-	gOutlines = Source.gOutlines;
 	gMetrics = Source.gMetrics;
 	gLinearHoriAdvance = Source.gLinearHoriAdvance;
 	gLinearVertAdvance = Source.gLinearVertAdvance;
@@ -828,26 +833,21 @@ GFontChar2D::GFontChar2D(const GFont2D* Owner, const GDynArray<GSubChar2D>& SubC
 // destructor
 GFontChar2D::~GFontChar2D() {
 
-	DeleteOutlines();
+	DeleteContours();
 }
 
-void GFontChar2D::DeleteOutlines() {
+void GFontChar2D::DeleteContours() {
 
 	GUInt32 i, j;
 
 	// delete all contours
-	j = gContours.size();
-	for (i = 0; i < j; i++) {
+	j = (GUInt32)gContours.size();
+	for (i = 0; i < j; ++i) {
 		GFontCharContour2D& c = gContours[i];
 		c.gPoints.clear();
 		c.gPointsFlags.clear();
 	}
 	gContours.clear();
-	// clear outlines
-	j = gOutlines.size();
-	for (i = 0; i < j; i++)
-		gOutlines[i].HolesContoursIndexes.clear();
-	gOutlines.clear();
 }
 
 
@@ -857,7 +857,6 @@ void GFontChar2D::Initialize() const {
 	LabelHolesAndFilled();
 	SwapHolesAndFilledLabels(gEvenOddFill);
 	FixHolesAndFilledWiseOrder();
-	SetHolesContainers();
 }
 
 // convert each contour that builds the char, into a path representation
@@ -927,130 +926,6 @@ GError GFontChar2D::ConvertToPaths(GDynArray<GPath2D *>& Paths) const {
 	return G_NO_ERROR;
 }
 
-GError GFontChar2D::DrawOutline(const GInt32 Index, GDynArray<GPoint2>& Points,
-							  GDynArray<GInt32>& PointsCounters, const GReal Variation) const {
-
-	GInt32 i, j, w, k0, k1, q;
-	const GFontChar2D *c;
-
-	if ((Index < 0) || (Index >= OutlinesCount()))
-		return G_OUT_OF_RANGE;
-
-	if (gInitialized == G_FALSE) {
-		// make a good vectorization; if this char is composite, it's a good choice to not do
-		// an initialization, because there aren't contours. So initialization would be just a
-		// waste of time
-		if (!IsComposite())
-			Initialize();
-		gInitialized = G_TRUE;
-	}
-	if (IsComposite()) {
-		// owner (font) is necessary to get sub chars pointers
-		if (!gFont)
-			return G_MEMORY_ERROR;
-		j = SubCharsCount();
-		k0 = k1 = 0;
-		for (i = 0; i < j; i++) {
-			// get subchar
-			c = gFont->CharByIndex(gSubChars[i].GlyphIndex);
-			if (c) {
-				w = c->OutlinesCount();
-				k1 = k0 + w;
-				// check if global 'Index' refers to this subchar
-				if ((Index >= k0) && (Index < k1)) {
-					q = Index - k0;
-					if (!c->IsComposite())
-						c->DrawOutline(c->gOutlines[q], Points, PointsCounters, Variation, gSubChars[i].Transformation);
-					else
-						c->DrawOutline(q, Points, PointsCounters, Variation);
-					return G_NO_ERROR;
-				}
-			}
-			k0 = k1;
-		}
-	}
-	else
-		DrawOutline(gOutlines[Index], Points, PointsCounters, Variation);
-	// exit without errors
-	return G_NO_ERROR;
-}
-
-GInt32 GFontChar2D::OutlinesCount() const {
-
-	GUInt32 i, j, k;
-	const GFontChar2D *c;
-
-	if (gInitialized == G_FALSE) {
-		// make a good vectorization; if this char is composite, it's a good choice to not do
-		// an initialization, because there aren't contours. So initialization would be just a
-		// waste of time
-		if (!IsComposite())
-			Initialize();
-		gInitialized = G_TRUE;
-	}
-	if (IsComposite()) {
-		// owner (font) is necessary to get sub chars pointers
-		if (!gFont)
-			return 0;
-		k = 0;
-		j = gSubChars.size();
-		for (i = 0; i < j; i++) {
-			c = gFont->CharByIndex(gSubChars[i].GlyphIndex);
-			if (c)
-				k += c->OutlinesCount();
-		}
-		return k;
-	}
-	else
-		return (GInt32)gOutlines.size();
-}
-
-void GFontChar2D::DrawOutline(const GCharOutline& Outline, GDynArray<GPoint2>& Points,
-							GDynArray<GInt32>& PointsCounters, const GReal Variation) const {
-
-	GInt32 i, j, k0, k1, k;
-
-	Points.clear();
-	PointsCounters.clear();
-	// draw outer contour
-	gContours[Outline.OuterContourIndex].DrawContour(Points, Variation);
-
-	k0 = (GInt32)Points.size();
-	PointsCounters.push_back(k0);
-	// now lets cycles over holes
-	j = (GInt32)Outline.HolesContoursIndexes.size();
-	for (i = 0; i < j; i++) {
-		gContours[Outline.HolesContoursIndexes[i]].DrawContour(Points, Variation);
-		k1 = (GInt32)Points.size();
-		k = k1 - k0;
-		PointsCounters.push_back(k);
-		k0 = k1;
-	}
-}
-
-void GFontChar2D::DrawOutline(const GCharOutline& Outline, GDynArray<GPoint2>& Points,
-							GDynArray<GInt32>& PointsCounters, const GReal Variation,
-							const GMatrix23& Transformation) const {
-
-	GInt32 i, j, k0, k1, k;
-
-	Points.clear();
-	PointsCounters.clear();
-	// draw outer contour
-	gContours[Outline.OuterContourIndex].DrawContour(Points, Variation, Transformation);
-	k0 = (GInt32)Points.size();
-	PointsCounters.push_back(k0);
-	// now lets cycles over holes
-	j = (GInt32)Outline.HolesContoursIndexes.size();
-	for (i = 0; i < j; i++) {
-		gContours[Outline.HolesContoursIndexes[i]].DrawContour(Points, Variation, Transformation);
-		k1 = (GInt32)Points.size();
-		k = k1 - k0;
-		PointsCounters.push_back(k);
-		k0 = k1;
-	}
-}
-
 void GFontChar2D::LabelContour(const GFontCharContour2D& Contour) const {
 
 	GUInt32 i, j, numIntersections, k;
@@ -1058,7 +933,7 @@ void GFontChar2D::LabelContour(const GFontCharContour2D& Contour) const {
 	GRay2 ray;
 	GDynArray<GReal> monChain;
 
-	j = gContours.size();
+	j = (GUInt32)gContours.size();
 	p = Contour.PickPointOnCurve();
 	ray.SetOrigin(p);
 	ray.SetDirection(GVector2(1, 0));
@@ -1100,7 +975,7 @@ void GFontChar2D::LabelHolesAndFilled() const {
 
 	GUInt32 i, j;
 
-	j = gContours.size();
+	j = (GUInt32)gContours.size();
 	for (i = 0; i < j; i++)
 		LabelContour(gContours[i]);
 }
@@ -1109,7 +984,7 @@ void GFontChar2D::SwapHolesAndFilledLabels(const GBool EvenOddFlag) const {
 
 	GUInt32 i, j;
 
-	j = gContours.size();
+	j = (GUInt32)gContours.size();
 	for (i = 0; i < j; i++) {
 		const GFontCharContour2D& c = gContours[i];
 		if (EvenOddFlag)
@@ -1123,7 +998,7 @@ void GFontChar2D::FixHolesAndFilledWiseOrder() const {
 	GUInt32 i, j;
 	GPoint2 tmpPoint;
 
-	j = gContours.size();
+	j = (GUInt32)gContours.size();
 	for (i = 0; i < j; i++) {
 		const GFontCharContour2D& c = gContours[i];
 		clockWise = IsClockWise(c.Points());
@@ -1133,65 +1008,6 @@ void GFontChar2D::FixHolesAndFilledWiseOrder() const {
 			continue;
 		// lets mirror points
 		c.MirrorPoints();
-	}
-}
-
-
-GInt32 GFontChar2D::AssignHoleOutline(const GInt32 HoleContourIndex) const {
-
-	GUInt32 i, j;
-	const GFontCharContour2D& Hole = gContours[HoleContourIndex];
-
-	GUInt32 intInfo;
-	GBool intersection;
-	GReal holeArea, outerArea, curArea;
-	GInt32 res = -1;
-
-	// calculate hole bounding box area
-	holeArea = Hole.BoundBox().Dimension(G_X) * Hole.BoundBox().Dimension(G_Y);
-	curArea = G_MAX_REAL;
-
-	j = gOutlines.size();
-	for (i = 0; i < j; i++) {
-		const GFontCharContour2D& outerContour = gContours[gOutlines[i].OuterContourIndex];
-
-		// check if bounding box of outerContour includes bounding box of Hole
-		intersection = Intersect(outerContour.BoundBox(), Hole.BoundBox(), intInfo);
-		if ((intersection) && (intInfo & INCLUDED_SHAPE)) {
-			// now we have to ensure that box of hole has a smaller area
-			outerArea = outerContour.BoundBox().Dimension(G_X) * outerContour.BoundBox().Dimension(G_Y);
-			if ((outerArea > holeArea) && (outerArea < curArea)) {
-				res = i;
-				curArea = outerArea;
-			}
-		}
-	}
-	if (res >= 0)
-		gOutlines[res].HolesContoursIndexes.push_back(HoleContourIndex);
-	return res;
-}
-
-void GFontChar2D::SetHolesContainers() const {
-
-	GInt32 i, j;
-
-	// push all outer contours
-	j = (GInt32)gContours.size();
-	for (i = 0; i < j; i++) {
-		const GFontCharContour2D &outer = gContours[i];
-		if (!outer.IsHole()) {
-			GCharOutline o;
-			//o.OuterOutline = &outer;
-			o.OuterContourIndex = i;
-			gOutlines.push_back(o);
-		}
-	}
-	// assign every hole to its outer contour
-	for (i = 0; i < j; i++) {
-		const GFontCharContour2D &hole = gContours[i];
-		if (!hole.IsHole())
-			continue;
-		AssignHoleOutline(i);
 	}
 }
 
@@ -1275,7 +1091,7 @@ void GFont2D::DeleteChars() {
 	GFontChar2D *c;
 	GUInt32 i, j;
 
-	j = gChars.size();
+	j = (GUInt32)gChars.size();
 	for (i = 0; i < j; i++) {
 		c = gChars[i];
 		delete c;
@@ -1311,7 +1127,7 @@ inline bool KerningCompare(const GKerningEntry& Arg1, const GKerningEntry& Arg2)
 // set kerning infos
 void GFont2D::SetKerning(const GDynArray<GKerningEntry>& NewKerningTable) {
 
-	GUInt32 i = NewKerningTable.size();
+	GUInt32 i = (GUInt32)NewKerningTable.size();
 
 	if (i == 0)
 		gKerningTable.clear();
@@ -1327,7 +1143,7 @@ GError GFont2D::CloneChars(const GDynArray<GFontChar2D *>& Chars, GDynArray<GFon
 
 	GUInt32 i, j;
 
-	j = Chars.size();
+	j = (GUInt32)Chars.size();
 	for (i = 0; i < j; i++) {
 		GFontChar2D *newChar = new(std::nothrow) GFontChar2D(*(Chars[i]));
 		if (!newChar)
@@ -1349,7 +1165,7 @@ GError GFont2D::BaseClone(const GElement& Source) {
 
 	err = CloneChars(k.gChars, tmpChars);
 	if (err != G_NO_ERROR) {
-		GUInt32 i, j = tmpChars.size();
+		GUInt32 i, j = (GUInt32)tmpChars.size();
 		for (i = 0; i < j; i++) {
 			GFontChar2D *c = tmpChars[i];
 			delete c;
@@ -1395,7 +1211,7 @@ GError GFont2D::AddCharMap(const GCharMap& NewCharMap) {
 
 	GUInt32 i, j, found;
 
-	j = gCharsMaps.size();
+	j = (GUInt32)gCharsMaps.size();
 	found = 0;
 	for (i = 0; i < j; i++) {
 		if ((gCharsMaps[i].PlatformID == NewCharMap.PlatformID) &&
@@ -1430,7 +1246,7 @@ void GFont2D::RemoveCharsMaps() {
 
 	GUInt32 i, j;
 
-	j = gCharsMaps.size();
+	j = (GUInt32)gCharsMaps.size();
 	for (i = 0; i < j; i++)
 		gCharsMaps[i].CharMap.clear();
 	gCharsMaps.clear();
@@ -1503,7 +1319,7 @@ const GPoint2& GFont2D::KerningByIndex(const GUInt32 LeftIndex, const GUInt32 Ri
 
 	// do a binary search
 	first = 0;
-	last = gKerningTable.size();
+	last = (GUInt32)gKerningTable.size();
 	while (last - first > 1) {
 		pivot = (first + last) / 2;
 		entry = gKerningTable[pivot];

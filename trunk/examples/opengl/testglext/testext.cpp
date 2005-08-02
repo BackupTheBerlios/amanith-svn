@@ -1,3 +1,27 @@
+/****************************************************************************
+**
+** Copyright (C) 2004-2005 Mazatech Inc. All rights reserved.
+**
+** This file is part of Amanith Framework.
+**
+** This file may be distributed and/or modified under the terms of the Q Public License
+** as defined by Mazatech Inc. of Italy and appearing in the file
+** LICENSE.QPL included in the packaging of this file.
+**
+** Licensees holding valid Amanith Professional Edition license may use this file in
+** accordance with the Amanith Commercial License Agreement provided with the Software.
+**
+** This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+** WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+**
+** See http://www.mazatech.com or email sales@mazatech.com for
+** information about Amanith Commercial License Agreements.
+** See http://www.amanith.org/ for opensource version, public forums and news.
+**
+** Contact info@mazatech.com if any conditions of this licensing are
+** not clear to you.
+**********************************************************************/
+
 #include <amanith/support/gutilities.h>
 #include <qmessagebox.h>
 #include "testext.h"
@@ -39,14 +63,14 @@ void QGLWidgetTest::keyPressEvent(QKeyEvent *e) {
 			s = "Number of GL functions supported over OpenGL 1.1 standard: " + StrUtils::ToString(numFunc) + "\n\n";
 			s += "TextureUnitsCount: " + StrUtils::ToString(gExtManager->TextureUnitsCount()) + "\n";
 			if (gExtManager->IsFunctionSupported("glcopYTexSubImage3D"))
-				s += "glcopYTexSubImage3D is supported\n";
+				s += "glCopyTexSubImage3D is supported\n";
 			else
-				s += "glcopYTexSubImage3D isn't supported\n";
+				s += "glCopyTexSubImage3D isn't supported\n";
 
 			if (gExtManager->IsGLVersionSupported("1.3"))
-				s += "OpenGL 1.3 is supported\n";
+				s += "OpenGL \"1.3\" is supported\n";
 			else
-				s += "OpenGL 1.3 isn't supported\n";
+				s += "OpenGL \"1.3\" isn't supported\n";
 
 
 			if (gExtManager->IsGLVersionSupported(1, 1))
@@ -75,14 +99,14 @@ void QGLWidgetTest::keyPressEvent(QKeyEvent *e) {
 				s += "OpenGL (1, 5) isn't supported\n";
 
 			if (gExtManager->IsGLVersionSupported("1.X"))
-				s += "OpenGL 1.X is supported\n";
+				s += "OpenGL \"1.X\" is supported\n";
 			else
-				s += "OpenGL 1.X isn't supported\n";
+				s += "OpenGL \"1.X\" isn't supported\n";
 
 			if (gExtManager->IsGLVersionSupported("1.*"))
-				s += "OpenGL 1.* is supported\n";
+				s += "OpenGL \"1.*\" is supported\n";
 			else
-				s += "OpenGL 1.* isn't supported\n";
+				s += "OpenGL \"1.*\" isn't supported\n";
 
 			if (gExtManager->IsMultitextureSupported())
 				s += "Multitexture is supported\n";

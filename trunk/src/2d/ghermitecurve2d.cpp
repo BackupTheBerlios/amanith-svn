@@ -218,7 +218,7 @@ GError GHermiteCurve2D::DoSetPointParameter(const GUInt32 Index, const GReal New
 				// append key at the end
 				gKeys.push_back(tmpKey);
 				deleteIndex = Index;
-				NewIndex = gKeys.size() - 1;
+				NewIndex = (GUInt32)gKeys.size() - 1;
 			}
 			AlreadyExists = G_FALSE;
 		}
@@ -429,7 +429,7 @@ GReal GHermiteCurve2D::SegmentVariation(const GUInt32 Index, const GReal MinPara
 GError GHermiteCurve2D::SetPoints(const GDynArray<GPoint2>& NewPoints,
 								  const GReal NewMinValue, const GReal NewMaxValue, const GBool Uniform) {
 
-	GUInt32 i, j = NewPoints.size();
+	GUInt32 i, j = (GUInt32)NewPoints.size();
 	GReal step, u, len;
 	GHermiteKey tmpkey;
 	GInterval<GReal> requestedInterval(NewMinValue, NewMaxValue);
@@ -496,7 +496,7 @@ void GHermiteCurve2D::SortKeys() {
 // set keys
 GError GHermiteCurve2D::SetKeys(const GDynArray<GHermiteKey>& NewKeys) {
 
-	GUInt32 j = NewKeys.size();
+	GUInt32 j = (GUInt32)NewKeys.size();
 	if (j < 2)
 		return G_INVALID_PARAMETER;
 
@@ -523,9 +523,9 @@ GBool GHermiteCurve2D::ParamToKeyIndex(const GReal Param, GUInt32& KeyIndex) con
 		return G_FALSE;
 
 	if ((*result).Parameter == tmpKey.Parameter)
-		KeyIndex = (result - gKeys.begin());
+		KeyIndex = (GUInt32)(result - gKeys.begin());
 	else
-		KeyIndex = ((result - gKeys.begin()) - 1);
+		KeyIndex = (GUInt32)((result - gKeys.begin()) - 1);
 
 	return G_TRUE;
 }
@@ -971,7 +971,7 @@ GBool GHermiteCurve2D::IntersectRay(const GRay2& NormalizedRay, GDynArray<GVecto
 	for (i = 0; i < j - 1; i++) {
 		intFound |= SegmentIntersectRay(i, NormalizedRay, tmpSolutions, tolerance, MaxIterations);
 		// check to not push identical solutions
-		w = tmpSolutions.size();
+		w = (GUInt32)tmpSolutions.size();
 		for (; k < w; k++) {
 			if (GMath::Abs(lastIntersection - tmpSolutions[k][0]) > tolerance) {
 				Intersections.push_back(tmpSolutions[k]);
@@ -1045,6 +1045,9 @@ GError GHermiteCurve2D::Flatten(GDynArray<GPoint2>& Contour, const GReal MaxDevi
 
 	if (j < 2)
 		return G_INVALID_OPERATION;
+
+	if (MaxDeviation <= 0)
+		return G_INVALID_PARAMETER;
 
 	for (i = 0; i < j - 2; i++) {
 		err = SegmentFlatten(i, Contour, MaxDeviation, G_TRUE);

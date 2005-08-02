@@ -353,7 +353,7 @@ namespace Amanith {
 			GInt32 i, j;
 			DATA_TYPE _sum, _max = 0;
 
-			for (i = 0; i < COLS; i++) {
+			for (i = 0; i < COLS; ++i) {
 				_sum = 0;
 				for (j = 0; j < ROWS; j++)
 					_sum += GMath::Abs(operator()(j, i));
@@ -368,7 +368,7 @@ namespace Amanith {
 			GUInt32 i, j;
 			DATA_TYPE _sum, _max = 0;
 
-			for (i = 0; i < ROWS; i++) {
+			for (i = 0; i < ROWS; ++i) {
 				_sum = 0;
 				for (j = 0; j < COLS; j++)
 					_sum += GMath::Abs(operator()(i, j));
@@ -382,7 +382,7 @@ namespace Amanith {
 
 			DATA_TYPE n = 0;
 
-			for (GUInt32 i = 0; i < ROWS * COLS; i++)
+			for (GUInt32 i = 0; i < ROWS * COLS; ++i)
 				n += (gData[i] * gData[i]);
 			return GMath::Sqrt(n);
 		}
@@ -727,7 +727,7 @@ namespace Amanith {
 
 		// initializations
 		det = 1;
-		for (i = 0; i < (GInt32)SIZE; i++) {
+		for (i = 0; i < (GInt32)SIZE; ++i) {
 			pc[i] = pl[i] = 0;
 			cs[i] = 0;
 		}
@@ -738,8 +738,8 @@ namespace Amanith {
 			ik = k;
 			jk = k;
 			pav = GMath::Abs(pv);
-			for (i = k; i < (GInt32)SIZE; i++)
-				for (j = k; j < (GInt32)SIZE; j++) {
+			for (i = k; i < (GInt32)SIZE; ++i)
+				for (j = k; j < (GInt32)SIZE; ++j) {
 					if (GMath::Abs(_result[i][j]) > pav) {
 						pv = _result[i][j];
 						pav = GMath::Abs(pv);
@@ -776,7 +776,7 @@ namespace Amanith {
 					if (jk == j)
 						continue;
 					// exchange columns j and pl[j]
-					for (i = 0; i < (GInt32)SIZE; i++) {
+					for (i = 0; i < (GInt32)SIZE; ++i) {
 						swapElem = _result[i][j];
 						_result[i][j] = _result[i][jk];
 						_result[i][jk] = swapElem;
@@ -790,7 +790,7 @@ namespace Amanith {
 			det *= pv;
 			// positioning pivot in k, k
 			if (ik != k)
-				for (i = 0; i < (GInt32)SIZE; i++) {
+				for (i = 0; i < (GInt32)SIZE; ++i) {
 					// exchange lines ik and k
 					swapElem =_result[ik][i];
 					_result[ik][i] = _result[k][i];
@@ -798,7 +798,7 @@ namespace Amanith {
 				}
 			// pivot is at correct line!
 			if (jk != k)
-				for (i = 0; i < (GInt32)SIZE; i++) {
+				for (i = 0; i < (GInt32)SIZE; ++i) {
 					// exchange columns jk and k
 					swapElem = _result[i][jk];
 					_result[i][jk] = _result[i][k];
@@ -807,20 +807,20 @@ namespace Amanith {
 
 			// the pivot is at correct column!
 			// column k of matrix is stored in cs vector, then column k is set to zero
-			for (i = 0; i < (GInt32)SIZE; i++) {
+			for (i = 0; i < (GInt32)SIZE; ++i) {
 				cs[i] = _result[i][k];
 				_result[i][k] = 0;
 			}
 			cs[k] = 0;
 			_result[k][k] = 1;
 			// line k of matrix is modified
-			for (i = 0; i < (GInt32)SIZE; i++)
+			for (i = 0; i < (GInt32)SIZE; ++i)
 				_result[k][i] = _result[k][i] / pv;
 			// other lines of matrix are modified
 			for (j = 0; j < (GInt32)SIZE; j++) {
 				if (j == k)
 					continue;
-				for (i = 0; i < (GInt32)SIZE; i++)
+				for (i = 0; i < (GInt32)SIZE; ++i)
 					// line j of matrix is modified
 					_result[j][i] = _result[j][i] - cs[j] * _result[k][i];
 			}
@@ -843,7 +843,7 @@ namespace Amanith {
 			if (jk == j)
 				continue;
 			// exchange columns j and pl[j]
-			for (i = 0; i < (GInt32)SIZE; i++) {
+			for (i = 0; i < (GInt32)SIZE; ++i) {
 				swapElem = _result[i][j];
 				_result[i][j] = _result[i][jk];
 				_result[i][jk] = swapElem;
@@ -876,7 +876,7 @@ namespace Amanith {
 		GInt32 m = ROWS, n = COLS, pivsign = 1, i, j; 
 
 		// use a "left-looking", dot-product, Crout/Doolittle algorithm
-		for (i = 0; i < m; i++)
+		for (i = 0; i < m; ++i)
 			Permutation[i] = i;
 
 		DATA_TYPE *LUrowi = 0;
@@ -884,11 +884,11 @@ namespace Amanith {
 		// outer loop
 		for (j = 0; j < n; j++) {
 			// make a copy of the j-th column to localize references
-			for (i = 0; i < m; i++)
+			for (i = 0; i < m; ++i)
 				LUcolj[i] = LU_[i][j];
 			// apply previous transformations
 			DATA_TYPE s;
-			for (i = 0; i < m; i++) {
+			for (i = 0; i < m; ++i) {
 				LUrowi = LU_[i];
 				// most of the time is spent in the following dot product
 				GInt32 kmax = GMath::Min(i, j);
@@ -900,13 +900,13 @@ namespace Amanith {
          }
            // find pivot and exchange if necessary
          GInt32 p = j;
-         for (i = j + 1; i < m; i++) {
+         for (i = j + 1; i < m; ++i) {
 			 if (GMath::Abs(LUcolj[i]) > GMath::Abs(LUcolj[p]))
                p = i;
          }
          if (p != j) {
 		    GInt32 k = 0;
-            for (k = 0; k < n; k++) {
+            for (k = 0; k < n; ++k) {
                DATA_TYPE t = LU_[p][k]; 
 			   LU_[p][k] = LU_[j][k]; 
 			   LU_[j][k] = t;
@@ -918,12 +918,12 @@ namespace Amanith {
 		}
 		// compute multipliers
 		if ((j < m) && (LU_[j][j] != 0)) {
-			for (i = j + 1; i < m; i++)
+			for (i = j + 1; i < m; ++i)
 				LU_[i][j] /= LU_[j][j];
 		}
 		// build L matrix
-		for (i = 0; i < m; i++) {
-			for (j = 0; j < n; j++) {
+		for (i = 0; i < m; ++i) {
+			for (j = 0; j < n; ++j) {
 				if (i > j)
 					L[i][j] = LU_[i][j];
 				else
@@ -934,8 +934,8 @@ namespace Amanith {
 			}
 		}
 		// build U matrix
-		for (i = 0; i < n; i++) {
-			for (j = 0; j < n; j++) {
+		for (i = 0; i < n; ++i) {
+			for (j = 0; j < n; ++j) {
 				if (i <= j)
 					U[i][j] = LU_[i][j];
 				else
@@ -990,30 +990,30 @@ namespace Amanith {
 		for (k = 0; k < n; k++) {
 			// compute 2-norm of k-th column without under/overflow
 			DATA_TYPE nrm = 0;
-			for (i = k; i < m; i++)
+			for (i = k; i < m; ++i)
 				nrm = GMath::Hypot(nrm, QR_[i][k]);
 			if (nrm != 0) {
 				// form k-th Householder vector
 				if (QR_[k][k] < 0)
 					nrm = -nrm;
-				for (i = k; i < m; i++)
+				for (i = k; i < m; ++i)
 					QR_[i][k] /= nrm;
 				QR_[k][k] += 1;
 				// apply transformation to remaining columns.
 				for (j = k + 1; j < n; j++) {
 					DATA_TYPE s = 0; 
-					for (i = k; i < m; i++)
+					for (i = k; i < m; ++i)
 						s += QR_[i][k] * QR_[i][j];
 
 					s = -s / QR_[k][k];
-					for (i = k; i < m; i++)
+					for (i = k; i < m; ++i)
 						QR_[i][j] += s * QR_[i][k];
 				}
 			}
 			Rdiag[k] = -nrm;
 		}
 		// build R factor
-		for (i = 0; i < n; i++) {
+		for (i = 0; i < n; ++i) {
 			for (j = 0; j < n; j++) {
 				if (i < j)
 					R[i][j] = QR_[i][j];
@@ -1026,17 +1026,17 @@ namespace Amanith {
 		}
 		// build Q factor
 		for (k = n - 1; k >= 0; k--) {
-			for (i = 0; i < m; i++)
+			for (i = 0; i < m; ++i)
 				Q[i][k] = 0;
 			Q[k][k] = 1;
 			for (j = k; j < n; j++) {
 				if (QR_[k][k] != 0) {
 					DATA_TYPE s = 0;
-					for (i = k; i < m; i++) {
+					for (i = k; i < m; ++i) {
 						s += QR_[i][k] * Q[i][j];
 					}
 					s = -s / QR_[k][k];
-					for (i = k; i < m; i++)
+					for (i = k; i < m; ++i)
 						Q[i][j] += s * QR_[i][k];
 				}
 			}
@@ -1068,7 +1068,7 @@ namespace Amanith {
 			DATA_TYPE d = 0;
 			for (GInt32 k = 0; k < j; k++) {
 				DATA_TYPE s = 0;
-				for (GInt32 i = 0; i < k; i++)
+				for (GInt32 i = 0; i < k; ++i)
 					s += L[k][i] * L[j][i];
 				L[j][k] = s = (Src[j][k] - s) / L[k][k];
 				d = d + s * s;
@@ -1120,12 +1120,12 @@ namespace Amanith {
 				// place the k-th diagonal in s[k]
 				// compute 2-norm of k-th column without under/overflow
 				s[k] = 0;
-				for (i = k; i < m; i++)
+				for (i = k; i < m; ++i)
 					s[k] = GMath::Hypot(s[k], A[i][k]);
 				if (s[k] != 0) {
 					if (A[k][k] < 0)
 						s[k] = -s[k];
-					for (i = k; i < m; i++)
+					for (i = k; i < m; ++i)
 						A[i][k] /= s[k];
 					A[k][k] += 1;
 				}
@@ -1136,10 +1136,10 @@ namespace Amanith {
 				if ((k < nct) && (s[k] != 0))  {
 					// apply the transformation.
 					DATA_TYPE t = 0;
-					for (i = k; i < m; i++)
+					for (i = k; i < m; ++i)
 						t += A[i][k] * A[i][j];
 					t = -t / A[k][k];
-					for (i = k; i < m; i++)
+					for (i = k; i < m; ++i)
 						A[i][j] += t * A[i][k];
 				}
 				// place the k-th row of A into e for the
@@ -1150,7 +1150,7 @@ namespace Amanith {
 			if (wantu & (k < nct)) {
 				// place the transformation in U for subsequent back
 				// multiplication.
-				for (i = k; i < m; i++)
+				for (i = k; i < m; ++i)
 					U[i][k] = A[i][k];
 			}
 			if (k < nrt) {
@@ -1158,34 +1158,34 @@ namespace Amanith {
 				// k-th super-diagonal in e[k].
 				// compute 2-norm without under/overflow.
 				e[k] = 0;
-				for (i = k + 1; i < n; i++)
+				for (i = k + 1; i < n; ++i)
 					e[k] = GMath::Hypot(e[k], e[i]);
 				if (e[k] != 0) {
 					if (e[k + 1] < 0)
 						e[k] = -e[k];
-					for (i = k+1; i < n; i++)
+					for (i = k+1; i < n; ++i)
 						e[i] /= e[k];
 					e[k + 1] += 1.0;
 				}
 				e[k] = -e[k];
 				if ((k + 1 < m) & (e[k] != 0)) {
 					// apply the transformation.
-					for (i = k + 1; i < m; i++)
+					for (i = k + 1; i < m; ++i)
 						work[i] = 0;
 					for (j = k + 1; j < n; j++) {
-						for (i = k + 1; i < m; i++)
+						for (i = k + 1; i < m; ++i)
 							work[i] += e[j] * A[i][j];
 					}
 					for (j = k + 1; j < n; j++) {
 						DATA_TYPE t = -e[j] / e[k + 1];
-						for (i = k + 1; i < m; i++)
+						for (i = k + 1; i < m; ++i)
 							A[i][j] += t * work[i];
 					}
 				}
 				if (wantv) {
 					// place the transformation in V for subsequent
 					// back multiplication
-					for (i = k + 1; i < n; i++)
+					for (i = k + 1; i < n; ++i)
 						V[i][k] = e[i];
 				}
 			}
@@ -1205,28 +1205,28 @@ namespace Amanith {
 		// if required, generate U
 		if (wantu) {
 			for (j = nct; j < nu; j++) {
-				for (i = 0; i < m; i++)
+				for (i = 0; i < m; ++i)
 	               U[i][j] = 0;
 				U[j][j] = 1;
 			}
 			for (k = nct - 1; k >= 0; k--) {
 				if (s[k] != 0) {
-					for (j = k + 1; j < nu; j++) {
+					for (j = k + 1; j < nu; ++j) {
 						DATA_TYPE t = 0;
-						for (i = k; i < m; i++)
+						for (i = k; i < m; ++i)
 							t += U[i][k] * U[i][j];
 						t = -t / U[k][k];
-						for (i = k; i < m; i++)
+						for (i = k; i < m; ++i)
 							U[i][j] += t * U[i][k];
 					}
-					for (i = k; i < m; i++)
+					for (i = k; i < m; ++i)
 						U[i][k] = -U[i][k];
 					U[k][k] = 1 + U[k][k];
-					for (i = 0; i < k - 1; i++)
+					for (i = 0; i < k - 1; ++i)
 						U[i][k] = 0;
 				}
 				else {
-					for (i = 0; i < m; i++)
+					for (i = 0; i < m; ++i)
 						U[i][k] = 0;
 					U[k][k] = 1;
 				}
@@ -1239,14 +1239,14 @@ namespace Amanith {
 				if ((k < nrt) & (e[k] != 0)) {
 	               for (j = k + 1; j < nu; j++) {
 						DATA_TYPE t = 0;
-						for (i = k + 1; i < n; i++)
+						for (i = k + 1; i < n; ++i)
 							t += V[i][k] * V[i][j];
 						t = -t / V[k + 1][k];
-						for (i = k+1; i < n; i++)
+						for (i = k+1; i < n; ++i)
 							V[i][j] += t * V[i][k];
 					}
 				}
-				for (i = 0; i < n; i++)
+				for (i = 0; i < n; ++i)
 					V[i][k] = 0;
 				V[k][k] = 1;
 			}
@@ -1320,7 +1320,7 @@ namespace Amanith {
 							e[j - 1] = cs * e[j - 1];
 						}
 						if (wantv) {
-							for (i = 0; i < n; i++) {
+							for (i = 0; i < n; ++i) {
 								t = cs * V[i][j] + sn * V[i][p - 1];
 								V[i][p - 1] = -sn * V[i][j] + cs * V[i][p - 1];
 								V[i][j] = t;
@@ -1342,7 +1342,7 @@ namespace Amanith {
 						f = -sn * e[j];
 						e[j] = cs * e[j];
 						if (wantu) {
-							for (i = 0; i < m; i++) {
+							for (i = 0; i < m; ++i) {
 								t = cs * U[i][j] + sn * U[i][k - 1];
 								U[i][k - 1] = -sn * U[i][j] + cs * U[i][k - 1];
 								U[i][j] = t;
@@ -1389,7 +1389,7 @@ namespace Amanith {
 						g = sn * s[j + 1];
 						s[j + 1] = cs * s[j + 1];
 						if (wantv) {
-							for (i = 0; i < n; i++) {
+							for (i = 0; i < n; ++i) {
 								t = cs * V[i][j] + sn * V[i][j + 1];
 								V[i][j + 1] = -sn * V[i][j] + cs * V[i][j + 1];
 								V[i][j] = t;
@@ -1404,7 +1404,7 @@ namespace Amanith {
 						g = sn * e[j + 1];
 						e[j + 1] = cs * e[j + 1];
 						if (wantu && (j < m - 1)) {
-							for (i = 0; i < m; i++) {
+							for (i = 0; i < m; ++i) {
 								t = cs * U[i][j] + sn * U[i][j + 1];
 								U[i][j + 1] = -sn * U[i][j] + cs * U[i][j + 1];
 								U[i][j] = t;
@@ -1422,7 +1422,7 @@ namespace Amanith {
 					if (s[k] <= 0) {
 						s[k] = (s[k] < 0 ? -s[k] : 0);
 						if (wantv) {
-							for (i = 0; i <= pp; i++)
+							for (i = 0; i <= pp; ++i)
 								V[i][k] = -V[i][k];
 						}
 					}
@@ -1434,14 +1434,14 @@ namespace Amanith {
 						s[k] = s[k + 1];
 						s[k + 1] = t;
 						if (wantv && (k < n - 1)) {
-							for (i = 0; i < n; i++) {
+							for (i = 0; i < n; ++i) {
 								t = V[i][k + 1];
 								V[i][k + 1] = V[i][k];
 								V[i][k] = t;
 							}
 						}
 						if (wantu && (k < m - 1)) {
-							for (i = 0; i < m; i++) {
+							for (i = 0; i < m; ++i) {
 								t = U[i][k + 1];
 								U[i][k + 1] = U[i][k];
 								U[i][k] = t;
@@ -1456,8 +1456,8 @@ namespace Amanith {
 			}
 		}
 		// build S matrix
-		for (i = 0; i < n; i++) {
-			for (j = 0; j < n; j++)
+		for (i = 0; i < n; ++i) {
+			for (j = 0; j < n; ++j)
 				S[i][j] = 0;
 			S[i][i] = s[i];
 		}
@@ -1468,7 +1468,7 @@ namespace Amanith {
 		eps = GMath::Pow((DATA_TYPE)2, (DATA_TYPE)-52);
 		DATA_TYPE tol = m * s[0] * eps;
 		Rank = 0;
-		for (i = 0; i < n; i++) {
+		for (i = 0; i < n; ++i) {
 			if (s[i] > tol)
 	            Rank++;
 		}
@@ -1478,7 +1478,7 @@ namespace Amanith {
 	template <typename DATA_TYPE, GUInt32 ROWS, GUInt32 COLS>
 	void HouseholderColumnsReflect(GMatrix<DATA_TYPE, ROWS, COLS>& M, const GVect<DATA_TYPE, COLS>& u) {
 		
-		for (GUInt32 i = 0; i < ROWS; i++) {
+		for (GUInt32 i = 0; i < ROWS; ++i) {
 			DATA_TYPE s = 0;
 			for (GUInt32 j = 0; j < COLS; j++)
 				s += u[j] * M[j][i];
@@ -1491,7 +1491,7 @@ namespace Amanith {
 	template <typename DATA_TYPE, GUInt32 ROWS, GUInt32 COLS>
 	void HouseholderRowsReflect(GMatrix<DATA_TYPE, ROWS, COLS>& M, const GVect<DATA_TYPE, COLS>& u) {
 		
-		for (GInt32 i = 0; i < (GInt32)ROWS; i++) {
+		for (GInt32 i = 0; i < (GInt32)ROWS; ++i) {
 			DATA_TYPE s = 0;
 			for (GInt32 j = 0; j < (GInt32)COLS; j++)
 				s += u[j] * M[i][j];
@@ -1513,7 +1513,7 @@ namespace Amanith {
 		/* If rank(M) is 1, we should find a non-zero column in M */
 		col = -1;
 		s = 0;
-		for (GUInt32 i = 0; i < 3; i++) 
+		for (GUInt32 i = 0; i < 3; ++i) 
 			for (GUInt32 j = 0; j < 3; j++) {
 				if (GMath::Abs(M[i][j]) > s) {
 					s = GMath::Abs(M[i][j]);
@@ -1560,8 +1560,8 @@ namespace Amanith {
 		// if rank(M) is 2, we should find a non-zero column in MadjT
 		col = -1;
 		s = 0;
-		for (GUInt32 i = 0; i < 3; i++)
-			for (GUInt32 j = 0; j < 3; j++) {
+		for (GUInt32 i = 0; i < 3; ++i)
+			for (GUInt32 j = 0; j < 3; ++j) {
 				if (GMath::Abs(MadjT[i][j]) > s) {
 					s = GMath::Abs(MadjT[i][j]);
 					col = j;
@@ -1688,7 +1688,7 @@ namespace Amanith {
 		QDeterminant = det;
 		// now build S factor
 		S = w * Src;
-		for (i = 0; i < (GInt32)SIZE; i++)
+		for (i = 0; i < (GInt32)SIZE; ++i)
 			for (j = i; j < (GInt32)SIZE; j++)
 				S[i][j] = S[j][i] = ((S[i][j] + S[j][i]) / (DATA_TYPE)2);
 		return G_TRUE;
@@ -1771,7 +1771,7 @@ namespace Amanith {
 		}
    
 		// accumulate transformations
-		for (GInt32 i = 0; i < n - 1; i++) {
+		for (GInt32 i = 0; i < n - 1; ++i) {
 			V[n - 1][i] = V[i][i];
 			V[i][i] = 1;
 			DATA_TYPE h = d[i + 1];
@@ -1808,7 +1808,7 @@ namespace Amanith {
 		//  Auto. Comp., Vol.ii-Linear Algebra, and the corresponding
 		//  Fortran subroutine in EISPACK
 		GInt32 n = SIZE;
-		for (GInt32 i = 1; i < n; i++)
+		for (GInt32 i = 1; i < n; ++i)
 			e[i - 1] = e[i];
 		e[n - 1] = 0;
    
@@ -1842,7 +1842,7 @@ namespace Amanith {
 					d[l + 1] = e[l] * (p + r);
 					DATA_TYPE dl1 = d[l + 1];
 					DATA_TYPE h = g - d[l];
-					for (GInt32 i = l + 2; i < n; i++)
+					for (GInt32 i = l + 2; i < n; ++i)
 						d[i] -= h;
 					f = f + h;
    					// implicit QL transformation
@@ -1885,7 +1885,7 @@ namespace Amanith {
 		if (Sort == G_FALSE)
 			return;
 		// sort eigenvalues and corresponding vectors
-		for (GInt32 i = 0; i < n - 1; i++) {
+		for (GInt32 i = 0; i < n - 1; ++i) {
 			GInt32 k = i;
 			DATA_TYPE p = d[i];
 			for (GInt32 j = i + 1; j < n; j++) {
@@ -1923,7 +1923,7 @@ namespace Amanith {
 		for (GInt32 m = low + 1; m <= high - 1; m++) {
             // scale column
             DATA_TYPE scale = 0;
-			for (GInt32 i = m; i <= high; i++)
+			for (GInt32 i = m; i <= high; ++i)
 				scale = scale + GMath::Abs(H[i][m - 1]);
 			if (scale != 0) {
 				// compute Householder transformation
@@ -1943,11 +1943,11 @@ namespace Amanith {
 					for (GInt32 i = high; i >= m; i--)
 						f += ort[i] * H[i][j];
 					f = f / h;
-					for (GInt32 i = m; i <= high; i++)
+					for (GInt32 i = m; i <= high; ++i)
 						H[i][j] -= f * ort[i];
 				}
    
-				for (GInt32 i = 0; i <= high; i++) {
+				for (GInt32 i = 0; i <= high; ++i) {
 					DATA_TYPE f = 0;
 					for (GInt32 j = high; j >= m; j--)
 						f += ort[j] * H[i][j];
@@ -1961,22 +1961,22 @@ namespace Amanith {
 		}
    
 		// accumulate transformations (Algol's ortran)
-		for (GInt32 i = 0; i < n; i++) {
-			for (GInt32 j = 0; j < n; j++)
+		for (GInt32 i = 0; i < n; ++i) {
+			for (GInt32 j = 0; j < n; ++j)
 				V[i][j] = (i == j ? (GReal)1 : (GReal)0);
 		}
 
 		for (GInt32 m = high - 1; m >= low + 1; m--) {
 			if (H[m][m - 1] != 0) {
-				for (GInt32 i = m + 1; i <= high; i++)
+				for (GInt32 i = m + 1; i <= high; ++i)
 					ort[i] = H[i][m - 1];
-				for (GInt32 j = m; j <= high; j++) {
+				for (GInt32 j = m; j <= high; ++j) {
 					DATA_TYPE g = 0;
-					for (GInt32 i = m; i <= high; i++)
+					for (GInt32 i = m; i <= high; ++i)
 						g += ort[i] * V[i][j];
 					// double division avoids possible underflow
 					g = (g / ort[m]) / H[m][m - 1];
-					for (GInt32 i = m; i <= high; i++)
+					for (GInt32 i = m; i <= high; ++i)
 						V[i][j] += g * ort[i];
 				}
 			}
@@ -2003,7 +2003,7 @@ namespace Amanith {
    
 		// Store roots isolated by balanc and compute matrix norm
 		DATA_TYPE norm = 0.0;
-		for (GInt32 i = 0; i < nn; i++) {
+		for (GInt32 i = 0; i < nn; ++i) {
 			if ((i < low) || (i > high)) {
 				d[i] = H[i][i];
 				e[i] = 0;
@@ -2072,14 +2072,14 @@ namespace Amanith {
 					}
    
 					// column modification
-					for (GInt32 i = 0; i <= n; i++) {
+					for (GInt32 i = 0; i <= n; ++i) {
 						z = H[i][n - 1];
 						H[i][n - 1] = q * z + p * H[i][n];
 						H[i][n] = q * H[i][n] - p * z;
 					}
    
 					// accumulate transformations
-					for (GInt32 i = low; i <= high; i++) {
+					for (GInt32 i = low; i <= high; ++i) {
 						z = V[i][n - 1];
 						V[i][n - 1] = q * z + p * V[i][n];
 						V[i][n] = q * V[i][n] - p * z;
@@ -2108,7 +2108,7 @@ namespace Amanith {
 				// Wilkinson's original ad hoc shift
 				if (iter == 10) {
 					exshift += x;
-					for (GInt32 i = low; i <= n; i++)
+					for (GInt32 i = low; i <= n; ++i)
 						H[i][i] -= x;
 					s = GMath::Abs(H[n][n - 1]) + GMath::Abs(H[n - 1][n - 2]);
 					x = y = (DATA_TYPE)0.75 * s;
@@ -2124,7 +2124,7 @@ namespace Amanith {
 						if (y < x)
 							s = -s;
 						s = x - w / ((y - x) * (GReal)0.5 + s);
-						for (GInt32 i = low; i <= n; i++)
+						for (GInt32 i = low; i <= n; ++i)
 							H[i][i] -= s;
 						exshift += s;
 						x = y = w = (DATA_TYPE)0.964;
@@ -2153,7 +2153,7 @@ namespace Amanith {
 					m--;
 				}
    
-				for (GInt32 i = m + 2; i <= n; i++) {
+				for (GInt32 i = m + 2; i <= n; ++i) {
 					H[i][i - 2] = 0;
 					if (i > m + 2)
 						H[i][i - 3] = 0;
@@ -2201,7 +2201,7 @@ namespace Amanith {
 							H[k + 1][j] = H[k + 1][j] - p * y;
 						}
 						// column modification
-						for (GInt32 i = 0; i <= GMath::Min(n, k + 3); i++) {
+						for (GInt32 i = 0; i <= GMath::Min(n, k + 3); ++i) {
 							p = x * H[i][k] + y * H[i][k + 1];
 							if (notlast) {
 								p = p + z * H[i][k + 2];
@@ -2211,7 +2211,7 @@ namespace Amanith {
 							H[i][k + 1] = H[i][k + 1] - p * q;
 						}
    						// accumulate transformations
-						for (GInt32 i = low; i <= high; i++) {
+						for (GInt32 i = low; i <= high; ++i) {
 							p = x * V[i][k] + y * V[i][k + 1];
 							if (notlast) {
 								p = p + z * V[i][k + 2];
@@ -2347,7 +2347,7 @@ namespace Amanith {
 			}
 		}
 		// vectors of isolated roots
-		for (GInt32 i = 0; i < nn; i++) {
+		for (GInt32 i = 0; i < nn; ++i) {
 			if (i < low || i > high) {
 				for (GInt32 j = i; j < nn; j++)
 					V[i][j] = H[i][j];
@@ -2355,7 +2355,7 @@ namespace Amanith {
 		}
 		// back transformation to get eigenvectors of original matrix
 		for (GInt32 j = nn - 1; j >= low; j--) {
-			for (GInt32 i = low; i <= high; i++) {
+			for (GInt32 i = low; i <= high; ++i) {
 				z = 0;
 				for (GInt32 k = low; k <= GMath::Min(j, high); k++)
 					z = z + V[i][k] * H[k][j];

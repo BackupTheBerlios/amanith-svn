@@ -36,6 +36,7 @@ int main(int argc, char **argv)
     UuidGenFrm frm;
 	app.setMainWidget(&frm);
 	frm.show();
+	//frm.setFixedSize(590, 168);
 
     app.connect(&app, SIGNAL(lastWindowClosed()), &app, SLOT(quit()));
     return app.exec();

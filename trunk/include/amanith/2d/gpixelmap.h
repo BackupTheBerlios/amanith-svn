@@ -51,8 +51,6 @@ namespace Amanith {
 		G_GRAYSCALE,
 		//! 8 bits RGB paltetted pixel format
 		G_RGB_PALETTE,
-		//! 8 bits ARGB paltetted pixel format
-		G_ARGB_PALETTE,
 		//! 24 bits RGB pixel format (8 bits per channel)
 		G_R8G8B8,
 		//! 32 bits ARGB pixel format (8 bits per channel)
@@ -102,10 +100,10 @@ namespace Amanith {
 		GPixelMap supports 8-bpp (grayscale and paletted formats), 16-bpp, 24 and 32 bpp image data.
 		Here are details of internal formats:
 
-		- 8-bpp images: they can be grayscale (G_GRAYSCALE) or paletted (G_RGB_PALETTE and G_ARGB_PALETTE). In both cases
+		- 8-bpp images: they can be grayscale (G_GRAYSCALE) or paletted (G_RGB_PALETTE). In both cases
 		each pixel is 1 byte. In grayscale bitmpas, the	pixel value represent a gray level (form 0 to 255). For paletted
 		bitmaps, the pixel value is a color table index (from 0 to 255). Each palette entry is maintained in memory as a
-		single (4 bytes long) integer, where the most significant byte is an optional alpha value (G_ARGB_PALETTE), then
+		single (4 bytes long) integer, where the most significant byte is an optional alpha value, then
 		come (going down to the least significant byte) 8bit red value, 8bit green value and finally 8bit blue value.\n\n
 		- 16-bpp images: they can be with (G_A1R5G5B5) and without (G_R5G6B5) alpha channel. In the first case the most significant
 		bit is an alpha value, and then come (from most to least significants bits positions) 5bits red, 5bits green and
@@ -113,8 +111,6 @@ namespace Amanith {
 		- 24/32-bpp images: they can be with (G_A8R8G8B8) and without (G_R8G8B8) alpha channel. In the first case the
 		most significant byte is an 8bits alpha value, and then come (from most to least significant bytes) 8bits red, 8bits
 		green and 8 bits blue values. Internally each pixel is always maintained as a (4 bytes long) integer.
-
-		\todo paletted formats are not supported very well, some methods do some others do not.
 	*/
 	class G_EXPORT GPixelMap : public GElement {
 
@@ -122,7 +118,7 @@ namespace Amanith {
 		//! The pointer to the first pixel.
 		GUChar8 *gPixels;
 		//! The pointer to the first palette entry. It can be NULL (for full color images, for examples).
-		GInt32 *gPalette;
+		GUInt32 *gPalette;
 		//! The current pixel format.
 		GPixelFormat gPixelFormat;
 		//! The width of this image.
@@ -258,9 +254,9 @@ namespace Amanith {
 		GError TraceContoursMono(const GInt32 BrighThres, const GBool Thinning, const GBool Fast);
 
 	public:
-		//! Default constructor
+		//! Default constructor.
 		GPixelMap();
-		//! Constructor with owner (kernel) parameter
+		//! Constructor with owner (kernel) parameter.
 		GPixelMap(const GElement* Owner);
 		//! Destructor, free memory allocated for pixels and palette.
 		~GPixelMap();
@@ -272,31 +268,31 @@ namespace Amanith {
 		inline GInt32 Height() const {
 			return gHeight;
 		}
-		//! Get current pixel format
+		//! Get current pixel format.
 		inline GPixelFormat PixelFormat() const {
 			return gPixelFormat;
 		}
-		//! Number of pixels, equal to Width() * Height()
+		//! Number of pixels, equal to Width() * Height().
 		GInt32 PixelsCount() const;
-		//!	Number of bits used to encode a single pixel, also called bits per pixel (bpp) or bit planes of an image
+		//!	Number of bits used to encode a single pixel, also called bits per pixel (bpp) or bit planes of an image.
 		GInt32 BitsPerPixel() const;
-		//! number of bytes used to encode a single pixel
+		//! number of bytes used to encode a single pixel.
 		GInt32 BytesPerPixel() const;
-		//! Number of bytes per scanline (a scanline is a row of pixels)
+		//! Number of bytes per scanline (a scanline is a row of pixels).
 		GInt32 BytesPerLine() const;
-		//! Number of bytes allocated by the image data (pixels)
+		//! Number of bytes allocated by the image data (pixels).
 		GInt32 Size() const;
-		//! Number of bytes allocated by the colors palette
+		//! Number of bytes allocated by the colors palette.
 		GInt32 PaletteSize() const;
-		//! returns if the image has an alpha channel
+		//! returns if the image has an alpha channel.
 		GBool HasAlphaChannel() const;
-		//! Returns if the image is paletted (it has an associated palette)
+		//! Returns if the image is paletted (it has an associated palette).
 		GBool IsPaletted() const;
-		//! Returns if image is gray scale
+		//! Returns if image is gray scale.
 		GBool IsGrayScale() const;
-		//! Returns if image is high color (15bits or 16bits)
+		//! Returns if image is high color (15bits or 16bits).
 		GBool IsHighColor() const;
-		//! Returns if image is truecolor (24 or 32 bits)
+		//! Returns if image is truecolor (24 or 32 bits).
 		GBool IsTrueColor() const;
 		/*!
 			Clear (fill) the image with a specified color.
@@ -321,7 +317,7 @@ namespace Amanith {
 			\note the pixel coordinates must be inside permitted range, else an G_OUT_OF_RANGE error code will be
 			returned.
 		*/
-		GError Pixel(const GInt32 X, const GInt32 Y, GUInt32& Index_Or_A8R8G8B8) const;
+		GError Pixel(const GUInt32 X, const GUInt32 Y, GUInt32& Index_Or_A8R8G8B8) const;
 		/*!
 			Set a pixel color.
 
@@ -336,7 +332,7 @@ namespace Amanith {
 			\note the pixel coordinates must be inside permitted range, else an G_OUT_OF_RANGE error code will be
 			returned.
 		*/
-		GError SetPixel(const GInt32 X, const GInt32 Y, const GUInt32 Index_Or_A8R8G8B8);
+		GError SetPixel(const GUInt32 X, const GUInt32 Y, const GUInt32 Index_Or_A8R8G8B8);
 		/*!
 			Swap (reverse) color channels from ARGB to ABGR.
 
@@ -555,7 +551,6 @@ namespace Amanith {
 
 			\param NewPixelFormat the new pixel format
 			\return G_NO_ERROR if operation succeeds, an error code otherwise.
-			\todo paletted formats are still not supported.
 		*/
 		GError SetPixelFormat(const GPixelFormat NewPixelFormat);
 		/*!
@@ -567,7 +562,6 @@ namespace Amanith {
 			\param NewPixelFormat the new pixel format
 			\param ConvertedImage the destination image.
 			\return G_NO_ERROR if operation succeeds, an error code otherwise.
-			\todo paletted formats are still not supported.
 		*/
 		GError SetPixelFormat(const GPixelFormat NewPixelFormat, GPixelMap& ConvertedImage) const;
 		/*
@@ -606,10 +600,28 @@ namespace Amanith {
 		*/
 		GError MergeChannels(const GPixelMap& RedImage, const GPixelMap& GreenImage, const GPixelMap& BlueImage,
 							 const GPixelMap *AlphaImage = NULL);
-		//! Get pointer to the first pixel.
-		GUChar8* Pixels() const;
-		//! Get pointer to the first palette color (if present). For non paletted images a NULL value will be returned.
-		GInt32* Palette() const;
+		/*!
+			Get pointer to the first pixel.
+			
+			Here's an example that accesses to every image pixels (it supposes a grayscale or paletted image, so
+			every pixel is a byte):\n\n
+
+\code
+	GUChar8 *pixelsArray = Image.Pixels();
+	GInt32 i, j = Image.PixelsCount();
+	for (i = 0; i < j; ++i)
+		< do something with pixelsArray[i] >
+\endcode
+		*/
+		inline GUChar8* Pixels() const {
+			return gPixels;
+		}
+		//! Get pointer to the first palette entry (if present). For non paletted images a NULL value will be returned.
+		inline GUInt32* Palette() const {
+			if (!IsPaletted())
+				return NULL;
+			return gPalette;
+		}
 		/*!
 			Load a pixmap from external file (using kernel plugins). This method is provided for convenience.
 

@@ -307,7 +307,7 @@ namespace Amanith {
 		GError AppendPath(const GPath2D& Path);
 		//! Return the number of curve segments.
 		inline GUInt32 SegmentsCount() const {
-			return gSegments.size();
+			return (GUInt32)gSegments.size();
 		}
 		/*!
 			Get the type of Index-th curve segment.

@@ -490,7 +490,7 @@ namespace Amanith {
 			GUInt32 i;
 			GDouble v;
 
-  			for (i = 0, v = (GDouble)Value; v >= 1; i++)
+  			for (i = 0, v = (GDouble)Value; v >= 1; ++i)
 				v = Log(v);
 			return (i - 1);
 		}
@@ -503,7 +503,7 @@ namespace Amanith {
 			GUInt32 i;
 			GDouble v;
 
-  			for (i = 0, v = (GDouble)Value; v >= 1; i++)
+  			for (i = 0, v = (GDouble)Value; v >= 1; ++i)
 				v = Log2(v);
 			return (i - 1);
 		}
@@ -516,7 +516,7 @@ namespace Amanith {
 			GUInt32 i;
 			GDouble v;
 
-  			for (i = 0, v = (GDouble)Value; v >= 1; i++)
+  			for (i = 0, v = (GDouble)Value; v >= 1; ++i)
 				v = Log10(v);
 			return (i - 1);
 		}
@@ -930,7 +930,7 @@ namespace Amanith {
 		inline void SeedRandom() {
 			time_t ltime;
 			time(&ltime);
-			std::srand(ltime);
+			std::srand((unsigned int)ltime);
 		}
 
 		/*!
@@ -1155,8 +1155,8 @@ namespace Amanith {
 		template <typename T, typename U>
 		inline T BarycentricConvexSum(const U& WeightA, const T& A, const U& WeightB, const T& B) {
 
-			G_ASSERT(WeightA >= T(0));
-			G_ASSERT(WeightB >= T(0));
+			G_ASSERT(WeightA >= U(0));
+			G_ASSERT(WeightB >= U(0));
 
 			if (WeightA < WeightB)
 				return A + (B - A) * (WeightA / (WeightA + WeightB));

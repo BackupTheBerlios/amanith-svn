@@ -382,7 +382,7 @@ GError GJpegImpExp::RawJpegSave(const GChar8 *FileName, const GInt32 Width, cons
     /* And we're done! */
     return G_NO_ERROR;
 #else
-	return G_MISSEDFEATURE;
+	return G_MISSED_FEATURE;
 #endif
 }
 

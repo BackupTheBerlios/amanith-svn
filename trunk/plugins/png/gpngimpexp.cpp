@@ -96,7 +96,7 @@ namespace Amanith {
 // modified simage_jpeg_load function
 GError GPngImpExp::RawPngLoad(const GChar8 *FileName, GInt32& Width, GInt32& Height,
 							  GPixelFormat& PixelFormat, GUChar8 **OutBuffer,
-							  GInt32& NumPaletteEntries, GInt32 **PaletteBuffer,
+							  GInt32& NumPaletteEntries, GUInt32 **PaletteBuffer,
 							  const GBool ExpandPalette) {
 
 #if defined(_PNG_READ)
@@ -161,7 +161,7 @@ GError GPngImpExp::RawPngLoad(const GChar8 *FileName, GInt32& Width, GInt32& Hei
 		return G_READ_ERROR;
 	}
 
-	GInt32 *newPalette = NULL;
+	GUInt32 *newPalette = NULL;
 
 	/* Set up the input control if you are using standard C streams */
 	png_init_io(png_ptr, infile);
@@ -221,18 +221,22 @@ GError GPngImpExp::RawPngLoad(const GChar8 *FileName, GInt32& Width, GInt32& Hei
 				*/
 				png_set_packing(png_ptr);
 				// allocate palette
-				GInt32 i, k, j;
-				j = GMath::Max(num_palette, 256);
-				newPalette = new GInt32[j];
+				GInt32 i, j;
+				GUInt32 k;
+
+				if (num_palette > 256)
+					j = 256;
+				else
+					j = num_palette;
+				newPalette = new GUInt32[256];
 				// copy palette
-				for (i = 0; i < num_palette; i++) {
-					k = ((GInt32)palette[i].blue) | (((GInt32)palette[i].green) << 8) |
-						(((GInt32)palette[i].red) << 16);
+				for (i = 0; i < j; i++) {
+					k = ((GUInt32)palette[i].blue) | (((GUInt32)palette[i].green) << 8) |
+						(((GUInt32)palette[i].red) << 16);
 					newPalette[i] = k;
 				}
-				for (i = num_palette; i < j; i++)
+				for (i = j; i < 256; i++)
 					newPalette[i] = 0;
-
 				resFormat = G_RGB_PALETTE;
 			}
 			break;
@@ -311,7 +315,7 @@ GError GPngImpExp::RawPngLoad(const GChar8 *FileName, GInt32& Width, GInt32& Hei
 // modified simage_jpeg_save function
 GError GPngImpExp::RawPngSave(const GChar8 *FileName, const GInt32 Width, const GInt32 Height,
 							  const GPixelFormat PixelFormat, const GUChar8 *Buffer,
-							  const GInt32 NumPaletteEntries, const GInt32 *PaletteBuffer,
+							  const GInt32 NumPaletteEntries, const GUInt32 *PaletteBuffer,
 							  const GBool Interlaced) {
 
 #if defined(_PNG_WRITE)
@@ -322,8 +326,8 @@ GError GPngImpExp::RawPngSave(const GChar8 *FileName, const GInt32 Width, const 
 	png_text text_ptr[3];
 
 	// just to avoid warnings
-	if (NumPaletteEntries && PaletteBuffer)
-		fp = NULL;
+	//if (NumPaletteEntries && PaletteBuffer)
+	//	fp = NULL;
 
 	// open the file
 	fp = std::fopen(FileName, "wb");
@@ -342,7 +346,7 @@ GError GPngImpExp::RawPngSave(const GChar8 *FileName, const GInt32 Width, const 
 		return G_WRITE_ERROR;
 	}
 
-	// Allocate/initialize the image information data.  REQUIRED
+	// Allocate/initialize the image information data. REQUIRED.
 	info_ptr = png_create_info_struct(png_ptr);
 	if (info_ptr == NULL) {
 		std::fclose(fp);
@@ -351,7 +355,7 @@ GError GPngImpExp::RawPngSave(const GChar8 *FileName, const GInt32 Width, const 
 	}
 
 	/* Set error handling.  REQUIRED if you aren't supplying your own
-	* error hadnling functions in the png_create_write_struct() call.
+	* error handling functions in the png_create_write_struct() call.
 	*/
 	if (setjmp(png_ptr->jmpbuf)) {
 		/* If we get here, we had a problem reading the file */
@@ -402,7 +406,6 @@ GError GPngImpExp::RawPngSave(const GChar8 *FileName, const GInt32 Width, const 
 			break;
 
 		case G_RGB_PALETTE:
-		case G_ARGB_PALETTE:
 			colortype = PNG_COLOR_TYPE_PALETTE;
 			bytesperrow = Width;
 			break;
@@ -435,6 +438,18 @@ GError GPngImpExp::RawPngSave(const GChar8 *FileName, const GInt32 Width, const 
 
 	/* other optional chunks like cHRM, bKGD, tRNS, tIME, oFFs, pHYs, */
 
+	png_color tmpPalette[256];
+	for (GInt32 i = 0; i < NumPaletteEntries; ++i) {
+		tmpPalette[i].red = (png_byte)((PaletteBuffer[i] >> 16) & 255);
+		tmpPalette[i].green = (png_byte)((PaletteBuffer[i] >> 8) & 255);
+		tmpPalette[i].blue = (png_byte)(PaletteBuffer[i] & 255);
+	}
+	for (GInt32 i = NumPaletteEntries; i < 256; ++i)
+		tmpPalette[i].red = tmpPalette[i].green = tmpPalette[i].blue = 0;
+
+	if (PaletteBuffer)
+		png_set_PLTE(png_ptr, info_ptr, tmpPalette, NumPaletteEntries);
+
 	/* Write the file header information.  REQUIRED */
 	png_write_info(png_ptr, info_ptr);
 
@@ -447,7 +462,7 @@ GError GPngImpExp::RawPngSave(const GChar8 *FileName, const GInt32 Width, const 
 	/* set up the transformations you want.  Note that these are
 	* all optional.  Only call them if you want them. */
 
-	/* invert monocrome pixels */
+	/* invert monochrome pixels */
 	/* png_set_invert(png_ptr); */
 
 	/* Shift the pixels up to a legal bit depth and fill in
@@ -488,7 +503,7 @@ GError GPngImpExp::RawPngSave(const GChar8 *FileName, const GInt32 Width, const 
 	//bytesperrow = width * numcomponents;
 
 	for (y = 0; y < Height; y++)
-		png_write_row(png_ptr, (png_bytep) Buffer + bytesperrow * y);
+		png_write_row(png_ptr, (png_bytep)Buffer + bytesperrow * y);
   
 	/* You can write optional chunks like tEXt, zTXt, and tIME at the end
 	* as well.
@@ -507,7 +522,6 @@ GError GPngImpExp::RawPngSave(const GChar8 *FileName, const GInt32 Width, const 
 
 	/* that's it */
 	return G_NO_ERROR;
-
 #else
 	return G_MISSED_FEATURE;
 #endif
@@ -546,7 +560,8 @@ GError GPngImpExp::ReadPng(const GChar8 *FullFileName, GElement& Element, const 
 	GPixelFormat pixFormat;
 	GInt32 width = -1, height = -1, numPalEntries = -1, bufferSize;
 	GUChar8 *pixelBuffer = NULL, *p = NULL;
-	GInt32 *paletteBuffer = NULL, *pal = NULL;
+	GUInt32 *paletteBuffer = NULL;
+	GUInt32 *pal = NULL;
 	GError err;
 
 	err = GPngImpExp::RawPngLoad(FullFileName, width, height, pixFormat, &pixelBuffer,
@@ -567,8 +582,8 @@ GError GPngImpExp::ReadPng(const GChar8 *FullFileName, GElement& Element, const 
 		if (image.IsPaletted()) {
 			pal = image.Palette();
 			G_ASSERT(pal != NULL);
-			bufferSize= image.PaletteSize();
-			std::memcpy((void *)p, (void *)paletteBuffer, bufferSize);
+			bufferSize = image.PaletteSize();
+			std::memcpy((void *)pal, (void *)paletteBuffer, bufferSize);
 		}
 	}
 
@@ -587,14 +602,16 @@ GError GPngImpExp::WritePng(const GChar8 *FullFileName, const GElement& Element,
 	GUChar8 *buf;
 	GError err;
 
-	if (image.IsPaletted())
-		return G_MISSED_FEATURE;
-
 	if (image.PixelsCount() <= 0)
 		return G_INVALID_PARAMETER;
-
 	buf = (GUChar8 *)image.Pixels();
 
+	// paletted image
+	if (image.IsPaletted()) {
+		err = RawPngSave(FullFileName, image.Width(), image.Height(), image.PixelFormat(), buf, 256,
+						image.Palette(), Interlaced);
+	}
+	else
 	// if image is 15/16 bit color, we must convert to full 24/32 bit
 	if (image.IsHighColor()) {
 		GPixelMap tmpImage;
@@ -616,6 +633,7 @@ GError GPngImpExp::WritePng(const GChar8 *FullFileName, const GElement& Element,
 		}
 	}
 	else
+		// full color image
 		err = RawPngSave(FullFileName, image.Width(), image.Height(), image.PixelFormat(), buf, 0, NULL, Interlaced);
 	return err;
 }

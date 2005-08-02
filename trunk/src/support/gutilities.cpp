@@ -306,11 +306,11 @@ GError SysUtils::MachineGUID(GString& Identifier) {
 		// machine guid
 		Identifier = "";
 
-		j = 16 - machineGuid.length() % 16;
+		j = (GUInt32)(16 - (machineGuid.length() % 16));
 		for (i = 0; i < j; i++)
 			machineGuid += GChar8(0);
 
-		j = machineGuid.length() / 16;
+		j = (GUInt32)(machineGuid.length()) / 16;
 		for (i = 0; i < 16; i++) {
 			c = 0;
 			for (k = 0; k < j; k++) {
@@ -507,7 +507,7 @@ GString StrUtils::ExtractFileName(const GString& FullFileName, const GBool Inclu
 	GInt32 pos = (GInt32)tmpStr.find_last_of('/');
 	GString s = FullFileName;
 	if (pos >= 0)
-		s = Right(tmpStr, tmpStr.length() - pos - 1);
+		s = Right(tmpStr, (GUInt32)tmpStr.length() - pos - 1);
 	// in this case we must cut away extension
 	if (IncludeExtension == G_FALSE) {
 		pos = (GInt32)s.find_first_of('.');
@@ -526,7 +526,7 @@ GString StrUtils::ExtractFileExt(const GString& FullFileName) {
 	GInt32 pos = (GInt32)tmpStr.find_first_of('.');
 	GString s = "";
 	if (pos >= 0)
-		s = Right(tmpStr, tmpStr.length() - pos - 1);
+		s = Right(tmpStr, (GUInt32)tmpStr.length() - pos - 1);
 	return s;
 }
 
@@ -559,83 +559,90 @@ GString StrUtils::Purge(const GString& DustySource, const GString& Dust) {
 	return purged;
 }
 
-// convert a vector into string format
-template<typename DATA_TYPE, GUInt32 SIZE>
-GString StrUtils::ToString(const GVectBase<DATA_TYPE, SIZE>& v) {
-
-	GString s = "";
-	GUInt32 i;
-
-	for (i = 0; i < SIZE-1; i++)
-		s += ToString(v[i]) + ", ";
-	s = s + ToString(v[SIZE-1]);
-	return s;
-}
-// convert a quaternion into string format
-template<typename DATA_TYPE>
-GString StrUtils::ToString(const GQuat<DATA_TYPE>& q) {
-
-	GString s = "";
-
-	for (GInt32 i = 0; i < 3; i++)
-		s += ToString(q[i]) + ", ";
-	s = s + ToString(q[3]);
-	return s;
-}
 // convert an integer into string format
-GString StrUtils::ToString(const GInt32 Value) {
+GString StrUtils::ToString(const GInt32 Value, const GChar8 *Format) {
 
 	GChar8 buffer[16];
-	std::sprintf(buffer, "%d", Value);
+
+	if (!Format)
+		std::sprintf(buffer, "%d", Value);
+	else
+		std::sprintf(buffer, Format, Value);
 	return GString(buffer);
 }
 // convert an integer into string format
-GString StrUtils::ToString(const GUInt32 Value) {
+GString StrUtils::ToString(const GUInt32 Value, const GChar8 *Format) {
 
 	GChar8 buffer[16];
-	std::sprintf(buffer, "%d", Value);
+
+	if (!Format)
+		std::sprintf(buffer, "%d", Value);
+	else
+		std::sprintf(buffer, Format, Value);
 	return GString(buffer);
 }
 // convert an integer into string format
-GString StrUtils::ToString(const GInt16 Value) {
+GString StrUtils::ToString(const GInt16 Value, const GChar8 *Format) {
 
 	GChar8 buffer[16];
-	std::sprintf(buffer, "%d", Value);
+
+	if (!Format)
+		std::sprintf(buffer, "%d", Value);
+	else
+		std::sprintf(buffer, Format, Value);
 	return GString(buffer);
 }
 // convert an integer into string format
-GString StrUtils::ToString(const GUInt16 Value) {
+GString StrUtils::ToString(const GUInt16 Value, const GChar8 *Format) {
 
 	GChar8 buffer[16];
-	std::sprintf(buffer, "%d", Value);
+
+	if (!Format)
+		std::sprintf(buffer, "%d", Value);
+	else
+		std::sprintf(buffer, Format, Value);
 	return GString(buffer);
 }
 // convert an integer into string format
-GString StrUtils::ToString(const GInt8 Value) {
+GString StrUtils::ToString(const GInt8 Value, const GChar8 *Format) {
 
 	GChar8 buffer[16];
-	std::sprintf(buffer, "%d", Value);
+	
+	if (!Format)
+		std::sprintf(buffer, "%d", Value);
+	else
+		std::sprintf(buffer, Format, Value);
 	return GString(buffer);
 }
 // convert an integer into string format
-GString StrUtils::ToString(const GUInt8 Value) {
+GString StrUtils::ToString(const GUInt8 Value, const GChar8 *Format) {
 
 	GChar8 buffer[16];
-	std::sprintf(buffer, "%d", Value);
+
+	if (!Format)
+		std::sprintf(buffer, "%d", Value);
+	else
+		std::sprintf(buffer, Format, Value);
 	return GString(buffer);
 }
 // convert a float into string format
-GString StrUtils::ToString(const GFloat Value) {
+GString StrUtils::ToString(const GFloat Value, const GChar8 *Format) {
 
 	GChar8 buffer[16];
-	std::sprintf(buffer, "%f", Value);
+	if (!Format)
+		std::sprintf(buffer, "%f", Value);
+	else
+		std::sprintf(buffer, Format, Value);
 	return GString(buffer);
 }
 // convert a double into string format
-GString StrUtils::ToString(const GDouble Value) {
+GString StrUtils::ToString(const GDouble Value, const GChar8 *Format) {
 
 	GChar8 buffer[64];
-	std::sprintf(buffer, "%f", Value);
+	if (!Format)
+		std::sprintf(buffer, "%f", Value);
+	else
+		std::sprintf(buffer, Format, Value);
 	return GString(buffer);
 }
 // converts the contents of a string as a C-style, null-terminated string
@@ -657,9 +664,9 @@ GLong StrUtils::ToLong(const GString& Value) {
 }
 
 // converts a string into a double
-GReal StrUtils::ToDouble(const GString& Value) {
+GDouble StrUtils::ToDouble(const GString& Value) {
 
-	return std::atof(StrUtils::ToAscii(Value));
+	return (GDouble)std::atof(StrUtils::ToAscii(Value));
 }
 
 /*!
@@ -686,7 +693,7 @@ GString StrUtils::ToHex(const GUInt32 Number, const GUInt32 Width) {
 	std::sprintf(buffer, "%X", Number);
 
 	s = buffer;
-	j = s.length();
+	j = (GUInt32)s.length();
 	if (j < Width) {
 		for (i = 0; i < Width - j; i++)
 			s = '0' + s;
@@ -716,7 +723,7 @@ GStringList StrUtils::Split(const GString& Value, const GString Separator, GBool
 		if ((s.length() > 0) || Empties)
 			strList.push_back(s);
 		pos0 += pos1 + dlen;
-		pos1 = Value.find(Separator, pos0);
+		pos1 = (GInt32)Value.find(Separator, pos0);
 	}
 	GString s = Value.substr(pos0);
 	if ((s.length() > 0) || Empties)
@@ -750,6 +757,8 @@ GString StrUtils::Merge(const GStringList& InputList, const GChar8 *InterStr) {
 	err = StrUtils::FromString("0, 1", v);
 \endcode
 */
+
+/*
 template<GUInt32 SIZE>
 GError StrUtils::FromString(const GString& SourceStr, GVectBase<GReal, SIZE>& Vect) {
 
@@ -764,12 +773,12 @@ GError StrUtils::FromString(const GString& SourceStr, GVectBase<GReal, SIZE>& Ve
 		return G_INVALID_FORMAT;
 	// extract each component
 	i = 0;
-	for (it = list.begin(); it != list.end(); ++it, i++)
+	for (it = list.begin(); it != list.end(); ++it, ++i)
 		vaux[i] = (GReal)StrUtils::ToDouble(*it);
 
 	Vect = vaux;
 	return G_NO_ERROR;
-}
+}*/
 
 /*!
 	Example:
@@ -812,7 +821,7 @@ GError StrUtils::FromString(const GString& SourceStr, GQuaternion& Quat) {
 */
 GError StrUtils::Encode(const GString& Input, const GString& Password, GString& Output, const GBool HexAscii) {
 
-	GUInt32 i, j = Input.size(), k, sizeInt32 = sizeof(GUInt32);
+	GUInt32 i, j = (GUInt32)Input.size(), k, sizeInt32 = sizeof(GUInt32);
 	GUChar8 c1;
 	GString s;
 
@@ -1166,7 +1175,7 @@ GError FileUtils::ReadFile(const GChar8 *FileName, GDynArray<GChar8>& Buffer) {
 	GDynArray<GChar8>::iterator it = Buffer.begin();
 	void *data = (void *)(&(*it));
 	// read the file
-	readBytes = std::fread(data, 1, fileSize, file);
+	readBytes = (GInt32)std::fread(data, 1, fileSize, file);
 	// check if file was completely read
 	std::fclose(file);
 	if (readBytes < fileSize) {
@@ -1196,7 +1205,7 @@ GError FileUtils::WriteFile(const GChar8 *FileName, const GDynArray<GChar8>& Buf
 	fileSize = (GInt32) Buffer.size();
 	GDynArray<GChar8>::const_iterator it = Buffer.begin();
 	const void *data = (const void *)(&(*it));
-	writtenBytes = std::fwrite(data, 1, fileSize, file);
+	writtenBytes = (GInt32)std::fwrite(data, 1, fileSize, file);
 	// check if file was completely written
 	std::fclose(file);
 	if (writtenBytes < fileSize)

@@ -594,7 +594,7 @@ namespace Amanith {
 		DATA_TYPE ymin = Contour[0][G_Y];
 		DATA_TYPE crossProd;
 		// first find rightmost lowest vertex of the polygon
-		for (GInt32 i = 1; i < s; i++) {
+		for (GInt32 i = 1; i < s; ++i) {
 			if (Contour[i][G_Y] > ymin)
 				continue;
 			if (Contour[i][G_Y] == ymin) {

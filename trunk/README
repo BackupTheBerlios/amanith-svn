@@ -2,15 +2,16 @@ AMANITH FRAMEWORK README
 ************************
 Crossplatform, Opensource, Ansi C++, Framework aimed to handle 2d and 3d Vector Graphic.
 
- =------------------------=
- | Version: 1.0b          |
- | Released: 30 June 2005 |
- | Licence: QPL           |
- | Url: www.amanith.org   |
- =------------------------=
+ =--------------------------=
+ | Version: 1.0 Final       |
+ | Released: 03 August 2005 |
+ | Licence: QPL             |
+ | Url: www.amanith.org     |
+ =--------------------------=
 
-Contents of the package
-=======================
+
+Content of the package
+======================
 
  |-----> 3rdpart
  |       |-----> freetype2
@@ -31,6 +32,7 @@ Contents of the package
  |       |       |-----> hermite2d
  |       |       |-----> path2d
  |       |       |-----> polyline2d
+ |       |       |-----> tesselator2d
  |       |       |-----> testglext
  |       |       |-----> testshaders
  |       |       |-----> vectorizer
@@ -60,6 +62,37 @@ Contents of the package
  |-----> tools
  |       |-----> plugwizard
  |       |-----> uuid_gen
+ |
+ |-----> vs2003
+ |       |-----> 3rdparts
+ |       |       |-----> freetype2
+ |       |       |-----> libjpeg
+ |       |       |-----> lipng
+ |       |       |-----> zlib
+ |       |
+ |       |-----> amanith
+ |       |
+ |       |-----> examples
+ |       |       |-----> opengl
+ |       |       |       |-----> bezier2d
+ |       |       |       |-----> bspline2d
+ |       |       |       |-----> delaunay2d
+ |       |       |       |-----> font2d
+ |       |       |       |-----> hermite2d
+ |       |       |       |-----> path2d
+ |       |       |       |-----> polyline2d
+ |       |       |       |-----> tesselator2d
+ |       |       |       |-----> testglext
+ |       |       |       |-----> testshaders
+ |       |       |       |-----> vectorizer
+ |       |       |
+ |       |       |-----> others
+ |       |               |-----> lowlevel_stuff
+ |       |
+ |       |-----> plugins
+ |               |-----> fonts
+ |               |-----> jpeg
+ |               |-----> png
  *
  
 Third parts libraries
@@ -69,8 +102,8 @@ FreeType2 v2.1.10 (www.freetype.org)
 
 LibJpeg v6b (ftp.uu.net/graphics/jpeg/)
 
-LibPng v1.2.7 (www.libpng.org/pub/png/)
+LibPng v1.2.8 (www.libpng.org/pub/png/)
 
-ZLib v1.2.2 (http://www.gzip.org/zlib/)
+ZLib v1.2.3 (http://www.gzip.org/zlib/)
 
 Glew v1.3.3 (glew.sourceforge.net)

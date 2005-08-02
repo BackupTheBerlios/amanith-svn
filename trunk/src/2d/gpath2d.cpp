@@ -71,7 +71,7 @@ void GPath2D::Clear() {
 // delete and remove curve segments
 void GPath2D::DeleteSegments() {
 
-	GUInt32 i, j = gSegments.size();
+	GUInt32 i, j = (GUInt32)gSegments.size();
 	GCurve2D *seg;
 
 	for (i = 0; i < j; i++) {
@@ -138,7 +138,7 @@ GError GPath2D::BaseClone(const GElement& Source) {
 
 	// copy segments
 	DeleteSegments();
-	err = CloneSegments(k.gSegments, 0, k.gSegments.size() - 1);
+	err = CloneSegments(k.gSegments, 0, (GInt32)k.gSegments.size() - 1);
 	if (err == G_NO_ERROR) {
 		// copy "closed" flag
 		gClosed = k.gClosed;
@@ -175,7 +175,7 @@ GBool GPath2D::PushFrontCurve(GCurve2D *Curve) {
 GError GPath2D::SetDomain(const GReal NewMinValue, const GReal NewMaxValue) {
 
 	GInterval<GReal> newInterval(NewMinValue, NewMaxValue);
-	GInt32 i, j = gSegments.size();
+	GInt32 i, j = (GInt32)gSegments.size();
 	GReal lSeg, start, end, ratio;
 	GCurve2D *curve;
 
@@ -204,7 +204,7 @@ GError GPath2D::SetDomain(const GReal NewMinValue, const GReal NewMaxValue) {
 // given a global parameter value, extract its relative segment index
 GError GPath2D::ParamToSegmentIndex(const GReal Param, GUInt32& SegmentIndex, GBool& PointShared) const {
 
-	GUInt32 i, j = gSegments.size();
+	GUInt32 i, j = (GUInt32)gSegments.size();
 	GReal d;
 
 	if (j == 0)
@@ -242,7 +242,7 @@ GError GPath2D::ParamToSegmentIndex(const GReal Param, GUInt32& SegmentIndex, GB
 // return the number of "global" points
 GUInt32 GPath2D::PointsCount() const {
 
-	GUInt32 c = 0, i, j = gSegments.size();
+	GUInt32 c = 0, i, j = (GUInt32)gSegments.size();
 
 	for (i = 0; i < j; i++)
 		c += (gSegments[i]->PointsCount() - 1);
@@ -260,7 +260,7 @@ GUInt32 GPath2D::PointsCount() const {
 GUInt32 GPath2D::PointsCountAndLocate(const GUInt32 GlobalIndex,
 									  GUInt32& SegmentIndex, GUInt32& LocalIndex, GBool& Shared) const {
 
-	GUInt32 c, i, j = gSegments.size(), ptsCount;
+	GUInt32 c, i, j = (GUInt32)gSegments.size(), ptsCount;
 	GUInt32 index;
 
 	ptsCount = PointsCount();
@@ -408,7 +408,7 @@ GError GPath2D::AddPoint(const GReal Param) {
 
 GError GPath2D::SegmentType(const GUInt32 Index, GClassID& Type) const {
 
-	GUInt32 i = gSegments.size();
+	GUInt32 i = (GUInt32)gSegments.size();
 
 	if (i == 0)
 		return G_INVALID_OPERATION;
@@ -589,7 +589,7 @@ GError GPath2D::AppendPath(const GPath2D& Path) {
 // translate
 void GPath2D::Translate(const GVector2& Translation) {
 
-	GUInt32 i, j = gSegments.size();
+	GUInt32 i, j = (GUInt32)gSegments.size();
 
 	for (i = 0; i < j; i++)
 		gSegments[i]->Translate(Translation);
@@ -598,7 +598,7 @@ void GPath2D::Translate(const GVector2& Translation) {
 // rotate
 void GPath2D::Rotate(const GPoint2& Pivot, const GReal RadAmount) {
 
-	GUInt32 i, j = gSegments.size();
+	GUInt32 i, j = (GUInt32)gSegments.size();
 
 	for (i = 0; i < j; i++)
 		gSegments[i]->Rotate(Pivot, RadAmount);
@@ -607,7 +607,7 @@ void GPath2D::Rotate(const GPoint2& Pivot, const GReal RadAmount) {
 // scale
 void GPath2D::Scale(const GPoint2& Pivot, const GReal XScaleAmount, const GReal YScaleAmount) {
 
-	GUInt32 i, j = gSegments.size();
+	GUInt32 i, j = (GUInt32)gSegments.size();
 
 	for (i = 0; i < j; i++)
 		gSegments[i]->Scale(Pivot, XScaleAmount, YScaleAmount);
@@ -616,7 +616,7 @@ void GPath2D::Scale(const GPoint2& Pivot, const GReal XScaleAmount, const GReal 
 // transform
 void GPath2D::XForm(const GMatrix23& Matrix) {
 
-	GUInt32 i, j = gSegments.size();
+	GUInt32 i, j = (GUInt32)gSegments.size();
 
 	for (i = 0; i < j; i++)
 		gSegments[i]->XForm(Matrix);
@@ -625,7 +625,7 @@ void GPath2D::XForm(const GMatrix23& Matrix) {
 // transform
 void GPath2D::XForm(const GMatrix33& Matrix, const GBool DoProjection) {
 
-	GUInt32 i, j = gSegments.size();
+	GUInt32 i, j = (GUInt32)gSegments.size();
 
 	for (i = 0; i < j; i++)
 		gSegments[i]->XForm(Matrix, DoProjection);
@@ -633,7 +633,7 @@ void GPath2D::XForm(const GMatrix33& Matrix, const GBool DoProjection) {
 
 GError GPath2D::Segment(const GUInt32 Index, GCurve2D& Curve) const {
 
-	GUInt32 i = gSegments.size();
+	GUInt32 i = (GUInt32)gSegments.size();
 
 	if (i == 0)
 		return G_INVALID_OPERATION;
@@ -644,7 +644,7 @@ GError GPath2D::Segment(const GUInt32 Index, GCurve2D& Curve) const {
 GError GPath2D::SetSegment(const GUInt32 Index, GCurve2D& Curve) {
 
 	#define PRECISION 4 * G_EPSILON * G_EPSILON
-	GUInt32 i = gSegments.size();
+	GUInt32 i = (GUInt32)gSegments.size();
 	GCurve2D *newCurve, *existingCurve;
 	GError err;
 
@@ -938,7 +938,7 @@ GError GPath2D::Cut(const GReal StartParam, const GReal EndParam, GPath2D *OutPa
 			// clone me (only curve segments and interval flags, we doesn't care about sub-paths)
 			tmpPath->gClosed = G_TRUE;
 			tmpPath->gDomain = gDomain;
-			err = tmpPath->CloneSegments(gSegments, 0, gSegments.size() - 1);
+			err = tmpPath->CloneSegments(gSegments, 0, (GInt32)gSegments.size() - 1);
 			if (err == G_NO_ERROR) {
 				// just open the tmpPath
 				err = tmpPath->Cut(StartParam, (GPath2D *)NULL, (GPath2D *)NULL);
@@ -1044,7 +1044,7 @@ GError GPath2D::CutByLength(const GReal PathPos0, const GReal PathPos1, GPath2D 
 GBool GPath2D::IntersectRay(const GRay2& NormalizedRay, GDynArray<GVector2>& Intersections,
 							const GReal Precision, const GInt32 MaxIterations) const {
 
-	GUInt32 i, j = gSegments.size(), k, w;
+	GUInt32 i, j = (GUInt32)gSegments.size(), k, w;
 	GReal lastIntersection, tolerance;
 	GBool intFound = G_FALSE;
 	GDynArray<GVector2> tmpSolutions;
@@ -1056,7 +1056,7 @@ GBool GPath2D::IntersectRay(const GRay2& NormalizedRay, GDynArray<GVector2>& Int
 	for (i = 0; i < j; i++) {
 		intFound |= gSegments[i]->IntersectRay(NormalizedRay, tmpSolutions, tolerance, MaxIterations);
 		// check to not push identical solutions
-		w = tmpSolutions.size();
+		w = (GUInt32)tmpSolutions.size();
 		for (; k < w; k++) {
 			if (GMath::Abs(lastIntersection - tmpSolutions[k][0]) > tolerance) {
 				Intersections.push_back(tmpSolutions[k]);
@@ -1304,7 +1304,7 @@ void GPath2D::ClosePath(const GBool MoveStartPoint) {
 // set path start point
 void GPath2D::SetStartPoint(const GPoint2& NewValue) {
 
-	GUInt32 i = gSegments.size();
+	GUInt32 i = (GUInt32)gSegments.size();
 
 	if (i == 0)
 		return;
@@ -1317,7 +1317,7 @@ void GPath2D::SetStartPoint(const GPoint2& NewValue) {
 // set path end point
 void GPath2D::SetEndPoint(const GPoint2& NewValue) {
 
-	GUInt32 i = gSegments.size();
+	GUInt32 i = (GUInt32)gSegments.size();
 
 	if (i == 0)
 		return;
@@ -1348,7 +1348,7 @@ GReal GPath2D::CalcLength(const GReal StartParam, const GReal EndParam, const GR
 	if (err != G_NO_ERROR)
 		return 0;
 	// loops over interested segments
-	j = gSegments.size();
+	j = (GUInt32)gSegments.size();
 	len = 0;
 	while (i < j) {
 		curve = gSegments[i];
@@ -1411,7 +1411,7 @@ GPoint2 GPath2D::StartPoint() const {
 // get curve end point
 GPoint2 GPath2D::EndPoint() const {
 
-	GUInt32 i = gSegments.size();
+	GUInt32 i = (GUInt32)gSegments.size();
 	if (i == 0)
 		return GPoint2(G_MIN_REAL, G_MIN_REAL);
 	else

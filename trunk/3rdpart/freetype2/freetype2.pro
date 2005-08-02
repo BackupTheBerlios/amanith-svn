@@ -27,9 +27,6 @@ unix: DEFINES += DARWIN_NO_CARBON
 
 # take into account compilation mode (debug or release)
 DEFINES -= FT_DEBUG_LEVEL_ERROR FT_DEBUG_LEVEL_TRACE
-contains(BUILD_MODE, debug) {
-#    DEFINES += FT_DEBUG_LEVEL_ERROR FT_DEBUG_LEVEL_TRACE
-}
 
 #select every used drivers
 contains(FONTS_PLUGIN_OPTIONS, TRUETYPE) {

@@ -48,7 +48,7 @@ namespace Amanith {
 
 		G_ASSERT((ROWS > TRANS_SIZE - 1) && (COLS > TRANS_SIZE));
 		Identity(Result);
-		for (GUInt32 i = 0; i < TRANS_SIZE; i++)
+		for (GUInt32 i = 0; i < TRANS_SIZE; ++i)
 			Result[i][COLS - 1] = Translation[i];
 	}
 	
@@ -256,7 +256,7 @@ namespace Amanith {
 		GUInt32 i, j = GMath::Min(ROWS, COLS, SIZE);
 
 		Identity(Result);
-		for (i = 0; i < j; i++)
+		for (i = 0; i < j; ++i)
 			Result[i][i] = ScaleFactors[i];
 	}
 
@@ -267,7 +267,7 @@ namespace Amanith {
 		GUInt32 i, j = GMath::Min(ROWS, COLS);
 
 		Identity(Result);
-		for (i = 0; i < j; i++)
+		for (i = 0; i < j; ++i)
 			Result[i][i] = ScaleFactor;
 	}
 

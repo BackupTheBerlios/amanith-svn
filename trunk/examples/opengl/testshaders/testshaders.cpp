@@ -1,3 +1,27 @@
+/****************************************************************************
+**
+** Copyright (C) 2004-2005 Mazatech Inc. All rights reserved.
+**
+** This file is part of Amanith Framework.
+**
+** This file may be distributed and/or modified under the terms of the Q Public License
+** as defined by Mazatech Inc. of Italy and appearing in the file
+** LICENSE.QPL included in the packaging of this file.
+**
+** Licensees holding valid Amanith Professional Edition license may use this file in
+** accordance with the Amanith Commercial License Agreement provided with the Software.
+**
+** This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+** WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+**
+** See http://www.mazatech.com or email sales@mazatech.com for
+** information about Amanith Commercial License Agreements.
+** See http://www.amanith.org/ for opensource version, public forums and news.
+**
+** Contact info@mazatech.com if any conditions of this licensing are
+** not clear to you.
+**********************************************************************/
+
 #include "testshaders.h"
 #include <amanith/2d/gpixelmap.h>
 #include <qapplication.h>
@@ -310,13 +334,10 @@ void QGLWidgetTest::createCubeTex() {
 		glTexParameteri(GL_TEXTURE_CUBE_MAP_ARB, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_CUBE_MAP_ARB, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_CUBE_MAP_ARB, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-
 		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X_ARB, 0, 4, img5->Width(), img5->Height(), 0, GL_BGRA, GL_UNSIGNED_BYTE, img5->Pixels());
 		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X_ARB, 0, 4, img6->Width(), img6->Height(), 0, GL_BGRA, GL_UNSIGNED_BYTE, img6->Pixels());
-
 		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y_ARB, 0, 4, img3->Width(), img3->Height(), 0, GL_BGRA, GL_UNSIGNED_BYTE, img3->Pixels());
 		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y_ARB, 0, 4, img4->Width(), img4->Height(), 0, GL_BGRA, GL_UNSIGNED_BYTE, img4->Pixels());
-
 		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z_ARB, 0, 4, img1->Width(), img1->Height(), 0, GL_BGRA, GL_UNSIGNED_BYTE, img1->Pixels());
 		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z_ARB, 0, 4, img2->Width(), img2->Height(), 0, GL_BGRA, GL_UNSIGNED_BYTE, img2->Pixels());
 	}
@@ -334,95 +355,64 @@ void QGLWidgetTest::createCubeTex() {
 //----- loads specified shaders ---------------
 GLhandleARB QGLWidgetTest::useShader(const GChar8 *vShader, const GChar8 *fShader) {
 
-	QStringList err;
 	// Reading the shaders from files
+	GDynArray<GChar8> vShaderData;
+	GDynArray<GChar8> fShaderData;
 
-	QString vShaderData;
-	QString fShaderData;
-
-    QFile file(vShader);
-	// QT4 support
-#ifdef USE_QT4
-	if (file.open(QIODevice::ReadOnly)) {
-#else
-    if (file.open(IO_ReadOnly)) {
-#endif
-        QTextStream stream(&file);
-		vShaderData = stream.read();
-        file.close();
-		vShaderData += '\0';
-	}
-	else {
-		G_DEBUG("Impossibile leggere il file: " + GString(vShader));
-		return 0;
-	}
-
-	QFile f(fShader);
-#ifdef USE_QT4
-	if (f.open(QIODevice::ReadOnly)) {
-#else
-    if (f.open(IO_ReadOnly)) {
-#endif
-        QTextStream stream( &f );
-		fShaderData= stream.read();
-        f.close();
-		fShaderData += '\0';
-	}
-	else {
-		G_DEBUG("Impossibile leggere il file: " + GString(vShader));
-		return 0;
-	}
+	FileUtils::ReadFile(vShader, vShaderData);
+	FileUtils::ReadFile(fShader, fShaderData);
 
 	GLhandleARB brickVS, brickFS, brickProg;   // handles to objects
-    GLint       vertCompiled, fragCompiled;    // status values
-    GLint       linked;
+	GLint       vertCompiled, fragCompiled;    // status values
+	GLint       linked;
 
-    // Create a vertex shader object and a fragment shader object
-    brickVS = glCreateShaderObjectARB(GL_VERTEX_SHADER_ARB);
-    brickFS = glCreateShaderObjectARB(GL_FRAGMENT_SHADER_ARB);
+	// Create a vertex shader object and a fragment shader object
+	brickVS = glCreateShaderObjectARB(GL_VERTEX_SHADER_ARB);
+	brickFS = glCreateShaderObjectARB(GL_FRAGMENT_SHADER_ARB);
 
-    // Load source code strings into shaders
+	// Load source code strings into shaders
 	char *vS, *fS;
-	vS = new char[vShaderData.length()];
-	fS = new char[fShaderData.length()];
-	strcpy(vS,vShaderData.ascii());
-	strcpy(fS,fShaderData.ascii());
+	vS = new char[vShaderData.size() + 1];
+	fS = new char[fShaderData.size() + 1];
 
+	std::memcpy(vS, &vShaderData[0], vShaderData.size());
+	std::memcpy(fS, &fShaderData[0], fShaderData.size());
+	vS[vShaderData.size()] = 0;
+	fS[fShaderData.size()] = 0;
 	glShaderSourceARB(brickVS, 1, (const GLcharARB**)(&(vS)), NULL);
-    glShaderSourceARB(brickFS, 1, (const GLcharARB**)(&(fS)), NULL);
+	glShaderSourceARB(brickFS, 1, (const GLcharARB**)(&(fS)), NULL);
 
-    // Compile the brick vertex shader, and print out
-    // the compiler log file.
-
-    glCompileShaderARB(brickVS);
+	// Compile the brick vertex shader, and print out
+	// the compiler log file.
+	glCompileShaderARB(brickVS);
 	if (PrintOpenGLError())  // Check for OpenGL errors
-		qDebug("Error when compile vertex shader");
-    glGetObjectParameterivARB(brickVS, GL_OBJECT_COMPILE_STATUS_ARB, &vertCompiled);
+		G_DEBUG("Error when compile vertex shader");
+	glGetObjectParameterivARB(brickVS, GL_OBJECT_COMPILE_STATUS_ARB, &vertCompiled);
 	gExtManager->PrintInfoLog(brickVS); // Check for errors
 
-    // Compile the brick vertex shader, and print out
-    // the compiler log file.
-    glCompileShaderARB(brickFS);
+	// Compile the brick vertex shader, and print out
+	// the compiler log file.
+	glCompileShaderARB(brickFS);
 	if (PrintOpenGLError())  // Check for OpenGL errors
-		qDebug("Error when compile fragment shader");
-    glGetObjectParameterivARB(brickFS, GL_OBJECT_COMPILE_STATUS_ARB, &fragCompiled);
+		G_DEBUG("Error when compile fragment shader");
+	glGetObjectParameterivARB(brickFS, GL_OBJECT_COMPILE_STATUS_ARB, &fragCompiled);
 	gExtManager->PrintInfoLog(brickFS); // Check for errors
 	delete [] vS;
 	delete [] fS;
-    if (!vertCompiled || !fragCompiled)
-        return 0;
-    // Create a program object and attach the two compiled shaders
-    brickProg = glCreateProgramObjectARB();
-    glAttachObjectARB(brickProg, brickVS);
-    glAttachObjectARB(brickProg, brickFS);
-    // Link the program object and print out the info log
-    glLinkProgramARB(brickProg);
+	if (!vertCompiled || !fragCompiled)
+		return 0;
+	// Create a program object and attach the two compiled shaders
+	brickProg = glCreateProgramObjectARB();
+	glAttachObjectARB(brickProg, brickVS);
+	glAttachObjectARB(brickProg, brickFS);
+	// Link the program object and print out the info log
+	glLinkProgramARB(brickProg);
 	if (PrintOpenGLError())  // Check for OpenGL errors
-		qDebug("Error when link shader program");
-    glGetObjectParameterivARB(brickProg, GL_OBJECT_LINK_STATUS_ARB, &linked);
+		G_DEBUG("Error when link shader program");
+	glGetObjectParameterivARB(brickProg, GL_OBJECT_LINK_STATUS_ARB, &linked);
 	gExtManager->PrintInfoLog(brickProg); // Check for errors
-    if (!linked)
-        return 0;
+	if (!linked)
+		return 0;
 	return brickProg;
 }
 //------------------------------------------------------------

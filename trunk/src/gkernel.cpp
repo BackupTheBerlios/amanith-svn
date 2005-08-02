@@ -172,7 +172,7 @@ void GKernel::RegisterProxies() {
 	#endif
 
 	RegisterElementProxy(G_FONT2D_PROXY);
-	RegisterElementProxy(G_MESH2D_PROXY);
+//	RegisterElementProxy(G_MESH2D_PROXY);
 	RegisterElementProxy(G_PATH2D_PROXY);
 	RegisterElementProxy(G_CURVE2D_PROXY);
 	RegisterElementProxy(G_BEZIERCURVE2D_PROXY);
@@ -193,16 +193,15 @@ GKernel::~GKernel() {
 	GElement *elem;
 
 	G_DEBUG("GKernel destructor: destroying undelete instances");
-	// check if some instances are already alive
+	// check if some instances are already alive. NB: destroying must proceed in sequential order!
 	while (gElementsInstances.size() > 0) {
-		elem = gElementsInstances.back();
-		gElementsInstances.pop_back();
+		elem = gElementsInstances.front();
 		if (elem)
 			delete elem;
 	}
 
 	// unload all external plugins
-	j = gRegisteredProxies.size();
+	j = (GInt32)gRegisteredProxies.size();
 	G_DEBUG("Gkernel destructor, begin to unload " + StrUtils::ToString(j) + " proxies");
 
 	for (i = 0; i < j; i++) {
@@ -366,7 +365,7 @@ GError GKernel::ImpExpFeatures(GDynArray<GImpExpFeature>& Features) const {
 	Features.clear();
 	// get all importer and exporter plugins
 	ChildClassProxies(G_IMPEXP_CLASSID, impexpProxies);
-	j = impexpProxies.size();
+	j = (GUInt32)impexpProxies.size();
 	for (i = 0; i < j; i++) {
 		plug = (GImpExp *)impexpProxies[i].Proxy()->CreateNew(this);
 		// abort error: i have a proxy but i can't create it!
@@ -395,7 +394,7 @@ GError GKernel::ImpExpFeatures(const GClassID& ID, GDynArray<GImpExpFeature>& Fe
 	Features.clear();
 	// get all importers and exporters plugin
 	ChildClassProxies(G_IMPEXP_CLASSID, impexpProxies);
-	j = impexpProxies.size();
+	j = (GUInt32)impexpProxies.size();
 	for (i = 0; i < j; i++) {
 		plug = (GImpExp *)impexpProxies[i].Proxy()->CreateNew(this);
 		// abort error: i have a proxy but i can't create it!
@@ -403,7 +402,7 @@ GError GKernel::ImpExpFeatures(const GClassID& ID, GDynArray<GImpExpFeature>& Fe
 			return G_UNKNOWN_ERROR;
 		// append features
 		const GDynArray<GImpExpFeature>& f = plug->Features();
-		w = f.size();
+		w = (GUInt32)f.size();
 		for (k = 0; k < w; k++) {
 			if (f[k].ClassID() == ID)
 				Features.push_back(f[k]);
@@ -441,7 +440,7 @@ GError GKernel::Load(const GChar8 *FileName, GElement& Element, const GChar8 *Op
 	// get all importers and exporters plugin
 	ChildClassProxies(G_IMPEXP_CLASSID, impexpProxies);
 	// first step: try with format
-	j = impexpProxies.size();
+	j = (GUInt32)impexpProxies.size();
 	for (i = 0; i < j; i++) {
 		// create a plugin
 		plug = (GImpExp *)impexpProxies[i].Proxy()->CreateNew(this);
@@ -491,7 +490,7 @@ GError GKernel::Save(const GChar8 *FileName, const GElement& Element, const GCha
 	// get all importers and exporters plugin
 	ChildClassProxies(G_IMPEXP_CLASSID, impexpProxies);
 	// first step: try with format
-	j = impexpProxies.size();
+	j = (GUInt32)impexpProxies.size();
 	for (i = 0; i < j; i++) {
 		// create a plugin
 		plug = (GImpExp *)impexpProxies[i].Proxy()->CreateNew(this);
@@ -644,31 +643,43 @@ GElement* GKernel::CreateNew(const GString& ClassName) {
 		return NULL;
 }
 
-GError GKernel::AddElementReference(const GElement *DeleteElement) {
+GError GKernel::AddElementReference(const GElement *Element) {
 
-	if (!DeleteElement)
+	if (!Element)
 		return G_INVALID_PARAMETER;
 
 	GList<GElement *>::iterator it;
-
+/*
 	it = std::lower_bound(gElementsInstances.begin(), gElementsInstances.end(), DeleteElement, ElementsPtrCmp);
 	if (it == gElementsInstances.end() || (*it) != DeleteElement)
 		gElementsInstances.insert(it, (GElement *)DeleteElement);
+*/
+	for (it = gElementsInstances.begin(); it != gElementsInstances.end(); ++it)
+		if ((*it) == Element)
+			return G_NO_ERROR;
+
+	gElementsInstances.push_back((GElement *)Element);
 	return G_NO_ERROR;
 }
 
 // remove an element reference from the proxy that created it
-GError GKernel::RemoveElementReference(const GElement *DeleteElement) {
+GError GKernel::RemoveElementReference(const GElement *Element) {
 
-	if (!DeleteElement)
+	if (!Element)
 		return G_INVALID_PARAMETER;
 
 	GList<GElement *>::iterator it;
-
+/*
 	it = std::lower_bound(gElementsInstances.begin(), gElementsInstances.end(), DeleteElement, ElementsPtrCmp);
 	if (it != gElementsInstances.end() && (*it) == DeleteElement)
 		gElementsInstances.erase(it);
-
+*/
+	for (it = gElementsInstances.begin(); it != gElementsInstances.end(); ++it) {
+		if ((*it) == Element) {
+			gElementsInstances.erase(it);
+			return G_NO_ERROR;
+		}
+	}
 	return G_NO_ERROR;
 }
 

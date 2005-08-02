@@ -1,3 +1,27 @@
+/****************************************************************************
+**
+** Copyright (C) 2004-2005 Mazatech Inc. All rights reserved.
+**
+** This file is part of Amanith Framework.
+**
+** This file may be distributed and/or modified under the terms of the Q Public License
+** as defined by Mazatech Inc. of Italy and appearing in the file
+** LICENSE.QPL included in the packaging of this file.
+**
+** Licensees holding valid Amanith Professional Edition license may use this file in
+** accordance with the Amanith Commercial License Agreement provided with the Software.
+**
+** This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+** WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+**
+** See http://www.mazatech.com or email sales@mazatech.com for
+** information about Amanith Commercial License Agreements.
+** See http://www.amanith.org/ for opensource version, public forums and news.
+**
+** Contact info@mazatech.com if any conditions of this licensing are
+** not clear to you.
+**********************************************************************/
+
 #include "drawmesh.h"
 #include <amanith/geometry/gxform.h>
 #include <amanith/geometry/garea.h>
@@ -10,10 +34,7 @@
 	#include <QKeyEvent>
 #endif
 
-#define PrintOpenGLError() gExtManager->PrintOglError(__FILE__, __LINE__)
-
 static int timer_interval = 0;			// timer interval (millisec)
-
 
 void QGLWidgetTest::BuildNewMesh() {
 
@@ -31,8 +52,7 @@ void QGLWidgetTest::BuildNewMesh() {
 // constructor
 QGLWidgetTest::QGLWidgetTest(QWidget * parent) : QGLWidget(parent) {
 
-	gKernel = new GKernel();
-	gMesh = (GMesh2D *)gKernel->CreateNew(G_MESH2D_CLASSID);
+	gMesh = new GMesh2D<GReal>();
 
 	GMath::SeedRandom();
 
@@ -43,26 +63,17 @@ QGLWidgetTest::QGLWidgetTest(QWidget * parent) : QGLWidget(parent) {
 	BuildNewMesh();
 
 	// Depth Into The Screen
-	z = -25.0f;
+	gZ = -25.0f;
 	gX = -0.0f;
 	gY = -0.0f;
-
-	// build path for data (textures)
-	gDataPath = SysUtils::AmanithPath();
-	if (gDataPath.length() > 0)
-		gDataPath += "data/";
 }
 //------------------------------------------------------------
 
 // destructor
 QGLWidgetTest::~QGLWidgetTest() {
 
-	if (gExtManager)
-		delete gExtManager;
 	if (gMesh)
 		delete gMesh;
-	if (gKernel)
-		delete gKernel;
 }
 
 //------------------------------------------------------------
@@ -77,9 +88,6 @@ void QGLWidgetTest::timerEvent(QTimerEvent *e) {
 //----- initializeGL -----------------------------------------
 void QGLWidgetTest::initializeGL() {
 
-	GString fName;
-	// create extensions manager
-	gExtManager = new GOpenglExt();
 	glShadeModel(GL_SMOOTH);							// Enable Smooth Shading
 	glClearColor(0.0f, 0.0f, 0.0f, 0.5f);				// Black Background
 	glClearDepth(1.0f);									// Depth Buffer Setup
@@ -88,13 +96,12 @@ void QGLWidgetTest::initializeGL() {
 	glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);				// Set Line Antialiasing
 	glDisable(GL_LIGHTING);
 	glDisable(GL_CULL_FACE);
-
 	setDefaultGlobalStates();
 	startTimer(timer_interval);
 }
 //------------------------------------------------------------
 
-void QGLWidgetTest::DrawMeshVertex(GMesh2D* Mesh) {
+void QGLWidgetTest::DrawMeshVertex(GMesh2D<GReal>* Mesh) {
 
 	GUInt32 i, j = Mesh->VerticesCount();
 	GPoint2 p;
@@ -109,13 +116,13 @@ void QGLWidgetTest::DrawMeshVertex(GMesh2D* Mesh) {
 	glEnd();
 }
 
-void QGLWidgetTest::DrawMeshFace(GMeshFace2D *Face) {
+void QGLWidgetTest::DrawMeshFace(GMeshFace2D<GReal> *Face) {
 
 	if (!Face)
 		return;
 
-	GMeshFaceEdgeIterator2D it(Face);
-	GMeshEdge2D *e = it.Next();
+	GMeshFaceEdgeIterator2D<GReal> it(Face);
+	GMeshEdge2D<GReal> *e = it.Next();
 	GPoint2 o, d;
 
 	while (e) {
@@ -131,9 +138,9 @@ void QGLWidgetTest::DrawMeshFace(GMeshFace2D *Face) {
 	}
 }
 
-void QGLWidgetTest::DrawMeshFaces(GMesh2D* Mesh) {
+void QGLWidgetTest::DrawMeshFaces(GMesh2D<GReal>* Mesh) {
 
-	GMeshFace2D *f;
+	GMeshFace2D<GReal> *f;
 	GUInt32 i, j = Mesh->FacesCount();
 	GPoint2 p;
 
@@ -148,7 +155,7 @@ void QGLWidgetTest::DrawMeshFaces(GMesh2D* Mesh) {
 	glEnd();
 }
 
-void QGLWidgetTest::DrawMesh(GMesh2D* Mesh) {
+void QGLWidgetTest::DrawMesh(GMesh2D<GReal>* Mesh) {
 
 	if (!Mesh)
 		return;
@@ -167,7 +174,6 @@ void QGLWidgetTest::paintGL() {
 	DrawMesh(gMesh);
 	glFlush();
 }
-//------------------------------------------------------------
 
 //----- resizeGL ---------------------------------------------
 void QGLWidgetTest::resizeGL(int width, int height) {
@@ -188,10 +194,10 @@ void QGLWidgetTest::keyPressEvent(QKeyEvent *e) {
 
 	switch(e->key()) {
 		case Qt::Key_A:
-			z -= 0.5f;
+			gZ -= 0.5f;
 			break;
 		case Qt::Key_Z:
-			z += 0.5f;
+			gZ += 0.5f;
 			break;
 		case Qt::Key_Up:
 			gY += 0.5f;
@@ -218,9 +224,8 @@ void QGLWidgetTest::setLightAndTransform() {
 
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
-	glTranslatef(gX, gY, z);
+	glTranslatef(gX, gY, gZ);
 }
-//------------------------------------------------------------
 
 //------------------------------------------------------------
 void QGLWidgetTest::setDefaultGlobalStates() {
@@ -229,4 +234,3 @@ void QGLWidgetTest::setDefaultGlobalStates() {
 	glDisable(GL_BLEND);
 	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 }
-//------------------------------------------------------------

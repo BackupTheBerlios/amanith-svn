@@ -138,7 +138,7 @@ namespace Amanith {
 		//! Parse semicolon separated options
 		GError ParseOptions(const GChar8 *Options, GDynArray<GImpExpOption>& ParsedOptions) const;
 		/*!
-			Read an element from external file. Must be implemented by plugins.
+			Read an element from external file. <b>Must be implemented by plugins</b>.
 
 			\param FullFileName is a string containing the full file name (path + name + extension) of the file
 			we wanna read from. It is ensured that is not empty.
@@ -151,7 +151,7 @@ namespace Amanith {
 		virtual GError DoRead(const GChar8 *FullFileName, GElement& Element,
 							  const GDynArray<GImpExpOption>& ParsedOptions) = 0;
 		/*!
-			Write an element to external file. Must be implemented by plugins.
+			Write an element to external file. <b>Must be implemented by plugins</b>.
 
 			\param FullFileName is a string containing the full file name (path + name + extension) of the file
 			we wanna write to. It is ensured that is not empty.

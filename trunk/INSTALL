@@ -1,4 +1,5 @@
 AMANITH FRAMEWORK INSTALLATION GUIDE
+************************************
 
 _______________________________________________________________________________________________________________________________________________
 :: UNIX
@@ -41,6 +42,25 @@ ________________________________________________________________________________
 3.Now you are ready to compile the entire framework.
   Note that QMAKE is needed to build AMANITH CORE and QT is needed to build all EXAMPLES and TOOLS.
   First check the file $AMANITHDIR/config/settings.conf, this file contains the settings that you can change to match your preferences.
+
+    3a.To specify Amanith build mode, use this line (dynamic/static and release/debug options are available):
+
+        ...
+        BUILD_MODE = DYNAMIC RELEASE
+        ...
+
+    3b.To specify Amanith real type (float/double), use this line:
+
+        ...
+        REAL_TYPE = FLOAT
+        ...
+
+    3c.To build Amanith using QT4 libraries, uncomment the line: 
+
+        ...
+        # DEFINES += USE_QT4
+        ...
+
   When done follow those steps :
   
     CD $AMANITHDIR
@@ -106,6 +126,25 @@ ________________________________________________________________________________
 4.Now you are ready to compile the entire framework.
   Note that QMAKE is needed to build AMANITH CORE and QT is needed to build all EXAMPLES and TOOLS.
   First check the file $AMANITHDIR/config/settings.conf, this file contains the settings that you can change to match your preferences.
+
+    4a.To specify Amanith build mode, use this line (dynamic/static and release/debug options are available):
+
+        ...
+        BUILD_MODE = DYNAMIC RELEASE
+        ...
+
+    4b.To specify Amanith real type (float/double), use this line:
+
+        ...
+        REAL_TYPE = FLOAT
+        ...
+
+    4c.To build Amanith using QT4 libraries, uncomment the line: 
+
+        ...
+        # DEFINES += USE_QT4
+        ...
+  
   When done follow those steps :
   
     CD $AMANITHDIR
@@ -149,11 +188,37 @@ ________________________________________________________________________________
     "AMANITHDIR"="C:\Amanith"
     ...
 
-3.Now you are ready to compile the entire framework.
-  Note that QMAKE is needed to build AMANITH CORE and QT is needed to build all EXAMPLES and TOOLS.
+3.Now you are ready to compile the entire framework. If you want compile Amanith without QT libraries, you can use the visual studio solution
+  %AMANITHDIR%/amanith.sln and ingnoring the rest of this document, but in this case all options are fixed (dynamic build and double real type) and
+  some examples/tools are unavailable; elsewhere note that QMAKE is needed to build AMANITH CORE and QT is needed to build all EXAMPLES and TOOLS.
   First check the file %AMANITHDIR%/config/settings.conf, this file contains the settings that you can change to match your preferences.
-  When done follow those steps :
+
+    3a.To specify Amanith build mode, use this line (dynamic/static and release/debug options are available):
+
+        ...
+        BUILD_MODE = DYNAMIC RELEASE
+        ...
+
+    3b.To specify Amanith real type (float/double), use this line:
+
+        ...
+        REAL_TYPE = FLOAT
+        ...
+
+    3c.To build Amanith using QT4 libraries, uncomment the line: 
+
+        ...
+        # DEFINES += USE_QT4
+        ...
   
+    4d.To build Amanith using MinGW compiler (not officially supported), uncomment the line:
+
+        ...
+        # DEFINES += WIN32_MINGW
+        ...
+
+  When done follow those steps :
+
     CD %AMANITHDIR%
     QMAKE amanith.pro
     NMAKE

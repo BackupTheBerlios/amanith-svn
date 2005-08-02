@@ -243,7 +243,7 @@ GBool GImpExpFeature::FileExtensionSupported(const GChar8 *FileExt, const GClass
 GUInt32 GImpExpFeature::FileExtensionsCount() const {
 
 	GStringList sList = StrUtils::Split(gExtensions, ";", G_FALSE);
-	return sList.size();
+	return (GUInt32)sList.size();
 }
 
 /*!

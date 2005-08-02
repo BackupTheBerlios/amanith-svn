@@ -1812,7 +1812,7 @@ namespace Amanith {
 		internalTangents = 0;
 		radiusSqr = GMath::Sqr(sph.Radius());
 
-		for (GUInt32 i = 0; i < SIZE; i++) {
+		for (GUInt32 i = 0; i < SIZE; ++i) {
 			a = GMath::Sqr(sph.Center()[i] - aab.Min()[i]);
 			b = GMath::Sqr(sph.Center()[i] - aab.Max()[i]);
 			// find min and max distance
@@ -1925,7 +1925,7 @@ namespace Amanith {
 		radiusSqr = GMath::Sqr(sph.Radius());
 
 		d = 0;
-		for (GInt32 i = 0; i < SIZE; i++) {
+		for (GInt32 i = 0; i < SIZE; ++i) {
 			prj = Dot(deltaCenter, oob.Axis(i));
 
 			a = GMath::Sqr(prj - (-oob.HalfDimension(i)));
@@ -2027,7 +2027,7 @@ namespace Amanith {
 		GUInt32 tangentsCount;
 
 		// first check for separation
-		for (GUInt32 i = 0; i < SIZE; i++) {
+		for (GUInt32 i = 0; i < SIZE; ++i) {
 			dist[i] = GMath::Abs(deltaCenter[i]) - aab1.HalfDimension(i) - aab2.HalfDimension(i);
 			if (dist[i] > 2 * G_EPSILON) {
 				Flags = NO_SOLUTIONS;
@@ -2036,7 +2036,7 @@ namespace Amanith {
 		}
 		// count external tangent faces
 		tangentsCount = 0;
-		for (GUInt32 i = 0; i < SIZE; i++)
+		for (GUInt32 i = 0; i < SIZE; ++i)
 			if (GMath::Abs(dist[i]) <= G_EPSILON)
 				tangentsCount++;
 		// corner touch
@@ -2053,7 +2053,7 @@ namespace Amanith {
 
 		// now calculate signed distances between extremities
 		s = 0;
-		for (GUInt32 i = 0; i < SIZE; i++) {
+		for (GUInt32 i = 0; i < SIZE; ++i) {
 			signedDist1[i] = aab1.Min()[i] - aab2.Min()[i];
 			signedDist2[i] = aab1.Max()[i] - aab2.Max()[i];
 			s += GMath::Abs(signedDist1[i]) + GMath::Abs(signedDist2[i]);
@@ -2066,7 +2066,7 @@ namespace Amanith {
 
 		// now we are sure that boxes are not included and they intersects
 		Flags = NO_SOLUTIONS;
-		for (GUInt32 i = 0; i < SIZE; i++) {
+		for (GUInt32 i = 0; i < SIZE; ++i) {
 
 			s = signedDist1[i] * signedDist2[i];
 			if (GMath::Abs(s) <= G_EPSILON * G_EPSILON)

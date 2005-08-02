@@ -198,7 +198,7 @@ GError GPolyLineCurve2D::DoSetPointParameter(const GUInt32 Index, const GReal Ne
 				// append key at the end
 				gKeys.push_back(tmpKey);
 				deleteIndex = Index;
-				NewIndex = gKeys.size() - 1;
+				NewIndex = (GUInt32)gKeys.size() - 1;
 			}
 			AlreadyExists = G_FALSE;
 		}
@@ -218,7 +218,7 @@ GError GPolyLineCurve2D::DoSetPointParameter(const GUInt32 Index, const GReal Ne
 GError GPolyLineCurve2D::SetPoints(const GDynArray<GPoint2>& NewPoints,
 								   const GReal NewMinValue, const GReal NewMaxValue, const GBool Uniform) {
 
-	GUInt32 i, j = NewPoints.size();
+	GUInt32 i, j = (GUInt32)NewPoints.size();
 	GReal step, u, len;
 	GPolyLineKey tmpkey;
 	GInterval<GReal> requestedInterval(NewMinValue, NewMaxValue);
@@ -286,7 +286,7 @@ void GPolyLineCurve2D::SortKeys() {
 // set keys
 GError GPolyLineCurve2D::SetKeys(const GDynArray<GPolyLineKey>& NewKeys) {
 
-	GUInt32 i = NewKeys.size();
+	GUInt32 i = (GUInt32)NewKeys.size();
 	if (i < 2)
 		return G_INVALID_PARAMETER;
 
@@ -312,9 +312,9 @@ GBool GPolyLineCurve2D::ParamToKeyIndex(const GReal Param, GUInt32& KeyIndex) co
 		return G_FALSE;
 
 	if ((*result).Parameter == tmpKey.Parameter)
-		KeyIndex = (result - gKeys.begin());
+		KeyIndex = (GUInt32)(result - gKeys.begin());
 	else
-		KeyIndex = ((result - gKeys.begin()) - 1);
+		KeyIndex = (GUInt32)((result - gKeys.begin()) - 1);
 
 	return G_TRUE;
 }

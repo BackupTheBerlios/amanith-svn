@@ -1,5 +1,5 @@
 /****************************************************************************
-** $file: amanith/tools/plugwizard/classtreeform.h   0.1.0.0   edited Jun 30 08:00
+** $file: amanith/tools/plugwizard/classtreeform.cpp   0.1.0.0   edited Jun 30 08:00
 **
 ** Plugin wizard tree form implementation.
 **

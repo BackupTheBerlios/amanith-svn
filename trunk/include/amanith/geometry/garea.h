@@ -42,7 +42,11 @@ namespace Amanith {
 	template<typename DATA_TYPE>
 	inline DATA_TYPE TwiceSignedArea(const GVectBase<DATA_TYPE, 2>& P1, const GVectBase<DATA_TYPE, 2>& P2,
 									 const GVectBase<DATA_TYPE, 2>& P3) {
-		return (P2[G_X] - P1[G_X]) * (P3[G_Y] - P1[G_Y]) - (P2[G_Y] - P1[G_Y]) * (P3[G_X] - P1[G_X]);
+		// the default implementation would be:
+		// return (P2[G_X] - P1[G_X]) * (P3[G_Y] - P1[G_Y]) - (P2[G_Y] - P1[G_Y]) * (P3[G_X] - P1[G_X]);
+		// Here we use a more numerically stable implementation, even if for some almost degenerate
+		// situations, the results are not reliable.
+		return P1[G_Y] * (P3[G_X] - P2[G_X]) + P2[G_Y] * (P1[G_X] - P3[G_X]) + P3[G_Y] * (P2[G_X] - P1[G_X]);
 	}
 	//! Compute the signed area of triangle defined by P1-P2-P3 points
 	template<typename DATA_TYPE>
@@ -153,83 +157,124 @@ namespace Amanith {
 	*/
 	template<typename DATA_TYPE>
 	GUInt32 CCWSmallerAngleSpan(const GPoint<DATA_TYPE, 2>& Origin, const GPoint<DATA_TYPE, 2>& Dest1,
-								const GPoint<DATA_TYPE, 2>& Dest2, const GPoint<DATA_TYPE, 2>& Destination) {
+								const GPoint<DATA_TYPE, 2>& Dest2, const GPoint<DATA_TYPE, 2>& Destination,
+								const DATA_TYPE Precision = (DATA_TYPE)G_EPSILON) {
 
 		DATA_TYPE area1 = TwiceSignedArea(Dest1, Origin, Destination);
+		DATA_TYPE normArea1;
 		DATA_TYPE area2 = TwiceSignedArea(Dest2, Origin, Destination);
+		DATA_TYPE copyArea2 = area2;
+		DATA_TYPE normArea2;
 		DATA_TYPE concord;
+		GBool swapped;
 
-		// a negative area means that vector span in counterclockwise order the smaller angle to overlap Destination
-		if ((area1 < 0 && area2 < 0) || (area1 > 0 && area2 > 0)) {
-			// swap Dest1 with Destination
-			area1 = TwiceSignedArea(Destination, Origin, Dest1);
-			area2 = TwiceSignedArea(Dest2, Origin, Dest1);
-			if ((area1 < 0 && area2 < 0) || (area1 > 0 && area2 > 0)) {
-				// swap Dest2 with Destination
-				area1 = TwiceSignedArea(Dest1, Origin, Dest2);
-				area2 = TwiceSignedArea(Destination, Origin, Dest2);
-				if (area1 < 0)
-					return 2;
-				else
-				if (area1 > 0)
-					return 1;
-				else {
-					G_ASSERT(0 == 1);
-					return 0xFFFF;
-				}
-			}
-			// here area1 or area2 (or both) is zero
-			else {
-				if (area1 < 0)
-					return 2;
-				else
-				if (area1 >= 0)
-					return 1;
-				else {
-					G_ASSERT(0 == 1);
-					return 0xFFFF;
-				}
-			}
+		DATA_TYPE area1Abs = GMath::Abs(area1);
+		DATA_TYPE area2Abs = GMath::Abs(area2);
+
+		// area normalization, we wanna area1 the less one
+		if (area1Abs > area2Abs) {
+			normArea1 = area2 / area1Abs;
+			normArea2 = area1;
+			swapped = G_TRUE;
 		}
-		// here area1 or area2 (or both) is zero
-		else
-		if (area1 < 0) {
-			if (area2 == 0) {
-				concord = Dot(Destination - Origin, Dest2 - Origin);
-				G_ASSERT(concord != 0);
-				if (concord > 0)
-					return 2;
-				else
-					return 1;
-			}
-			else
-				return 1;
-		}
-		else
-		if (area1 > 0) {
-			return 2;
-		}
-		// area1 == 0
 		else {
-			concord = Dot(Destination - Origin, Dest1 - Origin);
-			if (concord == 0)
-				G_ASSERT(concord != 0);
+			normArea1 = area1 / area2Abs;
+			normArea2 = area2;
+			swapped = G_FALSE;
+		}
 
-			if (concord > 0)
-				return 1;
-			else
-			if (area2 < 0)
-				return 2;
-			else
-			if (area2 > 0)
-				return 1;
+		if ((normArea1 > Precision && normArea2 > 0) || (normArea1 < -Precision && normArea2 < 0)) {
+
+			area1 = -area1;
+			area2 = TwiceSignedArea(Dest2, Origin, Dest1);
+			// area1Abs is still valid
+			area2Abs = GMath::Abs(area2);
+			// area normalization, we wanna area1 the less one
+			if (area1Abs > area2Abs) {
+				normArea1 = area2 / area1Abs;
+				normArea2 = area1;
+			}
 			else {
-				concord = Dot(Destination - Origin, Dest2 - Origin);
-				G_ASSERT(concord != 0);
-				if (concord > 0)
-					return 2;
-				else
+				normArea1 = area1 / area2Abs;
+				normArea2 = area2;
+			}
+
+			if ((normArea1 > Precision && normArea2 > 0) || (normArea1 < -Precision && normArea2 < 0)) {
+
+				area1 = -area2;
+				area2 = -copyArea2;
+				if (area2 < 0)
 					return 1;
+				else
+				if (area2 > 0)
+					return 2;
+				else {
+					G_ASSERT(0 == 1);
+					return 0xFFFF;
+				}
+			}
+			else {
+				if (area2 < 0)
+					return 1;
+				else
+					if (area2 >= 0)
+						return 2;
+					else {
+						G_ASSERT(0 == 1);
+						return 0xFFFF;
+					}
+			}
+
+		}
+		else {
+			if (!swapped) {
+				if (area2 < -Precision) {
+					if (GMath::Abs(area1) <= Precision) {
+						concord = Dot(Destination - Origin, Dest1 - Origin);
+						G_ASSERT(concord != 0);
+						if (concord > 0)
+							return 1;
+						else
+							return 2;
+					}
+					else
+						return 2;
+				}
+				else
+				if (area2 > Precision)
+					return 1;
+				// area2 == 0
+				else {
+					concord = Dot(Destination - Origin, Dest2 - Origin);
+					if (concord > 0)
+						return 2;
+					else
+						return 1;
+				}
+			}
+			else {
+				if (area1 < -Precision) {
+					if (GMath::Abs(area2) <= Precision) {
+						concord = Dot(Destination - Origin, Dest2 - Origin);
+						G_ASSERT(concord != 0);
+						if (concord > 0)
+							return 2;
+						else
+							return 1;
+					}
+					else
+						return 1;
+				}
+				else
+				if (area1 > Precision)
+					return 2;
+				else {
+					concord = Dot(Destination - Origin, Dest1 - Origin);
+					if (concord > 0)
+						return 1;
+					else
+						return 2;
+				}
 			}
 		}
 	}

@@ -15,6 +15,8 @@ IMAGES	= ./images/amanith32.png
 
 TARGET = viewimage
 
+win32: RC_FILE = example.rc
+
 # Qt4 support
 contains(DEFINES, USE_QT4) {
     QT += qt3support

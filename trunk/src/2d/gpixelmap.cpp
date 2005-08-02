@@ -30,6 +30,7 @@
 #include "amanith/support/gutilities.h"
 #include "amanith/gkernel.h"
 #include "amanith/numerics/gfilter.h"
+#include <new> // for nothrow
 #include <cstring>  // for memcpy function
 
 /*!
@@ -38,6 +39,346 @@
 */
 
 namespace Amanith {
+
+
+struct GColorNode {
+	// G_TRUE if node has no children
+	GBool gIsLeaf;
+	// number of pixels represented by this leaf
+	GUInt32 gPixelCount;
+	// sum of red components
+	GULong gRedSum;
+	// sum of green components
+	GUInt32 gGreenSum;
+	// sum of blue components
+	GUInt32 gBlueSum;
+	// pointers to child nodes
+	GColorNode* gChildren[8];
+	// pointer to next reducible node
+	GColorNode* gNext;
+
+	// constructor
+	GColorNode() {
+		gIsLeaf = G_FALSE;
+		gPixelCount = 0;
+		gRedSum = 0;
+		gGreenSum = 0;
+		gBlueSum = 0;
+		gChildren[0] = NULL;
+		gChildren[1] = NULL;
+		gChildren[2] = NULL;
+		gChildren[3] = NULL;
+		gChildren[4] = NULL;
+		gChildren[5] = NULL;
+		gChildren[6] = NULL;
+		gChildren[7] = NULL;
+		gNext = NULL;
+	}
+};
+
+static GColorNode* CreateNode(GUInt32 nLevel, GUInt32 nColorBits, GUInt32* pLeafCount, GColorNode** pReducibleNodes) {
+
+	GColorNode* pNode = NULL;
+
+	pNode = new(std::nothrow) GColorNode();
+	if (!pNode)
+		return NULL;
+
+	pNode->gIsLeaf = (nLevel == nColorBits) ? G_TRUE : G_FALSE;
+	if (pNode->gIsLeaf)
+		(*pLeafCount)++;
+	else {
+		// add the node to the reducible list for this level
+		pNode->gNext = pReducibleNodes[nLevel];
+		pReducibleNodes[nLevel] = pNode;
+	}
+	return pNode;
+}
+
+static void AddColor(GColorNode** ppNode, GUChar8 r, GUChar8 g, GUChar8 b, GUInt32 nColorBits,
+					GUInt32 nLevel, GUInt32* pLeafCount, GColorNode** pReducibleNodes) {
+	
+	GInt32 nIndex, shift;
+	static GUChar8 mask[8] = { 0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01 };
+
+	// if the node doesn't exist, create it
+	if (*ppNode == NULL)
+		*ppNode = CreateNode(nLevel, nColorBits, pLeafCount, pReducibleNodes);
+
+	// update color information if it's a leaf node
+	if ((*ppNode)->gIsLeaf) {
+		(*ppNode)->gPixelCount++;
+		(*ppNode)->gRedSum += r;
+		(*ppNode)->gGreenSum += g;
+		(*ppNode)->gBlueSum += b;
+	}
+	// recurse a level deeper if the node is not a leaf
+	else {
+		shift = 7 - nLevel;
+		nIndex = (((r & mask[nLevel]) >> shift) << 2) |	(((g & mask[nLevel]) >> shift) << 1) |
+					((b & mask[nLevel]) >> shift);
+		AddColor(&((*ppNode)->gChildren[nIndex]), r, g, b, nColorBits, nLevel + 1, pLeafCount, pReducibleNodes);
+	}
+}
+
+static void ReduceTree(GUInt32 nColorBits, GUInt32* pLeafCount, GColorNode** pReducibleNodes) {
+
+	GInt32 i;
+	GColorNode* pNode;
+	GUInt32 nRedSum, nGreenSum, nBlueSum, nChildren;
+
+	// Find the deepest level containing at least one reducible node
+	for (i = nColorBits - 1; (i > 0) && (pReducibleNodes[i] == NULL); i--);
+
+	// Reduce the node most recently added to the list at level i
+	pNode = pReducibleNodes[i];
+	pReducibleNodes[i] = pNode->gNext;
+
+	nRedSum = nGreenSum = nBlueSum = nChildren = 0;
+	for (i = 0; i < 8; i++) {
+		if (pNode->gChildren[i] != NULL) {
+			nRedSum += pNode->gChildren[i]->gRedSum;
+			nGreenSum += pNode->gChildren[i]->gGreenSum;
+			nBlueSum += pNode->gChildren[i]->gBlueSum;
+			pNode->gPixelCount += pNode->gChildren[i]->gPixelCount;
+			delete pNode->gChildren[i];
+			pNode->gChildren[i] = NULL;
+			nChildren++;
+		}
+	}
+	pNode->gIsLeaf = G_TRUE;
+	pNode->gRedSum = nRedSum;
+	pNode->gGreenSum = nGreenSum;
+	pNode->gBlueSum = nBlueSum;
+	*pLeafCount -= (nChildren - 1);
+}
+
+void DeleteTree(GColorNode** ppNode) {
+
+	GInt32 i;
+
+	for (i = 0; i < 8; i++) {
+		if ((*ppNode)->gChildren[i] != NULL)
+			DeleteTree(&((*ppNode)->gChildren[i]));
+	}
+	delete (*ppNode);
+	*ppNode = NULL;
+}
+
+static void GetPaletteColors(GColorNode* pTree, GUChar8* pPalEntries, GUInt32* pIndex) {
+
+	GInt32 i;
+
+	if (pTree->gIsLeaf) {
+		pPalEntries[(*pIndex) * 4] = (GUChar8)((pTree->gBlueSum) / (pTree->gPixelCount));
+		pPalEntries[(*pIndex) * 4 + 1] = (GUChar8)((pTree->gGreenSum) / (pTree->gPixelCount));
+		pPalEntries[(*pIndex) * 4 + 2] = (GUChar8)((pTree->gRedSum) / (pTree->gPixelCount));
+		pPalEntries[(*pIndex) * 4 + 3] = 0;
+		(*pIndex)++;
+	}
+	else {
+		for (i = 0; i < 8; i++) {
+			if (pTree->gChildren[i] != NULL)
+				GetPaletteColors(pTree->gChildren[i], pPalEntries, pIndex);
+		}
+	}
+}
+
+static void MapColor(GColorNode* pNode, GUChar8 r, GUChar8 g, GUChar8 b, GUInt32 nLevel,
+					 GUChar8 *OutR, GUChar8 *OutG, GUChar8 *OutB) {
+	
+	GInt32 nIndex, shift;
+	static GUChar8 mask[8] = { 0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01 };
+
+	G_ASSERT(pNode != NULL);
+
+	// update color information if it's a leaf node
+	if (pNode->gIsLeaf) {
+		*OutB = (GUChar8)((pNode->gBlueSum) / (pNode->gPixelCount));
+		*OutG = (GUChar8)((pNode->gGreenSum) / (pNode->gPixelCount));
+		*OutR = (GUChar8)((pNode->gRedSum) / (pNode->gPixelCount));
+	}
+	// recurse a level deeper if the node is not a leaf
+	else {
+		shift = 7 - nLevel;
+		nIndex = (((r & mask[nLevel]) >> shift) << 2) |	(((g & mask[nLevel]) >> shift) << 1) |
+					((b & mask[nLevel]) >> shift);
+		MapColor(pNode->gChildren[nIndex], r, g, b, nLevel + 1, OutR, OutG, OutB);
+	}
+}
+
+static GError OctreeQuantization(const GPixelMap& Image, const GUInt32 MaxColors, const GUInt32 ColorBits,
+								  GUInt32 *Palette, const GUInt32 PalEntries, GUInt32& CreatedEntries,
+								  GUChar8 *NewPixels) {
+
+	GInt32 i, j, k;
+	GUChar8 *pbBits;
+	GUInt16* pwBits;
+	GUInt32* pdwBits;
+	GUChar8 r, g, b, r2, g2, b2;
+	GUInt16 wColor;
+	GUInt32 dwColor;
+	GColorNode* pTree;
+	GUInt32 nLeafCount, nIndex;
+	GUInt32 maxCols;
+	GColorNode* pReducibleNodes[9];
+
+	// image must not be already paletted
+	G_ASSERT(Image.IsPaletted() == G_FALSE);
+
+	// check given parameters
+	j = Image.PixelsCount();
+	if (!NewPixels || !Palette || ColorBits > 8 || j <= 0)
+		return G_INVALID_PARAMETER;
+
+	maxCols = GMath::Min(MaxColors, PalEntries);
+
+	// initialize octree variables
+	pTree = NULL;
+	nLeafCount = 0;
+	for (i = 0; i <= (GInt32)ColorBits; i++)
+		pReducibleNodes[i] = NULL;
+
+	switch (Image.PixelFormat()) {
+		// just to make gcc happy...
+		case G_RGB_PALETTE:
+			return G_NO_ERROR;
+			break;
+
+		// in this case we can simply generate a standard 256 entries palette
+		case G_GRAYSCALE:
+			for (i = 0; i < (GInt32)maxCols; i++) {
+				dwColor = i | (i << 8) | (i << 16);
+				Palette[i] = dwColor;
+			}
+			pbBits = Image.Pixels();
+			for (i = 0; i < j; ++i)
+				NewPixels[i] = pbBits[i];
+			return G_NO_ERROR;
+			break;
+
+		case G_A1R5G5B5:
+			pwBits = (GUInt16 *)Image.Pixels();
+			for (i = 0; i < j; ++i) {
+				wColor = *pwBits++;
+				r = (GUChar8)(((wColor >> 10) & 31) << 3);
+				g = (GUChar8)(((wColor >> 5) & 31) << 3);
+				b = (GUChar8)((wColor & 31) << 3);
+				AddColor(&pTree, r, g, b, ColorBits, 0, &nLeafCount, pReducibleNodes);
+				while (nLeafCount > maxCols)
+					ReduceTree(ColorBits, &nLeafCount, pReducibleNodes);
+			}
+			break;
+
+		case G_R5G6B5:
+			pwBits = (GUInt16 *)Image.Pixels();
+			for (i = 0; i < j; ++i) {
+				wColor = *pwBits++;
+				r = (GUChar8)(((wColor >> 11) & 31) << 3);
+				g = (GUChar8)(((wColor >> 5) & 63) << 2);
+				b = (GUChar8)((wColor & 31) << 3);
+				AddColor(&pTree, r, g, b, ColorBits, 0, &nLeafCount, pReducibleNodes);
+				while (nLeafCount > maxCols)
+					ReduceTree(ColorBits, &nLeafCount, pReducibleNodes);
+			}
+			break;
+
+		// full color pixel format
+		case G_R8G8B8:
+		case G_A8R8G8B8:
+			pdwBits = (GUInt32 *)Image.Pixels();
+			for (i = 0; i < j; ++i) {
+				dwColor = *pdwBits++;
+				b = (GUChar8)((dwColor & 0x000000FF));
+				g = (GUChar8)((dwColor & 0x0000FF00) >> 8);
+				r = (GUChar8)((dwColor & 0x00FF0000) >> 16);
+				AddColor(&pTree, r, g, b, ColorBits, 0, &nLeafCount, pReducibleNodes);
+				while (nLeafCount > maxCols)
+					ReduceTree(ColorBits, &nLeafCount, pReducibleNodes);
+			}
+			break;
+	}
+	// sanity check
+	if (nLeafCount > maxCols) {
+		// free temporary octree
+		DeleteTree(&pTree);
+		return G_UNKNOWN_ERROR;
+	}
+	CreatedEntries = nLeafCount;
+	// fill palette
+	nIndex = 0;
+	GetPaletteColors(pTree, (GUChar8 *)Palette, &nIndex);
+
+	// now map each pixel in the new created palette
+	j = Image.PixelsCount();
+	switch (Image.PixelFormat()) {
+		// just to make gcc happy...
+		case G_RGB_PALETTE:
+		case G_GRAYSCALE:
+			break;
+
+		case G_A1R5G5B5:
+			pwBits = (GUInt16 *)Image.Pixels();
+			for (i = 0; i < j; ++i) {
+				wColor = *pwBits++;
+				r = (GUChar8)(((wColor >> 10) & 31) << 3);
+				g = (GUChar8)(((wColor >> 5) & 31) << 3);
+				b = (GUChar8)((wColor & 31) << 3);
+				MapColor(pTree, r, g, b, 0, &r2, &g2, &b2);
+				dwColor = (r2 << 16) | (g2 << 8) | b2;
+				for (k = 0; k < (GInt32)maxCols; ++k) {
+					if (Palette[k] == dwColor) {
+						NewPixels[i] = (GUChar8)k;
+						break;
+					}
+				}
+			}
+			break;
+
+		case G_R5G6B5:
+			pwBits = (GUInt16 *)Image.Pixels();
+			for (i = 0; i < j; ++i) {
+				wColor = *pwBits++;
+				r = (GUChar8)(((wColor >> 11) & 31) << 3);
+				g = (GUChar8)(((wColor >> 5) & 63) << 2);
+				b = (GUChar8)((wColor & 31) << 3);
+				MapColor(pTree, r, g, b, 0, &r2, &g2, &b2);
+				dwColor = (r2 << 16) | (g2 << 8) | b2;
+				for (k = 0; k < (GInt32)maxCols; ++k) {
+					if (Palette[k] == dwColor) {
+						NewPixels[i] = (GUChar8)k;
+						break;
+					}
+				}
+			}
+			break;
+
+		// full color pixel format
+		case G_R8G8B8:
+		case G_A8R8G8B8:
+			pdwBits = (GUInt32 *)Image.Pixels();
+			for (i = 0; i < j; ++i) {
+				dwColor = *pdwBits++;
+				b = (GUChar8)((dwColor & 0x000000FF));
+				g = (GUChar8)((dwColor & 0x0000FF00) >> 8);
+				r = (GUChar8)((dwColor & 0x00FF0000) >> 16);
+				MapColor(pTree, r, g, b, 0, &r2, &g2, &b2);
+				dwColor = (r2 << 16) | (g2 << 8) | b2;
+				for (k = 0; k < (GInt32)maxCols; ++k) {
+					if (Palette[k] == dwColor) {
+						NewPixels[i] = (GUChar8)k;
+						break;
+					}
+				}
+			}
+			break;
+	}
+	// free temporary octree
+	DeleteTree(&pTree);
+	return G_NO_ERROR;
+}
+
+
 
 // *********************************************************************
 //                            GPixelMap
@@ -71,9 +412,9 @@ GPixelMap::~GPixelMap() {
 void GPixelMap::Reset() {
 
 	if (gPixels)
-		std::free(gPixels);
+		delete [] gPixels;
 	if (gPalette)
-		std::free(gPalette);
+		delete [] gPalette;
 	gPixels = NULL;
 	gPalette = NULL;
 	gPixelFormat = G_A8R8G8B8;
@@ -83,7 +424,8 @@ void GPixelMap::Reset() {
 
 GError GPixelMap::Reset(const GInt32 NewWidth, const GInt32 NewHeight, const GPixelFormat NewPixelFormat) {
 
-	void *p1 = NULL, *p2 = NULL;
+	GUChar8 *p1 = NULL;
+	GUInt32 *p2 = NULL;
 	GInt32 palSize, pixelsSize;
 
 	// clear memory / reset image
@@ -98,14 +440,14 @@ GError GPixelMap::Reset(const GInt32 NewWidth, const GInt32 NewHeight, const GPi
 	pixelsSize = NeededBytes(NewWidth, NewHeight, NewPixelFormat);
 	palSize = PaletteSize(NewPixelFormat);
 	// allocate new pixels
-	p1 = std::malloc(pixelsSize);
+	p1 = new(std::nothrow) GUChar8[pixelsSize];
 	if (!p1)
 		return G_MEMORY_ERROR;
 	// allocate new palette
 	if (palSize > 0) {
-		p2 = std::malloc(palSize);
+		p2 = new(std::nothrow) GUInt32[palSize];
 		if (!p2) {
-			std::free(p1);
+			delete [] p1;
 			return G_MEMORY_ERROR;
 		}
 	}
@@ -115,8 +457,8 @@ GError GPixelMap::Reset(const GInt32 NewWidth, const GInt32 NewHeight, const GPi
 	gWidth = NewWidth;
 	gHeight = NewHeight;
 	gPixelFormat = NewPixelFormat;
-	gPixels = (GUChar8 *)p1;
-	gPalette = (GInt32 *)p2;
+	gPixels = p1;
+	gPalette = p2;
 	return G_NO_ERROR;
 }
 
@@ -154,17 +496,6 @@ GInt32 GPixelMap::PaletteSize() const {
 	return PaletteSize(gPixelFormat);
 }
 
-GUChar8* GPixelMap::Pixels() const {
-	return gPixels;
-}
-
-// pointer to the first palette color
-GInt32* GPixelMap::Palette() const {
-	if (!IsPaletted())
-		return NULL;
-	return gPalette;
-}
-
 // number of pixels
 GInt32 GPixelMap::PixelsCount() const {
 	return gWidth * gHeight;
@@ -177,7 +508,6 @@ GInt32 GPixelMap::BitsPerPixel() const {
 	switch (gPixelFormat) {
 		case G_GRAYSCALE:
 		case G_RGB_PALETTE:
-		case G_ARGB_PALETTE:
 			return 8;
 		case G_R8G8B8:
 		case G_A8R8G8B8:
@@ -196,7 +526,6 @@ GInt32 GPixelMap::BytesPerPixel() const {
 	switch (gPixelFormat) {
 		case G_GRAYSCALE:
 		case G_RGB_PALETTE:
-		case G_ARGB_PALETTE:
 			return 1;
 		case G_R8G8B8:
 		case G_A8R8G8B8:
@@ -226,7 +555,6 @@ GBool GPixelMap::HasAlphaChannel() const {
 			return G_FALSE;
 		case G_A8R8G8B8:
 		case G_A1R5G5B5:
-		case G_ARGB_PALETTE:
 			return G_TRUE;
 		default:
 			return G_FALSE;
@@ -236,7 +564,7 @@ GBool GPixelMap::HasAlphaChannel() const {
 // returns if image is paletted (it has a palette associated
 GBool GPixelMap::IsPaletted() const {
 
-	if ((gPixelFormat == G_RGB_PALETTE) || (gPixelFormat == G_ARGB_PALETTE))
+	if (gPixelFormat == G_RGB_PALETTE)
 		return G_TRUE;
 	return G_FALSE;
 }
@@ -275,7 +603,6 @@ GInt32 GPixelMap::NeededBytes(const GInt32 _Width, const GInt32 _Height, const G
 	switch (PixelFormat) {
 		case G_GRAYSCALE:
 		case G_RGB_PALETTE:
-		case G_ARGB_PALETTE:
 			return i;
 		case G_R5G6B5:
 		case G_A1R5G5B5:
@@ -290,7 +617,7 @@ GInt32 GPixelMap::NeededBytes(const GInt32 _Width, const GInt32 _Height, const G
 
 GInt32 GPixelMap::PaletteSize(const GPixelFormat PixelFormat) {
 
-	if ((PixelFormat == G_RGB_PALETTE) || (PixelFormat == G_ARGB_PALETTE))
+	if (PixelFormat == G_RGB_PALETTE)
 		return 1024; // 256 RGBA color = 1024 bytes
 	else
 		return 0;
@@ -326,7 +653,6 @@ GError GPixelMap::Negative() {
 
 	switch (gPixelFormat) {
 		case G_RGB_PALETTE:
-		case G_ARGB_PALETTE:
 			// just to make gcc happy with warnings..
 			break;
 		case G_GRAYSCALE:
@@ -376,7 +702,6 @@ GError GPixelMap::Negative(GPixelMap& NegativePixelMap) const {
 
 	switch (gPixelFormat) {
 		case G_RGB_PALETTE:
-		case G_ARGB_PALETTE:
 			// just to make gcc happy with warnings..
 			break;
 		case G_GRAYSCALE:
@@ -423,7 +748,6 @@ GError GPixelMap::ReverseChannels(const GBool ReverseAlphaToo) {
 
 	switch (gPixelFormat) {
 		case G_RGB_PALETTE:
-		case G_ARGB_PALETTE:
 		case G_GRAYSCALE:
 			// just to make gcc happy with warnings..
 			break;
@@ -513,7 +837,6 @@ GError GPixelMap::ReverseChannels(GPixelMap& ReversedImage, const GBool ReverseA
 
 	switch (gPixelFormat) {
 		case G_RGB_PALETTE:
-		case G_ARGB_PALETTE:
 		case G_GRAYSCALE:
 			// just to make gcc happy with warnings..
 			break;
@@ -605,7 +928,6 @@ GError GPixelMap::Resize(const GUInt32 NewWidth, const GUInt32 NewHeight, const 
 
 	switch (gPixelFormat) {
 		case G_RGB_PALETTE:
-		case G_ARGB_PALETTE:
 			// just to make gcc happy with warnings..
 			break;
 		case G_GRAYSCALE:
@@ -658,7 +980,6 @@ GError GPixelMap::Resize(const GUInt32 NewWidth, const GUInt32 NewHeight, GPixel
 
 	switch (gPixelFormat) {
 		case G_RGB_PALETTE:
-		case G_ARGB_PALETTE:
 			// just to make gcc happy with warnings..
 			break;
 		case G_GRAYSCALE:
@@ -1159,7 +1480,6 @@ void GPixelMap::Clear(const GUInt32& Index_Or_A8R8G8B8) {
 
 	switch (gPixelFormat) {
 		case G_RGB_PALETTE:
-		case G_ARGB_PALETTE:
 		case G_GRAYSCALE:
 			gray = Index_Or_A8R8G8B8;
 			std::memset(gPixels, gray, PixelsCount());
@@ -1352,7 +1672,7 @@ GError GPixelMap::ResizeCanvasMirror(const GInt32 Top, const GInt32 Bottom, cons
 			j = Top - 1 - i;
 			tmpDst = pixelDst + (j * newWidth + xDst) * ResizedPixelMap.BytesPerPixel();
 
-			memcpy(tmpDst, tmpSrc, lineBytes);
+			std::memcpy(tmpDst, tmpSrc, lineBytes);
 		}
 	}
 	if (Bottom > 0) {
@@ -1370,7 +1690,7 @@ GError GPixelMap::ResizeCanvasMirror(const GInt32 Top, const GInt32 Bottom, cons
 
 			j = newHeight - Bottom + i;
 			tmpDst = pixelDst + (j * newWidth + xDst) * ResizedPixelMap.BytesPerPixel();
-			memcpy(tmpDst, tmpSrc, lineBytes);
+			std::memcpy(tmpDst, tmpSrc, lineBytes);
 		}
 	}
 	if (Right > 0) {
@@ -1473,8 +1793,6 @@ GError GPixelMap::Flip(const GBool Horizontal, const GBool Vertical) {
 		switch (gPixelFormat) {
 			case G_GRAYSCALE:
 			case G_RGB_PALETTE:
-			case G_ARGB_PALETTE:
-
 				for (i = 0; i < j; i++) {	
 					pixel8Src = (GUInt8 *)gPixels + i;
 					pixel8Dest = (GUInt8 *)gPixels + (gWidth - i - 1);
@@ -1523,7 +1841,6 @@ GError GPixelMap::Flip(const GBool Horizontal, const GBool Vertical) {
 		switch (gPixelFormat) {
 			case G_GRAYSCALE:
 			case G_RGB_PALETTE:
-			case G_ARGB_PALETTE:
 				for (i = 0; i < j; i++) {	
 					pixel8Src = (GUInt8 *)gPixels + i * gWidth;
 					pixel8Dest = (GUInt8 *)gPixels + (gHeight - i - 1) * gWidth;
@@ -1573,7 +1890,7 @@ GError GPixelMap::SetPixelFormat(const GPixelFormat NewPixelFormat) {
 
 	if (gPixelFormat == NewPixelFormat)
 		return G_NO_ERROR;
-	// these 2 special case, for performance reasons, can be managed easily
+	// these 2 special cases, for performance reasons, can be managed easily
 	if (gPixelFormat == G_R8G8B8 && NewPixelFormat == G_A8R8G8B8)
 		return G_NO_ERROR;
 	if (gPixelFormat == G_A8R8G8B8 && NewPixelFormat == G_R8G8B8)
@@ -1594,7 +1911,7 @@ GError GPixelMap::SetPixelFormat(const GPixelFormat NewPixelFormat, GPixelMap& C
 
 	GError err;
 	GUInt32 i, j, gray32, *pixels32, red32, green32, blue32, alpha32, rgb32;
-	GUChar8 *pixels8;
+	GUChar8 *pixels8, *pix8;
 	GUInt16 *pixels16, rgb16, gray16, red16, green16, blue16, alpha16, *pixels16dst;
 
 	if ((NewPixelFormat == gPixelFormat) || (gPixelFormat == G_R8G8B8 && NewPixelFormat == G_A8R8G8B8) ||
@@ -1609,19 +1926,27 @@ GError GPixelMap::SetPixelFormat(const GPixelFormat NewPixelFormat, GPixelMap& C
 
 	j = PixelsCount();
 	switch (NewPixelFormat) {
-		//! \todo pixel format conversion for paletted images
-		case G_ARGB_PALETTE:
-			break;
-		//! \todo pixel format conversion for paletted images
 		case G_RGB_PALETTE:
+			// octree color quantization
+			err = OctreeQuantization(*this, 256, 8, ConvertedImage.gPalette, 256, j, ConvertedImage.gPixels);
 			break;
 		case G_R8G8B8:
 		case G_A8R8G8B8:
+			// palette to full 24/32 bit color conversion
+			if (gPixelFormat == G_RGB_PALETTE) {
+				pixels8 = gPixels;
+				pixels32 = (GUInt32 *)ConvertedImage.Pixels();
+				for (i = 0; i < j; ++i) {
+					rgb32 = gPalette[*pixels8++];
+					*pixels32++ = rgb32;
+				}
+			}
+			else
 			// grayscale to full 24bit color conversion
 			if (gPixelFormat == G_GRAYSCALE) {
 				pixels8 = (GUChar8 *)gPixels;
 				pixels32 = (GUInt32 *)ConvertedImage.Pixels();
-				for (i = 0; i < j; i++) {
+				for (i = 0; i < j; ++i) {
 					gray32 = (GUInt32)(*pixels8);
 					*pixels32 = gray32 | (gray32 << 8) | (gray32 << 16);
 					pixels32++;
@@ -1633,7 +1958,7 @@ GError GPixelMap::SetPixelFormat(const GPixelFormat NewPixelFormat, GPixelMap& C
 			if (gPixelFormat == G_A1R5G5B5) {
 				pixels16 = (GUInt16 *)gPixels;
 				pixels32 = (GUInt32 *)ConvertedImage.Pixels();
-				for (i = 0; i < j; i++) {
+				for (i = 0; i < j; ++i) {
 					rgb16 = *pixels16;
 					blue32 = rgb16 & 31;
 					green32 = (rgb16 >> 5) & 31;
@@ -1649,7 +1974,7 @@ GError GPixelMap::SetPixelFormat(const GPixelFormat NewPixelFormat, GPixelMap& C
 			if (gPixelFormat == G_R5G6B5) {
 				pixels16 = (GUInt16 *)gPixels;
 				pixels32 = (GUInt32 *)ConvertedImage.Pixels();
-				for (i = 0; i < j; i++) {
+				for (i = 0; i < j; ++i) {
 					rgb16 = *pixels16;
 					blue32 = rgb16 & 31;
 					green32 = (rgb16 >> 5) & 63;
@@ -1662,11 +1987,24 @@ GError GPixelMap::SetPixelFormat(const GPixelFormat NewPixelFormat, GPixelMap& C
 			break;
 
 		case G_A1R5G5B5:
+			// palette to 15 bit high color conversion
+			if (gPixelFormat == G_RGB_PALETTE) {
+				pixels8 = gPixels;
+				pixels16 = (GUInt16 *)ConvertedImage.Pixels();
+				for (i = 0; i < j; ++i) {
+					rgb32 = gPalette[*pixels8++];
+					red16 = (GUInt16)((rgb32 >> 19) & 31);
+					green16 = (GUInt16)((rgb32 >> 11) & 31);
+					blue16 = (GUInt16)((rgb32 >> 3)& 31);
+					*pixels16++ = (red16 << 10) | (green16 << 5) | blue16;
+				}
+			}
+			else
 			// grayscale to 16bit color conversion
 			if (gPixelFormat == G_GRAYSCALE) {
 				pixels8 = (GUChar8 *)gPixels;
 				pixels16 = (GUInt16 *)ConvertedImage.Pixels();
-				for (i = 0; i < j; i++) {
+				for (i = 0; i < j; ++i) {
 					gray16 = (GUInt16)(*pixels8);
 					gray16 = (gray16 >> 2) & 63;
 					*pixels16 = (((gray16 >> 1) & 31) << 11) | (gray16 << 5) | ((gray16 >> 1) & 31);
@@ -1679,7 +2017,7 @@ GError GPixelMap::SetPixelFormat(const GPixelFormat NewPixelFormat, GPixelMap& C
 			if (gPixelFormat == G_R8G8B8 || gPixelFormat ==  G_A8R8G8B8) {
 				pixels32 = (GUInt32 *)gPixels;
 				pixels16 = (GUInt16 *)ConvertedImage.Pixels();
-				for (i = 0; i < j; i++) {
+				for (i = 0; i < j; ++i) {
 					rgb32 = *pixels32;
 					alpha16 = (rgb32 >> 31) & 1;
 					red16 = (rgb32 >> 19) & 31;
@@ -1707,6 +2045,19 @@ GError GPixelMap::SetPixelFormat(const GPixelFormat NewPixelFormat, GPixelMap& C
 			break;
 
 		case G_R5G6B5:
+			// palette to 15 bit high color conversion
+			if (gPixelFormat == G_RGB_PALETTE) {
+				pixels8 = gPixels;
+				pixels16 = (GUInt16 *)ConvertedImage.Pixels();
+				for (i = 0; i < j; ++i) {
+					rgb32 = gPalette[*pixels8++];
+					red16 = (GUInt16)((rgb32 >> 19) & 31);
+					green16 = (GUInt16)((rgb32 >> 10) & 63);
+					blue16 = (GUInt16)((rgb32 >> 3)& 31);
+					*pixels16++ = (red16 << 11) | (green16 << 5) | blue16;
+				}
+			}
+			else
 			// grayscale to 16bit color conversion
 			if (gPixelFormat == G_GRAYSCALE) {
 				pixels8 = (GUChar8 *)gPixels;
@@ -1751,6 +2102,16 @@ GError GPixelMap::SetPixelFormat(const GPixelFormat NewPixelFormat, GPixelMap& C
 			break;
 
 		case G_GRAYSCALE:
+			// palette to grayscale conversion
+			if (gPixelFormat == G_RGB_PALETTE) {
+				pixels8 = gPixels;
+				pix8 = ConvertedImage.Pixels();
+				for (i = 0; i < j; ++i) {
+					rgb32 = gPalette[*pixels8++];
+					*pix8++ = RGBToGray(rgb32);
+				}
+			}
+			else
 			// full 24bit color to grayscale conversion
 			if ((gPixelFormat == G_R8G8B8) || (gPixelFormat == G_A8R8G8B8)) {
 				pixels32 = (GUInt32 *)gPixels;
@@ -2019,7 +2380,6 @@ GError GPixelMap::EdgePreservingSmooth(const GInt32 DistThres, const GInt32 Brig
 		GPixelMap alphaChannel, redChannel, greenChannel, blueChannel;
 		switch (gPixelFormat) {
 			case G_RGB_PALETTE:
-			case G_ARGB_PALETTE:
 			case G_GRAYSCALE:
 				// just to make gcc happy with warnings..
 				break;
@@ -2924,7 +3284,6 @@ GError GPixelMap::TraceContours(const GInt32 BrighThres, const GBool Thinning, c
 		GPixelMap alphaChannel, redChannel, greenChannel, blueChannel;
 		switch (gPixelFormat) {
 			case G_RGB_PALETTE:
-			case G_ARGB_PALETTE:
 			case G_GRAYSCALE:
 				// just to make gcc happy with warnings..
 				break;
@@ -3045,7 +3404,6 @@ GError GPixelMap::EdgeEnhance(const GInt32 Divisor, const GBool Strong) {
 		GPixelMap alphaChannel, redChannel, greenChannel, blueChannel;
 		switch (gPixelFormat) {
 			case G_RGB_PALETTE:
-			case G_ARGB_PALETTE:
 			case G_GRAYSCALE:
 				// just to make gcc happy with warnings..
 				break;
@@ -3365,9 +3723,9 @@ GInt32 GPixelMap::HueDistance(const GUChar8 Hue1, const GUChar8 Hue2) {
 }
 
 // get a pixel
-GError GPixelMap::Pixel(const GInt32 X, const GInt32 Y, GUInt32& Index_Or_A8R8G8B8) const {
+GError GPixelMap::Pixel(const GUInt32 X, const GUInt32 Y, GUInt32& Index_Or_A8R8G8B8) const {
 
-	if ((X < 0) || (X >= (GInt32)gWidth) || (Y < 0) || (Y >= (GInt32)gHeight)) {
+	if (X >= gWidth || Y >= gHeight) {
 		Index_Or_A8R8G8B8 = 0;
 		return G_OUT_OF_RANGE;
 	}
@@ -3377,7 +3735,6 @@ GError GPixelMap::Pixel(const GInt32 X, const GInt32 Y, GUInt32& Index_Or_A8R8G8
 	GUInt32 *pixel32;
 
 	switch (gPixelFormat) {
-		case G_ARGB_PALETTE:
 		case G_RGB_PALETTE:
 		case G_GRAYSCALE:
 			pixel8 = (GUChar8 *)gPixels;
@@ -3398,9 +3755,9 @@ GError GPixelMap::Pixel(const GInt32 X, const GInt32 Y, GUInt32& Index_Or_A8R8G8
 }
 
 // set a pixel color
-GError GPixelMap::SetPixel(const GInt32 X, const GInt32 Y, const GUInt32 Index_Or_A8R8G8B8) {
+GError GPixelMap::SetPixel(const GUInt32 X, const GUInt32 Y, const GUInt32 Index_Or_A8R8G8B8) {
 
-	if ((X < 0) || (X >= (GInt32)gWidth) || (Y < 0) || (Y >= (GInt32)gHeight))
+	if (X >= gWidth || Y >= gHeight)
 		return G_OUT_OF_RANGE;
 
 	GUChar8 *pixel8;
@@ -3408,7 +3765,6 @@ GError GPixelMap::SetPixel(const GInt32 X, const GInt32 Y, const GUInt32 Index_O
 	GUInt32 *pixel32;
 
 	switch (gPixelFormat) {
-		case G_ARGB_PALETTE:
 		case G_RGB_PALETTE:
 		case G_GRAYSCALE:
 			pixel8 = (GUChar8 *)gPixels;
@@ -3473,7 +3829,6 @@ GError GPixelMap::SplitChannels(GPixelMap *AlphaImage, GPixelMap *RedImage, GPix
 
 	switch (gPixelFormat) {
 		case G_RGB_PALETTE:
-		case G_ARGB_PALETTE:
 		case G_GRAYSCALE:
 			// just to make gcc happy with warnings..
 			break;

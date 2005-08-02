@@ -241,6 +241,10 @@ static void LoadGlyph(GFont2D& Font, const FT_Face Face, const GInt32 GlyphIndex
 			subChars[i].Transformation[G_Y][G_Y] = Fixed1616ToReal(subGlyph.transform.yy);
 			// y position
 			subChars[i].Transformation[G_Y][G_Z] = subGlyph.arg2 * Scale;
+			// last row is an identity
+			subChars[i].Transformation[G_Z][G_X] = 0;
+			subChars[i].Transformation[G_Z][G_Y] = 0;
+			subChars[i].Transformation[G_Z][G_Z] = 1;
 		}
 		c = Font.AddChar(subChars);
 	}

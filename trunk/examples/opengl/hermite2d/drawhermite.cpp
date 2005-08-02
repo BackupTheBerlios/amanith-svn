@@ -1,3 +1,27 @@
+/****************************************************************************
+**
+** Copyright (C) 2004-2005 Mazatech Inc. All rights reserved.
+**
+** This file is part of Amanith Framework.
+**
+** This file may be distributed and/or modified under the terms of the Q Public License
+** as defined by Mazatech Inc. of Italy and appearing in the file
+** LICENSE.QPL included in the packaging of this file.
+**
+** Licensees holding valid Amanith Professional Edition license may use this file in
+** accordance with the Amanith Commercial License Agreement provided with the Software.
+**
+** This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+** WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+**
+** See http://www.mazatech.com or email sales@mazatech.com for
+** information about Amanith Commercial License Agreements.
+** See http://www.amanith.org/ for opensource version, public forums and news.
+**
+** Contact info@mazatech.com if any conditions of this licensing are
+** not clear to you.
+**********************************************************************/
+
 #include "drawhermite.h"
 #include <amanith/geometry/gxform.h>
 #include <qmessagebox.h>
@@ -7,8 +31,6 @@
 	#include <QTimerEvent>
 	#include <QKeyEvent>
 #endif
-
-#define PrintOpenGLError() gExtManager->PrintOglError(__FILE__, __LINE__)
 
 static int timer_interval = 0;			// timer interval (millisec)
 
@@ -21,8 +43,7 @@ QGLWidgetTest::QGLWidgetTest(QWidget * parent) : QGLWidget(parent) {
 
 	gKernel = new GKernel();
 	gHermCurve = (GHermiteCurve2D *)gKernel->CreateNew(G_HERMITECURVE2D_CLASSID);
-
-
+	// create keys
 	keys.push_back(GHermiteKey(0, GPoint2(2, 7), GVector2(8, 4), GVector2(8, 4)));
 	keys.push_back(GHermiteKey(1, GPoint2(7, 6), GVector2(-4, -8), GVector2(8, -4)));
 	keys.push_back(GHermiteKey(2, GPoint2(6, 5), GVector2(-4, 8), GVector2(-4, -8)));
@@ -38,7 +59,6 @@ QGLWidgetTest::QGLWidgetTest(QWidget * parent) : QGLWidget(parent) {
 	gIntersectionRay.SetOrigin(GPoint2(0, 0));
 	gIntersectionRay.SetDirection(GPoint2(0, 0));
 	GMath::SeedRandom();
-
 	gDeviation = (GReal)0.0001;
 	BuildFlatContour(gHermCurve);
 }
@@ -47,10 +67,6 @@ QGLWidgetTest::QGLWidgetTest(QWidget * parent) : QGLWidget(parent) {
 // destructor
 QGLWidgetTest::~QGLWidgetTest() {
 
-	if (gExtManager)
-		delete gExtManager;
-	if (gHermCurve)
-		delete gHermCurve;
 	if (gKernel)
 		delete gKernel;
 }
@@ -78,9 +94,6 @@ void QGLWidgetTest::timerEvent(QTimerEvent *e) {
 //----- initializeGL -----------------------------------------
 void QGLWidgetTest::initializeGL() {
 
-	GString fName;
-	// create extensions manager
-	gExtManager = new GOpenglExt();
 	glShadeModel(GL_SMOOTH);							// Enable Smooth Shading
 	glClearColor(0.0f, 0.0f, 0.0f, 0.5f);				// Black Background
 	glClearDepth(1.0f);									// Depth Buffer Setup
@@ -88,7 +101,6 @@ void QGLWidgetTest::initializeGL() {
 	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);	// Really Nice Perspective Calculations
 	glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);					// Set Line Antialiasing
 	glDisable(GL_LIGHTING);
-
 	setDefaultGlobalStates();
 	startTimer(timer_interval);
 }

@@ -274,7 +274,7 @@ namespace Amanith {
 		GVect<DATA_TYPE, 3> rotatedPointOnPlane;
 
 		// transform ray into box frame
-		for (GUInt32 i = 0; i < 3; i++) {
+		for (GUInt32 i = 0; i < 3; ++i) {
 			tmpNormal[i] = Dot(Plane.Normal(), oob.Axis(i));
 			rotatedPointOnPlane[i] = Dot(pointOnPlane, oob.Axis(i));
 		}
@@ -675,7 +675,7 @@ namespace Amanith {
 
 		// transform ray into box frame
 		deltaOrg = ray.Origin() - oob.Center();
-		for (GUInt32 i = 0; i < SIZE; i++) {
+		for (GUInt32 i = 0; i < SIZE; ++i) {
 			tmpDirection[i] = Dot(ray.Direction(), oob.Axis(i));
 			tmpOrigin[i] = Dot(deltaOrg, oob.Axis(i));
 		}

@@ -18,6 +18,7 @@ rm $AMANITHDIR/examples/opengl/path2d/Makefile
 rm $AMANITHDIR/examples/opengl/polyline2d/Makefile
 rm $AMANITHDIR/examples/opengl/testglext/Makefile
 rm $AMANITHDIR/examples/opengl/testshaders/Makefile
+rm $AMANITHDIR/examples/opengl/tesselator2d/Makefile
 rm $AMANITHDIR/examples/opengl/vectorizer/Makefile
 rm $AMANITHDIR/examples/others/Makefile
 rm $AMANITHDIR/examples/others/lowlevel_stuff/Makefile
@@ -42,6 +43,7 @@ rm $AMANITHDIR/examples/opengl/path2d/path2d
 rm $AMANITHDIR/examples/opengl/polyline2d/drawpolyline
 rm $AMANITHDIR/examples/opengl/testglext/testglext
 rm $AMANITHDIR/examples/opengl/testshaders/testshaders
+rm $AMANITHDIR/examples/opengl/tesselator2d/tesselator2d
 rm $AMANITHDIR/examples/opengl/vectorizer/vectorizer
 rm $AMANITHDIR/examples/others/lowlevel_stuff/lowlevel
 rm $AMANITHDIR/examples/viewimage/viewimage

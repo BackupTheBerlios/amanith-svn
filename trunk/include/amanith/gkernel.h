@@ -116,9 +116,9 @@ namespace Amanith {
 		//! Clone function
 		GError BaseClone(const GElement& Source);
 		//! Remove an element reference from the the internal instances list
-		GError RemoveElementReference(const GElement *DeleteElement);
+		GError RemoveElementReference(const GElement *Element);
 		//! Add an element reference inside the internal instances list
-		GError AddElementReference(const GElement *DeleteElement);
+		GError AddElementReference(const GElement *Element);
 
 	public:
 		//! Default constructor

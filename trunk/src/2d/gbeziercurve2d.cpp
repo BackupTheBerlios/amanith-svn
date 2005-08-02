@@ -762,7 +762,6 @@ GError GBezierCurve2D::Flatten2(GDynArray<GPoint2>& Contour, const GReal MaxDevi
 	GBezierCurve2D tmpBez;
 	GReal u, eps;
 	GVector2 k;
-	//GPoint2 pOnCurve;
 
 	tmpBez.SetPoints(gPoints);
 	tmpBez.SetDomain(0, 1);
@@ -852,8 +851,7 @@ void GBezierCurve2D::ExciseInflectionPoint(const GReal Flex, const GReal Flatnes
 
 // Polyline points (excluding last end point) along curve using parabolic approximation
 // Precondition: there are no inflection points
-void GBezierCurve2D::ParabolicApproxBezierPointsNoInflPts(const GReal Flatness,
-													   GDynArray<GPoint2>& Contour) const {
+void GBezierCurve2D::ParabolicApproxBezierPointsNoInflPts(const GReal Flatness, GDynArray<GPoint2>& Contour) const {
 
 	G_ASSERT (Degree() == 3);
 
@@ -866,11 +864,15 @@ void GBezierCurve2D::ParabolicApproxBezierPointsNoInflPts(const GReal Flatness,
 	while (1) {
 		GReal dx = bez.gPoints[1][G_X] - bez.gPoints[0][G_X];
 		GReal dy = bez.gPoints[1][G_Y] - bez.gPoints[0][G_Y];			
-		GReal d = GMath::Abs(dx * (bez.gPoints[2][G_Y] - bez.gPoints[1][G_Y]) -
-							 dy * (bez.gPoints[2][G_X] - bez.gPoints[1][G_X])) / GMath::Sqrt(dx * dx + dy * dy);
 
-		GReal t = GMath::Sqrt((GReal)4 / (GReal)3 * Flatness / d);
-		if (t >= 1)
+		GReal dNorm = GMath::Sqrt(dx * dx + dy * dy);
+		if (dNorm <= G_EPSILON)
+			return;
+
+		GReal d = GMath::Abs(dx * (bez.gPoints[2][G_Y] - bez.gPoints[1][G_Y]) - dy * (bez.gPoints[2][G_X] - bez.gPoints[1][G_X]));
+
+		GReal t = GMath::Sqrt((GReal)4 / (GReal)3 * dNorm * Flatness / d);
+		if (t >= (GReal)1 - (GReal)G_EPSILON)
 			break;
 		bez.Cut(t, &bez2, (GBezierCurve2D *)NULL);
 		Contour.push_back(bez2.gPoints[0]);

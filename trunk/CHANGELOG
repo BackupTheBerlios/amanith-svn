@@ -1,0 +1,41 @@
+2005-08-03
+
+	* Version 0.1 Final.
+	==========================
+
+	* Updated to zlib v1.2.3 (that resolves some security issues).
+
+	* Updated to libpng v1.2.8 (that resolves some security issues).
+
+	* Added Visual Studio .Net 2003 build solution (it includes kernel library and examples).
+
+	* Added installer and binaries for Windows platform.
+
+	* Expanded string conversion of number, vectors and quaternions. Now functions accept a standard printf-like
+	formatting string (ex: "%5.2f") as parameter.
+
+	* Fixed a bug in the kernel class, that caused some memory leaks and crashes in the automatic memory retrivial (garbage collector).
+
+	* Added full support for paletted images, and implemented an octree color quantization.
+
+	* Changed GMesh2D class, now it's a template.
+
+	* More robust predicates have been introduced into tesselator (dictionary order, segments intersection, CCW smaller angle span).
+
+	* Fixed some minor and major bugs of tesselator. In particular some right diagonal cases made region collector crash, and in some degenerative
+	situations (deep otimization under gcc on Mac) an infinitive loop may be occurred.
+
+	* Added filling rules for tesselation (ODD, EVEN, BOTH).
+
+	* Added indexed array output in the tesselator api. So now, plain vertex and indexed output are available.
+
+	* Added a new example, called tesselator2d; it shows the realtime capabilities of Amanith tesselator.
+
+	* Fixed optimized cubic Bézier flattening when compiled using float real type.
+
+	* Added official support of Qt4 for examples and tools. So now the entire framework can be compiled with it. Please look at settings.conf file.
+
+	* Added unofficial support for MinGW compiler. It seems that MinGW has a bug that make not possible to export from dynamic libraries instantied
+	template classes. So in the Amanith case, the instantied template classes GMesh2D<GFloat> and GMesh2D<GDouble> could not be seen from the
+	delaunay2d example. We wish that this bug will be resolved into next MinGW version. Anyway the entire framework, examples and tools can be
+	compiled except for delaunay2d example. Please look at settings.conf file.

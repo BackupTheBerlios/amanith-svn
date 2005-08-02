@@ -49,7 +49,7 @@ namespace Amanith {
 // *********************************************************************
 void GTracedContour::DrawContour(GDynArray<GPoint2>& Points, const GReal Variation) const {
 
-	GUInt32 i, j = gPointFlags.size(), k;
+	GUInt32 i, j = (GUInt32)gPointFlags.size(), k;
 	GPoint2 cursor;
 	GBezierCurve2D bezDrawer;
 	GInt32 flag1, flag2;
@@ -87,7 +87,7 @@ void GTracedContour::DrawContour(GDynArray<GPoint2>& Points, const GReal Variati
 
 GError GTracedContour::ConvertToPath(GPath2D& Path) const {
 
-	GUInt32 i, j = gPointFlags.size(), w;
+	GUInt32 i, j = (GUInt32)gPointFlags.size(), w;
 	GPoint2 cursor;
 	GReal u, u0, step;
 	GBezierCurve2D tmpBezier;
@@ -626,14 +626,12 @@ void GTracer2D::BestFitSlope(const PixelPath& Path, const GDynArray< GPoint<GRea
 	correlMatrix[0][0] = (x2 - x * x * invk) * invk;
 	correlMatrix[0][1] = correlMatrix[1][0] = (xy - x * y * invk) * invk;
 	correlMatrix[1][1] = (y2 - y * y * invk) * invk;
-	//GDynArray<GVector2> eigenValues;
-	//GDynArray<GVector2> eigenVectors;
-	//GEigen solver(correlMatrix, true, eigenValues, eigenVectors, G_TRUE);
+
 	GVector2 eigenValue1, eigenValue2, eigenVector1, eigenVector2;
 	GEigen solver(correlMatrix, G_TRUE, eigenValue1, eigenValue2, eigenVector1, eigenVector2, G_TRUE);
 
 	// Potrace uses swapped slopes (ex: y-slope instead of x-slope)
-	//dir->Set(-eigenVectors[0][G_Y], eigenVectors[0][G_X]);
+	// dir->Set(-eigenVectors[0][G_Y], eigenVectors[0][G_X]);
 	dir->Set(-eigenVector1[G_Y], eigenVector1[G_X]);
 }
 
@@ -972,8 +970,7 @@ GError GTracer2D::Trace(const GPixelMap& Image, GDynArray<GTracedContour>& Paths
 						const GInt32 MaxRadius, const GInt32 MinArea, const GReal Alpha) {
 
 	// we only wanna single channel images
-	if ((Image.PixelFormat() != G_RGB_PALETTE) && (Image.PixelFormat() != G_ARGB_PALETTE) &&
-		(Image.PixelFormat() != G_GRAYSCALE))
+	if (!Image.IsPaletted() && !Image.IsGrayScale())
 		return G_INVALID_FORMAT;
 	
 	GPixelMap imageCopy;

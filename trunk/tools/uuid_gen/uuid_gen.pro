@@ -13,6 +13,8 @@ FORMS = uuidgenfrmbase.ui
 
 TARGET = uuid_gen
 
+win32: RC_FILE = tool.rc
+
 # Qt4 support
 contains(DEFINES, USE_QT4) {
     QT += qt3support

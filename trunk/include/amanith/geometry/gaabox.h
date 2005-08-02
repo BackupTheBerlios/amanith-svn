@@ -62,7 +62,7 @@ namespace Amanith {
 		*/
 		inline void FixCornersOrder() {
 
-			for (GUInt32 i = 0; i < SIZE; i++) {
+			for (GUInt32 i = 0; i < SIZE; ++i) {
 				if (gMin[i] > gMax[i]) {
 					DATA_TYPE swap = gMin[i];
 					gMin[i] = gMax[i];
@@ -137,7 +137,7 @@ namespace Amanith {
 			G_ASSERT(SIZE > 0);
 			DATA_TYPE res = gMax[0] - gMin[0];
 
-			for (GUInt32 i = 1; i < SIZE; i++)
+			for (GUInt32 i = 1; i < SIZE; ++i)
 				res *= (gMax[i] - gMin[i]);
 			return res;
 		}
@@ -179,11 +179,11 @@ namespace Amanith {
 		*/
 		GSurfaceSide PointSign(const GPoint<DATA_TYPE, SIZE>& TestPoint, const DATA_TYPE Epsilon = 0) const {
 
-			for (GUInt32 i = 0; i < SIZE; i++) {
+			for (GUInt32 i = 0; i < SIZE; ++i) {
 				if ((TestPoint[i] > gMax[i] + Epsilon) || (TestPoint[i] < gMin[i] - Epsilon))
 					return G_OUTSIDE;
 			}
-			for (GUInt32 i = 0; i < SIZE; i++) {
+			for (GUInt32 i = 0; i < SIZE; ++i) {
 				if ((TestPoint[i] <= gMin[i] + Epsilon) || (TestPoint[i] >= gMax[i] - Epsilon))
 					return G_ONSURFACE;
 			}
@@ -254,16 +254,15 @@ namespace Amanith {
 		*/
 		void SetMinMax(const GDynArray< GPoint<DATA_TYPE, SIZE> >& Points) {
 
-			GUInt32 i, j;
+			GUInt32 j = (GUInt32)Points.size();
 
-			for (i = 0; i < SIZE; i++) {
-				gMin[i] = G_MAX_REAL;
-				gMax[i] = G_MIN_REAL;
-			}
-			j = Points.size();
-			for (i = 0; i < j; i++) {
+			if (j < 2)
+				return;
+			gMin = Points[0];
+			gMax = Points[1];
+			FixCornersOrder();
+			for (GUInt32 i = 2; i < j; ++i)
 				ExtendToInclude(Points[i]);
-			}
 		}
 
 		/*!

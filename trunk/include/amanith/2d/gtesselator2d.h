@@ -39,10 +39,19 @@
 */
 namespace Amanith {
 
-
 	// *********************************************************************
 	//                          GTesselator2D
 	// *********************************************************************
+
+	//! Fill rules for tessellation
+	enum GFillRule {
+		//! Odd rule
+		G_ODD_RULE = 0,
+		//! Even rule
+		G_EVEN_RULE = 1,
+		//! Any rule
+		G_ANY_RULE = 2
+	};
 
 	/*!
 		\class GTesselator2D
@@ -72,25 +81,19 @@ namespace Amanith {
 
 	private:
 
-		#define UNDEFINED_VERTEX	-1
-		#define NORMAL_VERTEX		0
-		#define SPLIT_VERTEX		1
-		#define MERGE_VERTEX		2
-
 		struct GExtVertex {
-			GInt32 Flags;
-			GMeshVertex2D *MeshVertex;
+			GMeshVertex2D<GDouble> *MeshVertex;
 			// constructor
 			GExtVertex() {
-				Flags = UNDEFINED_VERTEX;
 				MeshVertex = NULL;
 			}
-			GExtVertex(const GInt32 VertFlags, GMeshVertex2D* VertMesh)	: Flags(VertFlags), MeshVertex(VertMesh) {
+			GExtVertex(GMeshVertex2D<GDouble>* VertMesh) : MeshVertex(VertMesh) {
 			}
 		};
+		// #define GExtVertex GMeshVertex2D<GDouble>
 
 		struct GActiveRegion {
-			GMeshEdge2D *MeshUpperEdge;  // upper edge, directed right to left
+			GMeshEdge2D<GDouble> *MeshUpperEdge;  // upper edge, directed right to left
 			GInt32 CrossingNumber;
 			GBool Valid;
 		};
@@ -101,6 +104,7 @@ namespace Amanith {
 			GBool IsIntoDictionary;
 			GAVLNode *AVLNode;
 			GActiveRegion *Region;
+			GBool HasBeenIntoDictionary;
 		};
 
 		struct GTessDescriptor;
@@ -115,27 +119,28 @@ namespace Amanith {
 			// destructor
 			~GDictionaryTree() {
 			}
-			int Compare(void *ItemA, void *ItemB);
+			GInt32 Compare(void *ItemA, void *ItemB);
 		};
 
 		struct GTessDescriptor {
-			GMesh2D TargetMesh;
-			GMeshEdge2D *LastEdge;
-			GPoint2 LastPoints[2];
-			GMeshVertex2D *FirstPushedPoints[2];
+			GMesh2D<GDouble> TargetMesh;
+			GMeshEdge2D<GDouble> *LastEdge;
+			GPoint<GDouble, 2> LastPoints[2];
+			GMeshVertex2D<GDouble> *FirstPushedPoints[2];
 			GInt32 StepsDone;
 			GInt32 FirstPushedSteps;
 			GInt32 PushedCount;
-			GMeshVertex2D *CurrentEvent;
+			GMeshVertex2D<GDouble> *CurrentEvent;
 			GActiveRegion *LastRegion;
-			GMeshEdge2D *LastRegionEdge;
-			std::list<GExtVertex *> PriorityTree;
+			GMeshEdge2D<GDouble> *LastRegionEdge;
+			std::list< GExtVertex* > PriorityTree;
 			GDictionaryTree DictionaryTree;
 
-			GDynArray<GMeshEdge2D *> MeshContours;
+			GDynArray< GMeshEdge2D<GDouble> *> MeshContours;
 			GDynArray<GExtVertex *> ExtVertices;
 			GDynArray<GMeshToAVL *> ExtEdges;
 			GDynArray<GActiveRegion *> ActiveRegions;
+			GUInt32 VertexID;
 
 			// constructor
 			GTessDescriptor() {
@@ -146,72 +151,91 @@ namespace Amanith {
 				LastRegion = NULL;
 				LastRegionEdge = NULL;
 				DictionaryTree.DescPointer = this;
+				VertexID = 0;
 			}
 		};
 
-		static bool SweepGreater(const GExtVertex *Event1, const GExtVertex *Event2);
+		static bool SweepGreater(const GExtVertex* Event1, const GExtVertex* Event2);
+
+		// debug functions
+		/*static void DebugOpenFile(std::FILE **File, const GChar8 *FileName);
+		static void DebugCloseFile(std::FILE **File);
+		static void DebugWrite(std::FILE *File, const GChar8* Text);*/
+		static void DebugDumpDictionary(std::FILE *File, GDictionaryTree& Dictionary, GMeshVertex2D<GDouble> *Event);
+		static void DebugDumpOrgRing(std::FILE *File, GMeshVertex2D<GDouble> *Vertex);
 
 	protected:
 
-		void BeginContour(const GReal X, const GReal Y, GTessDescriptor& Descriptor);
-		void AddContourPoint(const GReal X, const GReal Y, GTessDescriptor& Descriptor);
+		void BeginContour(const GDouble X, const GDouble Y, GTessDescriptor& Descriptor);
+		void AddContourPoint(const GDouble X, const GDouble Y, GTessDescriptor& Descriptor);
 		void EndContour(GTessDescriptor& Descriptor);
 		void EndTesselletionData(GTessDescriptor& Descriptor);
 
 		// return true is Edge is left-going from Vertex
-		GBool IsLeftGoing(GMeshEdge2D *Edge, GMeshVertex2D *Vertex);
-		GBool IsLeftGoingFast(GMeshEdge2D *Edge, GMeshVertex2D *Vertex);
+		GBool IsLeftGoing(GMeshEdge2D<GDouble> *Edge, GMeshVertex2D<GDouble> *Vertex);
+		GBool IsLeftGoingFast(GMeshEdge2D<GDouble> *Edge, GMeshVertex2D<GDouble> *Vertex);
 
 		// return true is Edge is right-going from Vertex
-		GBool IsRightGoing(GMeshEdge2D *Edge, GMeshVertex2D *Vertex);
-		GBool ProcessRightGoingEdges(GMeshVertex2D *EventVertex, GTessDescriptor& Descriptor);
+		GBool IsRightGoing(GMeshEdge2D<GDouble> *Edge, GMeshVertex2D<GDouble> *Vertex);
+		GBool ProcessRightGoingEdges(GMeshVertex2D<GDouble> *EventVertex, GTessDescriptor& Descriptor);
 		// add to the edge dictionary a mesh edge
-		GMeshEdge2D *AddDictionaryEdge(GMeshEdge2D *MeshEdge, const GInt32 Flags, GBool& RevisitFlag,
-									   GTessDescriptor& Descriptor);
+		GMeshEdge2D<GDouble> *AddDictionaryEdge(GMeshEdge2D<GDouble> *MeshEdge, const GInt32 Flags, GBool& RevisitFlag,
+												GTessDescriptor& Descriptor);
 		// events queue functions
-		GMeshVertex2D *InsertEventNoSort(GMeshVertex2D *EventVertex, GTessDescriptor& Descriptor);
-		GMeshVertex2D *InsertEventSort(GMeshVertex2D *EventVertex, GTessDescriptor& Descriptor);
+		GMeshVertex2D<GDouble>* InsertEventNoSort(GMeshVertex2D<GDouble> *EventVertex, GTessDescriptor& Descriptor);
+		GMeshVertex2D<GDouble>* InsertEventSort(GMeshVertex2D<GDouble> *EventVertex, GTessDescriptor& Descriptor);
 		// diagonal tracing functions
-		GMeshEdge2D *TraceLeftDiagonal(GMeshVertex2D *Origin, GMeshVertex2D *Destination, GTessDescriptor& Descriptor);
-		GMeshEdge2D *TraceRightDiagonal(GMeshVertex2D *Origin, GMeshVertex2D *Destination, GTessDescriptor& Descriptor);
+		GMeshEdge2D<GDouble> *TraceLeftDiagonal(GMeshVertex2D<GDouble> *Origin, GMeshVertex2D<GDouble> *Destination,
+												GTessDescriptor& Descriptor);
+		GMeshEdge2D<GDouble> *TraceRightDiagonal(GMeshVertex2D<GDouble> *Origin, GMeshVertex2D<GDouble> *Destination,
+												GTessDescriptor& Descriptor);
 		// intersection routines
-		GInt32 CheckIntersection(GMeshEdge2D *EdgeAbove, GMeshEdge2D *EdgeBelow,
-								 GPoint2& IntersectionPoint1, GPoint2& IntersectionPoint2);
-		GBool DoIntersection(GMeshEdge2D *EdgeAbove, GMeshEdge2D *EdgeBelow, GInt32& IntersectionType,
-							 GTessDescriptor& Descriptor);
-		void ManageIntersections(GMeshEdge2D *EdgeAbove, GMeshEdge2D *EdgeBelow, const GPoint2& IntersectionPoint,
-								 GTessDescriptor& Descriptor);
-		GMeshEdge2D *ManageDegenerativeIntersections(GMeshEdge2D *Touched, GMeshEdge2D *UnTouched,
-													 const GPoint2& IntersectionPoint, GTessDescriptor& Descriptor);
-		void ManageOverlappingEdges(GMeshEdge2D *Edge, GMeshEdge2D *EdgeToInsert,
-									const GPoint2& IntersectionPoint1, const GPoint2& IntersectionPoint2,
-									GBool& RevisitFlag, GTessDescriptor& Descriptor);
+		GInt32 CheckIntersection(const GPoint<GDouble, 2>& Event,
+								 GMeshEdge2D<GDouble> *EdgeAbove, GMeshEdge2D<GDouble> *EdgeBelow,
+								 GPoint<GDouble, 2>& IntersectionPoint);
+		GBool DoIntersection(GMeshEdge2D<GDouble> *EdgeAbove, GMeshEdge2D<GDouble> *EdgeBelow,
+							 GInt32& IntersectionType, GTessDescriptor& Descriptor);
+		void ManageIntersections(GMeshEdge2D<GDouble> *EdgeAbove, GMeshEdge2D<GDouble> *EdgeBelow,
+								 const GPoint<GDouble, 2>& IntersectionPoint, GTessDescriptor& Descriptor);
+		GMeshEdge2D<GDouble> *ManageDegenerativeIntersections(GMeshEdge2D<GDouble> *Touched,
+															  GMeshEdge2D<GDouble> *UnTouched,
+															  const GPoint<GDouble, 2>& IntersectionPoint,
+															  GTessDescriptor& Descriptor);
 		// merging rings functions
-		static GMeshVertex2D *MergeRings(GMeshVertex2D *Ring1Vertex, GMeshVertex2D *Ring2Vertex, GMesh2D *Mesh);
-		static GMeshEdge2D *SafeRemoveEdgeFromVertex(GMeshEdge2D *Edge);
-		static void DoInsertEdge(GMeshEdge2D *EdgeToInsert, GMeshEdge2D *RingEdge, GMesh2D *Mesh);
+		static GMeshVertex2D<GDouble> *MergeRings(GMeshVertex2D<GDouble> *Ring1Vertex,
+												  GMeshVertex2D<GDouble> *Ring2Vertex,
+												  GMesh2D<GDouble> *Mesh);
+		static GMeshEdge2D<GDouble> *SafeRemoveEdgeFromVertex(GMeshEdge2D<GDouble> *Edge);
+		static void DoInsertEdge(GMeshEdge2D<GDouble> *EdgeToInsert, GMeshEdge2D<GDouble> *RingEdge, GMesh2D<GDouble> *Mesh);
 		// tessellation routines
-		GBool CloseRegion(GMeshEdge2D *UpperEdge, GDynArray<GActiveRegion *>& ActiveRegions,
+		GBool CloseRegion(GMeshEdge2D<GDouble> *UpperEdge, GDynArray<GActiveRegion *>& ActiveRegions,
 						  GTessDescriptor& Descriptor);
-		GBool CloseRegions(GMeshVertex2D *EventVertex, GDynArray<GActiveRegion *>& ActiveRegions,
+		GBool CloseRegions(GMeshVertex2D<GDouble> *EventVertex, GDynArray<GActiveRegion *>& ActiveRegions,
 						   GAVLNode **UpperBounder, GAVLNode **LowerBounder, GBool& RevisitFlag,
 						   GTessDescriptor& Descriptor);
 
-		GBool PatchRightDiagonal(GMeshVertex2D *Event, GAVLNode *UpperBounder, GAVLNode *LowerBounder,
+		GBool PatchRightDiagonal(GMeshVertex2D<GDouble> *Event, GAVLNode *UpperBounder, GAVLNode *LowerBounder,
 								GTessDescriptor& Descriptor);
 		GExtVertex *MergeCoincidentVertices(GTessDescriptor& Descriptor);
-		void SimplifyEdges(GMeshVertex2D *Event, GDynArray<GActiveRegion *>& ActiveRegions,
+		void SimplifyEdges(GMeshVertex2D<GDouble> *Event, GDynArray<GActiveRegion *>& ActiveRegions,
 						   GTessDescriptor& Descriptor);
-		GBool SweepEvent(GExtVertex *Event, GTessDescriptor& Descriptor);
+		GBool SweepEvent(GExtVertex* Event, GTessDescriptor& Descriptor);
 		GUInt32 PurgeRegions(GDynArray<GActiveRegion *>& ActiveRegions, const GBool Fast,
 							 GTessDescriptor& Descriptor);
-		void TessellateMonotoneRegion(const GActiveRegion* Region, GDynArray<GPoint2>& Points,
+
+		void TessellateMonotoneRegion(const GActiveRegion* Region, GDynArray< GPoint<GDouble, 2> >& Points,
+									  GTessDescriptor& Descriptor);
+		void TessellateMonotoneRegion(const GActiveRegion* Region, GDynArray<GUInt32>& PointsIds,
 									  GTessDescriptor& Descriptor);
 
 		// searching into RingEdge's origin ring, return that edge that span the smaller angle in CCW
 		// direction to meet an edge specified by its Origin and its Destination
-		static GMeshEdge2D *CCWSmallerAngleSpanEdge(GMeshEdge2D *RingEdge,
-													const GPoint2& Origin, const GPoint2& Destination);
+		static GMeshEdge2D<GDouble> *CCWSmallerAngleSpanEdge(GMeshEdge2D<GDouble> *RingEdge,
+															 const GPoint<GDouble, 2>& Origin,
+															 const GPoint<GDouble, 2>& Destination);
+
+		static GBool ValidateInput(const GDynArray<GPoint2>& Points, const GDynArray<GInt32>& PointsPerContour);
+		static void FreeTessellation(GTessDescriptor& Descriptor);
 
 	public:
 		//! Default constructor.
@@ -221,12 +245,12 @@ namespace Amanith {
 		/*!
 			Build a valid triangulation of given contours and holes.
 			The triangulation is based on a robust sweep-line algorithm, see GTesselator2D class reference
-			for more details and use example. Unlike other triangulators, Amanith tesselator does not require
-			that contours (be they holes or not) must be given in ccw or cw order. This make Amanith tesselator
-			more general and adaptable to other high-level libraries.
+			and forum posts for more details and use example. Unlike other triangulators, Amanith tesselator
+			does not require that contours (be they holes or not) must be given in ccw or cw order. This make
+			Amanith tesselator	more general and adaptable to other high-level libraries.
 			Here's an example of the typical use:
 \code
-	GDynArray<GPoint2> pts;
+	GDynArray< GPoint<GDouble, 2> > pts;
 	GDynArray<GInt32> idx;
 
 	// push point for a square
@@ -241,7 +265,7 @@ namespace Amanith {
 	pts.push_back(GPoint2(5, 8));
 	idx.push_back(3);
 
-	GDynArray<GPoint2> triPoints;
+	GDynArray< GPoint<GDouble, 2> > triPoints;
 	GTesselator2D tesselator;
 
 	tesselator.Tesselate(pts, idx, triPoints);
@@ -251,12 +275,58 @@ namespace Amanith {
 			\param Points the array containing the contours points.
 			\param PointsPerContour an array containing the number of point for every contour.
 			\param Triangles the outputted array of triangles. Every triangle is built by 3 vertexes.
-			\param OddFill the filling rule.
+			\param FillRule the filling rule.
 			\return G_NO_ERROR if operation succeeds, an error code otherwise.
 			\note Please keep OddFill parameter G_TRUE. This is the only supported mode for this version.
 		*/
 		GError Tesselate(const GDynArray<GPoint2>& Points, const GDynArray<GInt32>& PointsPerContour,
-						 GDynArray<GPoint2>& Triangles, const GBool OddFill = G_TRUE);
+						 GDynArray< GPoint<GDouble, 2> >& Triangles, const GFillRule FillRule = G_ODD_RULE);
+
+		/*!
+			Build a valid triangulation of given contours and holes.
+			The triangulation is based on a robust sweep-line algorithm, see GTesselator2D class reference
+			and forum posts for more details and use example. Unlike other triangulators, Amanith tesselator
+			does not require that contours (be they holes or not) must be given in ccw or cw order. This make
+			Amanith tesselator more general and adaptable to other high-level libraries.
+			Here's an example of the typical use:
+\code
+	GDynArray< GPoint<GDouble, 2> > pts;
+	GDynArray<GInt32> idx;
+
+	// push point for a square
+	pts.push_back(GPoint2(0, 0));
+	pts.push_back(GPoint2(10, 0));
+	pts.push_back(GPoint2(10, 10));
+	pts.push_back(GPoint2(0, 10));
+	idx.push_back(4);
+	// push points for a triangle hole (inside the previous square).
+	pts.push_back(GPoint2(3, 3));
+	pts.push_back(GPoint2(7, 3));
+	pts.push_back(GPoint2(5, 8));
+	idx.push_back(3);
+
+	GDynArray< GPoint<GDouble, 2> > triPoints;
+	GDynArray<GInt32> triIndexes;
+	GTesselator2D tesselator;
+
+	tesselator.Tesselate(pts, idx, triPoints);
+	for (GUInt32 i = 0; i < triPoints.size(); i+=3)
+		DrawTriangle(triPoints[triIndexes[i]], triPoints[triIndexes[i + 1]], triPoints[triIndexes[i + 2]]);
+\endcode
+			\param Points the array containing the contours points.
+			\param PointsPerContour an array containing the number of point for every contour.
+			\param TriangPoints the outputted array of triangles points.
+			\param TriangIds the outputted array of triangles indexes. Each triangle is made of 3 vertexes, so
+			in this array there will be triplets of indexes, one triple for each triangle. Indexes are
+			consecutive, so first triplet describes the first triangle, second triplet describes the second
+			triangle, and so on.
+			\param FillRule the filling rule.
+			\return G_NO_ERROR if operation succeeds, an error code otherwise.
+			\note Please keep OddFill parameter G_TRUE. This is the only supported mode for this version.
+		*/
+		GError Tesselate(const GDynArray<GPoint2>& Points, const GDynArray<GInt32>& PointsPerContour,
+						 GDynArray< GPoint<GDouble, 2> >& TriangPoints, GDynArray< GUInt32 >& TriangIds,
+						 const GFillRule FillRule = G_ODD_RULE);
 
 	};
 

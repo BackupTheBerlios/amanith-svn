@@ -50,7 +50,7 @@
 #include "classtreeform.h"
 
 // constructor
-MainForm::MainForm() : mainFormBase() {
+MainForm::MainForm() : mainFormBase(0, 0, FALSE, Qt::WStyle_Customize | Qt::WStyle_DialogBorder | Qt::WStyle_Title | Qt::WStyle_SysMenu) {
 
 	GInt32 i;
 	GProxyState p;
@@ -75,15 +75,9 @@ MainForm::MainForm() : mainFormBase() {
 
 			if (!p.External())
 				list.push_back(p.Proxy()->ClassID().IDName());
-			//baseClass->insertItem(p.Proxy()->ClassID().IDName());
-			//lbItem = lbox->item(i);
-			// if it's an external plugin we can't select it
-			//if (p.External())
-			//	lbItem->setSelectable(FALSE);
 		}
 	}
 
-	//baseClass->listBox()->sort();
 	list.sort();
 
 	baseClass->insertStringList(list);

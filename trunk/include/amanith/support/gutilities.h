@@ -104,26 +104,44 @@ namespace Amanith {
 		static GString Purge(const GString& DustySource, const GString& Dust);
 		//! Convert a vector into string format
 		template<typename DATA_TYPE, GUInt32 SIZE>
-		static GString ToString(const GVectBase<DATA_TYPE, SIZE>& v);
+		static GString ToString(const GVectBase<DATA_TYPE, SIZE>& v, const GString& Separator = ",",
+								const GChar8 *Format = NULL) {
+
+			GString s = "";
+
+			for (GUInt32 i = 0; i < SIZE - 1; ++i)
+				s += ToString(v[i], Format) + Separator;
+			s = s + ToString(v[SIZE - 1], Format);
+			return s;
+		}
 		//! Convert a quaternion into string format
 		template<typename DATA_TYPE>
-		static GString ToString(const GQuat<DATA_TYPE>& q);
+		static GString ToString(const GQuat<DATA_TYPE>& q, const GString& Separator = ",",
+								const GChar8 *Format = NULL) {
+
+			GString s = "";
+
+			for (GUInt32 i = 0; i < 3; i++)
+				s += ToString(q[i], Format) + Separator;
+			s = s + ToString(q[3], Format);
+			return s;
+		}
 		//! Convert an integer into string format
-		static GString ToString(const GInt32 Value);
+		static GString ToString(const GInt32 Value, const GChar8 *Format = "%d");
 		//! Convert an integer into string format
-		static GString ToString(const GUInt32 Value);
+		static GString ToString(const GUInt32 Value, const GChar8 *Format = "%d");
 		//! Convert an integer into string format
-		static GString ToString(const GInt16 Value);
+		static GString ToString(const GInt16 Value, const GChar8 *Format = "%d");
 		//! Convert an integer into string format
-		static GString ToString(const GUInt16 Value);
+		static GString ToString(const GUInt16 Value, const GChar8 *Format = "%d");
 		//! Convert an integer into string format
-		static GString ToString(const GInt8 Value);
+		static GString ToString(const GInt8 Value, const GChar8 *Format = "%d");
 		//! Convert an integer into string format
-		static GString ToString(const GUInt8 Value);
+		static GString ToString(const GUInt8 Value, const GChar8 *Format = "%d");
 		//! Convert a float into string format
-		static GString ToString(const GFloat Value);
+		static GString ToString(const GFloat Value, const GChar8 *Format = "%f");
 		//! Convert a double into string format
-		static GString ToString(const GDouble Value);
+		static GString ToString(const GDouble Value, const GChar8 *Format = "%f");
 		//! Converts the contents of a string as a C-style, null-terminated string
 		static const GChar8 *ToAscii(const GString& Value);
 		/*!
@@ -149,7 +167,25 @@ namespace Amanith {
 		static GString Merge(const GStringList& InputList, const GChar8 *InterStr = "");
 		//! Set vector values from string representation
 		template<GUInt32 SIZE>
-		static GError FromString(const GString& SourceStr, GVectBase<GReal, SIZE>& Vect);
+		static GError FromString(const GString& SourceStr, GVectBase<GReal, SIZE>& Vect) {
+
+			GVectBase<GReal, SIZE> vaux;
+			GUInt32 i;
+			GStringList::const_iterator it;
+			// split components
+			GStringList list = StrUtils::Split(',', SourceStr);
+
+			// we MUST have SIZE components
+			if (list.size() != SIZE)
+				return G_INVALID_FORMAT;
+			// extract each component
+			i = 0;
+			for (it = list.begin(); it != list.end(); ++it, ++i)
+				vaux[i] = (GReal)StrUtils::ToDouble(*it);
+
+			Vect = vaux;
+			return G_NO_ERROR;
+		}
 		//! Set quaternion values from string representation
 		static GError FromString(const GString& SourceStr, GQuaternion& Quat);
 		//! Encode a given string using BlowFish algorithm

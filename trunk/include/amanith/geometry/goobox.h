@@ -70,7 +70,7 @@ namespace Amanith {
 		inline GGenericOOBox(GGenericOOBox<DATA_TYPE, SIZE>& SourceBox) {
 
 			gCenter = SourceBox.gCenter;
-			for (GUInt32 i = 0; i < SIZE; i++) {
+			for (GUInt32 i = 0; i < SIZE; ++i) {
 				gAxis[i] = SourceBox.gAxis[i];
 				gHalfDimensions[i] = SourceBox.gHalfDimensions[i];
 			}
@@ -141,7 +141,7 @@ namespace Amanith {
 			G_ASSERT(SIZE > 0);
 			DATA_TYPE res = (DATA_TYPE)2 * gHalfDimensions[0];
 
-			for (GUInt32 i = 1; i < SIZE; i++)
+			for (GUInt32 i = 1; i < SIZE; ++i)
 				res *= ((DATA_TYPE)2 * gHalfDimensions[i]);
 			return res;
 		}
@@ -161,12 +161,12 @@ namespace Amanith {
 			GVect<DATA_TYPE, SIZE> deltaCenter = TestPoint - gCenter;
 			DATA_TYPE prj[SIZE];
 
-			for (GUInt32 i = 0; i < SIZE; i++) {
+			for (GUInt32 i = 0; i < SIZE; ++i) {
 				prj[i] = Dot(deltaCenter, gAxis[i]);
 				if ((prj[i] > gHalfDimensions[i] + Epsilon) || (prj[i] < -gHalfDimensions[i] - Epsilon))
 					return G_OUTSIDE;
 			}
-			for (GUInt32 i = 0; i < SIZE; i++) {
+			for (GUInt32 i = 0; i < SIZE; ++i) {
 				if ((prj[i] <= -gHalfDimensions[i] + Epsilon) || (prj[i] >= gHalfDimensions[i] - Epsilon))
 					return G_ONSURFACE;
 			}
@@ -197,7 +197,7 @@ namespace Amanith {
 		inline GBool operator ==(const GGenericOOBox<DATA_TYPE, SIZE>& Box) const {
 
 			GBool res = (this->gCenter == Box.Center());
-			for (GUInt32 i = 0; i < SIZE; i++) {
+			for (GUInt32 i = 0; i < SIZE; ++i) {
 				res &= (this->Axis(i) == Box.Axis(i));
 				res &= (this->HalfDimension(i) == Box.HalfDimension(i));
 			}
@@ -239,7 +239,7 @@ namespace Amanith {
 
 		G_ASSERT(Epsilon >= 0);
 		GBool res = IsEqual(Box1.Center(), Box2.Center(), Epsilon);
-		for (GUInt32 i = 0; i < SIZE; i++) {
+		for (GUInt32 i = 0; i < SIZE; ++i) {
 			res &= IsEqual(Box1.Axis(i), Box2.Axis(i), Epsilon);
 			res &= IsEqual(Box1.HalfDimension(i), Box2.HalfDimension(i), Epsilon);
 		}

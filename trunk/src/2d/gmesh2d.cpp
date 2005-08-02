@@ -41,17 +41,21 @@
 
 namespace Amanith {
 
+template <typename DATA_TYPE>
 class GMeshSector;
 
 // arc of consecutive edges emanating from a vertex in counterclockwise order
 // (a linked list of pointers to other vertex)
 // http://www-2.cs.cmu.edu/afs/andrew/scs/cs/15-463/2001/pub/src/a2/quadedge.html
+template <typename DATA_TYPE>
 struct GMeshArc {
-	GDynArray<GMeshSector> Sectors;
+	GDynArray< GMeshSector<DATA_TYPE> > Sectors;
 	GBool Debug;
 };
 // list of arcs
-typedef GDynArray<GMeshArc> GMeshArcList;
+//typedef GDynArray< GMeshArc<DATA_TYPE> > GMeshArcList;
+#define GMeshArcList GDynArray< GMeshArc<DATA_TYPE> >
+
 // For example, for vertex v below,
 //
 //       c------ b------i
@@ -71,35 +75,42 @@ typedef GDynArray<GMeshArc> GMeshArcList;
 // A valid Arclist is any set of disjoint arcs, in arbitrary order.
 // When done, the Arclist for this vertex would be a single Arc.
 // It would be a cyclic permutation of (a,b,c,d,e,f).
+template <typename DATA_TYPE>
 class GImpExpMeshVertex;
+
+template <typename DATA_TYPE>
 class GImpExpMeshFace;
 
+template <typename DATA_TYPE>
 class GMeshSector {
 public:
-	GImpExpMeshVertex *gFirstCCW;		// first ccw vertex
-	GImpExpMeshFace *gFace;				// intervening face
-	GImpExpMeshVertex *gSecondCCW;		// second ccw vertex
+	GImpExpMeshVertex<DATA_TYPE> *gFirstCCW;		// first ccw vertex
+	GImpExpMeshFace<DATA_TYPE> *gFace;				// intervening face
+	GImpExpMeshVertex<DATA_TYPE> *gSecondCCW;		// second ccw vertex
 
-	GMeshSector(GImpExpMeshVertex *FirstCCW, GImpExpMeshFace *Face, GImpExpMeshVertex *SecondCCW) {
+	GMeshSector(GImpExpMeshVertex<DATA_TYPE> *FirstCCW, GImpExpMeshFace<DATA_TYPE> *Face,
+				GImpExpMeshVertex<DATA_TYPE> *SecondCCW) {
 		this->gFirstCCW = FirstCCW;
 		this->gFace = Face;
 		this->gSecondCCW = SecondCCW;
 	}
 };
 
+template <typename DATA_TYPE>
 class GImpExpMeshVertex {
 public:
 	GBool gDone;				// is topology fully set & arclist complete?
-	GPoint2 gPosition;
+	GPoint<DATA_TYPE, 2> gPosition;
 	GMeshArcList gArcs;		// info about the vertexes adjacent to this one
-	GMeshVertex2D *gVertex;		// final vertex in mesh, null if not id. yet
+	GMeshVertex2D<DATA_TYPE> *gVertex;		// final vertex in mesh, null if not id. yet
 	GBool gInstantiated;		// true if identified and instantiated
 };
 
+template <typename DATA_TYPE>
 class GImpExpMeshFace {
 public:
-	GDynArray<GImpExpMeshVertex *> gVertexList;
-	GMeshFace2D *gMeshFace;
+	GDynArray< GImpExpMeshVertex<DATA_TYPE> *> gVertexList;
+	GMeshFace2D<DATA_TYPE> *gMeshFace;
 
 	GImpExpMeshFace() {
 	}
@@ -111,14 +122,15 @@ public:
 // Mesh -> the mesh to get the face from (must be non-null)
 // Face -> GImpExpMeshFace to get the face for (must be non-null)
 // <- a face that can be used to instantiate Face; null if none are available
-static GMeshFace2D *FindFace(GMesh2D *Mesh, GImpExpMeshFace *Face) {
+template <typename DATA_TYPE>
+static GMeshFace2D<DATA_TYPE> *FindFace(GMesh2D<DATA_TYPE> *Mesh, GImpExpMeshFace<DATA_TYPE> *Face) {
 
 	G_ASSERT(Mesh != NULL);
 	G_ASSERT(Face != NULL);
-	GUInt32 i, j = Face->gVertexList.size();
+	GUInt32 i, j = (GUInt32)Face->gVertexList.size();
 	// build a list of all identified vertexes of Face
-	GDynArray<GMeshVertex2D *> tmpVerts;
-	GMeshVertex2D *v;
+	GDynArray< GMeshVertex2D<DATA_TYPE> *> tmpVerts;
+	GMeshVertex2D<DATA_TYPE> *v;
 	for (i = 0; i < j; i++) {
 		v = Face->gVertexList[i]->gVertex;
 		// if v is not NULL is an identified vertex
@@ -126,8 +138,8 @@ static GMeshFace2D *FindFace(GMesh2D *Mesh, GImpExpMeshFace *Face) {
 			tmpVerts.push_back(v);
 	}
 	// locate and unused face in the mesh that include all the identified vertexes of Face
-	GMeshFaceIterator2D iterator(Mesh);
-	GMeshFace2D *f;
+	GMeshFaceIterator2D<DATA_TYPE> iterator(Mesh);
+	GMeshFace2D<DATA_TYPE> *f;
 	while ((f = iterator.Next()) != NULL)
 		// CustomData will be null for every unidentified (unfinished) face
 		if ((f->CustomData() == NULL) && (f->HasVertices(tmpVerts)))
@@ -135,10 +147,11 @@ static GMeshFace2D *FindFace(GMesh2D *Mesh, GImpExpMeshFace *Face) {
 	return NULL;
 }
 
-static GBool ClosedPolyhedron(GDynArray<GImpExpMeshVertex>& Verts) {
+template <typename DATA_TYPE>
+static GBool ClosedPolyhedron(GDynArray< GImpExpMeshVertex<DATA_TYPE> >& Verts) {
 
     // check to see if polyhedron is closed
-    GUInt32 i, j = Verts.size();
+    GUInt32 i, j = (GUInt32)Verts.size();
 
     for (i = 0; i < j; i++) {
 		//GMeshArcList &a = Verts[i].gArcs;
@@ -168,27 +181,28 @@ static GBool ClosedPolyhedron(GDynArray<GImpExpMeshVertex>& Verts) {
 // instantiate a given GImpExpMeshFace in a given mesh by identifying its vertexes
 // Mesh -> the mesh to instantiate the face in (must be non-null)
 // Face -> the GImpExpMeshFace to instantiate (must be non-null)
-static void MakeFace(GMesh2D *Mesh, GImpExpMeshFace *Face) {
+template <typename DATA_TYPE>
+static void MakeFace(GMesh2D<DATA_TYPE> *Mesh, GImpExpMeshFace<DATA_TYPE> *Face) {
 
 	G_ASSERT(Mesh != NULL);
 	G_ASSERT(Face != NULL);
 
 	// get the face to use for the Face
-	GMeshFace2D *face = FindFace(Mesh, Face);
+	GMeshFace2D<DATA_TYPE> *face = FindFace(Mesh, Face);
 	G_ASSERT(face != NULL);
 	// connect all pairs of identified vertexes on the face, as necessary
 	{
-		GDynArray<GImpExpMeshVertex *>::iterator vi;
+		typename GDynArray< GImpExpMeshVertex<DATA_TYPE> *>::iterator vi;
 		vi = Face->gVertexList.begin();
 
 		for (; vi != Face->gVertexList.end(); ++vi) {
 
-			GMeshVertex2D *vertex1 = (*vi)->gVertex;
-			GMeshVertex2D *vertex2;
+			GMeshVertex2D<DATA_TYPE> *vertex1 = (*vi)->gVertex;
+			GMeshVertex2D<DATA_TYPE> *vertex2;
 
 			if (vertex1) {
 				// find the next identified vertex, even if just itself
-				GDynArray<GImpExpMeshVertex *>::iterator vj = vi;
+				typename GDynArray< GImpExpMeshVertex<DATA_TYPE> *>::iterator vj = vi;
 				for (;;) {
 					vj++;
 					if (vj == Face->gVertexList.end())
@@ -198,27 +212,27 @@ static void MakeFace(GMesh2D *Mesh, GImpExpMeshFace *Face) {
 						break;
 				}
 				// connect the vertexes, if necessary
-				if (!GMesh2D::IsConnected(vertex1, vertex2, face))
+				if (!GMesh2D<DATA_TYPE>::IsConnected(vertex1, vertex2, face))
 					(void)Mesh->MakeFaceEdge(face, vertex1, vertex2)->Right();
 			}
 		}
 	}
 	// find the first identified vertex
-	GDynArray<GImpExpMeshVertex *>::iterator vi0 = Face->gVertexList.begin();
+	typename GDynArray< GImpExpMeshVertex<DATA_TYPE> *>::iterator vi0 = Face->gVertexList.begin();
 	while ((*vi0)->gVertex == NULL)
 		vi0++;
 	// identify all the following and preceding vertexes
-	GDynArray<GImpExpMeshVertex *>::iterator vi = vi0;
-	GMeshVertex2D *vertex = (*vi0)->gVertex;
+	typename GDynArray< GImpExpMeshVertex<DATA_TYPE> *>::iterator vi = vi0;
+	GMeshVertex2D<DATA_TYPE> *vertex = (*vi0)->gVertex;
 	for (;;) {
 		vi++;
 		if (vi == Face->gVertexList.end())
 			vi = Face->gVertexList.begin();
 		if (vi == vi0)
 			break;
-		GImpExpMeshVertex *v = (*vi);
+		GImpExpMeshVertex<DATA_TYPE> *v = (*vi);
 		if (v->gVertex == NULL) {
-			GMeshFace2D *right = GMesh2D::RightFace(vertex, face);
+			GMeshFace2D<DATA_TYPE> *right = GMesh2D<DATA_TYPE>::RightFace(vertex, face);
 			G_ASSERT(right != NULL);
 			v->gVertex = Mesh->MakeVertexEdge(vertex, face, right)->Dest();
 			v->gVertex->SetPosition(v->gPosition);
@@ -233,19 +247,20 @@ static void MakeFace(GMesh2D *Mesh, GImpExpMeshFace *Face) {
 // instantiate a given identified GImpExpMeshVertex in a given mesh by instantiating its adjacent faces
 // Mesh -> the mesh to instantiate the GImpExpMeshVertex in (must be non-null)
 // Vert -> the GImpExpMeshVertex to instantiate (must be non-null)
-static void MakeVertex(GMesh2D *Mesh, GImpExpMeshVertex *Vert) {
+template <typename DATA_TYPE>
+static void MakeVertex(GMesh2D<DATA_TYPE> *Mesh, GImpExpMeshVertex<DATA_TYPE> *Vert) {
 
-	GImpExpMeshFace *f;
+	GImpExpMeshFace<DATA_TYPE> *f;
 
 	G_ASSERT(Mesh != NULL);
 	G_ASSERT(Vert != NULL);
 	// find the first sector with an identified FirstCCW vertex
-	GMeshArc &arc = Vert->gArcs.front();
-	GDynArray<GMeshSector>::iterator it = arc.Sectors.begin();
+	GMeshArc<DATA_TYPE> &arc = Vert->gArcs.front();
+	typename GDynArray< GMeshSector<DATA_TYPE> >::iterator it = arc.Sectors.begin();
 	while (it->gFirstCCW->gVertex == NULL)
 		it++;
 	// instantiate all following sectors of the vertex in counterclockwise order
-	GDynArray<GMeshSector>::iterator it2 = it;
+	typename GDynArray< GMeshSector<DATA_TYPE> >::iterator it2 = it;
 	do {
 		f = it2->gFace;
 		if (f->gMeshFace == NULL)
@@ -260,20 +275,23 @@ static void MakeVertex(GMesh2D *Mesh, GImpExpMeshVertex *Vert) {
 }
 
 // Merge the arc (p, q) into the list of arcs around vertex v.
-static void MergeArc(GImpExpMeshVertex *v, GImpExpMeshVertex *p, GImpExpMeshVertex *q, GImpExpMeshFace *f) {
+template <typename DATA_TYPE>
+static void MergeArc(GImpExpMeshVertex<DATA_TYPE> *v, GImpExpMeshVertex<DATA_TYPE> *p,
+					 GImpExpMeshVertex<DATA_TYPE> *q, GImpExpMeshFace<DATA_TYPE> *f) {
 
     // Cases:
     //  1. ( bef &&  aft) it connects two existing arcs
     //  2. ( bef && !aft) it goes on the end of an existing arc
     //  3. (!bef &&  aft) it goes on the beginning of an existing arc
     //  4. (!bef && !aft) it does not connect with an existing arc
-    GMeshArc *bef = NULL, *aft = NULL;
-    GMeshSector sector(p, f, q);
-	GDynArray<GMeshArc>::iterator a;
-	GDynArray<GMeshArc>::iterator delItem;
+    GMeshArc<DATA_TYPE> *bef = NULL, *aft = NULL;
+    GMeshSector<DATA_TYPE> sector(p, f, q);
+	typename GDynArray< GMeshArc<DATA_TYPE> >::iterator a;
+	typename GDynArray< GMeshArc<DATA_TYPE> >::iterator delItem;
 
     for (a = v->gArcs.begin(); a != v->gArcs.end(); ++a) {
-		GImpExpMeshVertex *w;
+
+		GImpExpMeshVertex<DATA_TYPE> *w;
 
 		w = a->Sectors.back().gSecondCCW;
 		if (w == p)
@@ -298,7 +316,7 @@ static void MergeArc(GImpExpMeshVertex *v, GImpExpMeshVertex *p, GImpExpMeshVert
 			// now we'll merge two arcs in the arclist (remove following arc, and concatenate it into previous)
 			v->gArcs.erase(delItem);
 			// concatenation
-			GUInt32 i, j = aft->Sectors.size();
+			GUInt32 i, j = (GUInt32)aft->Sectors.size();
 			for (i = 0; i < j; i++)
 				bef->Sectors.push_back((*aft).Sectors[i]);			
 		}
@@ -312,21 +330,22 @@ static void MergeArc(GImpExpMeshVertex *v, GImpExpMeshVertex *p, GImpExpMeshVert
 			aft->Sectors.insert(aft->Sectors.begin(), sector);
 		else {
 			// 4. (!bef && !aft) it doesn't connect w. existing arc
-			GMeshArc arc;
+			GMeshArc<DATA_TYPE> arc;
 			arc.Sectors.push_back(sector);
 			v->gArcs.push_back(arc);
 		}
     }
 }
 
-static void AddArcs(GDynArray<GImpExpMeshVertex *>& vlist, GImpExpMeshFace *f) {
+template <typename DATA_TYPE>
+static void AddArcs(GDynArray< GImpExpMeshVertex<DATA_TYPE> *>& vlist, GImpExpMeshFace<DATA_TYPE> *f) {
 
     // vlist is not a circular list, but we need to step through all
     // consecutive triples as if it were circular
-    GImpExpMeshVertex *u, *v, *w;
+    GImpExpMeshVertex<DATA_TYPE> *u, *v, *w;
 	GUInt32 i, j;
 
-	j = vlist.size();
+	j = (GUInt32)vlist.size();
 	for (i = 0; i < j; i++) {
 		u = vlist[i % j];
 		v = vlist[(i + 1) % j];
@@ -335,19 +354,20 @@ static void AddArcs(GDynArray<GImpExpMeshVertex *>& vlist, GImpExpMeshFace *f) {
 	}
 }
 
-static GMesh2D *BuildQuadedge(GMesh2D *mesh, GDynArray<GImpExpMeshVertex>& verts) {
+template <typename DATA_TYPE>
+static GMesh2D<DATA_TYPE> *BuildQuadedge(GMesh2D<DATA_TYPE> *mesh, GDynArray< GImpExpMeshVertex<DATA_TYPE> >& verts) {
 
 	// check for a good polyhedron
 	ClosedPolyhedron(verts);
 
 	mesh->AddSubManifold();
-	GMeshVertex2D *vertex1 = mesh->Vertex(0);
+	GMeshVertex2D<DATA_TYPE> *vertex1 = mesh->Vertex(0);
 
 	// instantiate a face of the initial vertex
-	GImpExpMeshVertex *v = &verts[0];
+	GImpExpMeshVertex<DATA_TYPE> *v = &verts[0];
 	v->gVertex = vertex1;
 	v->gVertex->SetPosition(v->gPosition);
-	GImpExpMeshFace *f = v->gArcs[0].Sectors[0].gFace;
+	GImpExpMeshFace<DATA_TYPE> *f = v->gArcs[0].Sectors[0].gFace;
 	MakeFace(mesh, f);
 	// instantiate identified vertexes until all are instantiated
 	for (;;) {
@@ -355,7 +375,7 @@ static GMesh2D *BuildQuadedge(GMesh2D *mesh, GDynArray<GImpExpMeshVertex>& verts
 		GInt32 j = (GInt32)verts.size();
 		for (GInt32 i = 0; i < j; i++) {
 			
-			GImpExpMeshVertex *v = &verts[i];
+			GImpExpMeshVertex<DATA_TYPE> *v = &verts[i];
 			if (v->gVertex != NULL && !v->gInstantiated)
 				MakeVertex(mesh, v);
 			instantiated &= v->gInstantiated;
@@ -364,8 +384,8 @@ static GMesh2D *BuildQuadedge(GMesh2D *mesh, GDynArray<GImpExpMeshVertex>& verts
 			break;
 	}
 	// reset the data pointers of all faces
-	GMeshFaceIterator2D iterator(mesh);
-	GMeshFace2D *face;
+	GMeshFaceIterator2D<DATA_TYPE> iterator(mesh);
+	GMeshFace2D<DATA_TYPE> *face;
 	while ((face = iterator.Next()) != NULL)
 		face->SetCustomData(NULL);
 	return mesh;
@@ -377,7 +397,8 @@ static GMesh2D *BuildQuadedge(GMesh2D *mesh, GDynArray<GImpExpMeshVertex>& verts
 // *********************************************************************
 
 // add a given outgoing edge to this vertex (an edge whose origin is this vertex). MUST be non-null
-void GMeshVertex2D::AddEdge(GMeshEdge2D* NewEdge) {
+template <typename DATA_TYPE>
+void GMeshVertex2D<DATA_TYPE>::AddEdge(GMeshEdge2D<DATA_TYPE>* NewEdge) {
 
 	G_ASSERT(NewEdge != NULL);
 	// only keep track of one edge in the orbit--this one is as good as any
@@ -386,17 +407,19 @@ void GMeshVertex2D::AddEdge(GMeshEdge2D* NewEdge) {
 
 // remove a given outgoing edge from this vertex (an edge whose origin is no longer at this vertex)
 // Edge must be non-null
-void GMeshVertex2D::RemoveEdge(GMeshEdge2D* Edge) {
+template <typename DATA_TYPE>
+void GMeshVertex2D<DATA_TYPE>::RemoveEdge(GMeshEdge2D<DATA_TYPE>* Edge) {
 
 	G_ASSERT(Edge != NULL);
 	// replace the arbitrary edge with another edge in the orbit use null if this is the only edge
 	// assumes that the edge hasn't been actually removed yet
-	GMeshEdge2D *next = Edge->Onext();
+	GMeshEdge2D<DATA_TYPE> *next = Edge->Onext();
 	gEdge = next != Edge ? next : NULL;
 }
 
 // constructor (initialize this vertex at the origin with no outgoing edges)
-GMeshVertex2D::GMeshVertex2D(GMesh2D *Mesh) {
+template <typename DATA_TYPE>
+GMeshVertex2D<DATA_TYPE>::GMeshVertex2D(GMesh2D<DATA_TYPE> *Mesh) {
 
 	G_ASSERT(Mesh != NULL);
 
@@ -407,17 +430,19 @@ GMeshVertex2D::GMeshVertex2D(GMesh2D *Mesh) {
 }
 
 // destructor
-GMeshVertex2D::~GMeshVertex2D() {
+template <typename DATA_TYPE>
+GMeshVertex2D<DATA_TYPE>::~GMeshVertex2D() {
 }
 
 // counts how many edges are in the origin ring specified by this vertex
-GUInt32 GMeshVertex2D::EdgesInRingCount() {
+template <typename DATA_TYPE>
+GUInt32 GMeshVertex2D<DATA_TYPE>::EdgesInRingCount() {
 
 	// lets count how many edge goes from this vertex
 	GUInt32 rCount = 1;
 	// pick an outgoing edge
-	GMeshEdge2D *startEdge = this->Edge();
-	GMeshEdge2D *e = startEdge->Onext();
+	GMeshEdge2D<DATA_TYPE> *startEdge = this->Edge();
+	GMeshEdge2D<DATA_TYPE> *e = startEdge->Onext();
 	// lets visit origin orbit
 	while (e != startEdge) {
 		rCount++;
@@ -431,15 +456,16 @@ GUInt32 GMeshVertex2D::EdgesInRingCount() {
 // *********************************************************************
 
 // return the next edge of this edge iterator, if any. Null if none
-GMeshEdge2D *GMeshVertexEdgeIterator2D::Next() {
+template <typename DATA_TYPE>
+GMeshEdge2D<DATA_TYPE> *GMeshVertexEdgeIterator2D<DATA_TYPE>::Next() {
 	// check for degeneracy or exhausted iteration
-	GMeshEdge2D *current = gEdge;
+	GMeshEdge2D<DATA_TYPE> *current = gEdge;
 
 	if (!current)
 		return NULL;
 	// get the next edge in the counterclockwise orbit of the vertex, but
 	// return the current edge; reset to null if we've come back to the start
-	GMeshEdge2D *next = current->Onext();
+	GMeshEdge2D<DATA_TYPE> *next = current->Onext();
 	gEdge = next != gStart ? next : NULL;
 	return current;
 }
@@ -450,15 +476,17 @@ GMeshEdge2D *GMeshVertexEdgeIterator2D::Next() {
 // *********************************************************************
 
 // return the mesh this edge belongs to
-GMesh2D* GMeshEdge2D::Mesh() {
+template <typename DATA_TYPE>
+GMesh2D<DATA_TYPE>* GMeshEdge2D<DATA_TYPE>::Mesh() {
 
-	GQuadEdge2D *q = (GQuadEdge2D*)(this - this->gIndex);
+	GQuadEdge2D<DATA_TYPE> *q = (GQuadEdge2D<DATA_TYPE> *)(this - this->gIndex);
 	G_ASSERT(q != NULL);
 	return q->Mesh();
 }
 
 // change the origin vertex of this edge to a given vertex (null if currently unknown)
-void GMeshEdge2D::SetOrg(GMeshVertex2D *NewOrg) {
+template <typename DATA_TYPE>
+void GMeshEdge2D<DATA_TYPE>::SetOrg(GMeshVertex2D<DATA_TYPE> *NewOrg) {
 	
 	// add this edge to the (vertex) orbit of _org_
 	gVertex = NewOrg;
@@ -466,7 +494,8 @@ void GMeshEdge2D::SetOrg(GMeshVertex2D *NewOrg) {
 }
 
 // change the destination vertex of this edge to a given vertex (null if currently unknown)
-void GMeshEdge2D::SetDest(GMeshVertex2D *NewDest) {
+template <typename DATA_TYPE>
+void GMeshEdge2D<DATA_TYPE>::SetDest(GMeshVertex2D<DATA_TYPE> *NewDest) {
 
 	// add this edge to the (vertex) orbit of _dest_
 	Sym()->gVertex = NewDest;
@@ -474,7 +503,8 @@ void GMeshEdge2D::SetDest(GMeshVertex2D *NewDest) {
 }
 
 // change the left face of this edge to a given face (null if currently unknown)
-void GMeshEdge2D::SetLeft(GMeshFace2D *NewLeft) {
+template <typename DATA_TYPE>
+void GMeshEdge2D<DATA_TYPE>::SetLeft(GMeshFace2D<DATA_TYPE> *NewLeft) {
 
 	// add this edge to the (face) orbit of _left_
 	Rot()->gFace = NewLeft;
@@ -482,7 +512,8 @@ void GMeshEdge2D::SetLeft(GMeshFace2D *NewLeft) {
 }
 
 // change the right face of this edge to a given face (null if currently unknown)
-void GMeshEdge2D::SetRight(GMeshFace2D *NewRight) {
+template <typename DATA_TYPE>
+void GMeshEdge2D<DATA_TYPE>::SetRight(GMeshFace2D<DATA_TYPE> *NewRight) {
 
 	// add this edge to the (face) orbit of _right_
 	InvRot()->gFace = NewRight;
@@ -491,26 +522,27 @@ void GMeshEdge2D::SetRight(GMeshFace2D *NewRight) {
 
 // determines if the point P is on the edge. The point is considered on if it is in the EPS-neighborhood
 // of the edge
-GBool GMeshEdge2D::IsOnEdge(const GPoint2& P, const GReal Tolerance) {
+template <typename DATA_TYPE>
+GBool GMeshEdge2D<DATA_TYPE>::IsOnEdge(const GPoint<DATA_TYPE, 2>& P, const DATA_TYPE Tolerance) {
 
-	GReal t1, t2;
-	const GPoint2& o = Org()->Position();
-	const GPoint2& d = Dest()->Position();
+	DATA_TYPE t1, t2;
+	const GPoint<DATA_TYPE, 2>& o = Org()->Position();
+	const GPoint<DATA_TYPE, 2>& d = Dest()->Position();
 
 	t1 = Length(P - o);
 	t2 = Length(P - d);
 	if (t1 < Tolerance || t2 < Tolerance)
 	    return G_TRUE;
 
-	GVector2 t = d - o;
-	GReal t3 = t.Length();
+	GVect<DATA_TYPE, 2> t = d - o;
+	DATA_TYPE t3 = t.Length();
 	if (t1 > t3 || t2 > t3)
 	    return G_FALSE;
 	// computes the normalized line equation through the points Org and Dest
-	GReal a = t[G_Y] / t3;
-	GReal b = -t[G_X] / t3;
-	GReal c = -(a * o[G_X] + b * o[G_Y]);
-	GReal eval = a * P[G_X] + b * P[G_Y] + c;
+	DATA_TYPE a = t[G_Y] / t3;
+	DATA_TYPE b = -t[G_X] / t3;
+	DATA_TYPE c = -(a * o[G_X] + b * o[G_Y]);
+	DATA_TYPE eval = a * P[G_X] + b * P[G_Y] + c;
 	return (GMath::Abs(eval) < Tolerance);
 }
 
@@ -518,7 +550,8 @@ GBool GMeshEdge2D::IsOnEdge(const GPoint2& P, const GReal Tolerance) {
 //                              GMeshFace
 // *********************************************************************
 // constructor; it initialize this face with no adjacent edges (must be non-null)
-GMeshFace2D::GMeshFace2D(GMesh2D *Mesh) {
+template <typename DATA_TYPE>
+GMeshFace2D<DATA_TYPE>::GMeshFace2D(GMesh2D<DATA_TYPE> *Mesh) {
 
 	G_ASSERT(Mesh != NULL);
 	gMesh = Mesh;
@@ -527,11 +560,13 @@ GMeshFace2D::GMeshFace2D(GMesh2D *Mesh) {
 }
 
 // destructor
-GMeshFace2D::~GMeshFace2D() {
+template <typename DATA_TYPE>
+GMeshFace2D<DATA_TYPE>::~GMeshFace2D() {
 }
 
 // add a given adjacent edge to this face (must be non-null)
-void GMeshFace2D::AddEdge(GMeshEdge2D *Edge) {
+template <typename DATA_TYPE>
+void GMeshFace2D<DATA_TYPE>::AddEdge(GMeshEdge2D<DATA_TYPE> *Edge) {
 	
 	G_ASSERT(Edge != NULL);
 	// only keep track of one edge in the orbit--this one is as good as any
@@ -539,22 +574,24 @@ void GMeshFace2D::AddEdge(GMeshEdge2D *Edge) {
 }
 
 // remove a given adjacent from this face (must be non-null)
-void GMeshFace2D::RemoveEdge(GMeshEdge2D *Edge) {
+template <typename DATA_TYPE>
+void GMeshFace2D<DATA_TYPE>::RemoveEdge(GMeshEdge2D<DATA_TYPE> *Edge) {
 
 	G_ASSERT(Edge != NULL);
 	// replace the arbitrary edge with another edge in the orbit, use null if this is the only edge
 	// assumes that the edge hasn't been actually removed yet
-	GMeshEdge2D *next = Edge->Onext();
+	GMeshEdge2D<DATA_TYPE> *next = Edge->Onext();
 	gEdge = next != Edge ? next : NULL;
 }
 
 // return true if a given vertex is adjacent to this face
-GBool GMeshFace2D::HasVertex(const GMeshVertex2D *Vertex) {
+template <typename DATA_TYPE>
+GBool GMeshFace2D<DATA_TYPE>::HasVertex(const GMeshVertex2D<DATA_TYPE> *Vertex) {
 
 	G_ASSERT(Vertex != NULL);
 	// check the origin vertex of each edge on the face
-	GMeshFaceEdgeIterator2D edges(this);
-	GMeshEdge2D *edge;
+	GMeshFaceEdgeIterator2D<DATA_TYPE> edges(this);
+	GMeshEdge2D<DATA_TYPE> *edge;
 	while ((edge = edges.Next()) != NULL)
 		if (edge->Org() == Vertex)
 			return G_TRUE;
@@ -562,10 +599,11 @@ GBool GMeshFace2D::HasVertex(const GMeshVertex2D *Vertex) {
 }
 
 // return true if the face includes all the vertexes specified
-GBool GMeshFace2D::HasVertices(const GDynArray<GMeshVertex2D *> VertsArray) {
+template <typename DATA_TYPE>
+GBool GMeshFace2D<DATA_TYPE>::HasVertices(const GDynArray< GMeshVertex2D<DATA_TYPE> *> VertsArray) {
 
-	GUInt32 i, j = VertsArray.size();
-	const GMeshVertex2D *v;
+	GUInt32 i, j = (GUInt32)VertsArray.size();
+	const GMeshVertex2D<DATA_TYPE> *v;
 
 	for (i = 0; i < j; i++) {
 		v = VertsArray[i];
@@ -580,7 +618,8 @@ GBool GMeshFace2D::HasVertices(const GDynArray<GMeshVertex2D *> VertsArray) {
 // *********************************************************************
 
 // get Index-th vertex (null if Index is out of range)
-GMeshVertex2D* GMesh2D::Vertex(const GUInt32 Index) {
+template <typename DATA_TYPE>
+GMeshVertex2D<DATA_TYPE>* GMesh2D<DATA_TYPE>::Vertex(const GUInt32 Index) {
 
 	if (Index >= gVertices.size())
 		return NULL;
@@ -588,7 +627,8 @@ GMeshVertex2D* GMesh2D::Vertex(const GUInt32 Index) {
 }
 
 // get Index-th face (null if Index is out of range)
-GMeshFace2D* GMesh2D::Face(const GUInt32 Index) {
+template <typename DATA_TYPE>
+GMeshFace2D<DATA_TYPE>* GMesh2D<DATA_TYPE>::Face(const GUInt32 Index) {
 
 	if (Index >= gFaces.size())
 		return NULL;
@@ -596,47 +636,52 @@ GMeshFace2D* GMesh2D::Face(const GUInt32 Index) {
 }
 
 // add a new vertex
-GMeshVertex2D *GMesh2D::AddVertex() {
+template <typename DATA_TYPE>
+GMeshVertex2D<DATA_TYPE> *GMesh2D<DATA_TYPE>::AddVertex() {
 
-	GMeshVertex2D *v = new GMeshVertex2D(this);
+	GMeshVertex2D<DATA_TYPE> *v = new GMeshVertex2D<DATA_TYPE>(this);
 	gVertices.push_back(v);
 	return v;
 }
 
-GMeshVertex2D *GMesh2D::AddVertex(const GPoint2& Position) {
+template <typename DATA_TYPE>
+GMeshVertex2D<DATA_TYPE> *GMesh2D<DATA_TYPE>::AddVertex(const GPoint<DATA_TYPE, 2>& Position) {
 
-	GMeshVertex2D *v = new GMeshVertex2D(this);
+	GMeshVertex2D<DATA_TYPE> *v = new GMeshVertex2D<DATA_TYPE>(this);
 	v->SetPosition(Position);
 	gVertices.push_back(v);
 	return v;
 }
 
 // add a new face
-GMeshFace2D *GMesh2D::AddFace() {
+template <typename DATA_TYPE>
+GMeshFace2D<DATA_TYPE> *GMesh2D<DATA_TYPE>::AddFace() {
 
-	GMeshFace2D *f = new GMeshFace2D(this);
+	GMeshFace2D<DATA_TYPE> *f = new GMeshFace2D<DATA_TYPE>(this);
 	gFaces.push_back(f);
 	return f;
 }
 
 // add a new edge
-GMeshEdge2D *GMesh2D::AddEdge() {
+template <typename DATA_TYPE>
+GMeshEdge2D<DATA_TYPE> *GMesh2D<DATA_TYPE>::AddEdge() {
 
-	GQuadEdge2D *q = new GQuadEdge2D(this);
+	GQuadEdge2D<DATA_TYPE> *q = new GQuadEdge2D<DATA_TYPE>(this);
 	gQuadEdges.push_back(q);
 	return q->Edges();
 }
 
 // add a new sub manifold
-GMeshEdge2D *GMesh2D::AddSubManifold() {
+template <typename DATA_TYPE>
+GMeshEdge2D<DATA_TYPE> *GMesh2D<DATA_TYPE>::AddSubManifold() {
 
 	// - create a looping edge that connects to itself at a single vertex
 	// - the edge delimits two faces
 	// - this is the smallest mesh that is consistent with our invariants
-	GMeshVertex2D *vertex = AddVertex();
-	GMeshFace2D *left = AddFace();
-	GMeshFace2D *right = AddFace();
-	GMeshEdge2D *edge = AddEdge()->InvRot();
+	GMeshVertex2D<DATA_TYPE> *vertex = AddVertex();
+	GMeshFace2D<DATA_TYPE> *left = AddFace();
+	GMeshFace2D<DATA_TYPE> *right = AddFace();
+	GMeshEdge2D<DATA_TYPE> *edge = AddEdge()->InvRot();
 	edge->SetOrg(vertex);
 	edge->SetDest(vertex);
 	edge->SetLeft(left);
@@ -645,26 +690,49 @@ GMeshEdge2D *GMesh2D::AddSubManifold() {
 }
 
 // constructor
-GMesh2D::GMesh2D() : GElement() {
+template <typename DATA_TYPE>
+GMesh2D<DATA_TYPE>::GMesh2D() {//: GElement() {
 }
 
+/*template <typename DATA_TYPE>
 GMesh2D::GMesh2D(const GElement* Owner) : GElement(Owner) {
-}
+}*/
 
 // destructor
-GMesh2D::~GMesh2D() {
+template <typename DATA_TYPE>
+GMesh2D<DATA_TYPE>::~GMesh2D() {
 
 	// just clear all memory
 	Clear();
 }
 
+/*
+typedef std::pair<const GMeshVertex2D<DATA_TYPE> *, GUInt32> VertexPair;
+typedef std::pair<const GMeshFace2D<DATA_TYPE> *, GUInt32> FacePair;
+typedef std::pair<const GQuadEdge2D<DATA_TYPE> *, GUInt32> EdgePair;
+*/
 
-typedef std::pair<const GMeshVertex2D *, GUInt32> VertexPair;
-typedef std::pair<const GMeshFace2D *, GUInt32> FacePair;
-typedef std::pair<const GQuadEdge2D *, GUInt32> EdgePair;
+typedef std::pair<const void *, GUInt32> VertexPair;
+typedef std::pair<const void *, GUInt32> FacePair;
+typedef std::pair<const void *, GUInt32> EdgePair;
+
+//#define VertexPair std::pair< const GMeshVertex2D<DATA_TYPE> *, GUInt32 >
+/*template <typename DATA_TYPE>
+struct VertexPair {
+	const GMeshVertex2D<DATA_TYPE> *first;
+	GUInt32 second;
+	// set constructor
+	VertexPair(const GMeshVertex2D<DATA_TYPE>* NewFirst, const GUInt32 NewSecond)
+	: first(NewFirst), second(NewSecond) {
+	}
+};*/
+
+//#define FacePair std::pair< const GMeshFace2D<DATA_TYPE> *, GUInt32 >
+//#define EdgePair std::pair< const GQuadEdge2D<DATA_TYPE> *, GUInt32 >
 
 inline bool VertexPairSortAscending(const VertexPair& Pair1, const VertexPair& Pair2) {
 
+	//if ((GULong)Pair1.first < (GULong)Pair2.first)
 	if (Pair1.first < Pair2.first)
 		return G_TRUE;
 	return G_FALSE;
@@ -672,6 +740,7 @@ inline bool VertexPairSortAscending(const VertexPair& Pair1, const VertexPair& P
 
 inline bool FacePairSortAscending(const FacePair& Pair1, const FacePair& Pair2) {
 
+	//if ((GULong)Pair1.first < (GULong)Pair2.first)
 	if (Pair1.first < Pair2.first)
 		return G_TRUE;
 	return G_FALSE;
@@ -679,14 +748,16 @@ inline bool FacePairSortAscending(const FacePair& Pair1, const FacePair& Pair2) 
 
 inline bool EdgePairSortAscending(const EdgePair& Pair1, const EdgePair& Pair2) {
 
+	//if ((GULong)Pair1.first < (GULong)Pair2.first)
 	if (Pair1.first < Pair2.first)
 		return G_TRUE;
 	return G_FALSE;
 }
 
-static GUInt32 FindQuadEdgeIndex(const GDynArray<EdgePair>& EdgeMap, const GQuadEdge2D *QuadEdge) {
+template <typename DATA_TYPE>
+static GUInt32 FindQuadEdgeIndex(const GDynArray<EdgePair>& EdgeMap, const GQuadEdge2D<DATA_TYPE> *QuadEdge) {
 
-	GDynArray<EdgePair>::const_iterator it;
+	GDynArray< EdgePair >::const_iterator it;
 	EdgePair tmpEdgePair(QuadEdge, 0xFFFFFFFF);
 
 	it = std::lower_bound(EdgeMap.begin(), EdgeMap.end(), tmpEdgePair, EdgePairSortAscending);
@@ -695,10 +766,11 @@ static GUInt32 FindQuadEdgeIndex(const GDynArray<EdgePair>& EdgeMap, const GQuad
 	return it->second;
 }
 
-static GUInt32 FindVertexIndex(const GDynArray<VertexPair>& VertexMap, const GMeshVertex2D *Vertex) {
+template <typename DATA_TYPE>
+static GUInt32 FindVertexIndex(const GDynArray<VertexPair>& VertexMap, const GMeshVertex2D<DATA_TYPE> *Vertex) {
 
-	GDynArray<VertexPair>::const_iterator it;
-	VertexPair tmpVertexPair(Vertex, 0xFFFFFFFF);
+	GDynArray< VertexPair >::const_iterator it;
+	VertexPair tmpVertexPair((const void *)Vertex, 0xFFFFFFFF);
 
 	it = std::lower_bound(VertexMap.begin(), VertexMap.end(), tmpVertexPair, VertexPairSortAscending);
 	G_ASSERT(it != VertexMap.end());
@@ -706,7 +778,8 @@ static GUInt32 FindVertexIndex(const GDynArray<VertexPair>& VertexMap, const GMe
 	return it->second;
 }
 
-static GUInt32 FindFaceIndex(const GDynArray<FacePair>& FaceMap, const GMeshFace2D *Face) {
+template <typename DATA_TYPE>
+static GUInt32 FindFaceIndex(const GDynArray<FacePair>& FaceMap, const GMeshFace2D<DATA_TYPE> *Face) {
 
 	GDynArray<FacePair>::const_iterator it;
 	FacePair tmpFacePair(Face, 0xFFFFFFFF);
@@ -717,104 +790,108 @@ static GUInt32 FindFaceIndex(const GDynArray<FacePair>& FaceMap, const GMeshFace
 	return it->second;
 }
 
-GError GMesh2D::BaseClone(const GElement& Source) {
+template <typename DATA_TYPE>
+GError GMesh2D<DATA_TYPE>::BaseClone(const GMesh2D<DATA_TYPE>& Source) {
 
-	const GMesh2D& s = (const GMesh2D&)Source;
+	// this fix the copy from/to the same instance
+	if (this == &Source)
+		return G_NO_ERROR;
+
 	GUInt32 i, j, k, w;
-	GQuadEdge2D *q;
+	GQuadEdge2D<DATA_TYPE> *q;
 
 	Clear();
 
 	// create associative arrays for vertex, face and edge pointers
-	j = s.gVertices.size();
+	j = (GUInt32)Source.gVertices.size();
 	GDynArray<VertexPair> vertexMap(j);
 	gVertices.resize(j);
 	for (i = 0; i < j; i++)
-		vertexMap[i] = VertexPair(s.gVertices[i], i);
+		vertexMap[i] = VertexPair((const void *)Source.gVertices[i], i);
 	std::sort(vertexMap.begin(), vertexMap.end(), VertexPairSortAscending);
 
-	j = s.gQuadEdges.size();
-	GDynArray<EdgePair> edgeMap(j);
+	j = (GUInt32)Source.gQuadEdges.size();
+	GDynArray< EdgePair > edgeMap(j);
 	gQuadEdges.resize(j);
 	for (i = 0; i < j; i++)
-		edgeMap[i] = EdgePair(s.gQuadEdges[i], i);
+		edgeMap[i] = EdgePair((const void *)Source.gQuadEdges[i], i);
 	std::sort(edgeMap.begin(), edgeMap.end(), EdgePairSortAscending);
 
 
-	j = s.gFaces.size();
+	j = (GUInt32)Source.gFaces.size();
 	GDynArray<FacePair> faceMap(j);
 	gFaces.resize(j);
 	for (i = 0; i < j; i++)
-		faceMap[i] = FacePair(s.gFaces[i], i);
+		faceMap[i] = FacePair((const void *)Source.gFaces[i], i);
 	std::sort(faceMap.begin(), faceMap.end(), FacePairSortAscending);
 
 	// allocate new vertexes
-	j = s.gVertices.size();
+	j = (GUInt32)Source.gVertices.size();
 	for (i = 0; i < j; i++) {
-		GMeshVertex2D *newVertex = new GMeshVertex2D(this);
-		newVertex->gPosition = s.gVertices[i]->gPosition;
-		newVertex->gCustomData = s.gVertices[i]->gCustomData;
+		GMeshVertex2D<DATA_TYPE> *newVertex = new GMeshVertex2D<DATA_TYPE>(this);
+		newVertex->gPosition = Source.gVertices[i]->gPosition;
+		newVertex->gCustomData = Source.gVertices[i]->gCustomData;
 		gVertices[i] = newVertex;
 	}
-	j = s.gQuadEdges.size();
+	j = (GUInt32)Source.gQuadEdges.size();
 	// allocate new quad edges
 	for (i = 0; i < j; i++) {
-		GQuadEdge2D *newQuadEdge = new GQuadEdge2D(this);
-		newQuadEdge->gEdges[0].gCustomData = s.gQuadEdges[i]->gEdges[0].gCustomData;
-		newQuadEdge->gEdges[0].gIndex = s.gQuadEdges[i]->gEdges[0].gIndex;
-		newQuadEdge->gEdges[1].gCustomData = s.gQuadEdges[i]->gEdges[1].gCustomData;
-		newQuadEdge->gEdges[1].gIndex = s.gQuadEdges[i]->gEdges[1].gIndex;
-		newQuadEdge->gEdges[2].gCustomData = s.gQuadEdges[i]->gEdges[2].gCustomData;
-		newQuadEdge->gEdges[2].gIndex = s.gQuadEdges[i]->gEdges[2].gIndex;
-		newQuadEdge->gEdges[3].gCustomData = s.gQuadEdges[i]->gEdges[3].gCustomData;
-		newQuadEdge->gEdges[3].gIndex = s.gQuadEdges[i]->gEdges[3].gIndex;
+		GQuadEdge2D<DATA_TYPE> *newQuadEdge = new GQuadEdge2D<DATA_TYPE>(this);
+		newQuadEdge->gEdges[0].gCustomData = Source.gQuadEdges[i]->gEdges[0].gCustomData;
+		newQuadEdge->gEdges[0].gIndex = Source.gQuadEdges[i]->gEdges[0].gIndex;
+		newQuadEdge->gEdges[1].gCustomData = Source.gQuadEdges[i]->gEdges[1].gCustomData;
+		newQuadEdge->gEdges[1].gIndex = Source.gQuadEdges[i]->gEdges[1].gIndex;
+		newQuadEdge->gEdges[2].gCustomData = Source.gQuadEdges[i]->gEdges[2].gCustomData;
+		newQuadEdge->gEdges[2].gIndex = Source.gQuadEdges[i]->gEdges[2].gIndex;
+		newQuadEdge->gEdges[3].gCustomData = Source.gQuadEdges[i]->gEdges[3].gCustomData;
+		newQuadEdge->gEdges[3].gIndex = Source.gQuadEdges[i]->gEdges[3].gIndex;
 		gQuadEdges[i] = newQuadEdge;
 	}
-	j = s.gFaces.size();
+	j = (GUInt32)Source.gFaces.size();
 	// allocate new faces
 	for (i = 0; i < j; i++) {
-		GMeshFace2D *newFace = new GMeshFace2D(this);
-		newFace->gCustomData = s.gFaces[i]->gCustomData;
+		GMeshFace2D<DATA_TYPE> *newFace = new GMeshFace2D<DATA_TYPE>(this);
+		newFace->gCustomData = Source.gFaces[i]->gCustomData;
 		gFaces[i] = newFace;
 	}
 	// link vertexes internal 'edge' field
-	j = s.gVertices.size();
+	j = (GUInt32)Source.gVertices.size();
 	for (i = 0; i < j; i++) {
-		if (s.gVertices[i]->gEdge) {
-			q = (GQuadEdge2D*)(s.gVertices[i]->gEdge - s.gVertices[i]->gEdge->gIndex);
+		if (Source.gVertices[i]->gEdge) {
+			q = (GQuadEdge2D<DATA_TYPE> *)(Source.gVertices[i]->gEdge - Source.gVertices[i]->gEdge->gIndex);
 			k = FindQuadEdgeIndex(edgeMap, q);
-			G_ASSERT(k < s.gQuadEdges.size());
-			gVertices[i]->gEdge = &gQuadEdges[k]->gEdges[s.gVertices[i]->gEdge->gIndex];
+			G_ASSERT(k < Source.gQuadEdges.size());
+			gVertices[i]->gEdge = &gQuadEdges[k]->gEdges[Source.gVertices[i]->gEdge->gIndex];
 		}
 		else
 			gVertices[i]->gEdge = NULL;
 	}
 	// link faces
-	j = s.gFaces.size();
+	j = (GUInt32)Source.gFaces.size();
 	for (i = 0; i < j; i++) {
-		if (s.gFaces[i]->gEdge) {
-			q = (GQuadEdge2D*)(s.gFaces[i]->gEdge - s.gFaces[i]->gEdge->gIndex);
+		if (Source.gFaces[i]->gEdge) {
+			q = (GQuadEdge2D<DATA_TYPE> *)(Source.gFaces[i]->gEdge - Source.gFaces[i]->gEdge->gIndex);
 			k = FindQuadEdgeIndex(edgeMap, q);
-			G_ASSERT(k < s.gQuadEdges.size());
-			gFaces[i]->gEdge = &gQuadEdges[k]->gEdges[s.gFaces[i]->gEdge->gIndex];
+			G_ASSERT(k < Source.gQuadEdges.size());
+			gFaces[i]->gEdge = &gQuadEdges[k]->gEdges[Source.gFaces[i]->gEdge->gIndex];
 		}
 		else
 			gFaces[i]->gEdge = NULL;
 	}
 	// link quad edges
-	j = s.gQuadEdges.size();
+	j = (GUInt32)Source.gQuadEdges.size();
 	for (i = 0; i < j; i++) {
 		for (w = 0; w < 4; w++) {
 			// link gNext field
-			GMeshEdge2D *e = &s.gQuadEdges[i]->gEdges[w];
-			q = (GQuadEdge2D*)(e->gNext - e->gNext->gIndex);
+			GMeshEdge2D<DATA_TYPE> *e = &Source.gQuadEdges[i]->gEdges[w];
+			q = (GQuadEdge2D<DATA_TYPE> *)(e->gNext - e->gNext->gIndex);
 			k = FindQuadEdgeIndex(edgeMap, q);
-			G_ASSERT(k < s.gQuadEdges.size());
+			G_ASSERT(k < Source.gQuadEdges.size());
 			gQuadEdges[i]->gEdges[w].gNext = &gQuadEdges[k]->gEdges[e->gNext->gIndex];
 			// link gVertex field
 			if (e->gVertex) {
 				k = FindVertexIndex(vertexMap, e->gVertex);
-				G_ASSERT(k < s.gVertices.size());
+				G_ASSERT(k < Source.gVertices.size());
 				gQuadEdges[i]->gEdges[w].gVertex = gVertices[k];
 			}
 			else
@@ -822,7 +899,7 @@ GError GMesh2D::BaseClone(const GElement& Source) {
 			// link gFace field
 			if (e->gFace) {
 				k = FindFaceIndex(faceMap, e->gFace);
-				G_ASSERT(k < s.gFaces.size());
+				G_ASSERT(k < Source.gFaces.size());
 				gQuadEdges[i]->gEdges[w].gFace = gFaces[k];
 			}
 			else
@@ -863,8 +940,10 @@ struct GIndexPairTrait {
 	}
 };
 
-GError GMesh2D::BuildFromFaces(const GDynArray<GPoint2>& Points, const GDynArray<GIndexList>& FacesIndexes,
-							   const GBool Deep2ManifoldCheck) {
+template <typename DATA_TYPE>
+GError GMesh2D<DATA_TYPE>::BuildFromFaces(const GDynArray< GPoint<DATA_TYPE, 2> >& Points,
+										  const GDynArray<GIndexList>& FacesIndexes,
+										  const GBool Deep2ManifoldCheck) {
 
 	GUInt32 i, j, k, w, q, edgesCount;
 
@@ -872,9 +951,9 @@ GError GMesh2D::BuildFromFaces(const GDynArray<GPoint2>& Points, const GDynArray
 		return G_INVALID_PARAMETER;
 
 	// check input data
-	j = FacesIndexes.size();
+	j = (GUInt32)FacesIndexes.size();
 	for (i = 0; i < j; i++) {
-		k = FacesIndexes[i].size();
+		k = (GUInt32)FacesIndexes[i].size();
 		// a face must be built of at least 3 points
 		if (k < 3)
 			return G_INVALID_PARAMETER;
@@ -883,9 +962,9 @@ GError GMesh2D::BuildFromFaces(const GDynArray<GPoint2>& Points, const GDynArray
 	// check for 2 manifold consistency
 	if (Deep2ManifoldCheck) {
 		std::set<GIndexPair, GIndexPairTrait> idxSet;
-		j = FacesIndexes.size();
+		j = (GUInt32)FacesIndexes.size();
 		for (i = 0; i < j; i++) {
-			k = FacesIndexes[i].size();
+			k = (GUInt32)FacesIndexes[i].size();
 			for (w = 0; w < k; w++) {
 				if (w == k - 1)
 					q = 0;
@@ -906,8 +985,8 @@ GError GMesh2D::BuildFromFaces(const GDynArray<GPoint2>& Points, const GDynArray
 	// first clear mesh
 	Clear();
 
-	j = Points.size();
-	GDynArray<GImpExpMeshVertex> verts(j);
+	j = (GUInt32)Points.size();
+	GDynArray< GImpExpMeshVertex<DATA_TYPE> > verts(j);
 	for (i = 0; i < j; i++) {
 		verts[i].gDone = G_FALSE;
 		verts[i].gPosition = Points[i];
@@ -917,11 +996,11 @@ GError GMesh2D::BuildFromFaces(const GDynArray<GPoint2>& Points, const GDynArray
 
 	edgesCount = 0;
 	// build arcs structures
-	j = FacesIndexes.size();
-	GDynArray<GImpExpMeshFace> faces(j);
+	j = (GUInt32)FacesIndexes.size();
+	GDynArray< GImpExpMeshFace<DATA_TYPE> > faces(j);
 	for (i = 0; i < j; i++) {
 		faces[i].gMeshFace = NULL;
-		k = FacesIndexes[i].size();
+		k = (GUInt32)FacesIndexes[i].size();
 		// a face must be built of at least 3 points
 		if (k < 3)
 			return G_INVALID_PARAMETER;
@@ -946,15 +1025,16 @@ GError GMesh2D::BuildFromFaces(const GDynArray<GPoint2>& Points, const GDynArray
 }
 
 // remove edge from internal list, without doing nothing else on mesh
-void GMesh2D::RemoveEdge(GMeshEdge2D *Edge) {
+template <typename DATA_TYPE>
+void GMesh2D<DATA_TYPE>::RemoveEdge(GMeshEdge2D<DATA_TYPE> *Edge) {
 
 	G_ASSERT(Edge != NULL);
-	GMeshEdge2D *edges;
+	GMeshEdge2D<DATA_TYPE> *edges;
 	
 	// remove edge form internal list
-	GDynArray<GQuadEdge2D *>::iterator it;
+	typename GDynArray< GQuadEdge2D<DATA_TYPE> *>::iterator it;
 	for (it = gQuadEdges.begin(); it != gQuadEdges.end(); ++it) {
-		GQuadEdge2D *qe = *it;
+		GQuadEdge2D<DATA_TYPE> *qe = *it;
 		edges = qe->Edges();
 		if (&edges[0] == Edge || &edges[1] == Edge || &edges[2] == Edge || &edges[3] == Edge) {
 			gQuadEdges.erase(it);
@@ -967,17 +1047,18 @@ void GMesh2D::RemoveEdge(GMeshEdge2D *Edge) {
 }
 
 // Splice a given pair of (non-null) edges.
-void GMesh2D::Splice(GMeshEdge2D *a, GMeshEdge2D *b) {
+template <typename DATA_TYPE>
+void GMesh2D<DATA_TYPE>::Splice(GMeshEdge2D<DATA_TYPE> *a, GMeshEdge2D<DATA_TYPE> *b) {
 
 	G_ASSERT(a != NULL);
 	G_ASSERT(b != NULL);
 	// see Guibas and Stolfi
-	GMeshEdge2D* alpha = a->Onext()->Rot();
-	GMeshEdge2D* beta  = b->Onext()->Rot();
-	GMeshEdge2D* t1 = b->Onext();
-	GMeshEdge2D* t2 = a->Onext();
-	GMeshEdge2D* t3 = beta->Onext();
-	GMeshEdge2D* t4 = alpha->Onext();
+	GMeshEdge2D<DATA_TYPE>* alpha = a->Onext()->Rot();
+	GMeshEdge2D<DATA_TYPE>* beta  = b->Onext()->Rot();
+	GMeshEdge2D<DATA_TYPE>* t1 = b->Onext();
+	GMeshEdge2D<DATA_TYPE>* t2 = a->Onext();
+	GMeshEdge2D<DATA_TYPE>* t3 = beta->Onext();
+	GMeshEdge2D<DATA_TYPE>* t4 = alpha->Onext();
 	a->gNext = t1;
 	b->gNext = t2;
 	alpha->gNext = t3;
@@ -985,7 +1066,8 @@ void GMesh2D::Splice(GMeshEdge2D *a, GMeshEdge2D *b) {
 }
 
 // detach the edge from mesh
-void GMesh2D::DetachEdge(GMeshEdge2D *Edge) {
+template <typename DATA_TYPE>
+void GMesh2D<DATA_TYPE>::DetachEdge(GMeshEdge2D<DATA_TYPE> *Edge) {
 
 	G_ASSERT(Edge != NULL);
 	// detach the edge from its mesh
@@ -994,9 +1076,10 @@ void GMesh2D::DetachEdge(GMeshEdge2D *Edge) {
 }
 
 // remove vertex from internal list, without doing nothing else on mesh
-void GMesh2D::RemoveVertex(GMeshVertex2D *Vertex) {
+template <typename DATA_TYPE>
+void GMesh2D<DATA_TYPE>::RemoveVertex(GMeshVertex2D<DATA_TYPE> *Vertex) {
 
-	GDynArray<GMeshVertex2D *>::iterator it;
+	typename GDynArray< GMeshVertex2D<DATA_TYPE> *>::iterator it;
 	for (it = gVertices.begin(); it != gVertices.end(); ++it) {
 		if ((*it) == Vertex) {
 			gVertices.erase(it);
@@ -1006,20 +1089,23 @@ void GMesh2D::RemoveVertex(GMeshVertex2D *Vertex) {
 	}
 }
 
-GMeshEdge2D *GMesh2D::MakeVertexEdge(GMeshVertex2D *Vertex, GMeshFace2D *Left, GMeshFace2D *Right) {
+template <typename DATA_TYPE>
+GMeshEdge2D<DATA_TYPE> *GMesh2D<DATA_TYPE>::MakeVertexEdge(GMeshVertex2D<DATA_TYPE> *Vertex,
+														   GMeshFace2D<DATA_TYPE> *Left,
+														   GMeshFace2D<DATA_TYPE> *Right) {
 
 	G_ASSERT(Vertex != NULL);
 	G_ASSERT(Left != NULL);
 	G_ASSERT(Right != NULL);
 	// locate the edges to the right of each of the faces in the orbit of the vertex
-	GMeshEdge2D *edge = Vertex->Edge();
-	GMeshEdge2D *edge1 = NULL;
-	GMeshEdge2D *edge2 = NULL;
+	GMeshEdge2D<DATA_TYPE> *edge = Vertex->Edge();
+	GMeshEdge2D<DATA_TYPE> *edge1 = NULL;
+	GMeshEdge2D<DATA_TYPE> *edge2 = NULL;
 
 	edge1 = OrbitLeft(edge, Right);
 	edge2 = OrbitLeft(edge, Left);
 
-	GPoint2 a, b, c, d;
+	GPoint<DATA_TYPE, 2> a, b, c, d;
 
 	a = edge1->Org()->Position();
 	b = edge1->Dest()->Position();
@@ -1038,9 +1124,9 @@ GMeshEdge2D *GMesh2D::MakeVertexEdge(GMeshVertex2D *Vertex, GMeshFace2D *Left, G
 		std::abort();
 	}
 	// create a new vertex and copy the position of the vertex of origin
-	GMeshVertex2D *vertexNew = AddVertex(Vertex->Position());
+	GMeshVertex2D<DATA_TYPE> *vertexNew = AddVertex(Vertex->Position());
 	// create a new edge and rotate it to make a clockwise loop
-	GMeshEdge2D *edgeNew = AddEdge()->Rot();
+	GMeshEdge2D<DATA_TYPE> *edgeNew = AddEdge()->Rot();
 	// connect the origin (and destination) of the new edge to _vertex_ so that
 	// the left face of the edge is _left_
 	// this makes a loop on the inside of _left_
@@ -1059,12 +1145,13 @@ GMeshEdge2D *GMesh2D::MakeVertexEdge(GMeshVertex2D *Vertex, GMeshFace2D *Left, G
 	return edgeNew;
 }
 
-void GMesh2D::KillVertexEdge(GMeshEdge2D *Edge) {
+template <typename DATA_TYPE>
+void GMesh2D<DATA_TYPE>::KillVertexEdge(GMeshEdge2D<DATA_TYPE> *Edge) {
 
 	G_ASSERT(Edge != NULL);
 	// locate edge1 and edge2 as in MakeVertexEdge
-	GMeshEdge2D *edge1 = Edge->Oprev();
-	GMeshEdge2D *edge2 = Edge->Lnext();
+	GMeshEdge2D<DATA_TYPE> *edge1 = Edge->Oprev();
+	GMeshEdge2D<DATA_TYPE> *edge2 = Edge->Lnext();
 	// use edge1 for edge2 if the destination vertex is isolated
 	if (edge2 == Edge->Sym())
 		edge2 = edge1;
@@ -1079,7 +1166,7 @@ void GMesh2D::KillVertexEdge(GMeshEdge2D *Edge) {
 	edge1->Left()->AddEdge(edge1);
 	edge2->Left()->AddEdge(edge2);
 	// reclaim the vertex and the edge
-	GMeshVertex2D *v = Edge->Dest();
+	GMeshVertex2D<DATA_TYPE> *v = Edge->Dest();
 	RemoveVertex(v);
 	// delete edge
 	DetachEdge(Edge);
@@ -1087,9 +1174,10 @@ void GMesh2D::KillVertexEdge(GMeshEdge2D *Edge) {
 }
 
 // remove face from internal list, without doing nothing else on mesh
-void GMesh2D::RemoveFace(GMeshFace2D *Face) {
+template <typename DATA_TYPE>
+void GMesh2D<DATA_TYPE>::RemoveFace(GMeshFace2D<DATA_TYPE> *Face) {
 
-	GDynArray<GMeshFace2D *>::iterator it;
+	typename GDynArray< GMeshFace2D<DATA_TYPE> *>::iterator it;
 	for (it = gFaces.begin(); it != gFaces.end(); ++it) {
 		if ((*it) == Face) {
 			gFaces.erase(it);
@@ -1099,15 +1187,18 @@ void GMesh2D::RemoveFace(GMeshFace2D *Face) {
 	}
 }
 
-GMeshEdge2D *GMesh2D::MakeFaceEdge(GMeshFace2D *Face, GMeshVertex2D *Org, GMeshVertex2D *Dest) {
+template <typename DATA_TYPE>
+GMeshEdge2D<DATA_TYPE> *GMesh2D<DATA_TYPE>::MakeFaceEdge(GMeshFace2D<DATA_TYPE> *Face,
+														 GMeshVertex2D<DATA_TYPE> *Org,
+														 GMeshVertex2D<DATA_TYPE> *Dest) {
 
 	G_ASSERT(Face != NULL);
 	G_ASSERT(Org != NULL);
 	G_ASSERT(Dest != NULL);
 	// locate the edges leaving each of the vertexes in the orbit of the face
-	GMeshEdge2D *edge = Face->Edge();
-	GMeshEdge2D *edge1 = OrbitOrg(edge, Org);
-	GMeshEdge2D *edge2 = OrbitOrg(edge, Dest);
+	GMeshEdge2D<DATA_TYPE> *edge = Face->Edge();
+	GMeshEdge2D<DATA_TYPE> *edge1 = OrbitOrg(edge, Org);
+	GMeshEdge2D<DATA_TYPE> *edge2 = OrbitOrg(edge, Dest);
 	if (!edge1) {
 		GString s = "GMesh::MakeFaceEdge: unable to locate origin vertex";
 		G_DEBUG(s);
@@ -1119,9 +1210,9 @@ GMeshEdge2D *GMesh2D::MakeFaceEdge(GMeshFace2D *Face, GMeshVertex2D *Org, GMeshV
 		std::abort();
 	}
 	// create a new face
-	GMeshFace2D *faceNew = AddFace();
+	GMeshFace2D<DATA_TYPE> *faceNew = AddFace();
 	// create a new (non-loop) edge
-	GMeshEdge2D *edgeNew = AddEdge();
+	GMeshEdge2D<DATA_TYPE> *edgeNew = AddEdge();
 	// connect the destination of the new edge to the origin of edge2
 	// both faces of the edge are now face
 	Splice(edge2, edgeNew->Sym());
@@ -1139,12 +1230,13 @@ GMeshEdge2D *GMesh2D::MakeFaceEdge(GMeshFace2D *Face, GMeshVertex2D *Org, GMeshV
 	return edgeNew;
 }
 
-void GMesh2D::KillFaceEdge(GMeshEdge2D *Edge) {
+template <typename DATA_TYPE>
+void GMesh2D<DATA_TYPE>::KillFaceEdge(GMeshEdge2D<DATA_TYPE> *Edge) {
 
 	G_ASSERT(Edge != NULL);
 	// locate edge1 and edge2 as in MakeFaceEdge
-	GMeshEdge2D *edge1 = Edge->Oprev();
-	GMeshEdge2D *edge2 = Edge->Lnext();
+	GMeshEdge2D<DATA_TYPE> *edge1 = Edge->Oprev();
+	GMeshEdge2D<DATA_TYPE> *edge2 = Edge->Lnext();
 	// use edge2 for edge1 if the right face is inside a loop
 	if (edge1 == Edge->Sym())
 		edge1 = edge2;
@@ -1159,19 +1251,20 @@ void GMesh2D::KillFaceEdge(GMeshEdge2D *Edge) {
 	edge2->Org()->AddEdge(edge2);
 	edge2->Left()->AddEdge(edge2);
 	// reclaim the face and the edge
-	GMeshFace2D *f = Edge->Right();
+	GMeshFace2D<DATA_TYPE> *f = Edge->Right();
 	RemoveFace(f);
 	// delete edge
 	DetachEdge(Edge);
 	RemoveEdge(Edge);
 }
 
-GMeshEdge2D *GMesh2D::OrbitOrg(GMeshEdge2D *Edge, GMeshVertex2D *Org) {
+template <typename DATA_TYPE>
+GMeshEdge2D<DATA_TYPE> *GMesh2D<DATA_TYPE>::OrbitOrg(GMeshEdge2D<DATA_TYPE> *Edge, GMeshVertex2D<DATA_TYPE> *Org) {
 
 	G_ASSERT(Edge != NULL);
 	G_ASSERT(Org != NULL);
 	// traverse the Lnext orbit of edge looking for an edge whose origin is org
-	GMeshEdge2D *scan = Edge;
+	GMeshEdge2D<DATA_TYPE> *scan = Edge;
 	do {
 		if (scan->Org() == Org)
 			return scan;
@@ -1180,24 +1273,26 @@ GMeshEdge2D *GMesh2D::OrbitOrg(GMeshEdge2D *Edge, GMeshVertex2D *Org) {
 	return NULL;
 }
 
-void GMesh2D::SetOrbitOrg(GMeshEdge2D *Edge, GMeshVertex2D *Org) {
+template <typename DATA_TYPE>
+void GMesh2D<DATA_TYPE>::SetOrbitOrg(GMeshEdge2D<DATA_TYPE> *Edge, GMeshVertex2D<DATA_TYPE> *Org) {
 
 	G_ASSERT(Edge != NULL);
 	G_ASSERT(Org != NULL);
 	// traverse the Onext orbit of edge, setting the origin of each edge to org
-	GMeshEdge2D *scan = Edge;
+	GMeshEdge2D<DATA_TYPE> *scan = Edge;
 	do {
 		scan->SetOrg(Org);
 		scan = scan->Onext();
 	} while (scan != Edge);
 }
 
-GMeshEdge2D *GMesh2D::OrbitLeft(GMeshEdge2D *Edge, GMeshFace2D *Left) {
+template <typename DATA_TYPE>
+GMeshEdge2D<DATA_TYPE> *GMesh2D<DATA_TYPE>::OrbitLeft(GMeshEdge2D<DATA_TYPE> *Edge, GMeshFace2D<DATA_TYPE> *Left) {
 
 	G_ASSERT(Edge != 0);
 	G_ASSERT(Left != 0);
 	// traverse the Onext orbit of edge looking for an edge whose left face is left
-	GMeshEdge2D *scan = Edge;
+	GMeshEdge2D<DATA_TYPE> *scan = Edge;
 	do {
 		if (scan->Left() == Left)
 			return scan;
@@ -1206,12 +1301,13 @@ GMeshEdge2D *GMesh2D::OrbitLeft(GMeshEdge2D *Edge, GMeshFace2D *Left) {
 	return NULL;
 }
 
-void GMesh2D::SetOrbitLeft(GMeshEdge2D *Edge, GMeshFace2D *Left) {
+template <typename DATA_TYPE>
+void GMesh2D<DATA_TYPE>::SetOrbitLeft(GMeshEdge2D<DATA_TYPE> *Edge, GMeshFace2D<DATA_TYPE> *Left) {
 
 	G_ASSERT(Edge != NULL);
 	G_ASSERT(Left != NULL);
 	// traverse the Lnext orbit of edge, setting the left face of each edge to left
-	GMeshEdge2D *scan = Edge;
+	GMeshEdge2D<DATA_TYPE> *scan = Edge;
 	do {
 		scan->SetLeft(Left);
 		scan = scan->Lnext();
@@ -1219,10 +1315,11 @@ void GMesh2D::SetOrbitLeft(GMeshEdge2D *Edge, GMeshFace2D *Left) {
 }
 
 // find a mesh vertex with the corresponding geometric coordinates
-GMeshVertex2D *GMesh2D::FindVertex(const GReal X, const GReal Y) {
+template <typename DATA_TYPE>
+GMeshVertex2D<DATA_TYPE> *GMesh2D<DATA_TYPE>::FindVertex(const DATA_TYPE X, const DATA_TYPE Y) {
 
-	GUInt32 i, j = gVertices.size();
-	GMeshVertex2D *v;
+	GUInt32 i, j = (GUInt32)gVertices.size();
+	GMeshVertex2D<DATA_TYPE> *v;
 
 	for (i = 0; i < j; i++) {
 		v = gVertices[i];
@@ -1233,14 +1330,16 @@ GMeshVertex2D *GMesh2D::FindVertex(const GReal X, const GReal Y) {
 }
 
 // return true if a given pair of vertexes is connected directly by an edge along a given left face.
-GBool GMesh2D::IsConnected(GMeshVertex2D *Vert1, GMeshVertex2D *Vert2, GMeshFace2D *Left) {
+template <typename DATA_TYPE>
+GBool GMesh2D<DATA_TYPE>::IsConnected(GMeshVertex2D<DATA_TYPE> *Vert1, GMeshVertex2D<DATA_TYPE> *Vert2,
+									  GMeshFace2D<DATA_TYPE> *Left) {
 
 	G_ASSERT(Vert1 != NULL);
 	G_ASSERT(Vert2 != NULL);
 	G_ASSERT(Left != NULL);
 	// check the orbit of vertex1 for an edge to vertex2
-	GMeshVertexEdgeIterator2D edges(Vert1);
-	GMeshEdge2D *edge;
+	GMeshVertexEdgeIterator2D<DATA_TYPE> edges(Vert1);
+	GMeshEdge2D<DATA_TYPE> *edge;
 	while ((edge = edges.Next()) != NULL)
 		if (edge->Dest() == Vert2 && edge->Left() == Left)
 			return G_TRUE;
@@ -1248,13 +1347,14 @@ GBool GMesh2D::IsConnected(GMeshVertex2D *Vert1, GMeshVertex2D *Vert2, GMeshFace
 }
 
 // return the face to the right of a given face around a given vertex (null if none)
-GMeshFace2D *GMesh2D::RightFace(GMeshVertex2D *Vertex, GMeshFace2D *Left) {
+template <typename DATA_TYPE>
+GMeshFace2D<DATA_TYPE> *GMesh2D<DATA_TYPE>::RightFace(GMeshVertex2D<DATA_TYPE> *Vertex, GMeshFace2D<DATA_TYPE> *Left) {
 
 	G_ASSERT(Vertex != NULL);
 	G_ASSERT(Left != NULL);
 	// check the left face of each edge in the orbit of the vertex
-	GMeshEdge2D *start = Vertex->Edge();
-	GMeshEdge2D *scan  = start;
+	GMeshEdge2D<DATA_TYPE> *start = Vertex->Edge();
+	GMeshEdge2D<DATA_TYPE> *scan  = start;
 	do {
 		if (scan->Left() == Left)
 			return scan->Right();
@@ -1265,9 +1365,10 @@ GMeshFace2D *GMesh2D::RightFace(GMeshVertex2D *Vertex, GMeshFace2D *Left) {
 
 // add a new edge e connecting the destination of a to the origin of b, in such a way that
 // all three have the same left face after the connection is complete
-GMeshEdge2D* GMesh2D::Connect(GMeshEdge2D* a, GMeshEdge2D* b) {
+template <typename DATA_TYPE>
+GMeshEdge2D<DATA_TYPE>* GMesh2D<DATA_TYPE>::Connect(GMeshEdge2D<DATA_TYPE>* a, GMeshEdge2D<DATA_TYPE>* b) {
 
-	GMeshEdge2D* e = AddEdge();
+	GMeshEdge2D<DATA_TYPE>* e = AddEdge();
 	Splice(e, a->Lnext());
 	Splice(e->Sym(), b);
 
@@ -1277,23 +1378,24 @@ GMeshEdge2D* GMesh2D::Connect(GMeshEdge2D* a, GMeshEdge2D* b) {
 }
 
 // clear mesh (delete all faces, vertexes and edges)
-void GMesh2D::Clear() {
+template <typename DATA_TYPE>
+void GMesh2D<DATA_TYPE>::Clear() {
 
 	GUInt32 i, j;
 	// reclaim each of the vertexes and faces still owned by the mesh
-	j = gVertices.size();
+	j = (GUInt32)gVertices.size();
 	for (i = 0; i < j; i++) {
-		GMeshVertex2D *v = gVertices[i];
+		GMeshVertex2D<DATA_TYPE> *v = gVertices[i];
 		delete v;
 	}
-	j = gFaces.size();
+	j = (GUInt32)gFaces.size();
 	for (i = 0; i < j; i++) {
-		GMeshFace2D *f = gFaces[i];
+		GMeshFace2D<DATA_TYPE> *f = gFaces[i];
 		delete f;
 	}
-	j = gQuadEdges.size();
+	j = (GUInt32)gQuadEdges.size();
 	for (i = 0; i < j; i++) {
-		GQuadEdge2D *q = gQuadEdges[i];
+		GQuadEdge2D<DATA_TYPE> *q = gQuadEdges[i];
 		delete q;
 	}
 	// reclaim the vertex, edge and face arrays
@@ -1303,12 +1405,13 @@ void GMesh2D::Clear() {
 }
 
 // essentially turns edge e counterclockwise inside its enclosing quadrilateral
-void GMesh2D::DelaunaySwap(GMeshEdge2D* e) {
+template <typename DATA_TYPE>
+void GMesh2D<DATA_TYPE>::DelaunaySwap(GMeshEdge2D<DATA_TYPE>* e) {
 
-	GMeshEdge2D* a = e->Oprev();
-	GMeshEdge2D* b = e->Sym()->Oprev();
-	GMeshFace2D *left = e->Left();
-	GMeshFace2D *right = e->Right();
+	GMeshEdge2D<DATA_TYPE>* a = e->Oprev();
+	GMeshEdge2D<DATA_TYPE>* b = e->Sym()->Oprev();
+	GMeshFace2D<DATA_TYPE> *left = e->Left();
+	GMeshFace2D<DATA_TYPE> *right = e->Right();
 
 	// this two instructions are the same of DetachEdge(e)
 	Splice(e, a);
@@ -1326,10 +1429,12 @@ void GMesh2D::DelaunaySwap(GMeshEdge2D* e) {
 
 // returns an edge e, s.t. either P is on e, or e is an edge of a triangle containing P.
 // The search starts from startingEdge and proceeds in the general direction of P
-GMeshEdge2D* GMesh2D::DelaunayLocate(const GPoint2& P, GMeshEdge2D *StartEdge) {
+template <typename DATA_TYPE>
+GMeshEdge2D<DATA_TYPE>* GMesh2D<DATA_TYPE>::DelaunayLocate(const GPoint<DATA_TYPE, 2>& P,
+														   GMeshEdge2D<DATA_TYPE> *StartEdge) {
 
 	#define RIGHTOF(x, edge) CounterClockWise(x, edge->Dest()->Position(), edge->Org()->Position())
-	GMeshEdge2D* e = StartEdge;
+	GMeshEdge2D<DATA_TYPE>* e = StartEdge;
 
 	while (1) {
 		if (P == e->Org()->Position() || P == e->Dest()->Position())
@@ -1352,11 +1457,14 @@ GMeshEdge2D* GMesh2D::DelaunayLocate(const GPoint2& P, GMeshEdge2D *StartEdge) {
 // inserts a new point into a subdivision representing a Delaunay triangulation, and fixes the
 // affected edges so that the result is still a Delaunay triangulation. This is based on the
 // pseudo code from Guibas and Stolfi, with slight modifications and a bug fix.
-GMeshEdge2D *GMesh2D::DelaunayInsertSite(const GPoint2& P, const GReal Tolerance, GMeshEdge2D *LastIndertedEdge) {
+template <typename DATA_TYPE>
+GMeshEdge2D<DATA_TYPE> *GMesh2D<DATA_TYPE>::DelaunayInsertSite(const GPoint<DATA_TYPE, 2>& P,
+															   const DATA_TYPE Tolerance,
+															   GMeshEdge2D<DATA_TYPE> *LastIndertedEdge) {
 
 	#define RIGHTOF(x, edge) CounterClockWise(x, edge->Dest()->Position(), edge->Org()->Position())
-	GMeshEdge2D *edge, *e, *newEdge1, *newEdge2, *tmpEdge, *stop, *newDelaunayEdge;
-	GMeshFace2D *newFace;
+	GMeshEdge2D<DATA_TYPE> *edge, *e, *newEdge1, *newEdge2, *tmpEdge, *stop, *newDelaunayEdge;
+	GMeshFace2D<DATA_TYPE> *newFace;
 
 	e = DelaunayLocate(P, LastIndertedEdge);
 	if ((P == e->Org()->Position()) || (P == e->Dest()->Position()))  // point is already in
@@ -1370,7 +1478,7 @@ GMeshEdge2D *GMesh2D::DelaunayInsertSite(const GPoint2& P, const GReal Tolerance
 	stop = e->Lprev();
 	// connect the new point to the vertexes of the containing triangle (or quadrilateral, if the new
 	// point fell on an existing edge)
-	GMeshVertex2D *v = AddVertex(P);
+	GMeshVertex2D<DATA_TYPE> *v = AddVertex(P);
 	v->SetCustomData((void *)1);
 
 	// now we create two edges and a new face
@@ -1422,28 +1530,30 @@ GMeshEdge2D *GMesh2D::DelaunayInsertSite(const GPoint2& P, const GReal Tolerance
 
 
 // build an incremental Delaunay triangulation
-GError GMesh2D::BuildFromPointsCloud(const GDynArray<GPoint2>& Points, const GReal Epsilon) {
+template <typename DATA_TYPE>
+GError GMesh2D<DATA_TYPE>::BuildFromPointsCloud(const GDynArray< GPoint<DATA_TYPE, 2> >& Points,
+												const DATA_TYPE Epsilon) {
 
-	GMeshVertex2D *v1, *v2, *v3, *v4;
-	GMeshEdge2D *DelaunayStartingEdge = NULL; 	// last inserted edge for Delanunay triangulation
-	GMeshEdge2D *tmpEdge;
-	GMeshFace2D *left, *right, *front;
-	GUInt32 i, j = Points.size();
+	GMeshVertex2D<DATA_TYPE> *v1, *v2, *v3, *v4;
+	GMeshEdge2D<DATA_TYPE> *DelaunayStartingEdge = NULL; 	// last inserted edge for Delanunay triangulation
+	GMeshEdge2D<DATA_TYPE> *tmpEdge;
+	GMeshFace2D<DATA_TYPE> *left, *right, *front;
+	GUInt32 i, j = (GUInt32)Points.size();
 	// just to be sure that a positive precision is specified to DelaunayInsertSite routine
-	GReal eps = GMath::Abs(Epsilon);
+	DATA_TYPE eps = GMath::Abs(Epsilon);
 
 	// test for a degenerative case
 	if (j < 3)
 		return G_INVALID_PARAMETER;
 
 	// calculate bounding box for points cloud
-	GPoint2 p;
-	GAABox2 extBox(Points);
+	GPoint<DATA_TYPE, 2> p;
+	GGenericAABox<DATA_TYPE, 2> extBox(Points);
 	p = extBox.Min();
-	p = p - GPoint2(1, 1);
+	p = p - GPoint<DATA_TYPE, 2>(1, 1);
 	extBox.SetMin(p);
 	p = extBox.Max();
-	p = p + GPoint2(1, 1);
+	p = p + GPoint<DATA_TYPE, 2>(1, 1);
 	extBox.SetMax(p);
 
 	// clear mesh
@@ -1461,7 +1571,7 @@ GError GMesh2D::BuildFromPointsCloud(const GDynArray<GPoint2>& Points, const GRe
 	v1->SetCustomData(NULL);
 
 	v2 = MakeVertexEdge(v1, left, right)->Dest();
-	v2->SetPosition(GPoint2(extBox.Min()[G_X], extBox.Max()[G_Y]));
+	v2->SetPosition(GPoint<DATA_TYPE, 2>(extBox.Min()[G_X], extBox.Max()[G_Y]));
 	v2->SetCustomData(NULL);
 
 	v3 = MakeVertexEdge(v2, left, right)->Dest();
@@ -1469,7 +1579,7 @@ GError GMesh2D::BuildFromPointsCloud(const GDynArray<GPoint2>& Points, const GRe
 	v3->SetCustomData(NULL);
 
 	v4 = MakeVertexEdge(v3, left, right)->Dest();
-	v4->SetPosition(GPoint2(extBox.Max()[G_X], extBox.Min()[G_Y]));
+	v4->SetPosition(GPoint<DATA_TYPE, 2>(extBox.Max()[G_X], extBox.Min()[G_Y]));
 	v4->SetCustomData(NULL);
 
 	// make a diagonal
@@ -1482,5 +1592,25 @@ GError GMesh2D::BuildFromPointsCloud(const GDynArray<GPoint2>& Points, const GRe
 	}
 	return G_NO_ERROR;
 }
+
+// float instantiation
+template G_EXPORT
+class GMeshVertex2D<GFloat>;
+template G_EXPORT
+class GMeshEdge2D<GFloat>;
+template G_EXPORT
+class GMeshFace2D<GFloat>;
+template G_EXPORT
+class GMesh2D<GFloat>;
+
+// double instantiation
+template G_EXPORT
+class GMeshVertex2D<GDouble>;
+template G_EXPORT
+class GMeshEdge2D<GDouble>;
+template G_EXPORT
+class GMeshFace2D<GDouble>;
+template G_EXPORT
+class GMesh2D<GDouble>;
 
 };	// end namespace Amanith

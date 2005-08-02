@@ -159,7 +159,7 @@ Legend:  O on curve  + off curve
 			\param Variation maximum variation permitted by this flattening operation.
 			\param Transformation the affine transformation to apply to points.
 		*/
-		void DrawContour(GDynArray<GPoint2>& Points, const GReal Variation,	const GMatrix23& Transformation) const;
+		void DrawContour(GDynArray<GPoint2>& Points, const GReal Variation,	const GMatrix33& Transformation) const;
 		/*!
 			Convert the internal compact contour representation, into a piecewise Bezier form.
 
@@ -199,7 +199,7 @@ Legend:  O on curve  + off curve
 		//! Internal flag (sorry, but it's not documented by FreeType)
 		GInt32 Flags;
 		//! Transformation to apply to this subchar
-		GMatrix23 Transformation;
+		GMatrix33 Transformation;
 	};
 
 	/*!
@@ -244,11 +244,6 @@ Legend:  O on curve  + off curve
 		friend class GFont2D;
 
 	private:
-		struct GCharOutline {
-			GInt32 OuterContourIndex;
-			GDynArray<GInt32> HolesContoursIndexes;
-		};
-
 		//! The GFont instance that created this character.
 		const GFont2D *gFont;
 		/*!
@@ -261,7 +256,6 @@ Legend:  O on curve  + off curve
 			only. For 'plain' characters this array is empty.
 		*/
 		GDynArray<GSubChar2D> gSubChars;
-		mutable GDynArray<GCharOutline> gOutlines;
 		/*!
 			The metrics of the glyph. The returned values depend on the "scale" loading option.\n
 			Values are expressed in font units (or normalized if the font has been read with option "scale=0")
@@ -298,10 +292,8 @@ Legend:  O on curve  + off curve
 		GFontChar2D(const GFontChar2D& Source);
 
 	protected:
-		//! Remove and free all outlines
-		void DeleteOutlines();
-		//! Assign to a single labeled hole to its respective outer contour
-		GInt32 AssignHoleOutline(const GInt32 HoleContourIndex) const;
+		//! Remove and free all contours
+		void DeleteContours();
 		//! Label a single contour as hole or solid (using the crossing line algorithm)
 		void LabelContour(const GFontCharContour2D& Contour) const;
 		//! Label every contours as hole or solid (using the crossing line algorithm)
@@ -310,34 +302,6 @@ Legend:  O on curve  + off curve
 		void SwapHolesAndFilledLabels(const GBool EvenOddFlag) const;
 		//! Reverse points order of each contour, according to its hole/solid flag and cw/ccw flag.
 		void FixHolesAndFilledWiseOrder() const;
-		//! Assign labeled holes to their respective outer contour
-		void SetHolesContainers() const;
-		/*!
-			Do the effective outline drawing.
-
-			\param Outline the outline to draw
-			\param Points the points array, where generated points will be appended
-			\param PointsCounters the counters array, for every contour an integer (that represents the number of
-			points appended for that contour) will be appended.
-			\param Variation the parameter used as maximum permitted variation (squared chordal distance).
-		*/
-		void DrawOutline(const GCharOutline& Outline, GDynArray<GPoint2>& Points,
-						 GDynArray<GInt32>& PointsCounters, const GReal Variation) const;
-
-		/*!
-			Do the effective outline drawing.
-
-			\param Outline the outline to draw
-			\param Points the points array, where generated points will be appended
-			\param PointsCounters the counters array, for every contour an integer (that represents the number of
-			points appended for that contour) will be appended.
-			\param Variation the parameter used as maximum permitted variation (squared chordal distance).
-			\param Transformation the affine transformation to apply to all contours points.
-		*/
-		void DrawOutline(const GCharOutline& Outline, GDynArray<GPoint2>& Points,
-						 GDynArray<GInt32>& PointsCounters, const GReal Variation, const GMatrix23& Transformation) const;
-
-
 		/*!
 			Set constructor, build a 'plain' character.
 
@@ -358,21 +322,17 @@ Legend:  O on curve  + off curve
 	public:
 		/*!
 			Get number of closed contours owned by this character. If this char is composite, 0 will be returned.
-
-			\todo add an 'exmpand' flag, to make composite characters to be seen as plain character.
 		*/
-		inline GInt32 ContoursCount() const {
-			return (GInt32)gContours.size();
+		inline GUInt32 ContoursCount() const {
+			return (GUInt32)gContours.size();
 		}
 		/*!
 			Get the Index-th contour owned by this character. If this char is composite, a NULL pointer will be returned.
-
-			\todo add an 'exmpand' flag, to make composite characters to be seen as plain character.
 		*/
 		const GFontCharContour2D* Contour(const GUInt32 Index) const;
 		//! In the case of composite char, return the number of subchars.
-		inline GInt32 SubCharsCount() const {
-			return (GInt32)gSubChars.size();
+		inline GUInt32 SubCharsCount() const {
+			return (GUInt32)gSubChars.size();
 		}
 		/*!
 			In the case of composite char, get the Index-th subchar.
@@ -382,34 +342,6 @@ Legend:  O on curve  + off curve
 			\return G_NO_ERROR if operation succeeds, an error code otherwise.
 		*/
 		GError SubChar(const GUInt32 Index, GSubChar2D& SubCharInfo) const;
-		/*! 
-			Get the number of outlines that compose this character.
-
-			Here the concept of outline has been introduced just for convenience, to permit to third parts
-			libraries/renderers to be (i wish!) more comfortable.
-			An outline is just a logical grouping of geometric contours that build this character.
-			Every group (called outline) is made of:
-
-			- an outer contour (called main contour)
-			- a list of holes contours relative (inside) the outer contour.
-
-			An outline can be thought as a brush trait, made by an outer solid contour and its holes.
-			This method take care of composite characters, so the number returned is the sum of all sub-chars
-			outlines.
-		*/
-		GInt32 OutlinesCount() const;
-		/*!
-			Draw a single outline, with a maximum (squared chordal distance) variation specified.
-
-			\param Index the index of outline, must be a valid.
-			\param Points the points array, where generated points will be appended
-			\param PointsCounters the counters array, for every contour an integer (that represents the number of
-			points appended for that contour) will be appended.
-			\param Variation the parameter used as maximum permitted variation (squared chordal distance).
-			\return G_NO_ERROR if operation succeeds, an error code otherwise.
-		*/
-		GError DrawOutline(const GInt32 Index, GDynArray<GPoint2>& Points,
-						   GDynArray<GInt32>& PointsCounters, const GReal Variation = 1e-4) const;
 		/*!
 			Convert each contour that builds the character, into a GPath2D representation.
 

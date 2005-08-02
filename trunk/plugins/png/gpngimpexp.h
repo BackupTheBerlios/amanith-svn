@@ -44,11 +44,11 @@ namespace Amanith {
 	private:
 		void AddPngFeatures();
 		GError RawPngLoad(const GChar8 *FileName, GInt32& Width, GInt32& Height, GPixelFormat& PixelFormat,
-						  GUChar8 **OutBuffer, GInt32& NumPaletteEntries, GInt32 **PaletteBuffer,
+						  GUChar8 **OutBuffer, GInt32& NumPaletteEntries, GUInt32 **PaletteBuffer,
 						  const GBool ExpandPalette);
 		GError RawPngSave(const GChar8 *FileName, const GInt32 Width, const GInt32 Height,
 						  const GPixelFormat PixelFormat, const GUChar8 *Buffer,
-						  const GInt32 NumPaletteEntries, const GInt32 *PaletteBuffer,
+						  const GInt32 NumPaletteEntries, const GUInt32 *PaletteBuffer,
 						  const GBool Interlaced);
 
 	protected:

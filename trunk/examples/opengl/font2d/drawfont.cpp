@@ -1,3 +1,27 @@
+/****************************************************************************
+**
+** Copyright (C) 2004-2005 Mazatech Inc. All rights reserved.
+**
+** This file is part of Amanith Framework.
+**
+** This file may be distributed and/or modified under the terms of the Q Public License
+** as defined by Mazatech Inc. of Italy and appearing in the file
+** LICENSE.QPL included in the packaging of this file.
+**
+** Licensees holding valid Amanith Professional Edition license may use this file in
+** accordance with the Amanith Commercial License Agreement provided with the Software.
+**
+** This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+** WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+**
+** See http://www.mazatech.com or email sales@mazatech.com for
+** information about Amanith Commercial License Agreements.
+** See http://www.amanith.org/ for opensource version, public forums and news.
+**
+** Contact info@mazatech.com if any conditions of this licensing are
+** not clear to you.
+**********************************************************************/
+
 #include "drawfont.h"
 #include <amanith/2d/gtesselator2d.h>
 #include <qmessagebox.h>
@@ -7,8 +31,6 @@
 	#include <QTimerEvent>
 	#include <QKeyEvent>
 #endif
-
-#define PrintOpenGLError() gExtManager->PrintOglError(__FILE__, __LINE__)
 
 static int timer_interval = 0;			// timer interval (millisec)
 
@@ -25,7 +47,7 @@ QGLWidgetTest::QGLWidgetTest(QWidget * parent) : QGLWidget(parent) {
 	gY = -0.3f;
 	gZ = -2.3f;
 
-	// build path for data (textures)
+	// build path for data
 	gDataPath = SysUtils::AmanithPath();
 	if (gDataPath.length() > 0)
 		gDataPath += "data/";
@@ -45,41 +67,64 @@ QGLWidgetTest::QGLWidgetTest(QWidget * parent) : QGLWidget(parent) {
 // destructor
 QGLWidgetTest::~QGLWidgetTest() {
 
-	if (gExtManager)
-		delete gExtManager;
-	if (gFont)
-		delete gFont;
 	if (gKernel)
 		delete gKernel;
 }
 
 //------------------------------------------------------------
 
+void QGLWidgetTest::DrawChar(const GFontChar2D* Char, const GReal Deviation, const GMatrix33& Transformation) {
+
+	GUInt32 i, j;
+
+	if (!Char->IsComposite()) {
+		GDynArray<GPoint2> tmpPts;
+		GDynArray<GInt32> tmpIndex;
+		GUInt32 oldSize = 0;
+
+		// extract all contours
+		j = Char->ContoursCount();
+		for (i = 0; i < j; ++i) {
+			Char->Contour(i)->DrawContour(tmpPts, Deviation, Transformation);
+			tmpIndex.push_back(tmpPts.size() - oldSize);
+			oldSize = tmpPts.size();
+			// insert generated point into internal arrays, used for the pure wireframe rendering mode
+			gContoursPoints.insert(gContoursPoints.end(), tmpPts.begin(), tmpPts.end());
+			gContoursIndexes.insert(gContoursIndexes.end(), tmpIndex.begin(), tmpIndex.end());
+		}
+		// triangulate contours
+		GTesselator2D tesselator;
+		tesselator.Tesselate(tmpPts, tmpIndex, gVertices, G_ODD_RULE);
+	}
+	else {
+		const GFontChar2D* subChar;
+		GSubChar2D subCharInfo;
+		GMatrix33 totalMatrix;
+		// extract all sub characters
+		j = Char->SubCharsCount();
+		for (i = 0; i < j; ++i) {
+			Char->SubChar(i, subCharInfo);
+			// concatenate transformations
+			totalMatrix = Transformation * subCharInfo.Transformation;
+			subChar = gFont->CharByIndex(subCharInfo.GlyphIndex);
+			// draw sub character
+			DrawChar(subChar, Deviation, totalMatrix);
+		}
+	}
+}
+
 void QGLWidgetTest::GenerateTessellation(const GFontChar2D* Char, const GReal Deviation) {
 
 	if (Char == NULL)
 		return;
 
-	GInt32 i, j;
-	GDynArray<GPoint2> tmpPts;
-	GDynArray<GInt32> tmpIndex;
-	GTesselator2D tesselator;
+	// start with an identity transformation
+	GMatrix33 idMatrix;
 
-	j = (GInt32)Char->OutlinesCount();
 	gContoursPoints.clear();
 	gContoursIndexes.clear();
-
-	for (i = 0; i < j; i++) {
-		tmpPts.clear();
-		tmpIndex.clear();
-
-		Char->DrawOutline(i, tmpPts, tmpIndex, Deviation);
-
-		gContoursPoints.insert(gContoursPoints.end(), tmpPts.begin(), tmpPts.end());
-		gContoursIndexes.insert(gContoursIndexes.end(), tmpIndex.begin(), tmpIndex.end());
-	}
 	gVertices.clear();
-	tesselator.Tesselate(gContoursPoints, gContoursIndexes, gVertices, G_TRUE);
+	DrawChar(Char, Deviation, idMatrix);
 }
 
 //------------------------------------------------------------
@@ -94,18 +139,14 @@ void QGLWidgetTest::timerEvent(QTimerEvent *e) {
 //----- initializeGL -----------------------------------------
 void QGLWidgetTest::initializeGL() {
 
-	GString fName;
-	// create extensions manager
-	gExtManager = new GOpenglExt();
 	glShadeModel(GL_SMOOTH);							// Enable Smooth Shading
 	glClearColor(0.0f, 0.0f, 0.0f, 0.5f);				// Black Background
 	glClearDepth(1.0f);									// Depth Buffer Setup
 	glDisable(GL_DEPTH_TEST);
 	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);	// Really Nice Perspective Calculations
-	glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);					// Set Line Antialiasing
+	glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);				// Set Line Antialiasing
 	glDisable(GL_LIGHTING);
 	glDisable(GL_CULL_FACE);
-
 	setDefaultGlobalStates();
 	startTimer(timer_interval);
 }
@@ -140,32 +181,31 @@ void QGLWidgetTest::DrawOutlines(const GDynArray<GPoint2>& ContoursPoints,
 
 //------------------------------------------------------------
 
-void QGLWidgetTest::DrawTriangles(const GDynArray<GPoint2>& Points) {
+void QGLWidgetTest::DrawTriangles(const GDynArray< GPoint<GDouble, 2> >& Points) {
 
-	GUInt32 i, j = Points.size(), k;
-	GPoint2 a, b, c;
-	GPoint<GLfloat, 3> col1(1.0f, 0.74f, 0.20f);
-	GPoint<GLfloat, 3> col2(0.72f, 0.0f, 0.0f);
-	GPoint<GLfloat, 3> col;
+	GUInt32 i, j = Points.size();
+	GPoint<GDouble, 2> a, b, c;
+	GPoint<GDouble, 3> col1(1.0f, 0.74f, 0.20f);
+	GPoint<GDouble, 3> col2(0.72f, 0.0f, 0.0f);
+	GPoint<GDouble, 3> col;
 
-	k = j / 3;
 	glBegin(GL_TRIANGLES);
-	for (i = 0; i < k; i++) {
-		a = Points[i * 3];
-		b = Points[i * 3 + 1];
-		c = Points[i * 3 + 2];
-
-		col = GMath::Lerp(GMath::Clamp(a[G_X], (GReal)0, (GReal)1), col1, col2);
-		glColor3f(col[0], col[1], col[2]);
-		glVertex3f(a[G_X], a[G_Y], 1.0f);
-
-		col = GMath::Lerp(GMath::Clamp(b[G_X], (GReal)0, (GReal)1), col1, col2);
-		glColor3f(col[0], col[1], col[2]);
-		glVertex3f(b[G_X], b[G_Y], 1.0f);
-
-		col = GMath::Lerp(GMath::Clamp(c[G_X], (GReal)0, (GReal)1), col1, col2);
-		glColor3f(col[0], col[1], col[2]);
-		glVertex3f(c[G_X], c[G_Y], 1.0f);
+	for (i = 0; i < j; i+=3) {
+		a = Points[i];
+		b = Points[i + 1];
+		c = Points[i + 2];
+		// generate color for first point
+		col = GMath::Lerp(GMath::Clamp(a[G_X], (GDouble)0, (GDouble)1), col1, col2);
+		glColor3d(col[0], col[1], col[2]);
+		glVertex3d(a[G_X], a[G_Y], 1.0f);
+		// generate color for second point
+		col = GMath::Lerp(GMath::Clamp(b[G_X], (GDouble)0, (GDouble)1), col1, col2);
+		glColor3d(col[0], col[1], col[2]);
+		glVertex3d(b[G_X], b[G_Y], 1.0f);
+		// generate color for third point
+		col = GMath::Lerp(GMath::Clamp(c[G_X], (GDouble)0, (GDouble)1), col1, col2);
+		glColor3d(col[0], col[1], col[2]);
+		glVertex3d(c[G_X], c[G_Y], 1.0f);
 	}
 	glEnd();
 
@@ -175,16 +215,17 @@ void QGLWidgetTest::DrawTriangles(const GDynArray<GPoint2>& Points) {
 	glLineWidth(1.0f);
 	glBegin(GL_LINES);
 	glColor3f(1.0f, 1.0f, 1.0f);
-	for (i = 0; i < k; i++) {
-		a = Points[i * 3];
-		b = Points[i * 3 + 1];
-		c = Points[i * 3 + 2];
-		glVertex3f(a[G_X], a[G_Y], 1.0f);
-		glVertex3f(b[G_X], b[G_Y], 1.0f);
-		glVertex3f(a[G_X], a[G_Y], 1.0f);
-		glVertex3f(c[G_X], c[G_Y], 1.0f);
-		glVertex3f(b[G_X], b[G_Y], 1.0f);
-		glVertex3f(c[G_X], c[G_Y], 1.0f);
+	for (i = 0; i < j; i+=3) {
+		a = Points[i];
+		b = Points[i + 1];
+		c = Points[i + 2];
+		// draw edge lines
+		glVertex3d(a[G_X], a[G_Y], 1.0f);
+		glVertex3d(b[G_X], b[G_Y], 1.0f);
+		glVertex3d(a[G_X], a[G_Y], 1.0f);
+		glVertex3d(c[G_X], c[G_Y], 1.0f);
+		glVertex3d(b[G_X], b[G_Y], 1.0f);
+		glVertex3d(c[G_X], c[G_Y], 1.0f);
 	}
 	glEnd();
 }
@@ -202,17 +243,16 @@ void QGLWidgetTest::paintGL() {
 		DrawOutlines(gContoursPoints, gContoursIndexes);
 	glFlush();
 }
-//------------------------------------------------------------
 
 //----- resizeGL ---------------------------------------------
 void QGLWidgetTest::resizeGL(int width, int height) {
 
 	if (height == 0)									// Prevent A Divide By Zero By
 		height = 1;										// Making Height Equal One
-	glViewport(0, 0, width, height);						// Reset The Current Viewport
+	glViewport(0, 0, width, height);					// Reset The Current Viewport
 	glMatrixMode(GL_PROJECTION);						// Select The Projection Matrix
 	glLoadIdentity();									// Reset The Projection Matrix
-	gluPerspective(45.0f, (GLfloat)width/(GLfloat)height, 0.1f, 1000.0f);
+	gluPerspective(45.0f, (GLfloat)width/(GLfloat)height, 0.1f, 1500.0f);
 	glMatrixMode(GL_MODELVIEW);							// Select The Modelview Matrix
 	glLoadIdentity();	
 }
@@ -258,7 +298,7 @@ void QGLWidgetTest::keyPressEvent(QKeyEvent *e) {
 			gX -= 0.05f;
 			break;
 		case Qt::Key_M:
-			gDeviation *= 0.5;
+			gDeviation /= 2;
 			GenerateTessellation(gChar, gDeviation);
 			break;
 		case Qt::Key_N:

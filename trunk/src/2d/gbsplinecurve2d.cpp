@@ -453,7 +453,7 @@ GError GBSplineCurve2D::KnotsAveraging(GDynArray<GReal>& OutKnots, const GDynArr
 	GInt32 i, j, n, m;
 	GReal u, oneOverDegree;
 	
-	n = ChordalKnots.size() - 1;
+	n = (GInt32)ChordalKnots.size() - 1;
 	m = 2 * (Degree + 1) + HowManyAveraged - 1;
 	OutKnots.resize(m + 1);
 	for (i = 0; i <= Degree; i++)
@@ -505,7 +505,7 @@ void GBSplineCurve2D::BuildCentripetalKnots(GDynArray<GReal>& OutKnots,
 	GInt32 n;
 
 	ChordLengthKnots(uk, ControlPoints, MinValue, MaxValue);
-	n = ControlPoints.size() - 1;
+	n = (GInt32)ControlPoints.size() - 1;
 	KnotsAveraging(OutKnots, uk, Degree, 1, n - Degree);
 }
 
@@ -669,7 +669,7 @@ GInt32 GBSplineCurve2D::FindSpan(const GReal u) const {
 		if (u >= DomainEnd())
 			return PointsCount() - 1;
 	}
-	j = gKnots.size() - 1;
+	j = (GInt32)gKnots.size() - 1;
 	for (i = 0; i < j; i++)
 		if ((u >= gKnots[i]) && (u < gKnots[i + 1]))
 			return i;
@@ -687,7 +687,7 @@ GInt32 GBSplineCurve2D::FindSpanMult(const GReal u, GInt32& Multiplicity) const 
 			return PointsCount() - 1;
 		}
 	}
-	j = gKnots.size() - 1;
+	j = (GInt32)gKnots.size() - 1;
 	for (i = 0; i < j; i++)
 
 		if ((u >= gKnots[i]) && (u < gKnots[i + 1])) {
@@ -710,7 +710,7 @@ GInt32 GBSplineCurve2D::FindSpanMult(const GReal u, GInt32& Multiplicity) const 
 // calculate knot multiplicity
 GInt32 GBSplineCurve2D::Multiplicity(const GReal u) const {
 
-	GInt32 i = 0, j = gKnots.size(), res = 0;
+	GInt32 i = 0, j = (GInt32)gKnots.size(), res = 0;
 
 	while ((i < j) && (gKnots[i] <= u)) {
 		if (gKnots[i] == u)
@@ -1056,7 +1056,7 @@ GError GBSplineCurve2D::LowerDegree(GBSplineCurve2D& OutputCurve) const {
 	// get knots multiplicities
 	GDynArray<GKnotMultiplicity> tmpMult;
 	Multiplicities(tmpMult);
-	j = tmpMult.size();
+	j = (GInt32)tmpMult.size();
 	s = j - 2;
 	// nSigned = (numer of new control points) - 1
 	nSigned = (PointsCount() - 1) - s - 1;
@@ -1219,7 +1219,7 @@ GError GBSplineCurve2D::HigherDegree(const GInt32 HowManyTimes, GBSplineCurve2D&
 	// get knots multiplicities
 	GDynArray<GKnotMultiplicity> tmpMult;
 	Multiplicities(tmpMult);
-	s = tmpMult.size() - 2;
+	s = (GInt32)tmpMult.size() - 2;
 
 	// coefficients for degree elevating the Bezier segments
 	GDynArray<GReal> bezalfs((p + t + 1) * (p + 1));
@@ -1424,7 +1424,7 @@ GError GBSplineCurve2D::DoCut(const GReal u, GCurve2D *RightCurve, GCurve2D *Lef
 	// create first step Deboor polygon
 	for (i = k - gDegree; i <= k - s; i++)
 		deBoor.push_back(gPoints[i]);
-	j = deBoor.size();
+	j = (GInt32)deBoor.size();
 	// lets subdivide the curve 
 	for (r = 1; r <= h ; r++) {
 		for (i = k - s; i >= k - gDegree + r; i--) {
@@ -1447,7 +1447,7 @@ GError GBSplineCurve2D::DoCut(const GReal u, GCurve2D *RightCurve, GCurve2D *Lef
 
 	// the knot vector for the left curve includes all knots in [MinKnotParam, u) followed by
 	// Degree+1 copies of u
-	j = gKnots.size() - 1;
+	j = (GInt32)gKnots.size() - 1;
 	for (i = 0; i <= j; i++)
 		if ((gKnots[i] >= DomainStart()) && (gKnots[i] < u))
 			leftKnots.push_back(gKnots[i]);
@@ -1455,13 +1455,13 @@ GError GBSplineCurve2D::DoCut(const GReal u, GCurve2D *RightCurve, GCurve2D *Lef
 		leftKnots.push_back(u);
 
 	// lets mirror "right" points
-	ReverseArray(rightPoints, 0, rightPoints.size() - 1);
+	ReverseArray(rightPoints, 0, (GUInt32)(rightPoints.size() - 1));
 
 	// the knot vector for the right curve includes Degree+1 copies of u followed by all
 	// knots in (u, MinKnotParam] 
 	for (i = 0; i < gDegree + 1; i++)
 		rightKnots.push_back(u);
-	j = gKnots.size() - 1;
+	j = (GInt32)gKnots.size() - 1;
 	for (i = 0; i <= j; i++)
 		if ((gKnots[i] > u) && (gKnots[i] <= DomainEnd()))
 			rightKnots.push_back(gKnots[i]);
