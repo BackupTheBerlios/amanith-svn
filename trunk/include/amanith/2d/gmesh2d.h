@@ -629,7 +629,35 @@ namespace Amanith {
 		//! Build a mesh from a classic vertex-indices arrays
 		GError BuildFromFaces(const GDynArray< GPoint<DATA_TYPE, 2> >& Points, const GDynArray<GIndexList>& FacesIndexes,
 							  const GBool Deep2ManifoldCheck = G_TRUE);
-		//! Build an incremental Delaunay triangulation.
+		/*!
+			Build an incremental Delaunay triangulation.
+
+			The algorithm is the one presented from Guibas and Stolfi (1985) in
+			"Leonidas Guibas and Jorge Stolfi, Primitives for the manipulation of general subdivisions and the computation
+			of Voronoi diagrams, ACM Transactions on Graphics, 4(2), 1985, 75-123", with slight	modifications and
+			a bug fix.\n
+			The idea is to construct an axes aligned bounding box that will surround all specified points, triangulate
+			it (delaunay triangulation of a aabox is pretty easy, just trace a diagonal), and then points are added
+			into the triangulation one by one, maintaining the invariant that the triangulation is Delaunay.\n
+
+			\param Points the array of points to be triangulated. This array must contain at least 3 points, else
+			an G_INVALID_PARAMETER error code will be returned.
+			\param Epsilon the precision used during calculation.
+			\return G_NO_ERROR if the operation succeeds, an error code otherwise.
+			\note To know witch edges are part of the Delaunay triangulation, just look at CustomData() value at
+			edge's origin and destination vertexes. This value is non-NULL for vertexes that belong to the Delaunay
+			triangulation. Here's an example code that check if a mesh edge is part of the triangulation:
+\code
+	GBool IsEdgeDelaunay(const GMeshEdge2D *Edge) {
+		if (Edge->Org()->CustomData() && Edge->Dest()->CustomData())
+			return G_TRUE;
+		else
+			return G_FALSE;
+	}
+\endcode
+		Extending this idea, is possible to know witch faces belong to the Delaunay triangulation: check each face
+		edge with the above function, and you are done.
+		*/
 		GError BuildFromPointsCloud(const GDynArray< GPoint<DATA_TYPE, 2> >& Points,
 									const DATA_TYPE Epsilon = (DATA_TYPE)G_EPSILON);
 		//! Destructor, it release the storage occupied by the contents of this mesh.

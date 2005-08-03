@@ -274,6 +274,10 @@ namespace Amanith {
 		}
 		//! Number of pixels, equal to Width() * Height().
 		GInt32 PixelsCount() const;
+		//! Number of palette entries. If image is not paletted, zero will be returned.
+		inline GInt32 PaletteEntriesCount() const {
+			return (this->PaletteSize() / sizeof(GUInt32));
+		}
 		//!	Number of bits used to encode a single pixel, also called bits per pixel (bpp) or bit planes of an image.
 		GInt32 BitsPerPixel() const;
 		//! number of bytes used to encode a single pixel.
@@ -603,9 +607,8 @@ namespace Amanith {
 		/*!
 			Get pointer to the first pixel.
 			
-			Here's an example that accesses to every image pixels (it supposes a grayscale or paletted image, so
+			Here's an example that accesses every image pixels (it supposes a grayscale or paletted image, so
 			every pixel is a byte):\n\n
-
 \code
 	GUChar8 *pixelsArray = Image.Pixels();
 	GInt32 i, j = Image.PixelsCount();
@@ -616,7 +619,18 @@ namespace Amanith {
 		inline GUChar8* Pixels() const {
 			return gPixels;
 		}
-		//! Get pointer to the first palette entry (if present). For non paletted images a NULL value will be returned.
+		/*!
+			Get pointer to the first palette entry (if present). For non paletted images a NULL value
+			will be returned.
+
+			Here's an example that accesses every palette entry (it supposes a paletted image):\n\n
+\code
+	GUInt32 *palette = Image.Palette();
+	GInt32 i, j = Image.PaletteEntriesCount();
+	for (i = 0; i < j; ++i)
+		< do something with palette[i] >
+\endcode
+		*/
 		inline GUInt32* Palette() const {
 			if (!IsPaletted())
 				return NULL;
