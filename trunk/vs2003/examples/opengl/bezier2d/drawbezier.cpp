@@ -491,5 +491,5 @@ int WINAPI WinMain(	HINSTANCE	hInstance,			// Instance
 	// Shutdown
 	KillGLWindow();									// Kill The Window
 	KillApp();
-	return (msg.wParam);							// Exit The Program
+	return (int)(msg.wParam);							// Exit The Program
 }

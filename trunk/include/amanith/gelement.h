@@ -47,11 +47,11 @@ namespace Amanith {
 	// *********************************************************************
 
 	//! Time interval, it's an interval where values are of type GTimeValue
-	typedef GInterval<GTimeValue> GTimeInterval;
+	typedef GInterval<GReal> GTimeInterval;
 	//! Time interval with the maximum possible length
-	static const GTimeInterval G_FOREVER_TIMEINTERVAL = GTimeInterval(-G_MAX_INT32, G_MAX_INT32);
+	static const GTimeInterval G_FOREVER_TIMEINTERVAL = GTimeInterval(G_MIN_REAL, G_MAX_REAL);
 	//! An empty interval
-	static const GTimeInterval G_NEVER_TIMEINTERVAL = GTimeInterval(-G_MAX_INT32, -G_MAX_INT32);
+	static const GTimeInterval G_NEVER_TIMEINTERVAL = GTimeInterval(G_MIN_REAL, G_MIN_REAL);
 
 
 	// *********************************************************************
@@ -99,9 +99,9 @@ namespace Amanith {
 		}
 
 	public:
-		//! Default constructor, set owner to NULL
+		//! Default constructor, set owner to NULL.
 		GElement();
-		//! Constructor, specifying owner
+		//! Constructor, specifying owner.
 		GElement(const GElement* Owner);
 		//! Destructor
 		virtual ~GElement();
@@ -224,6 +224,388 @@ namespace Amanith {
 
 	//! Static proxy for GElement class.
 	static const GElementProxy G_ELEMENT_PROXY;
+
+
+	// *********************************************************************
+	//                             GAnimElement
+	// *********************************************************************
+	static const GClassID G_ANIMELEMENT_CLASSID = GClassID("GAnimElement", 0x8B98ACC9, 0x577E4416, 0xB9230A4A, 0xE4762EEE);
+	// forward declaration
+	class GProperty;
+
+	class G_EXPORT GAnimElement : public GElement {
+	private:
+		// internal list of properties
+		GDynArray<GProperty*> gProperties;
+
+		// delete and empty all properties
+		void DeleteProperties(void);
+		// clone properties
+		GError CloneProperties(const GAnimElement& Source);
+
+	protected:
+		// find a property given its name
+		GProperty* FindProperty(const GString& Name, GUInt32& PropIndex) const;
+		// base clone function
+		GError BaseClone(const GElement& Source);
+
+	public:
+		//! Default constructor, set owner to NULL. Internal properties array is initialized as empty.
+		GAnimElement() : GElement() {
+		}
+		//! Constructor, specifying owner. Internal properties array is initialized as empty.
+		GAnimElement(const GElement* Owner) : GElement(Owner) {
+		}
+		//! Destructor, remove and free all owned properties.
+		virtual ~GAnimElement() {
+			// delete all properties
+			DeleteProperties();
+		}
+		// Add a property
+		GProperty* AddProperty(const GString& Name, const GClassID& ClassID, GBool& AlreadyExist,
+							   GUInt32& PropertyIndex);
+		// Get an existing property (given its name)
+		GProperty* Property(const GString& Name) const;
+		// get an existing property (given its index)
+		GProperty* Property(const GUInt32 Index) const;
+		// remove the specified property form internal list
+		GBool RemoveProperty(const GString& Name);
+		// remove the specified property form internal list
+		GBool RemoveProperty(const GUInt32 Index);
+		// get full list of properties
+		const GDynArray<GProperty*>& Properties() const {
+			return gProperties;
+		}
+		//! Get number of properties.
+		inline const GInt32 PropertiesCount() const {
+			return (GInt32)gProperties.size();
+		}
+		//! Get class descriptor
+		inline const GClassID& ClassID() const {
+			return G_ANIMELEMENT_CLASSID;
+		}
+		//! Get base class (father class) descriptor
+		inline const GClassID& DerivedClassID() const {
+			return G_ELEMENT_CLASSID;
+		}
+	};
+
+	// *********************************************************************
+	//                          GAnimElementProxy
+	// *********************************************************************
+	/*!
+		\class GAnimElementProxy
+		\brief This class implements a GAnimElement proxy (provider).
+
+		This proxy does not override CreateNew() method because we don't wanna make a creation of a GAnimElement
+		class possible (because of pure virtual  methods).
+	*/
+	class G_EXPORT GAnimElementProxy : public GElementProxy {
+	public:
+		//! Get class descriptor of elements type "provided" by this proxy.
+		const GClassID& ClassID() const {
+			return G_ANIMELEMENT_CLASSID;
+		}
+		//! Get base class (father class) descriptor of elements type "provided" by this proxy.
+		const GClassID& DerivedClassID() const {
+			return G_ELEMENT_CLASSID;
+		}
+	};
+	//! Static proxy for GAnimElement class.
+	static const GAnimElementProxy G_ANIMELEMENT_PROXY;
+
+
+
+	// *********************************************************************
+	//                              GKeyValue
+	// *********************************************************************
+
+	// key types
+	enum GKeyType {
+		G_UNDEFINED_KEY,
+		G_BOOL_KEY,
+		G_INT_KEY,
+		G_REAL_KEY,
+		G_VECTOR2_KEY,
+		G_VECTOR3_KEY,
+		G_VECTOR4_KEY
+	};
+
+	class G_EXPORT GKeyValue {
+
+		friend class GProperty;
+
+	private:
+		GKeyType gType;
+		GTimeValue gTimePos;
+		GVector4 gValue;
+		void* gCustomData;
+
+	protected:
+		void SetUndefined() {
+			gType = G_UNDEFINED_KEY;
+			gValue.Set(G_MIN_REAL, G_MIN_REAL, G_MIN_REAL, G_MIN_REAL);
+			gTimePos = G_MIN_REAL;
+			gCustomData = NULL;
+		}
+
+	public:
+		GKeyValue();
+		GKeyValue(const GBool Value);
+		GKeyValue(const GInt32 Value);
+		GKeyValue(const GReal Value);
+		GKeyValue(const GVector2& Value);
+		GKeyValue(const GVector3& Value);
+		GKeyValue(const GVector4& Value);
+		GKeyValue(const GTimeValue TimePos, const GBool Value);
+		GKeyValue(const GTimeValue TimePos, const GInt32 Value);
+		GKeyValue(const GTimeValue TimePos, const GReal Value);
+		GKeyValue(const GTimeValue TimePos, const GVector2& Value);
+		GKeyValue(const GTimeValue TimePos, const GVector3& Value);
+		GKeyValue(const GTimeValue TimePos, const GVector4& Value);
+
+		void SetValue(const GBool Value);
+		void SetValue(const GInt32 Value);
+		void SetValue(const GReal Value);//, const GReal InTangent = 0, const GReal OutTangent = 0);
+		void SetValue(const GVector2& Value);//, const GVector2& InTangent = G_NULL_POINT2, const GVector2& OutTangent = G_NULL_POINT2);
+		void SetValue(const GVector3& Value);//, const GVector3& InTangent = G_NULL_POINT3, const GVector3& OutTangent = G_NULL_POINT3);
+		void SetValue(const GVector4& Value);//, const GVector4& InTangent = G_NULL_POINT4, const GVector4& OutTangent = G_NULL_POINT4);
+		void SetCustomData(void* CustomData) {
+			gCustomData = CustomData;
+		}
+		// get key type
+		inline GKeyType KeyType() const {
+			return gType;
+		}
+		void SetKeyType(const GKeyType NewType) {
+			gType = NewType;
+		}
+		// get key position (timeline position)
+		inline GTimeValue TimePosition() const {
+			return gTimePos;
+		}
+		void SetTimePosition(const GTimeValue NewTimePos) {
+			gTimePos = NewTimePos;
+		}
+		GBool BoolValue() const;
+		GInt32 IntValue() const;
+		GReal RealValue() const;
+		GVector2 Vect2Value() const;
+		GVector3 Vect3Value() const;
+		GVector4 Vect4Value() const;
+		// get custom data associated with this key
+		inline void *CustomData() const {
+			return gCustomData;
+		}
+	};
+
+
+	// *********************************************************************
+	//                             GProperty
+	// *********************************************************************
+	static const GClassID G_PROPERTY_CLASSID = GClassID("GProperty", 0xF7858DAE, 0xAACB4E8A, 0x8F8F65C3, 0x9695F42E);
+
+	// OOR (Out Of Range) type definition
+	enum GOORType {
+		G_CONSTANT_OOR,
+		G_LOOP_OOR,
+		G_PINGPONG_OOR
+	};
+
+	// used for get/set value
+	enum GValueMethod {
+		G_ABSOLUTE_VALUE,
+		G_RELATIVE_VALUE
+	};
+
+	class G_EXPORT GProperty : public GAnimElement {
+
+		friend class GAnimElement;
+
+	private:
+		GString gName;
+		GString gUpperName;
+		GBool gApplyEase;
+		GOORType gOORBefore;
+		GOORType gOORAfter;
+		GBool gIsKeyBased;
+		GProperty *gEaseProperty;
+
+	protected:
+		GError SetName(const GString& NewName);
+
+		inline void SetIsKeyBased(const GBool IsKeyBased) {
+			gIsKeyBased = IsKeyBased;
+		}
+
+		// here is ensured that Index is valid; <b>This method MUST be implemented by all keybased properties</b>
+		virtual GError DoGetKey(const GUInt32 Index, GKeyValue& OutputKey) const {
+			// just to avoid warnings...
+			if (Index == 0) {
+			}
+			// signal that this method has not been implemented
+			OutputKey.SetUndefined();
+			return G_MISSED_FEATURE;
+		}
+
+		// get local value; Time is ensured to be inside life-interval.
+		virtual GError DoGetValue(GKeyValue& OutputValue, GTimeInterval& ValidInterval, const GTimeValue Time,
+								  const GValueMethod GetMethod) const {
+
+			OutputValue.SetUndefined();
+			// just to avoid warnings...
+			if (ValidInterval.IsEmpty() && Time == 0 && GetMethod == G_ABSOLUTE_VALUE) {
+			}
+			return G_MISSED_FEATURE;
+		}
+		// set local value; InputValue.TimePosition can be outside range, behavior is to append key
+		// and expand domain
+		virtual GError DoSetValue(const GKeyValue& InputValue, const GValueMethod SetMethod) {
+			// just to avoid warnings...
+			if (InputValue.TimePosition() == 0 && SetMethod == G_ABSOLUTE_VALUE) {
+			}
+			return G_MISSED_FEATURE;
+		}
+
+		// add a point ON curve, Time is ensured to be inside domain;
+		// <b>This method must be implemented by all keybased properties</b>
+		virtual GError DoAddKey(const GTimeValue Time, GUInt32& Index, GBool& AlreadyExists) {
+			// just to avoid warnings...
+			if (Time == 0 && Index && AlreadyExists) {
+			}
+			return G_MISSED_FEATURE;
+		}
+		// here is ensured that Index is valid; <b>This method must be implemented by all keybased properties</b>
+		virtual GError DoMoveKey(const GUInt32 Index, const GReal NewTimePos, GUInt32& NewIndex, GBool& AlreadyExists) {
+			// just to avoid warnings...
+			if (Index && NewTimePos > 0 && NewIndex && AlreadyExists) {
+			}
+			return G_MISSED_FEATURE;
+		}
+		// Index is ensured to be valid; <b>This method must be implemented by all keybased properties</b>
+		virtual GError DoRemoveKey(const GUInt32 Index) {
+			// just to avoid warnings...
+			if (Index) {
+			}
+			return G_MISSED_FEATURE;
+		}
+
+		// <b>this method MUST be implemented by all keybased properties</b>
+		virtual GInt32 DoGetKeysCount() const {
+			return -1;
+		}
+
+		// <b>this method MUST be implemented by all keybased properties</b>
+		virtual GError DoSetKeys(const GDynArray<GKeyValue>& Keys) {
+			// just to avoid warnings
+			if (Keys.size() > 0) {
+			}
+			return G_MISSED_FEATURE;
+		}
+
+		// basic cloning function
+		GError BaseClone(const GElement& Source);
+
+	public:
+		// default constructor
+		GProperty();
+		// default constructor with owner
+		GProperty(const GElement* Owner);
+		// destructor, delete all keys and internal ease curve (if it exists)
+		~GProperty();
+		// get property name
+		inline const GString& Name() const {
+			return gName;
+		}
+		// get the upper-case version of property name; used by GAnimElement to do a fast property search by name
+		inline const GString& UpperName() const {
+			return gUpperName;
+		}
+		// get time domain range; <b>Every procedural property MUST implement this method</b>
+		virtual GTimeInterval Domain() const;
+		// true if keybased, procedural otherwise
+		inline GBool IsKeyBased() const {
+			return gIsKeyBased;
+		}
+		// number of keys, -1 if property is not keybased
+		inline GInt32 KeysCount() const {
+			if (gIsKeyBased)
+				return DoGetKeysCount();
+			return -1;
+		}
+		// get key, specifying index
+		GError Key(const GUInt32 Index, GKeyValue& OutputKey) const;
+		// get a key at a specified time; if the key does not exists it returns NULL pointer;
+		// if the key exists, the "index" parameter tell its internal array position
+		//GError Key(const GTimeValue Time, GKey& OutputKey, GUInt32& Index) const;
+
+		GError AddKey(const GTimeValue Time, GUInt32& Index, GBool& AlreadyExists);
+		GError MoveKey(const GUInt32 Index, const GReal NewTimePos,	GUInt32& NewIndex, GBool& AlreadyExists);
+		GError RemoveKey(const GUInt32 Index);
+		GError SetKeys(const GDynArray<GKeyValue>& Keys);
+
+		virtual GError Value(GKeyValue& OutputValue, GTimeInterval& ValidInterval,
+							 const GTimeValue Time = 0, const GValueMethod GetMethod = G_ABSOLUTE_VALUE) const;
+		// set the property value (add a new key)
+		virtual GError SetValue(const GKeyValue& InputValue, const GValueMethod SetMethod = G_ABSOLUTE_VALUE);
+
+		// get ease property
+		inline GProperty* EaseProperty() const {
+			return gEaseProperty;
+		}
+		// set ease property
+		GError SetEaseProperty(const GProperty& EaseProperty);
+		// if keybased, am i applying easy spline?
+		inline const GBool ApplyEase() {
+			if (!gIsKeyBased)
+				return G_FALSE;
+			return gApplyEase;
+		}
+		// have i to apply easy spline?
+		inline void SetApplyEasy (const GBool Apply) {
+			gApplyEase = Apply;
+		}
+		// get oor (out of range) before
+		inline GOORType OORBefore() const {
+			return gOORBefore;
+		}
+		// set oor (out of range) before
+		inline void SetOORBefore(const GOORType NewOOR) {
+			gOORBefore = NewOOR;
+		}
+		// get oor (out of range) after
+		inline GOORType OORAfter() const {
+			return gOORAfter;
+		}
+		// set oor (out of range) after
+		inline void SetOORAfter(const GOORType NewOOR) {
+			gOORAfter = NewOOR;
+		}
+		// remap a (possible out of range) time into the corresponding one that it's ensured to lie
+		// inside domain interval
+		GTimeValue OORTime(const GTimeValue Time) const;
+		// <b>Every property MUST implement this method</b>
+		virtual GKeyType HandledType() const {
+			return G_UNDEFINED_KEY;
+		}
+	};
+
+	// *********************************************************************
+	//                              GPropertyProxy
+	// *********************************************************************
+	class G_EXPORT GPropertyProxy : public GElementProxy {
+	public:
+		//! Get class descriptor of elements type "provided" by this proxy.
+		inline const GClassID& ClassID() const {
+			return G_PROPERTY_CLASSID;
+		}
+		//! Get base class (father class) descriptor of elements type "provided" by this proxy.
+		inline const GClassID& DerivedClassID() const {
+			return G_ANIMELEMENT_CLASSID;
+		}
+	};
+
+	static const GPropertyProxy G_PROPERTY_PROXY;
 
 };	// end namespace Amanith
 

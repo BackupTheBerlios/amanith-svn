@@ -66,7 +66,6 @@ namespace Amanith {
 	template <typename DATA_TYPE>
 	class G_EXPORT GMeshVertex2D {
 
-		//template <typename DATA_TYPE>
 		friend class GMesh2D<DATA_TYPE>;
 
 	private:
@@ -214,10 +213,7 @@ namespace Amanith {
 	template <typename DATA_TYPE>
 	class G_EXPORT GMeshEdge2D {
 
-		//template <typename DATA_TYPE>
 		friend class GQuadEdge2D<DATA_TYPE>;
-
-		//template <typename DATA_TYPE>
 		friend class GMesh2D<DATA_TYPE>;
 
 	private:
@@ -525,10 +521,7 @@ namespace Amanith {
 	template <typename DATA_TYPE>
 	class G_EXPORT GMesh2D {
 
-		//template <typename DATA_TYPE>
 		friend class GMeshVertexIterator2D<DATA_TYPE>;
-
-		//template <typename DATA_TYPE>
 		friend class GMeshFaceIterator2D<DATA_TYPE>;
 
 	private:

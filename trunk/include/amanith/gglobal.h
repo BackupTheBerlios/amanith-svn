@@ -293,8 +293,6 @@ namespace Amanith {
 	#define GChar8 char
 	//! 8-bit unsigned char type (sometime known as byte)
 	typedef GUInt8 GUChar8;
-	//! time value type
-	typedef GInt32 GTimeValue;
 	//! Error type. As a general rule, all error values are negative numbers
 	typedef GInt32 GError;
 
@@ -317,6 +315,9 @@ namespace Amanith {
 		//! Minimum GReal value
 		const GReal G_MIN_REAL = -3.4028234663852886e+38;
 	#endif
+
+	//! time value type
+	typedef GReal GTimeValue;
 
 	//! Maximum signed GInt8 value
 	#define G_MAX_INT8 127

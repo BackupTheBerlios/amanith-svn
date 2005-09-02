@@ -1,7 +1,7 @@
 /****************************************************************************
-** $file: amanith/2d/gmulticurve2d.h   0.1.0.0   edited Jun 30 08:00
+** $file: amanith/1d/gmulticurve1d.h   0.1.0.0   edited Jun 30 08:00
 **
-** 2D Base multicurve segment definition.
+** 1D Base multicurve segment definition.
 **
 **
 ** Copyright (C) 2004-2005 Mazatech Inc. All rights reserved.
@@ -26,38 +26,38 @@
 ** not clear to you.
 **********************************************************************/
 
-#ifndef GMULTICURVE2D_H
-#define GMULTICURVE2D_H
+#ifndef GMULTICURVE1D_H
+#define GMULTICURVE1D_H
 
 /*!
-	\file gmulticurve2d.h
-	\brief Header file for 2D multicurve class.
+	\file gmulticurve1d.h
+	\brief Header file for 1D multicurve class.
 */
 
-#include "amanith/2d/gcurve2d.h"
+#include "amanith/1d/gcurve1d.h"
 
 namespace Amanith {
 
 
 	// *********************************************************************
-	//                             GMultiCurve2D
+	//                             GMultiCurve1D
 	// *********************************************************************
 
-	//! GMultiCurve2D static class descriptor.
-	static const GClassID G_MULTICURVE2D_CLASSID = GClassID("GMultiCurve2D", 0x59BA6FA6, 0x62F943B2, 0xA5548655, 0xA4D349D1);
+	//! GMultiCurve1D static class descriptor.
+	static const GClassID G_MULTICURVE1D_CLASSID = GClassID("GMultiCurve1D", 0x9CBFF80E, 0x983847AA, 0xB1D75F85, 0x18C0EA2F);
 
 	/*!
-		\class GMultiCurve2D
-		\brief This class represents a parametric continuous piece-wise 2D curve.
+		\class GMultiCurve1D
+		\brief This class represents a parametric continuous piece-wise 1D curve.
 
-		The main difference respect to a GCurve2D is that a multicurve is an "homogeneous" piece-wise continuous curve.
+		The main difference respect to a GCurve1D is that a multicurve is an "homogeneous" piece-wise continuous curve.
 		A multicurve is made of curve traits of the same type, each trait is continuously joined to the previous and
 		next ones. You can think at a multicurve as a key-based curve. At each key point the curve may or may not be
 		globally derivable. But at least it's continuous.\n
 		Some kind of multicurve can be useful for shape design (think for example at Hermite curves used in Inkscape
 		software), others for animation purposes (think for example at TCB curves).
 	*/
-	class G_EXPORT GMultiCurve2D : public GCurve2D {
+	class G_EXPORT GMultiCurve1D : public GCurve1D {
 
 	protected:
 		/*!
@@ -73,7 +73,7 @@ namespace Amanith {
 			point must be overridden by the created point.
 			\return G_NO_ERROR if the function succeeds, an error code must be returned otherwise.
 		*/
-		virtual GError DoAddPoint(const GReal Parameter, const GPoint2 *NewPoint, GUInt32& Index,
+		virtual GError DoAddPoint(const GReal Parameter, const GReal *NewPoint, GUInt32& Index,
 								  GBool& AlreadyExists) = 0;
 		/*!
 			Remove a (key)point from the curve.
@@ -115,11 +115,11 @@ namespace Amanith {
 
 	public:
 		//! Default constructor, constructs and empty curve.
-		GMultiCurve2D();
+		GMultiCurve1D();
 		//! Constructor with kernel specification, constructs and empty curve.
-		GMultiCurve2D(const GElement* Owner);
+		GMultiCurve1D(const GElement* Owner);
 		//! Destructor
-		virtual ~GMultiCurve2D();
+		virtual ~GMultiCurve1D();
 		/*!
 			Get domain parameter corresponding to specified (key)point index.
 
@@ -171,7 +171,7 @@ namespace Amanith {
 			\note the specified domain value can be outside the current domain; in this case the domain will be
 			updated to include the specified domain value.
 		*/
-		GError AddPoint(const GReal Parameter, const GPoint2& Point, GUInt32& Index, GBool& AlreadyExists);
+		GError AddPoint(const GReal Parameter, const GReal Point, GUInt32& Index, GBool& AlreadyExists);
 		/*!
 			Remove a (key)point from curve. The domain will be updated in the case that the specified point to be
 			removed is first or last one.
@@ -182,6 +182,7 @@ namespace Amanith {
 			curve, because a multicurve must be composed of at least 2 points.
 		*/
 		GError RemovePoint(const GUInt32 Index);
+
 		/*!
 			Return the curve derivative calculated at specified domain parameter. This method differs from
 			the one of base GCurve1D class in the number of returned value. This is due to the possibility
@@ -194,45 +195,45 @@ namespace Amanith {
 			\param RightDerivative the right derivative.
 			\note specified domain parameter is clamped by domain interval.
 		*/
-		virtual void DerivativeLR(const GDerivativeOrder Order, const GReal u,
-								  GVector2& LeftDerivative, GVector2& RightDerivative) const {
+		virtual void DerivativeLR(const GDerivativeOrder Order, const GReal u, GReal& LeftDerivative, GReal& RightDerivative) const {
 			LeftDerivative = RightDerivative = this->Derivative(Order, u);
 		}
+
 		//! Get class descriptor
 		inline const GClassID& ClassID() const {
-			return G_MULTICURVE2D_CLASSID;
+			return G_MULTICURVE1D_CLASSID;
 		}
 		//! Get base class (father class) descriptor
 		inline const GClassID& DerivedClassID() const {
-			return G_CURVE2D_CLASSID;
+			return G_CURVE1D_CLASSID;
 		}
 	};
 
 
 	// *********************************************************************
-	//                           GMultiCurve2DProxy
+	//                           GMultiCurve1DProxy
 	// *********************************************************************
 
 	/*!
-		\class GMultiCurve2DProxy
-		\brief This class implements a GMultiCurve2D proxy (provider).
+		\class GMultiCurve1DProxy
+		\brief This class implements a GMultiCurve1D proxy (provider).
 
-		This proxy does not override CreateNew() method because we don't wanna make a creation of a GMultiCurve2D
+		This proxy does not override CreateNew() method because we don't wanna make a creation of a GMultiCurve1D
 		class possible (because of pure virtual  methods).
 	*/
-	class G_EXPORT GMultiCurve2DProxy : public GElementProxy {
+	class G_EXPORT GMultiCurve1DProxy : public GElementProxy {
 	public:
 		//! Get class descriptor of elements type "provided" by this proxy.
 		const GClassID& ClassID() const {
-			return G_MULTICURVE2D_CLASSID;
+			return G_MULTICURVE1D_CLASSID;
 		}
 		//! Get base class (father class) descriptor of elements type "provided" by this proxy.
 		const GClassID& DerivedClassID() const {
-			return G_CURVE2D_CLASSID;
+			return G_CURVE1D_CLASSID;
 		}
 	};
-	//! Static proxy for GMultiCurve2D class.
-	static const GMultiCurve2DProxy G_MULTICURVE2D_PROXY;
+	//! Static proxy for GMultiCurve1D class.
+	static const GMultiCurve1DProxy G_MULTICURVE1D_PROXY;
 
 };	// end namespace Amanith
 

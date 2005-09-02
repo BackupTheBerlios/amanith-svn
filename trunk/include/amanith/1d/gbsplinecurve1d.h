@@ -1,7 +1,7 @@
 /****************************************************************************
-** $file: amanith/2d/g2dbsplinecurve.h   0.1.0.0   edited Jun 30 08:00
+** $file: amanith/1d/gbsplinecurve1d.h   0.1.0.0   edited Jun 30 08:00
 **
-** 2D B-Spline curve segment definition.
+** 1D B-Spline curve segment definition.
 **
 **
 ** Copyright (C) 2004-2005 Mazatech Inc. All rights reserved.
@@ -26,49 +26,59 @@
 ** not clear to you.
 **********************************************************************/
 
-#ifndef GBSPLINECURVE2D_H
-#define GBSPLINECURVE2D_H
+#ifndef GBSPLINECURVE1D_H
+#define GBSPLINECURVE1D_H
 
 /*!
-	\file gbsplinecurve2d.h
-	\brief Header file for 2D BSpline curve class.
+	\file gbsplinecurve1d.h
+	\brief Header file for 1D BSpline curve class.
 */
 
-#include "amanith/2d/gcurve2d.h"
-#include "amanith/1d/gbsplinecurve1d.h"  // just to import GKnotMultiplicity structure definition
+#include "amanith/1d/gcurve1d.h"
 
 namespace Amanith {
 
 
 	// *********************************************************************
-	//                           GBSplineCurve2D
+	//                           GBSplineCurve1D
 	// *********************************************************************
 
-	//! GBSplineCurve2D static class descriptor.
-	static const GClassID G_BSPLINECURVE2D_CLASSID = GClassID("GBSplineCurve2D", 0xA93232A6, 0xDA274032, 0xB4653354, 0xDE375419);
+	//! GBSplineCurve1D static class descriptor.
+	static const GClassID G_BSPLINECURVE1D_CLASSID = GClassID("GBSplineCurve1D", 0x397B8DCA, 0xB3F3450E, 0x9BF031FE, 0x06873DE8);
 
 	/*!
-		class GBSplineCurve2D
-		\brief A generic degree 2D B-spline curve.
+		\struct GKnotMultiplicity
+		\brief A simple pair-like structure that describes a spline knot multiplicity.
+	*/
+	struct GKnotMultiplicity {
+		//! Knot value
+		GReal Value;
+		//! Knot multiplicity
+		GInt32 Multiplicity;
+	};
+
+	/*!
+		class GBSplineCurve1D
+		\brief A generic degree 1D B-spline curve.
 
 		B-spline curves are generalizations of Bezier curves.
 		Given (n+1) control points P0, P1, ..., Pn and a knot vector U = { u0, u1, ..., um }, the B-spline curve of degree
 		p defined by these control points and knot vector U is:
 		\f[
-		C(u) = \sum_{i=0}^{n} N_{i,p}(u)P_{i}
+			C(u) = \sum_{i=0}^{n} N_{i,p}(u)P_{i}
 		\f]
 
 		where Ni,p(u) are B-spline basis functions of degree p. The i-th B-spline basis function of degree p, written
 		as Ni,p(u), is defined recursively as follows:
 		\f[
-		N_{i,0}(u) = \left\{ \begin{array}{ll}
-		1 & \mbox{if $u_i \leq u \leq u_{i+1}$};\\
-		0 & \mbox{otherwise}.\end{array} \right.
+			N_{i,0}(u) = \left\{ \begin{array}{ll}
+			1 & \mbox{if $u_i \leq u \leq u_{i+1}$};\\
+			0 & \mbox{otherwise}.\end{array} \right.
 		\f]
 		\f[
-		N_{i,p}(u) = \frac{u - u_i}{u_{i+p} - u_i}N_{i,p-1}(u) + \frac{u_{i+p+1} - u}{u_{i+p+1} - u_{i+1}}N_{i+1,p-1}(u)
+			N_{i,p}(u) = \frac{u - u_i}{u_{i+p} - u_i}N_{i,p-1}(u) + \frac{u_{i+p+1} - u}{u_{i+p+1} - u_{i+1}}N_{i+1,p-1}(u)
 		\f]
-
+		
 		The form of a B-spline curve is very similar to that
 		of a Bezier curve. Unlike a Bezier curve, a B-spline curve involves more information, namely: a set of (n+1) control
 		points, a knot vector of (m+1) knots, and a degree p. Note that n, m and p must satisfy m = n + p + 1.\n More
@@ -85,7 +95,7 @@ namespace Amanith {
 		the so-called clamped B-spline curves.\n
 		Amanith supports both flavors.
 	*/
-	class G_EXPORT GBSplineCurve2D : public GCurve2D {
+	class G_EXPORT GBSplineCurve1D : public GCurve1D {
 
 	private:
 		//! Curve degree
@@ -97,11 +107,11 @@ namespace Amanith {
 		//! Knots vector
 		GDynArray<GReal> gKnots;
 		//! Control points
-		GDynArray<GPoint2> gPoints;
+		GDynArray<GReal> gPoints;
 		//! Internal array used for first order forward differences.
-		mutable GDynArray<GPoint2> gForwDiff1;
+		mutable GDynArray<GReal> gForwDiff1;
 		//! Internal array used for second order forward differences.
-		mutable GDynArray<GPoint2> gForwDiff2;
+		mutable GDynArray<GReal> gForwDiff2;
 		/*!
 			This flag signs if (at least) a control point (or a knot) has been modified (so forward differences must be
 			recalculated when calling derivatives estimation).
@@ -126,12 +136,12 @@ namespace Amanith {
 			centripetal (chord-length) schema will be used to generate knots vector.
 		*/
 		static void BuildKnots(GDynArray<GReal>& OutKnots,
-							   const GDynArray<GPoint2>& ControlPoints,
+							   const GDynArray<GReal>& ControlPoints,
 							   const GReal MinValue, const GReal MaxValue,
 							   const GInt32 Degree, const GBool OpenedKnots, const GBool UniformKnots);
 		// build a knot array (clamped and non-uniform) with a centripetal schema and knot averaging
 		static void BuildCentripetalKnots(GDynArray<GReal>& OutKnots,
-										  const GDynArray<GPoint2>& ControlPoints,
+										  const GDynArray<GReal>& ControlPoints,
 										  const GReal MinValue, const GReal MaxValue, 
 										  const GInt32 Degree);
 		// build a uniform knots array, open(clamped) or not
@@ -151,39 +161,11 @@ namespace Amanith {
 									const GInt32 Degree, const GReal u) const;
 
 	protected:
-		/*!
-			Get max variation (squared chordal distance) in the range [u0; u1]; here are necessary also
-			curve evaluations at the interval ends.
-
-			\param u0 lower bound of interested interval
-			\param u1 upper bound of interested interval
-			\param p0 the point corresponding to the curve evaluation at u0
-			\param p1 the point corresponding to the curve evaluation at u1
-			\note The interval is ensured to be completely inside the curve domain.
-		*/
-		GReal Variation(const GReal u0, const GReal u1,	const GPoint2& p0, const GPoint2& p1) const;
-		//! Returns the number of intersection between control polygon and X axis.
-		GInt32 CrossingCountX() const;
-		/*!
-			Compute intersections between this curve and the X axis (1, 0).
-
-			\param Intersections every found intersection will be appended to this array.
-			\param Precision the precision used to find every solution.
-			\param MaxIterations number of max iterations this method can loop for each found solution.
-			If the current solution calculus does not reach the specified Precision within MaxIterations iterations, the
-			current solution calculus is stopped, the solution is appended into output array, and calculus go for the
-			next found solution.
-			The more this value is, the more is the accuracy of each solution (and the more is the time taken from this
-			method).
-			\note this function uses the Brent method to refine each found intersection. For more information about
-			Brent's method, pleas check this site http://mathworld.wolfram.com/BrentsMethod.html.
-		*/
-		GBool IntersectXRay(GDynArray<GVector2>& Intersections, const GReal Precision, const GInt32 MaxIterations) const;
 		// set control points
-		GError SetPoints(const GDynArray<GPoint2>& NewPoints, const GDynArray<GReal>& Knots,
+		GError SetPoints(const GDynArray<GReal>& NewPoints, const GDynArray<GReal>& Knots,
 						 const GInt32 Degree, const GBool Uniform);
 		// build a chord-length parametrized knots array
-		static void ChordLengthKnots(GDynArray<GReal>& OutKnots, const GDynArray<GPoint2>& Points,
+		static void ChordLengthKnots(GDynArray<GReal>& OutKnots, const GDynArray<GReal>& Points,
 									 const GReal MinKnotValue, const GReal MaxKnotValue);
 		// knot averaging
 		static GError KnotsAveraging(GDynArray<GReal>& OutKnots, const GDynArray<GReal>& ChordalKnots,
@@ -199,24 +181,24 @@ namespace Amanith {
 			\param RightCurve if non-NULL, the function must return the right arc generated by cutting operation.
 			\param LeftCurve if non-NULL, the function must return the left arc generated by cutting operation.
 			\note The domain parameter is ensured to be completely inside the curve domain. Furthermore RightCurve and
-			LeftCurve parameters, if specified, are ensured to be GBSplineCurve2D classes (so cast is type-safe).
+			LeftCurve parameters, if specified, are ensured to be GBSplineCurve1D classes (so cast is type-safe).
 		*/
-		GError DoCut(const GReal u, GCurve2D *RightCurve, GCurve2D *LeftCurve) const;
+		GError DoCut(const GReal u, GCurve1D *RightCurve, GCurve1D *LeftCurve) const;
 		// return true if B-spline is clamped (first and last knots have a multiplicity greater or equal to
 		// the degree)
 		GBool IsClamped() const;
 		//! Resolve banded system for B-spline fitting.
 		static GError SolveBandedSystem(const GDynArray<GReal>& BasisMatrix, const GInt32 MatrixSize,
 										const GInt32 LeftSemiBandWidth, const GInt32 RightSemiBandWidth,
-										GDynArray<GPoint2>& Rhs);
+										GDynArray<GReal>& Rhs);
 
 	public:
 		//! Default constructor, creates an empty B-spline.
-		GBSplineCurve2D();
+		GBSplineCurve1D();
 		//! Constructor with owner (kernel) parameter, creates an empty B-spline.
-		GBSplineCurve2D(const GElement* Owner);
+		GBSplineCurve1D(const GElement* Owner);
 		//! Destructor
-		virtual ~GBSplineCurve2D();
+		virtual ~GBSplineCurve1D();
 		//! Clear the curve (remove control points, free internal structures and set an empty domain).
 		void Clear();
 		//! Returns number of control points.
@@ -224,9 +206,9 @@ namespace Amanith {
 		//! Get curve degree.
 		GInt32 Degree() const;
 		//! Get Index-th control point; Index must be valid, else a point with infinitive components is returned.
-		GPoint2 Point(const GInt32 Index) const;
+		GReal Point(const GInt32 Index) const;
 		//! Get control points array.
-		inline const GDynArray<GPoint2>& Points() const {
+		inline const GDynArray<GReal>& Points() const {
 			return gPoints;
 		}
 		//! Get knots array.
@@ -246,17 +228,17 @@ namespace Amanith {
 		//! Get knots multiplicities.
 		void Multiplicities(GDynArray<GKnotMultiplicity>& Values) const;
 		//! Set Index-th control point; Index must be valid.
-		GError SetPoint(const GInt32 Index, const GPoint2& NewPoint);
+		GError SetPoint(const GInt32 Index, const GReal NewPoint);
 		/*!
 			Construct a B-spline curve, specifying control points and degree. Example:
 \code
-	GDynArray<GPoint2> pts;
+	GDynArray<GReal> pts;
 
 	// the following code create a non-uniform clamped cubic B-spline
-	pts.push_back(GPoint2(13, 5));
-	pts.push_back(GPoint2(5, 3));
-	pts.push_back(GPoint2(10, 8));
-	pts.push_back(GPoint2(8, 3));
+	pts.push_back(13);
+	pts.push_back(5);
+	pts.push_back(10);
+	pts.push_back(8);
 	bsplineCurve.SetPoints(pts, 3);
 \endcode
 
@@ -271,19 +253,19 @@ namespace Amanith {
 			\return G_NO_ERROR if the operation succeeds, an error code otherwise.
 			\note the curve domain will not be changed.
 		*/
-		GError SetPoints(const GDynArray<GPoint2>& NewPoints, const GInt32 Degree,
+		GError SetPoints(const GDynArray<GReal>& NewPoints, const GInt32 Degree,
 						 const GBool Opened = G_TRUE, const GBool Uniform = G_FALSE);
 		/*!
 			Construct a B-spline curve, specifying control points, degree and domain. Example:
 
 \code
-	GDynArray<GPoint2> pts;
+	GDynArray<GReal> pts;
 
 	// the following code create a uniform clamped cubic B-spline, with a [-0.2; 3.0] domain
-	pts.push_back(GPoint2(13, 5));
-	pts.push_back(GPoint2(5, 3));
-	pts.push_back(GPoint2(10, 8));
-	pts.push_back(GPoint2(8, 3));
+	pts.push_back(13);
+	pts.push_back(5);
+	pts.push_back(10);
+	pts.push_back(8);
 	bsplineCurve.SetPoints(pts, 3, -0.2, 3.0, G_TRUE, G_TRUE);
 \endcode
 
@@ -299,7 +281,7 @@ namespace Amanith {
 			centripetal (chord-length) schema will be used to generate knots vector.
 			\return G_NO_ERROR if the operation succeeds, an error code otherwise.
 		*/
-		GError SetPoints(const GDynArray<GPoint2>& NewPoints, const GInt32 Degree,
+		GError SetPoints(const GDynArray<GReal>& NewPoints, const GInt32 Degree,
 						 const GReal NewMinValue, const GReal NewMaxValue,
 						 const GBool Opened = G_TRUE, const GBool Uniform = G_FALSE);
 		/*!
@@ -337,14 +319,6 @@ namespace Amanith {
 			return (GInt32)gKnots.size();
 		}
 		/*!
-			Returns control polygon length.
-
-			\param FromIndex lower index of considered control points.
-			\param ToIndex upper index of considered control points.
-			\return control polygon length, for specified control points range.
-		*/
-		GReal ControlPolygonLength(const GInt32 FromIndex, const GInt32 ToIndex) const;
-		/*!
 			Increases by HowManyTimes the degree of the curve (without changing its shape).
 
 			The steps are:\n\n
@@ -377,7 +351,7 @@ namespace Amanith {
 			fast algorithm to raise the degree of spline curves, Comput. Aid. Geom. Des., Vol. 8, pp. 253-261, 1991",
 			particularly in the case where the degree is to be raised by more than 1.
 		*/
-		GError HigherDegree(const GInt32 HowManyTimes, GBSplineCurve2D& OutputCurve) const;
+		GError HigherDegree(const GInt32 HowManyTimes, GBSplineCurve1D& OutputCurve) const;
 		/*!
 			Decreases by one the degree of the curve.
 
@@ -407,42 +381,7 @@ namespace Amanith {
 			\param OutputCurve the output degree-reduced B-spline curve.
 			\return G_NO_ERROR if the operation succeeds, an error code otherwise.
 		*/
-		GError LowerDegree(GBSplineCurve2D& OutputCurve) const;
-		//!	Returns number of intersection between control polygon and a ray.
-		GInt32 CrossingCount(const GRay2& Ray) const;
-		/*!
-			Intersect the B-spline curve with a normalized ray, and returns a list of intersections.
-
-			Here's the implemented algorithm:\n
-
-			-# First transform all control points into "ray space", so that	line is starting at (0, 0) and have
-			a direction of (1, 0) (X axis).
-			-# At this point Variation diminishing can be exploited. After point (1) number of intersection
-			ray-controlpolygon is a simple y-change sign test.
-			-# A recursive loop splits the curve until every possible solution are isolated.
-				- if the curve piece (its control polygon) does not intersect x-axis just discard it and exit.
-				- if the curve piece (its control polygon) intersects more than once x-axis split this
-				piece (say at midpoint parameter) into right and left arcs. Call the function for left arc
-				and then for right arc (this order is the most clever, so solutions are automatically ordered in
-				ascending order).
-				- if the curve piece intersects (its control polygon intersects) just once x-axis, the Brents's method
-				is used to catch the solution. This method  requires curve evaluation only, its "root bracketing" and
-				overall it can't diverge, so the solution is always find with good convergence. 
-
-			\param NormalizedRay a normalized ray used for intersection test. Ray must be normalized, else incorrect
-			results are possible.
-			\param Intersections every found intersection will be appended to this array. Each intersection is a 2D
-			vector; it has at position 0 the curve parameter (domain) value corresponding to the intersection, and at
-			position 1 the ray parameter value corresponding to the intersection.
-			\param Precision the precision used to find every solution.
-			\param MaxIterations number of max iterations this method can loop for each found solution.
-			If the current solution calculus does not reach the specified Precision within MaxIterations iterations, the
-			current solution calculus is stopped, the solution is appended into output array, and calculus go for the
-			next found solution. The more this value is, the more is the accuracy of each solution (and the more is the time taken from this
-			method).
-		*/
-		GBool IntersectRay(const GRay2& NormalizedRay, GDynArray<GVector2>& Intersections,
-						   const GReal Precision = G_EPSILON, const GInt32 MaxIterations = 100) const;
+		GError LowerDegree(GBSplineCurve1D& OutputCurve) const;
 		/*!
 			Knot insertion. This function is provided only for completeness.
 
@@ -462,29 +401,19 @@ namespace Amanith {
 		*/
 		GError InsertKnot(const GReal u);
 		/*!
-			Flats the curve specifying a max error/variation (squared chordal distance).
-
-			\param Contour a dynamic array where this function has to append generated points.
-			\param MaxDeviation maximum squared chordal distance we wanna reach (maximum permitted deviation).
-			\param IncludeLastPoint if G_TRUE the function must append last curve point (the point corresponding to
-			domain upper bound parameter). If G_FALSE last point must not be included.
-		*/
-		GError Flatten(GDynArray<GPoint2>& Contour, const GReal MaxDeviation,
-						const GBool IncludeLastPoint = G_TRUE) const;
-		/*!
 			Evaluate Index-th basic function of specified degree at the given global parameter value.
 			This function is provided only for completeness.
 
 			To define B-spline basis functions, we need to specify the degree, p. The i-th B-spline basis function
 			of degree p, written as Ni,p(u), is defined recursively as follows:
-			\f[
-			N_{i,0}(u) = \left\{ \begin{array}{ll}
-			1 & \mbox{if $u_i \leq u \leq u_{i+1}$};\\
-			0 & \mbox{otherwise}.\end{array} \right.
-			\f]
-			\f[
-			N_{i,p}(u) = \frac{u - u_i}{u_{i+p} - u_i}N_{i,p-1}(u) + \frac{u_{i+p+1} - u}{u_{i+p+1} - u_{i+1}}N_{i+1,p-1}(u)
-			\f]
+\f[
+N_{i,0}(u) = \left\{ \begin{array}{ll}
+1 & \mbox{if $u_i \leq u \leq u_{i+1}$};\\
+0 & \mbox{otherwise}.\end{array} \right.
+\f]
+\f[
+N_{i,p}(u) = \frac{u - u_i}{u_{i+p} - u_i}N_{i,p-1}(u) + \frac{u_{i+p+1} - u}{u_{i+p+1} - u_{i+1}}N_{i+1,p-1}(u)
+\f]
 			\param u Global parameter at which we wanna calculate the basis function value.
 			\param Index the index of basis function.
 			\param Degree the degree of basis function.
@@ -498,7 +427,7 @@ namespace Amanith {
 			\note if specified domain parameter is out of domain, StartPoint() or EndPoint() are returned (depending of
 			witch side the parameter is out).
 		*/
-		GPoint2 Evaluate(const GReal u) const;
+		GReal Evaluate(const GReal u) const;
 		/*!
 			Return the curve derivative calculated at specified domain parameter.
 
@@ -506,12 +435,12 @@ namespace Amanith {
 			\param u the domain parameter at witch we wanna evaluate curve derivative.
 			\note specified domain parameter is clamped by domain interval.
 		*/
-		GVector2 Derivative(const GDerivativeOrder Order, const GReal u) const;
+		GReal Derivative(const GDerivativeOrder Order, const GReal u) const;
 		/*!
 			Construct a B-spline that interpolates given points data.
 
-			\param Degree the degree of the interpolating B-spline
-			\param FitPoints the points array, every point will be interpolated by the constructed B-spline
+			\param Degree the degree of the interpolating B-spline.
+			\param FitPoints the points array, every point will be interpolated by the constructed B-spline.
 			\param MinKnotValue lower bound of the interpolating B-spline's domain.
 			\param MaxKnotValue upper bound of the interpolating B-spline's domain.
 			\return G_NO_ERROR if the operation succeeds, else an error code.
@@ -519,17 +448,16 @@ namespace Amanith {
 			opposite to local methods (that are more geometric in nature, and construct the curve segment-wise using only
 			local data for each step).
 		*/	
-		GError GlobalFit(const GInt32 Degree, const GDynArray<GPoint2>& FitPoints,
+		GError GlobalFit(const GInt32 Degree, const GDynArray<GReal>& FitPoints,
 						 const GReal MinKnotValue = 0, const GReal MaxKnotValue = 1);
-
 		/*!
 			Construct a natural B-spline that interpolates given points data.
 
 			Here the term 'natural' means that generated B-spline will have a null (zero) curvature at its domain
 			endpoints.
 
-			\param Degree the degree of the interpolating B-spline
-			\param FitPoints the points array, every point will be interpolated by the constructed B-spline
+			\param Degree the degree of the interpolating B-spline.
+			\param FitPoints the points array, every point will be interpolated by the constructed B-spline.
 			\param MinKnotValue lower bound of the interpolating B-spline's domain.
 			\param MaxKnotValue upper bound of the interpolating B-spline's domain.
 			\return G_NO_ERROR if the operation succeeds, else an error code.
@@ -537,13 +465,13 @@ namespace Amanith {
 			opposite to local methods (that are more geometric in nature, and construct the curve segment-wise using only
 			local data for each step).
 		*/
-		GError GlobalNaturalFit(const GInt32 Degree, const GDynArray<GPoint2>& FitPoints,
+		GError GlobalNaturalFit(const GInt32 Degree, const GDynArray<GReal>& FitPoints,
 								const GReal MinKnotValue = 0, const GReal MaxKnotValue = 1);
 		/*!
 			Construct a B-spline that interpolates given points data, specifying also the first order derivatives that
 			the curve must assume at its end points.
 
-			\param Degree the degree of the interpolating B-spline
+			\param Degree the degree of the interpolating B-spline.
 			\param FitPoints the points array, every point will be interpolated by the constructed B-spline.
 			\param Derivative0 first order derivative corresponding to the lower bound of new domain.
 			\param Derivative1 first order derivative corresponding to the upper bound of new domain.
@@ -554,14 +482,14 @@ namespace Amanith {
 			opposite to local methods (that are more geometric in nature, and construct the curve segment-wise using only
 			local data for each step).
 		*/
-		GError GlobalFit(const GInt32 Degree, const GDynArray<GPoint2>& FitPoints,
-						 const GVector2& Derivative0, const GVector2& Derivative1,
+		GError GlobalFit(const GInt32 Degree, const GDynArray<GReal>& FitPoints,
+						 const GReal Derivative0, const GReal Derivative1,
 						 const GReal MinKnotValue = 0, const GReal MaxKnotValue = 1);
 		/*!
 			Construct a B-spline that interpolates given points data, specifying also the first order derivatives that
 			the curve must assume at each interpolated points.
 
-			\param Degree the degree of the interpolating B-spline
+			\param Degree the degree of the interpolating B-spline.
 			\param FitPoints the points array, every point will be interpolated by the constructed B-spline.
 			\param Derivatives first order derivatives corresponding to each point. 
 			\param MinKnotValue lower bound of the interpolating B-spline's domain.
@@ -571,46 +499,46 @@ namespace Amanith {
 			a linear (banded) system of equations is set up and solved, in opposite to local methods (that are more
 			geometric in nature, and construct the curve segment-wise using only local data for each step).
 		*/
-		GError GlobalFit(const GInt32 Degree, const GDynArray<GPoint2>& FitPoints, const GDynArray<GVector2>& Derivatives,
+		GError GlobalFit(const GInt32 Degree, const GDynArray<GReal>& FitPoints, const GDynArray<GReal>& Derivatives,
 						 const GReal MinKnotValue = 0, const GReal MaxKnotValue = 1);
 		//! Get class descriptor.
 		inline const GClassID& ClassID() const {
-			return G_BSPLINECURVE2D_CLASSID;
+			return G_BSPLINECURVE1D_CLASSID;
 		}
 		//! Get base class (father class) descriptor.
 		inline const GClassID& DerivedClassID() const {
-			return G_CURVE2D_CLASSID;
+			return G_CURVE1D_CLASSID;
 		}
 	};
 
 
 	// *********************************************************************
-	//                         GBSplineCurve2DProxy
+	//                         GBSplineCurve1DProxy
 	// *********************************************************************
 
 	/*!
-		\class GBSplineCurve2DProxy
-		\brief This class implements a GBSplineCurve2D proxy (provider).
+		\class GBSplineCurve1DProxy
+		\brief This class implements a GBSplineCurve1D proxy (provider).
 
-		This proxy provides the creation of GBSplineCurve2D class instances.
+		This proxy provides the creation of GBSplineCurve1D class instances.
 	*/
-	class G_EXPORT GBSplineCurve2DProxy : public GElementProxy {
+	class G_EXPORT GBSplineCurve1DProxy : public GElementProxy {
 	public:
-		//! Creates a new GBSplineCurve2D instance
+		//! Creates a new GBSplineCurve1D instance
 		GElement* CreateNew(const GElement* Owner = NULL) const {
-			return new GBSplineCurve2D(Owner);
+			return new GBSplineCurve1D(Owner);
 		}
 		//! Get class descriptor of elements type "provided" by this proxy.
 		const GClassID& ClassID() const {
-			return G_BSPLINECURVE2D_CLASSID;
+			return G_BSPLINECURVE1D_CLASSID;
 		}
 		//! Get base class (father class) descriptor of elements type "provided" by this proxy.
 		const GClassID& DerivedClassID() const {
-			return G_CURVE2D_CLASSID;
+			return G_CURVE1D_CLASSID;
 		}
 	};
-	//! Static proxy for GBSplineCurve2D class.
-	static const GBSplineCurve2DProxy G_BSPLINECURVE2D_PROXY;
+	//! Static proxy for GBSplineCurve1D class.
+	static const GBSplineCurve1DProxy G_BSPLINECURVE1D_PROXY;
 
 };	// end namespace Amanith
 

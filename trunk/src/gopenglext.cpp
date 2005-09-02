@@ -29,6 +29,11 @@
 #include "amanith/gopenglext.h"
 #include "amanith/support/gutilities.h"
 
+/*!
+	\file gopenglext.cpp
+	\brief Opengl extensions manager implementation.
+*/
+
 namespace Amanith {
 
 	/*!

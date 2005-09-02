@@ -1,5 +1,5 @@
 /****************************************************************************
-** $file: amanith/src/2d/g2dbezcurve.cpp   0.1.0.0   edited Jun 30 08:00
+** $file: amanith/src/2d/gbezcurve2d.cpp   0.1.0.0   edited Jun 30 08:00
 **
 ** 2D Bezier curve segment implementation.
 **
@@ -157,7 +157,7 @@ GError GBezierCurve2D::ConvertToHermite(GHermiteCurve2D& Curve) const {
 	if (Degree() != 3)
 		return G_INVALID_OPERATION;
 
-	GDynArray<GHermiteKey> keys(2);
+	GDynArray<GHermiteKey2D> keys(2);
 	// first key
 	keys[0].Parameter = DomainStart();
 	keys[0].Value = gPoints[0];

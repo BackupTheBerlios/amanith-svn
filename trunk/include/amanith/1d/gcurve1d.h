@@ -1,7 +1,7 @@
 /****************************************************************************
-** $file: amanith/2d/gcurve2d.h   0.1.0.0   edited Jun 30 08:00
+** $file: amanith/1d/gcurve1d.h   0.1.0.0   edited Jun 30 08:00
 **
-** 2D Base curve segment definition.
+** 1D Base curve segment definition.
 **
 **
 ** Copyright (C) 2004-2005 Mazatech Inc. All rights reserved.
@@ -26,84 +26,55 @@
 ** not clear to you.
 **********************************************************************/
 
-#ifndef GCURVE2D_H
-#define GCURVE2D_H
+#ifndef GCURVE1D_H
+#define GCURVE1D_H
 
 #include "amanith/gelement.h"
-#include "amanith/geometry/gintersect.h"
-#include "amanith/geometry/gmatrix.h"
-#include "amanith/1d/gcurve1d.h"  // just to import GDerivativeOrder type
 
 /*!
-	\file gcurve2d.h
-	\brief Header file for 2D curve class.
+	\file gcurve1d.h
+	\brief Header file for 1D curve class.
 */
 namespace Amanith {
 
 
 	// *********************************************************************
-	//                             GCurve2D
+	//                             GCurve1D
 	// *********************************************************************
 
 	//! GCurve2D static class descriptor.
-	static const GClassID G_CURVE2D_CLASSID = GClassID("GCurve2D", 0xCBE1A79C, 0xDE2249A0, 0xA9D39BC0, 0x4E6AA052);
+	static const GClassID G_CURVE1D_CLASSID = GClassID("GCurve1D", 0x84644355, 0xF1244B8E, 0xBFC3D59C, 0x842F089F);
+
+	//! Order of derivative
+	enum GDerivativeOrder {
+		//! First order derivative
+		G_FIRST_ORDER_DERIVATIVE = 1,
+		//! Second order derivative
+		G_SECOND_ORDER_DERIVATIVE = 2
+	};
 
 	/*!
-		\class GCurve2D
-		\brief This class represents a generic parametric continuous 2D curve.
+		\class GCurve1D
+		\brief This class represents a generic parametric continuous 1D curve.
 
-		Formally a 2D parametric curve is a function with a real domain and RxR codomain.
+		Formally a 1D parametric curve is a function with a real domain and real codomain.
 
 		\f[
-			C: [a; b] \rightarrow R^2
+			C: [a; b] \rightarrow R
 		\f]
 		
 		where [a; b] is a sub-set of R.\n
-		So given a number belonging to domain, C is a function that give you a 2D point.
-		This class implements some useful differential calculus like Curvature(), Length(), Tangent(), Speed(),
-		Variation() and so on.
-		Some geometric tools are implemented too, like Cut(), Translate(), Rotate(), Scale(), XForm(), IntersectRay() and
-		so on.
-		Every curve can be flattened. Flatten operation converts the curve into straight-linesegments. By specifying
-		a flatness parameter, the application has control over the number of straight-line segments	used to
-		approximate curves. This is very useful for rendering (ex: in OpenGL).
+		So given a number belonging to domain, C is a function that give you a scalar value.
+		This class implements some useful differential calculus like Length(), Tangent(), Speed() and so on.
+		Some geometric tools are implemented too, like Cut(), Translate(), Scale(), and	so on.
 	*/
-	class G_EXPORT GCurve2D : public GElement {
+	class G_EXPORT GCurve1D : public GElement {
 
 	private:
 		//! Curve's domain.
 		GInterval<GReal> gDomain;
 
 	protected:
-		/*!
-			Get max variation (squared chordal distance) in the range [u0; u1]; here are necessary also
-			curve evaluations at the interval ends.
-
-			\param u0 lower bound of interested interval
-			\param u1 upper bound of interested interval
-			\param p0 the point corresponding to the curve evaluation at u0
-			\param p1 the point corresponding to the curve evaluation at u1
-			\note The interval is ensured to be completely inside the curve domain.	<b>This method must be implemented
-			by every derived classes</b>.
-		*/
-		virtual GReal Variation(const GReal u0, const GReal u1,	const GPoint2& p0, const GPoint2& p1) const = 0;
-		/*!
-			Flats the curve specifying a max error/variation (squared chordal distance).
-
-			The default behavior is to split the curve at midpoint, and then call recursively this function on
-			both curve arcs until maximum permitted deviation has been reached.
-			If you wanna change this behavior just override this function.
-
-			\param u0 lower bound of interested interval
-			\param u1 upper bound of interested interval
-			\param p0 the point corresponding to the curve evaluation at u0
-			\param p1 the point corresponding to the curve evaluation at u1
-			\param Contour a dynamic array where this function has to append generated points
-			\param MaxDeviation maximum squared chordal distance we wanna reach (maximum permitted deviation).
-			\note The interval is ensured to be completely inside the curve domain.
-		*/
-		virtual GError Flatten(const GReal u0, const GReal u1, const GPoint2& p0, const GPoint2& p1,
-							   GDynArray<GPoint2>& Contour, const GReal MaxDeviation) const;
 		/*!
 			Curve subdivision.
 
@@ -116,7 +87,7 @@ namespace Amanith {
 			LeftCurve parameters, if specified, are ensured to be of the same type of this curve.\n
 			<b>This method must be implemented	by every derived classes</b>.
 		*/
-		virtual GError DoCut(const GReal u, GCurve2D *RightCurve, GCurve2D *LeftCurve) const = 0;
+		virtual GError DoCut(const GReal u, GCurve1D *RightCurve, GCurve1D *LeftCurve) const = 0;
 		//! Cloning function; this implementation copies the domain.
 		GError BaseClone(const GElement& Source);
 		//! Static speed evaluation callback (for Length() evaluation).
@@ -124,11 +95,11 @@ namespace Amanith {
 
 	public:
 		//! Default constructor, constructs and empty curve.
-		GCurve2D();
+		GCurve1D();
 		//! Constructor with kernel specification, constructs and empty curve.
-		GCurve2D(const GElement* Owner);
+		GCurve1D(const GElement* Owner);
 		//! Destructor
-		virtual ~GCurve2D();
+		virtual ~GCurve1D();
 		//! Get domain lower bound (it corresponds to the start point).
 		inline GReal DomainStart() const {
 			return gDomain.Start();
@@ -154,45 +125,16 @@ namespace Amanith {
 		*/
 		virtual void Clear() = 0;
 		//! Get Index-th point. <b>This method must be implemented by all derived classes</b>.
-		virtual GPoint2 Point(const GInt32 Index) const = 0;
+		virtual GReal Point(const GInt32 Index) const = 0;
 		//! Set Index-th point. <b>This method must be implemented by all derived classes</b>.
-		virtual GError SetPoint(const GInt32 Index, const GPoint2& NewValue) = 0;
-		/*!
-			Intersect the curve with a ray, and returns a list of intersections.
-
-			\param NormalizedRay a normalized ray used for intersection test. If the ray has not been
-			normalized incorrect results are possible.
-			\param Intersections every found intersection will be appended to this array. Each intersection is a 2D
-			vector; it has at position 0 the curve parameter (domain) value corresponding to the intersection, and at
-			position 1 the ray parameter value corresponding to the intersection.
-			\param Precision the precision used to find every solution.
-			\param MaxIterations number of max iterations this method can loop for each found solution.
-			If the current solution calculus does not reach the specified Precision within MaxIterations iterations, the
-			current solution calculus is stopped, the solution is appended into output array, and calculus go for the
-			next found solution.
-			The more this value is, the more is the accuracy of each solution (and the more is the time taken from this
-			method).
-			\note <b>this method must be implemented by all derived classes</b>.
-		*/
-		virtual GBool IntersectRay(const GRay2& NormalizedRay, GDynArray<GVector2>& Intersections,
-								   const GReal Precision = G_EPSILON, const GInt32 MaxIterations = 100) const = 0;
-		/*!
-			Flats the curve specifying a max error/variation (squared chordal distance).
-
-			\param Contour a dynamic array where this function has to append generated points.
-			\param MaxDeviation maximum squared chordal distance we wanna reach (maximum permitted deviation).
-			\param IncludeLastPoint if G_TRUE the function must append last curve point (the point corresponding to
-			domain upper bound parameter). If G_FALSE last point must not be included.
-		*/
-		virtual GError Flatten(GDynArray<GPoint2>& Contour, const GReal MaxDeviation,
-								const GBool IncludeLastPoint = G_TRUE) const;
+		virtual GError SetPoint(const GInt32 Index, const GReal NewValue) = 0;
 		/*! 
 			Return the curve value calculated at specified domain parameter.
 			
 			\param u the domain parameter at witch we wanna evaluate curve value.
 			\note <b>this method must be implemented by all derived classes</b>.
 		*/
-		virtual GPoint2 Evaluate(const GReal u) const = 0;
+		virtual GReal Evaluate(const GReal u) const = 0;
 		/*! 
 			Return the curve derivative calculated at specified domain parameter.
 
@@ -200,7 +142,7 @@ namespace Amanith {
 			\param u the domain parameter at witch we wanna evaluate curve derivative.
 			\note <b>this method must be implemented by all derived classes</b>.
 		*/
-		virtual GVector2 Derivative(const GDerivativeOrder Order, const GReal u) const = 0;
+		virtual GReal Derivative(const GDerivativeOrder Order, const GReal u) const = 0;
 		/*!
 			Giving CurvePos = Length(t), this function solves for t = Inverse(Length(s))
 
@@ -256,7 +198,7 @@ namespace Amanith {
 			\note if specified domain parameter is out of the domain, an G_OUT_OF_RANGE error code is returned.
 			Furthermore RightCurve and LeftCurve parameters, if specified, must be of the same type of this curve.
 		*/			
-		GError Cut(const GReal u, GCurve2D *RightCurve, GCurve2D *LeftCurve) const;
+		GError Cut(const GReal u, GCurve1D *RightCurve, GCurve1D *LeftCurve) const;
 		/*!
 			Cuts a curve slice corresponding to specified domain interval, and return the curve arc.
 
@@ -267,7 +209,7 @@ namespace Amanith {
 			\note specified domain interval is clamped by the valid interval for this curve. OutCurve parameter must
 			be of the same type of this curve.
 		*/
-		GError Cut(const GReal u0, const GReal u1, GCurve2D *OutCurve) const;
+		GError Cut(const GReal u0, const GReal u1, GCurve1D *OutCurve) const;
 		/*!
 			Cuts (subdivides) the curve at specified curve (length) parameter, and return left and right arcs.
 
@@ -279,7 +221,7 @@ namespace Amanith {
 			\note if specified curve parameter is out of the length-domain, an G_OUT_OF_RANGE error code is returned.
 			Furthermore RightCurve and LeftCurve parameters, if specified, must be of the same type of this curve.
 		*/
-		GError CutByLength(const GReal CurvePos, GCurve2D *RightCurve, GCurve2D *LeftCurve,
+		GError CutByLength(const GReal CurvePos, GCurve1D *RightCurve, GCurve1D *LeftCurve,
 						   const GReal MaxError = G_EPSILON) const;
 		/*!
 			Cuts a curve slice corresponding to specified curve (length) interval, and return the curve arc.
@@ -292,92 +234,52 @@ namespace Amanith {
 			\note specified domain interval is clamped by the valid interval for this curve. OutCurve parameter must
 			be of the same type of this curve.
 		*/
-		GError CutByLength(const GReal CurvePos0, const GReal CurvePos1, GCurve2D *Curve,
+		GError CutByLength(const GReal CurvePos0, const GReal CurvePos1, GCurve1D *Curve,
 						   const GReal MaxError = G_EPSILON) const;
 		/*!
-			Get tangent vector, specifying domain parameter.
+			Get tangent value, specifying domain parameter.
 
-			The returned value is the normalized (unit length) tangent vector.
+			\note for 1D curves, Tangent() and Speed() always return the same value.
 		*/
-		GVector2 Tangent(const GReal u) const;
-		/*!
-			Get curve normal, specifying domain parameter.
-			
-			The returned value is a normalized vector perpendicular to the curve Tangent().
-		*/
-		GVector2 Normal(const GReal u) const;
-		/*!
-			Get curve curvature, specifying domain parameter.\n For detailed information about curvature, please check this
-			site http://planetmath.org/encyclopedia/CurvatureOfACurve.html
-		*/
-		GReal Curvature(const GReal u) const;
+		GReal Tangent(const GReal u) const;
 		/*!
 			Get curve speed, specifying domain parameter.
 
-			With 'speed', here's intended the length of the curve's first derivative vector.
+			\note for 1D curves, Tangent() and Speed() always return the same value.
 		*/
 		GReal Speed(const GReal u) const;
-		/*!
-			Get variation (squared chordal distance) in the domain range [u0; u1]
-		*/
-		GReal Variation(const GReal u0, const GReal u1) const;
 		//! Get start point of curve; this is the point corresponding to the domain lower bound.
-		inline GPoint2 StartPoint() const {
+		inline GReal StartPoint() const {
 			return Point(0);
 		}
 		//! Get end point of curve; this is the point corresponding to the domain upper bound.
-		inline GPoint2 EndPoint() const {
+		inline GReal EndPoint() const {
 			return Point(PointsCount() - 1);
 		}
 		//! Set start point of curve; this is the point corresponding to the domain lower bound.
-		inline void SetStartPoint(const GPoint2& NewValue) {
+		inline void SetStartPoint(const GReal NewValue) {
 			SetPoint(0, NewValue);
 		}
 		//! Set end point of curve; this is the point corresponding to the domain upper bound.
-		inline void SetEndPoint(const GPoint2& NewValue) {
+		inline void SetEndPoint(const GReal NewValue) {
 			SetPoint(PointsCount() - 1, NewValue);
 		}
 		/*!
-			Translates all curve points by the specified vector offset.
+			Translates all curve points by the specified scalar offset.
 
-			\param Translation the offset vector, added to each curve point.
+			\param Translation the offset value, added to each curve point.
 		*/
-		void Translate(const GVector2& Translation);
-		/*!
-			Rotate all curve points around a pivot point.
-
-			\param Pivot the pivot point (the center of rotation)
-			\param RadAmount the rotation (in radians) amount.
-		*/
-		void Rotate(const GPoint2& Pivot, const GReal RadAmount);
+		void Translate(const GReal Translation);
 		/*!
 			Scale all curve points around a pivot point.
 
 			\param Pivot the pivot point (the center of scaling)
-			\param XScaleAmount the scale factor used for X axis
-			\param YScaleAmount the scale factor used for Y axis
+			\param ScaleAmount the scale factor
 		*/
-		void Scale(const GPoint2& Pivot, const GReal XScaleAmount, const GReal YScaleAmount);
-		/*!
-			Apply an affine transformation to all curve points.
-
-			\param Matrix a 2x3 matrix, specifying the affine transformation.
-			\note the leftmost 2x2 matrix contains the rotation/scale portion, the last column vector contains the
-			translation.
-		*/
-		void XForm(const GMatrix23& Matrix);
-		/*!
-			Apply full transformation to all curve points.
-
-			\param Matrix a 3x3 matrix, specifying the transformation.
-			\param DoProjection if G_TRUE the projective transformation (described by the last row vector of matrix) will
-			be done. In this case all transformed vertexes will be divided by the last W component. If G_FALSE only the
-			affine portion will be used for transformation, and no projective division will be executed.
-		*/
-		void XForm(const GMatrix33& Matrix, const GBool DoProjection = G_TRUE);
+		void Scale(const GReal Pivot, const GReal ScaleAmount);
 		//! Get class descriptor
 		inline const GClassID& ClassID() const {
-			return G_CURVE2D_CLASSID;
+			return G_CURVE1D_CLASSID;
 		}
 		//! Get base class (father class) descriptor
 		inline const GClassID& DerivedClassID() const {
@@ -387,20 +289,20 @@ namespace Amanith {
 
 
 	// *********************************************************************
-	//                             GCurve2DProxy
+	//                             GCurve1DProxy
 	// *********************************************************************
 	/*!
-		\class GCurve2DProxy
-		\brief This class implements a GCurve2D proxy (provider).
+		\class GCurve1DProxy
+		\brief This class implements a GCurve1D proxy (provider).
 
-		This proxy does not override CreateNew() method because we don't wanna make a creation of a GCurve2D
+		This proxy does not override CreateNew() method because we don't wanna make a creation of a GCurve1D
 		class possible (because of pure virtual  methods).
 	*/
-	class G_EXPORT GCurve2DProxy : public GElementProxy {
+	class G_EXPORT GCurve1DProxy : public GElementProxy {
 	public:
 		//! Get class descriptor of elements type "provided" by this proxy.
 		const GClassID& ClassID() const {
-			return G_CURVE2D_CLASSID;
+			return G_CURVE1D_CLASSID;
 		}
 		//! Get base class (father class) descriptor of elements type "provided" by this proxy.
 		const GClassID& DerivedClassID() const {
@@ -408,8 +310,8 @@ namespace Amanith {
 		}
 	};
 
-	//! Static proxy for GCurve2D class.
-	static const GCurve2DProxy G_CURVE2D_PROXY;
+	//! Static proxy for GCurve1D class.
+	static const GCurve1DProxy G_CURVE1D_PROXY;
 
 };	// end namespace Amanith
 

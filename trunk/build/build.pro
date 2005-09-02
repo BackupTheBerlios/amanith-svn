@@ -17,10 +17,17 @@ DEPENDPATH += $$(AMANITHDIR)/src
 #
 #*********************************************************
 SOURCES = gelement.cpp \
+          gproperty.cpp \
           gkernel.cpp \
           gerror.cpp \
           gimpexp.cpp \
           gpluglib.cpp \
+          1d/gcurve1d.cpp \
+          1d/gmulticurve1d.cpp \
+          1d/gbeziercurve1d.cpp \
+          1d/gbsplinecurve1d.cpp \
+          1d/gpolylinecurve1d.cpp \
+          1d/ghermitecurve1d.cpp \
           2d/gcurve2d.cpp \
           2d/gmulticurve2d.cpp \
           2d/gbeziercurve2d.cpp \

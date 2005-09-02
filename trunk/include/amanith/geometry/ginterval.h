@@ -193,10 +193,10 @@ namespace Amanith {
 			if (l <= 0)
 				return 1;
 			if (Value < gStart)
-				return (GMath::Abs(Value - gStart) / l) + 1;
+				return (GInt32)GMath::Trunc((GMath::Abs(Value - gStart) / l)) + 1;
 			else 
 			if (Value > gEnd)
-				return (GMath::Abs(Value - gEnd) / l) + 1;
+				return (GInt32)GMath::Trunc((GMath::Abs(Value - gEnd) / l)) + 1;
 			else
 				return 0;
 		}
@@ -212,12 +212,14 @@ namespace Amanith {
 		*/
 		inline DATA_TYPE CycleValue(const DATA_TYPE& Value) const {
 
-			DATA_TYPE retValue;
 			DATA_TYPE l = Length();
 
 			if (l <= 0)
 				return Value;
-			retValue = (Value - gStart) % l;
+
+			DATA_TYPE delta = (Value - gStart);
+			DATA_TYPE retValue = GMath::Trunc(delta / l);
+			retValue = delta - (retValue * l);
 			if (Value < gStart)
 				return (gEnd + retValue);
 			else

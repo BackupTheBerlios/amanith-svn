@@ -70,17 +70,17 @@ void BuildFlatContour(const GHermiteCurve2D* Curve) {
 void InitApp() {
 
 	GDynArray<GPoint2> points;
-	GDynArray<GHermiteKey> keys;
+	GDynArray<GHermiteKey2D> keys;
 
 	gKernel = new GKernel();
 	gHermCurve = (GHermiteCurve2D *)gKernel->CreateNew(G_HERMITECURVE2D_CLASSID);
 
-	keys.push_back(GHermiteKey(0, GPoint2(2, 7), GVector2(8, 4), GVector2(8, 4)));
-	keys.push_back(GHermiteKey(1, GPoint2(7, 6), GVector2(-4, -8), GVector2(8, -4)));
-	keys.push_back(GHermiteKey(2, GPoint2(6, 5), GVector2(-4, 8), GVector2(-4, -8)));
-	keys.push_back(GHermiteKey(3, GPoint2(4, 6), GVector2(-4, -4), GVector2(-4, 4)));
-	keys.push_back(GHermiteKey(4, GPoint2(3, 3), GVector2(4, -8), GVector2(4, -8)));
-	keys.push_back(GHermiteKey(5, GPoint2(8, 2), GVector2(4, -1), GVector2(4, 0)));
+	keys.push_back(GHermiteKey2D(0, GPoint2(2, 7), GVector2(8, 4), GVector2(8, 4)));
+	keys.push_back(GHermiteKey2D(1, GPoint2(7, 6), GVector2(-4, -8), GVector2(8, -4)));
+	keys.push_back(GHermiteKey2D(2, GPoint2(6, 5), GVector2(-4, 8), GVector2(-4, -8)));
+	keys.push_back(GHermiteKey2D(3, GPoint2(4, 6), GVector2(-4, -4), GVector2(-4, 4)));
+	keys.push_back(GHermiteKey2D(4, GPoint2(3, 3), GVector2(4, -8), GVector2(4, -8)));
+	keys.push_back(GHermiteKey2D(5, GPoint2(8, 2), GVector2(4, -1), GVector2(4, 0)));
 	gHermCurve->SetKeys(keys);
 
 	gX = -5.5;
@@ -105,7 +105,7 @@ void Draw(const GHermiteCurve2D* Curve) {
 
 	GInt32 numSegs, i, j;
 	GPoint2 p1, p2;
-	GHermiteKey tmpKey;
+	GHermiteKey2D tmpKey;
 
 	glDisable(GL_LINE_SMOOTH);
 	glLineWidth(2.0f);
@@ -505,5 +505,5 @@ int WINAPI WinMain(	HINSTANCE	hInstance,			// Instance
 	// Shutdown
 	KillGLWindow();									// Kill The Window
 	KillApp();
-	return (msg.wParam);							// Exit The Program
+	return (int)(msg.wParam);							// Exit The Program
 }

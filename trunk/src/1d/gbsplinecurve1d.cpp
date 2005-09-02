@@ -1,7 +1,7 @@
 /****************************************************************************
-** $file: amanith/src/2d/gbsplinecurve2d.cpp   0.1.0.0   edited Jun 30 08:00
+** $file: amanith/src/1d/gbsplinecurve1d.cpp   0.1.0.0   edited Jun 30 08:00
 **
-** 2D B-Spline curve segment implementation.
+** 1D B-Spline curve segment implementation.
 **
 **
 ** Copyright (C) 2004-2005 Mazatech Inc. All rights reserved.
@@ -26,25 +26,22 @@
 ** not clear to you.
 **********************************************************************/
 
-#include "amanith/2d/gbsplinecurve2d.h"
-#include "amanith/2d/gbeziercurve2d.h"
-#include "amanith/geometry/gintersect.h"
-#include "amanith/geometry/gxformconv.h"
-#include "amanith/geometry/gxform.h"
+#include "amanith/1d/gbsplinecurve1d.h"
+#include "amanith/1d/gbeziercurve1d.h"
 #include "amanith/gerror.h"
 
 /*!
-	\file gbsplinecurve2d.cpp
-	\brief Implementation of 2D BSpline curve class.
+	\file gbsplinecurve1d.cpp
+	\brief Implementation of 1D BSpline curve class.
 */
 namespace Amanith {
 
 // *********************************************************************
-//                          GBSplineCurve2D
+//                          GBSplineCurve1D
 // *********************************************************************
 
 // constructor
-GBSplineCurve2D::GBSplineCurve2D() : GCurve2D() {
+GBSplineCurve1D::GBSplineCurve1D() : GCurve1D() {
 
 	gDegree = 0;
 	gOpened = G_TRUE;
@@ -53,7 +50,7 @@ GBSplineCurve2D::GBSplineCurve2D() : GCurve2D() {
 }
 
 // constructor
-GBSplineCurve2D::GBSplineCurve2D(const GElement* Owner) : GCurve2D(Owner) {
+GBSplineCurve1D::GBSplineCurve1D(const GElement* Owner) : GCurve1D(Owner) {
 
 	gDegree = 0;
 	gOpened = G_TRUE;
@@ -62,11 +59,11 @@ GBSplineCurve2D::GBSplineCurve2D(const GElement* Owner) : GCurve2D(Owner) {
 }
 
 // destructor
-GBSplineCurve2D::~GBSplineCurve2D() {
+GBSplineCurve1D::~GBSplineCurve1D() {
 }
 
 // clear the curve (remove control points and set an empty knots interval)
-void GBSplineCurve2D::Clear() {
+void GBSplineCurve1D::Clear() {
 
 	gPoints.clear();
 	gDegree = 0;
@@ -80,27 +77,27 @@ void GBSplineCurve2D::Clear() {
 }
 
 // get number of control points
-GInt32 GBSplineCurve2D::PointsCount() const {
+GInt32 GBSplineCurve1D::PointsCount() const {
 
 	return (GInt32)gPoints.size();
 }
 
 // get curve degree
-GInt32 GBSplineCurve2D::Degree() const {
+GInt32 GBSplineCurve1D::Degree() const {
 
 	return gDegree;
 }
 
 // get Index-th point
-GPoint2 GBSplineCurve2D::Point(const GInt32 Index) const {
+GReal GBSplineCurve1D::Point(const GInt32 Index) const {
 
 	if ((Index < 0) || (Index >= PointsCount()))
-		return GPoint2(G_MIN_REAL, G_MIN_REAL);
+		return G_MIN_REAL;
 	return gPoints[Index];
 }
 
 // set Index-th point
-GError GBSplineCurve2D::SetPoint(const GInt32 Index, const GPoint2& NewPoint) {
+GError GBSplineCurve1D::SetPoint(const GInt32 Index, const GReal NewPoint) {
 
 	if ((Index < 0) || (Index >= PointsCount()))
 		return G_OUT_OF_RANGE;
@@ -111,7 +108,7 @@ GError GBSplineCurve2D::SetPoint(const GInt32 Index, const GPoint2& NewPoint) {
 }
 
 // set control points
-GError GBSplineCurve2D::SetPoints(const GDynArray<GPoint2>& NewPoints, const GInt32 Degree,
+GError GBSplineCurve1D::SetPoints(const GDynArray<GReal>& NewPoints, const GInt32 Degree,
 								  const GBool Opened, const GBool Uniform) {
 
 
@@ -140,20 +137,18 @@ GError GBSplineCurve2D::SetPoints(const GDynArray<GPoint2>& NewPoints, const GIn
 }
 
 // set control points specifying also knots range
-GError GBSplineCurve2D::SetPoints(const GDynArray<GPoint2>& NewPoints, const GInt32 Degree,
+GError GBSplineCurve1D::SetPoints(const GDynArray<GReal>& NewPoints, const GInt32 Degree,
 								  const GReal NewMinValue, const GReal NewMaxValue,
 								  const GBool Opened, const GBool Uniform) {
 
-	GError err;
-
-	err = GCurve2D::SetDomain(NewMinValue, NewMaxValue);
+	GError err = GCurve1D::SetDomain(NewMinValue, NewMaxValue);
 	if (err == G_NO_ERROR)
 		err = SetPoints(NewPoints, Degree, Opened, Uniform);
 	return err;
 }
 
 // set control points
-GError GBSplineCurve2D::SetPoints(const GDynArray<GPoint2>& NewPoints, const GDynArray<GReal>& Knots,
+GError GBSplineCurve1D::SetPoints(const GDynArray<GReal>& NewPoints, const GDynArray<GReal>& Knots,
 								  const GInt32 Degree, const GBool Uniform) {
 
 	GInt32 n = (GInt32)NewPoints.size();
@@ -177,13 +172,13 @@ GError GBSplineCurve2D::SetPoints(const GDynArray<GPoint2>& NewPoints, const GDy
 	gModified = G_TRUE;
 	// set opened flag
 	gOpened = IsClamped();
-	GCurve2D::SetDomain(Knots[0], Knots[Knots.size() -1]);
+	GCurve1D::SetDomain(Knots[0], Knots[Knots.size() -1]);
 	return G_NO_ERROR;
 }
 
 // return true if B-spline is clamped (first and last knots have a multiplicity greater or equal to
 // the degree)
-GBool GBSplineCurve2D::IsClamped() const {
+GBool GBSplineCurve1D::IsClamped() const {
 
 	GInt32 mult;
 
@@ -198,218 +193,14 @@ GBool GBSplineCurve2D::IsClamped() const {
 	return G_TRUE;
 }
 
-// returns numer of intersection between control polygon and a ray
-GInt32 GBSplineCurve2D::CrossingCount(const GRay2& Ray) const {
-
-	GBool intersected;
-	GInt32 i, k;
-	GUInt32 intersFlags;
-	GReal localIntersParams[2];
-	GLineSegment2 seg;
-
-	k = 0;
-	for (i = 0; i < gDegree; i++) {
-		seg.SetStartPoint(gPoints[i]);
-		seg.SetEndPoint(gPoints[i + 1]);
-		intersected = Intersect(Ray, seg, intersFlags, localIntersParams);
-		if (intersected)
-			k++;
-	}
-	return k;
-}
-
-// returns numer of intersection between control polygon and y axis
-GInt32 GBSplineCurve2D::CrossingCountX() const {
-
-	GInt32 i, j, numCross = 0;
-	GInt32 sign, old_sign;
-
-	sign = old_sign = GMath::Sign(gPoints[0][G_Y]);
-	j = PointsCount() - 1;
-	for (i = 1; i <= j; i++) {
-		sign = GMath::Sign(gPoints[i][G_Y]);
-		if (sign != old_sign)
-			numCross++;
-		old_sign = sign;
-	}
-	return numCross;
-}
-
-// ray intersection based on Newton schema
-GBool GBSplineCurve2D::IntersectXRay(GDynArray<GVector2>& Intersections,
-										   const GReal Precision, const GInt32 MaxIterations) const {
-
-	GInt32 crossCount;
-	GReal u;
-	GBool intLeft, intRight;
-	GVector2 intInfo;
-
-	// exploits variation-diminishing property
-	crossCount = CrossingCountX();
-	if (crossCount <= 0)
-		return G_FALSE;
-	else
-	if (crossCount == 1) {
-		// in this case, we are sure that sign(StartPoint.y) != sign(EndPoint.y), so we can use
-		// Brent method for 0-searching
-		GReal relerr;
-		GReal a, b, c, d = 0, e = 0, xm, p, q, r, s, tol1;
-		GPoint2 fa, fb, fc;
-		GInt32 i;
-
-		relerr = GMath::Max(G_EPSILON, GMath::Abs(Precision));
-		a = DomainStart();
-		c = b = DomainEnd();
-		fa = StartPoint();
-		fc = fb = EndPoint();
-
-		for (i = 0; i < MaxIterations; i++) {
-			// no inclusion of a root
-			if (fb[G_Y] * (fc[G_Y] / GMath::Abs(fc[G_Y])) > 0) {
-				c  = a;				// between b and c ?        
-				fc = fa;			// alter c so that b and c  
-				e  = d = b - a;		// include the root of f    
-			}
-			// if fc has the smaller modulus interchange interval end points
-			if (GMath::Abs(fc[G_Y]) < GMath::Abs(fb[G_Y])) {        
-				a = b;
-				b = c;
-				c = a;
-				fa = fb;
-				fb = fc;
-				fc = fa;
-			}
-  			tol1 = (GReal)0.5 * relerr * GMath::Abs(b);
-			xm = (GReal)0.5 * (c - b);
-			// reached desired accuracy
-			if ((fb[G_Y] == 0) || (GMath::Abs(xm) <= tol1)) {
-				// test if solution is opposite to ray
-				if (fb[G_X] < 0)
-					return G_FALSE;
-				// curve parameter
-				intInfo[G_X] = b;
-				// ray distance from its origin
-				intInfo[G_Y] = fb[G_X];
-				// save found solution
-				Intersections.push_back(intInfo);
-				return G_TRUE;
-			}
-			r = 0;
-			if (GMath::Abs(e) < tol1 || GMath::Abs(fa[G_Y]) <= GMath::Abs(fb[G_Y]))
-				e = d = xm;
-			else {
-				if (a != c) {						// if a is not equal to c
-					q =  fa[G_Y] / fc[G_Y];			// with a, b and c we have 3 points for  
-					r = fb[G_Y] / fc[G_Y];			// an inverse quadratic interpolation    
-					s = fb[G_Y] / fa[G_Y];
-					p = s * (2 * xm * q * (q - r) - (b - a) * (r - 1));
-					q = (q - 1) * (r - 1) * (s - 1);
-				}
-				else {
-					// use the secant method or linear
-					s = fb[G_Y] / fa[G_Y];
-					// interpolation
-					p = 2 * xm * s;
-					q = 1 - s;
-				}
-				// alter the sign of p/q for the subsequent division
-				if (p > 0)
-					q = -q;
-				else
-					p = -p;
-				if ((2 * p  >= 3 * xm * q - GMath::Abs(tol1 * q)) || (p >=  GMath::Abs((GReal)0.5 * e * q)))
-					e = d = xm;
-				else {
-					// compute the quotient p/q for both iterations which will be used to modify b 
-					e = d;
-					d = p / q;
-				}
-			}
-			// store the best approximation b and its function value fb in a and fa
-			a  = b;
-			fa = fb;
-			if (GMath::Abs(d) > tol1)
-				b += d;
-			else {
-				if (xm >= 0)
-					b += tol1;
-				else
-					b -= tol1;
-			}
-			fb = Evaluate(b);
-		}
-	}
-
-	GBSplineCurve2D leftCurve, rightCurve;
-	// pivot point
-	u = (DomainStart() + DomainEnd()) * (GReal)0.5;
-	Cut(u, &rightCurve, &leftCurve);
-	intLeft = leftCurve.IntersectXRay(Intersections, Precision, MaxIterations);
-	intRight = rightCurve.IntersectXRay(Intersections, Precision, MaxIterations);
-	return (intLeft | intRight);
-}
-
-// returns control polygon length
-GReal GBSplineCurve2D::ControlPolygonLength(const GInt32 FromIndex, const GInt32 ToIndex) const {
-
-	GInt32 i, j0, j1;
-	GReal l;
-
-	// make sure that FromIndex is <= ToIndex
-	if (FromIndex > ToIndex) {
-		j0 = ToIndex;
-		j1 = FromIndex;
-	}
-	else {
-		j0 = FromIndex;
-		j1 = ToIndex;
-	}
-	// just to be sure if some value is out of range
-	j0 = GMath::Max(j0, 0);
-	j1 = GMath::Min(j1, PointsCount() - 1);
-	l = 0;
-	for (i = j0; i < j1; i++)
-		l += Distance(gPoints[i + 1],  gPoints[i]);
-	return l;
-}
-
-// intersect the curve with a ray, and returns a list of intersections
-GBool GBSplineCurve2D::IntersectRay(const GRay2& NormalizedRay, GDynArray<GVector2>& Intersections,
-									const GReal Precision, const GInt32 MaxIterations) const {
-
-	if (PointsCount() <= 1)
-		return G_FALSE;
-
-	GMatrix33 rayTrans, rayRot, rayMatrix;
-	GBSplineCurve2D tmpCurve = (*this);
-	GInt32 i, j;
-	GBool b;
-	
-	// build a matrix that makes ray to become X axis, at origin = (0, 0)
-	rayRot[G_X][G_X] = NormalizedRay.Direction()[G_X];
-	rayRot[G_X][G_Y] = NormalizedRay.Direction()[G_Y];
-	rayRot[G_Y][G_X] = -NormalizedRay.Direction()[G_Y];
-	rayRot[G_Y][G_Y] = NormalizedRay.Direction()[G_X];
-	TranslationToMatrix(rayTrans, -NormalizedRay.Origin());
-	rayMatrix = rayRot * rayTrans;
-
-	// transform each control point
-	j = PointsCount();
-	for (i = 0; i < j; i++)
-		tmpCurve.gPoints[i] = rayMatrix * gPoints[i];
-
-	b = tmpCurve.IntersectXRay(Intersections, Precision, MaxIterations);
-	return b;
-}
-
 // knot insertion
-GError GBSplineCurve2D::InsertKnot(const GReal u) {
+GError GBSplineCurve1D::InsertKnot(const GReal u) {
 
 	if ((u < DomainStart()) || (u > DomainEnd()))
 		return G_INVALID_PARAMETER;
 
 	GInt32 i, span, s, pc = PointsCount(), kc = KnotsCount();
-	GDynArray<GPoint2> newPoints(pc + 1);
+	GDynArray<GReal> newPoints(pc + 1);
 	GDynArray<GReal> newKnots(kc + 1);
 	GReal c, den;
 	
@@ -447,7 +238,7 @@ GError GBSplineCurve2D::InsertKnot(const GReal u) {
 }
 
 // knot averaging
-GError GBSplineCurve2D::KnotsAveraging(GDynArray<GReal>& OutKnots, const GDynArray<GReal>& ChordalKnots,
+GError GBSplineCurve1D::KnotsAveraging(GDynArray<GReal>& OutKnots, const GDynArray<GReal>& ChordalKnots,
 									   const GInt32 Degree, const GInt32 Offset0, const GInt32 HowManyAveraged) {
 
 	GInt32 i, j, n, m;
@@ -472,7 +263,7 @@ GError GBSplineCurve2D::KnotsAveraging(GDynArray<GReal>& OutKnots, const GDynArr
 }
 
 // build a chord-length parametrized knots array
-void GBSplineCurve2D::ChordLengthKnots(GDynArray<GReal>& OutKnots, const GDynArray<GPoint2>& Points,
+void GBSplineCurve1D::ChordLengthKnots(GDynArray<GReal>& OutKnots, const GDynArray<GReal>& Points,
 									   const GReal MinKnotValue, const GReal MaxKnotValue) {
 
 	GReal c, d, u, delta;
@@ -482,13 +273,13 @@ void GBSplineCurve2D::ChordLengthKnots(GDynArray<GReal>& OutKnots, const GDynArr
 	d = 0;
 	// calculate total length
 	for (i = 1; i <= n; i++)
-		d += GMath::Sqrt(Distance(Points[i], Points[i - 1]));
+		d += GMath::Sqrt(GMath::Abs(Points[i] - Points[i - 1]));
 
 	OutKnots.resize(n + 1);
 	OutKnots[0] = MinKnotValue;
 	delta = (MaxKnotValue - MinKnotValue) / d;
 	for (i = 1; i <= n - 1; i++) {
-		c = GMath::Sqrt(Distance(Points[i], Points[i - 1]));
+		c = GMath::Sqrt(GMath::Abs(Points[i] - Points[i - 1]));
 		u = OutKnots[i - 1] + (c * delta);
 		OutKnots[i] = u;
 	}
@@ -496,8 +287,8 @@ void GBSplineCurve2D::ChordLengthKnots(GDynArray<GReal>& OutKnots, const GDynArr
 }
 
 // build a knot array (clamped and non-uniform) with a centripetal schema and knot averaging
-void GBSplineCurve2D::BuildCentripetalKnots(GDynArray<GReal>& OutKnots,
-											const GDynArray<GPoint2>& ControlPoints,
+void GBSplineCurve1D::BuildCentripetalKnots(GDynArray<GReal>& OutKnots,
+											const GDynArray<GReal>& ControlPoints,
 											const GReal MinValue, const GReal MaxValue,
 											const GInt32 Degree) {
 
@@ -510,7 +301,7 @@ void GBSplineCurve2D::BuildCentripetalKnots(GDynArray<GReal>& OutKnots,
 }
 
 // build a uniform knots array, open(clamped) or not
-void GBSplineCurve2D::BuildUniformKnots(GDynArray<GReal>& OutKnots,
+void GBSplineCurve1D::BuildUniformKnots(GDynArray<GReal>& OutKnots,
 										const GReal MinValue, const GReal MaxValue,
 										const GInt32 Degree, const GInt32 NumControlPoints,
 										const GBool Clamped) {
@@ -560,8 +351,8 @@ void GBSplineCurve2D::BuildUniformKnots(GDynArray<GReal>& OutKnots,
 }
 
 // build the knot array
-void GBSplineCurve2D::BuildKnots(GDynArray<GReal>& OutKnots,
-								 const GDynArray<GPoint2>& ControlPoints,
+void GBSplineCurve1D::BuildKnots(GDynArray<GReal>& OutKnots,
+								 const GDynArray<GReal>& ControlPoints,
 								 const GReal MinValue, const GReal MaxValue,
 								 const GInt32 Degree, const GBool OpenedKnots, const GBool UniformKnots) {
 
@@ -579,7 +370,7 @@ void GBSplineCurve2D::BuildKnots(GDynArray<GReal>& OutKnots,
 }
 
 // set global parameters corresponding to the start point and to the end point
-GError GBSplineCurve2D::SetDomain(const GReal NewMinValue, const GReal NewMaxValue) {
+GError GBSplineCurve1D::SetDomain(const GReal NewMinValue, const GReal NewMaxValue) {
 
 	#define PRECISION 2 * G_EPSILON
 	// new re-parametrization, lets call:
@@ -657,11 +448,11 @@ GError GBSplineCurve2D::SetDomain(const GReal NewMinValue, const GReal NewMaxVal
 	}
 	gModified = G_TRUE;
 	// set internal members
-	return (GCurve2D::SetDomain(newInterval.Start(), newInterval.End()));
+	return (GCurve1D::SetDomain(newInterval.Start(), newInterval.End()));
 }
 
 // find knot span
-GInt32 GBSplineCurve2D::FindSpan(const GReal u) const {
+GInt32 GBSplineCurve1D::FindSpan(const GReal u) const {
 
 	GInt32 i, j;
 
@@ -677,7 +468,7 @@ GInt32 GBSplineCurve2D::FindSpan(const GReal u) const {
 }
 
 // find at the same time knot span and its multiplicity
-GInt32 GBSplineCurve2D::FindSpanMult(const GReal u, GInt32& Multiplicity) const {
+GInt32 GBSplineCurve1D::FindSpanMult(const GReal u, GInt32& Multiplicity) const {
 
 	GInt32 i, j, k;
 
@@ -708,7 +499,7 @@ GInt32 GBSplineCurve2D::FindSpanMult(const GReal u, GInt32& Multiplicity) const 
 }
 
 // calculate knot multiplicity
-GInt32 GBSplineCurve2D::Multiplicity(const GReal u) const {
+GInt32 GBSplineCurve1D::Multiplicity(const GReal u) const {
 
 	GInt32 i = 0, j = (GInt32)gKnots.size(), res = 0;
 
@@ -721,7 +512,7 @@ GInt32 GBSplineCurve2D::Multiplicity(const GReal u) const {
 }
 
 // get knots multiplicities
-void GBSplineCurve2D::Multiplicities(GDynArray<GKnotMultiplicity>& Values) const {
+void GBSplineCurve1D::Multiplicities(GDynArray<GKnotMultiplicity>& Values) const {
 
 	GKnotMultiplicity tmpValue;
 	GReal u;
@@ -748,15 +539,15 @@ void GBSplineCurve2D::Multiplicities(GDynArray<GKnotMultiplicity>& Values) const
 	Values.push_back(tmpValue);
 }
 
-GPoint2 GBSplineCurve2D::Evaluate(const GReal u) const {
+GReal GBSplineCurve1D::Evaluate(const GReal u) const {
 
-	GPoint2 tmpPoint;
+	GReal tmpPoint = 0;
 	GInt32 j, span;
 	GReal uu;
 	GReal *c;
 
 	if (PointsCount() <= 0)
-		return G_NULL_POINT2;
+		return G_MIN_REAL;
 	
 	// clamp parameter inside valid interval
 	if (u < DomainStart())
@@ -779,7 +570,7 @@ GPoint2 GBSplineCurve2D::Evaluate(const GReal u) const {
 }
 
 // evaluate Index-th basic function of specified degree at global parameter value u
-GReal GBSplineCurve2D::EvaluateBasisFunc(const GReal u, const GInt32 Index, const GInt32 Degree) const {
+GReal GBSplineCurve1D::EvaluateBasisFunc(const GReal u, const GInt32 Index, const GInt32 Degree) const {
 
 	GInt32 i, j, k, s;
 	GReal temp, uLeft, uRight, saved;
@@ -837,7 +628,7 @@ GReal GBSplineCurve2D::EvaluateBasisFunc(const GReal u, const GInt32 Index, cons
 }
 
 // calculate first and second order forward differences
-void GBSplineCurve2D::BuildForwDiff() const {
+void GBSplineCurve1D::BuildForwDiff() const {
 
 	GInt32 i, j;
 	GReal k;
@@ -852,7 +643,7 @@ void GBSplineCurve2D::BuildForwDiff() const {
 			gForwDiff1[i] = k * (gPoints[i + 1] - gPoints[i]);
 		}
 		else
-			gForwDiff1[i] = G_NULL_POINT2;
+			gForwDiff1[i] = 0;
 	}
 	// calculate second order forward differences
 	j = PointsCount() - 2;
@@ -864,13 +655,13 @@ void GBSplineCurve2D::BuildForwDiff() const {
 			gForwDiff2[i] = k * (gForwDiff1[i + 1] - gForwDiff1[i]);
 		}
 		else
-			gForwDiff2[i] = G_NULL_POINT2;
+			gForwDiff2[i] = 0;
 	}
 	gModified = G_FALSE;
 }
 
 // evaluate non-vanishing basis functions for a given span index, and global parameter
-GReal* GBSplineCurve2D::BasisFunctions(const GInt32 SpanIndex, const GInt32 Degree, const GReal u) const {
+GReal* GBSplineCurve1D::BasisFunctions(const GInt32 SpanIndex, const GInt32 Degree, const GReal u) const {
 
 	// Degree is always less or equal to gDegree
 	GReal *left = &gBasisFuncEval[Degree + 1];
@@ -894,7 +685,7 @@ GReal* GBSplineCurve2D::BasisFunctions(const GInt32 SpanIndex, const GInt32 Degr
 
 // evaluate non-vanishing basis functions derivatives (up to Degree) for a given span index
 // and global parameter
-GReal* GBSplineCurve2D::BasisFuncDerivatives(const GInt32 Order, const GInt32 SpanIndex,
+GReal* GBSplineCurve1D::BasisFuncDerivatives(const GInt32 Order, const GInt32 SpanIndex,
 											 const GInt32 Degree, const GReal u) const {
 
 	GReal *left, *right, *ders, *swap, *a1, *a2, *ndu;
@@ -980,14 +771,14 @@ GReal* GBSplineCurve2D::BasisFuncDerivatives(const GInt32 Order, const GInt32 Sp
 
 
 // return the derivate Order-th calculated at global parameter u
-GVector2 GBSplineCurve2D::Derivative(const GDerivativeOrder Order, const GReal u) const {
+GReal GBSplineCurve1D::Derivative(const GDerivativeOrder Order, const GReal u) const {
 
-	GPoint2 tmpPoint;
+	GReal tmpPoint = 0;
 	GInt32 j, span;
 	GReal uu, *c;
 
 	if (PointsCount() <= 0)
-		return G_NULL_POINT2;
+		return G_MIN_REAL;
 	// clamp parameter inside valid interval
 	if (u < DomainStart())
 		uu = DomainStart();
@@ -1021,7 +812,7 @@ GVector2 GBSplineCurve2D::Derivative(const GDerivativeOrder Order, const GReal u
 
 
 // decreases by one the degree of the curve
-GError GBSplineCurve2D::LowerDegree() {
+GError GBSplineCurve1D::LowerDegree() {
 
 	// degree elevating is not yet implemented for unclamped b-splines
 	if (gOpened == G_FALSE)
@@ -1030,7 +821,7 @@ GError GBSplineCurve2D::LowerDegree() {
 	if (Degree() < 2)
 		return G_NO_ERROR;
 
-	GBSplineCurve2D tmpCurve;
+	GBSplineCurve1D tmpCurve;
 	GError err = LowerDegree(tmpCurve);
 	if (err == G_NO_ERROR)
 		(*this) = tmpCurve;
@@ -1038,7 +829,7 @@ GError GBSplineCurve2D::LowerDegree() {
 }
 
 // decreases by one the degree of the curve and gives the result out
-GError GBSplineCurve2D::LowerDegree(GBSplineCurve2D& OutputCurve) const {
+GError GBSplineCurve1D::LowerDegree(GBSplineCurve1D& OutputCurve) const {
 
 	GInt32 p = gDegree;
 	GInt32 i, j, k, b, ph, kind, cind, mult, a, m, r, oldr,
@@ -1073,19 +864,19 @@ GError GBSplineCurve2D::LowerDegree(GBSplineCurve2D& OutputCurve) const {
 		return G_OUT_OF_RANGE;
 
 	// pth-degree Bezier control points of the current segment
-	GDynArray<GPoint2> bpts(p + 1);
+	GDynArray<GReal> bpts(p + 1);
 	// degree reduced Bezier control points
-	GDynArray<GPoint2> rbpts(p);
+	GDynArray<GReal> rbpts(p);
 	// leftmost control points of the next Bezier segment
-	GDynArray<GPoint2> Nextbpts(p - 1);
+	GDynArray<GReal> Nextbpts(p - 1);
 	// new control points
-	GDynArray<GPoint2> Pw(nSigned + 1);
+	GDynArray<GReal> Pw(nSigned + 1);
 	// new knots
 	GDynArray<GReal> Uh(mSigned);
 	// knot insertion alphas
 	GDynArray<GReal> alphas(p - 1);
 	// temporary Bezier curve, used to do degree reduction of a Bezier segment
-	GBezierCurve2D tmpBezCurve;
+	GBezierCurve1D tmpBezCurve;
 	tmpBezCurve.SetDomain(DomainStart(), DomainEnd());
 
 	ph = p - 1;
@@ -1191,13 +982,13 @@ GError GBSplineCurve2D::LowerDegree(GBSplineCurve2D& OutputCurve) const {
 }
 
 // increases by one the degree of the curve
-GError GBSplineCurve2D::HigherDegree(const GInt32 HowManyTimes) {
+GError GBSplineCurve1D::HigherDegree(const GInt32 HowManyTimes) {
 
 	// degree elevating is not yet implemented for unclamped b-splines
 	if (gOpened == G_FALSE)
 		return G_MISSED_FEATURE;
 
-	GBSplineCurve2D tmpCurve;
+	GBSplineCurve1D tmpCurve;
 	GError err = HigherDegree(HowManyTimes, tmpCurve);
 	if (err == G_NO_ERROR)
 		(*this) = tmpCurve;
@@ -1205,7 +996,7 @@ GError GBSplineCurve2D::HigherDegree(const GInt32 HowManyTimes) {
 }
 
 // increases by one the degree of the curve and gives the result out
-GError GBSplineCurve2D::HigherDegree(const GInt32 HowManyTimes, GBSplineCurve2D& OutputCurve) const {
+GError GBSplineCurve1D::HigherDegree(const GInt32 HowManyTimes, GBSplineCurve1D& OutputCurve) const {
 
 	GInt32 p = gDegree;
 	GInt32 mpi, i, j, k, b, ph, ph2, kind, cind, mul, a, m, r, oldr,
@@ -1224,13 +1015,13 @@ GError GBSplineCurve2D::HigherDegree(const GInt32 HowManyTimes, GBSplineCurve2D&
 	// coefficients for degree elevating the Bezier segments
 	GDynArray<GReal> bezalfs((p + t + 1) * (p + 1));
 	// pth-degree Bezier control points of the current segment
-	GDynArray<GPoint2> bpts(p + 1);
+	GDynArray<GReal> bpts(p + 1);
 	// (p + HowManyTimes)th-degree Bezier control points of the current segment
-	GDynArray<GPoint2> ebpts(p + t + 1);
+	GDynArray<GReal> ebpts(p + t + 1);
 	// leftmost control points of the next Bezier segment
-	GDynArray<GPoint2> Nextbpts(p - 1);
+	GDynArray<GReal> Nextbpts(p - 1);
 	// new control points
-	GDynArray<GPoint2> Qw(PointsCount() + s + 1);
+	GDynArray<GReal> Qw(PointsCount() + s + 1);
 	// new knots
 	GDynArray<GReal> Uh(KnotsCount() + s + 2);
 	// knot insertion alphas
@@ -1309,7 +1100,7 @@ GError GBSplineCurve2D::HigherDegree(const GInt32 HowManyTimes, GBSplineCurve2D&
 		// degree elevate Bezier
 		for (i = lbz; i <= ph; i++) {
 			// only points lbz, ..., ph are used below
-			ebpts[i].Set(0, 0);
+			ebpts[i] = 0;
 			mpi = GMath::Min(p, i);
 			for (j = GMath::Max(0, i - t); j <= mpi; j++)
 				ebpts[i] = ebpts[i] + BEZALFS(i, j) * bpts[j];
@@ -1383,10 +1174,10 @@ GError GBSplineCurve2D::HigherDegree(const GInt32 HowManyTimes, GBSplineCurve2D&
 
 // cut the curve, giving the 2 new set of control points that represents 2 Bezier curve (with the
 // same degree of the original one)
-GError GBSplineCurve2D::DoCut(const GReal u, GCurve2D *RightCurve, GCurve2D *LeftCurve) const {
+GError GBSplineCurve1D::DoCut(const GReal u, GCurve1D *RightCurve, GCurve1D *LeftCurve) const {
 
-	GBSplineCurve2D *rCurve = (GBSplineCurve2D *)RightCurve;
-	GBSplineCurve2D *lCurve = (GBSplineCurve2D *)LeftCurve;
+	GBSplineCurve1D *rCurve = (GBSplineCurve1D *)RightCurve;
+	GBSplineCurve1D *lCurve = (GBSplineCurve1D *)LeftCurve;
 
 	if (u == DomainStart()) {
 		if (rCurve)
@@ -1405,11 +1196,10 @@ GError GBSplineCurve2D::DoCut(const GReal u, GCurve2D *RightCurve, GCurve2D *Lef
 	}
 
 	GInt32 k, i, j, s, h, r;
-	GDynArray<GPoint2> leftPoints, rightPoints;
-	GDynArray<GPoint2> deBoor;
+	GDynArray<GReal> leftPoints, rightPoints;
+	GDynArray<GReal> deBoor;
 	GDynArray<GReal> leftKnots, rightKnots;
-	GPoint2 v;
-	GReal den, a;
+	GReal den, a, v;
 
 	k = FindSpanMult(u, s);
 	h = gDegree - s;
@@ -1482,68 +1272,10 @@ GError GBSplineCurve2D::DoCut(const GReal u, GCurve2D *RightCurve, GCurve2D *Lef
 	return G_NO_ERROR;
 }
 
-// flats (tessellates) the curve specifying a max error/variation (chordal distance)
-GError GBSplineCurve2D::Flatten(GDynArray<GPoint2>& Contour, const GReal MaxDeviation,
-								const GBool IncludeLastPoint) const {
-
-	GInt32 i;
-	GError err;
-
-	if (MaxDeviation <= 0)
-		return G_INVALID_PARAMETER;
-
-	i = PointsCount();
-	if (i <= 0)
-		return G_NO_ERROR;
-
-	GPoint2 p0, p1;
-	if (gOpened) {
-		p0 = gPoints[0];
-		p1 = gPoints[i - 1];
-	}
-	else {
-		p0 = Evaluate(DomainStart());
-		p1 = Evaluate(DomainEnd());
-	}
-
-	err = GCurve2D::Flatten(DomainStart(), DomainEnd(), p0, p1, Contour, MaxDeviation);
-	if ((err == G_NO_ERROR) && (IncludeLastPoint))
-		Contour.push_back(p1);
-
-	return err;
-}
-
-// get max variation (chordal distance) in the range [u0;u1]; here are necessary also
-// curve evaluations at the interval ends
-GReal GBSplineCurve2D::Variation(const GReal u0, const GReal u1,
-								const GPoint2& p0, const GPoint2& p1) const {
-
-	GInt32 i, numSeg;
-	GReal step, u, curVariation, tmpVariation;
-	GPoint2 v;
-	GRay2 ray(p0, p1 - p0);
-
-	// normalize ray direction
-	ray.Normalize();
-	// taken from Graphics Gems 3: "Curve tessellation criteria through sampling"
-	numSeg = 2 * (gDegree + 1);
-	step = (u1 - u0) / (GReal)numSeg;
-	u = u0;
-	curVariation = -1.0;
-	for (i = 0; i < numSeg - 1; i++) {
-		u += step;
-		v = Evaluate(u);
-		tmpVariation = DistanceSquared(v, ray); 
-		if (tmpVariation > curVariation)
-			curVariation = tmpVariation;
-	}
-	return curVariation;
-}
-
 // cloning function
-GError GBSplineCurve2D::BaseClone(const GElement& Source) {
+GError GBSplineCurve1D::BaseClone(const GElement& Source) {
 
-	const GBSplineCurve2D& k = (const GBSplineCurve2D&)Source;
+	const GBSplineCurve1D& k = (const GBSplineCurve1D&)Source;
 
 	// copy control points and knots
 	gPoints = k.gPoints;
@@ -1557,7 +1289,7 @@ GError GBSplineCurve2D::BaseClone(const GElement& Source) {
 	gOpened = k.gOpened;
 	gUniform = k.gUniform;
 	gBasisFuncEval = k.gBasisFuncEval;
-	return GCurve2D::BaseClone(Source);
+	return GCurve1D::BaseClone(Source);
 }
 
 // taken from Numerical Recipes in C and adapted to the spline case (optimized)
@@ -1624,7 +1356,7 @@ static void BandEncodec(GDynArray<GReal>& a, const GInt32 n, const GInt32 m1,
 // taken from Numerical Recipes in C and adapted to the spline case (optimized)
 static void BandedBackSubstitution(GDynArray<GReal>& a, const GInt32 n, const GInt32 m1, const GInt32 m2,
 								   const GDynArray<GReal>& al, const GDynArray<GInt32>& indx,
-								   GDynArray<GPoint2>& b) {
+								   GDynArray<GReal>& b) {
 
 	// Given the arrays a, al, and indx as returned from bandec, and given a right-hand side vector
 	// b[0..n-1], solves the band diagonal linear equations A · x = b. The solution vector x overwrites
@@ -1632,7 +1364,7 @@ static void BandedBackSubstitution(GDynArray<GReal>& a, const GInt32 n, const GI
 	// with different right-hand sides
 	GInt32 i, k, l;
 	GInt32 mm;
-	GPoint2 dum;
+	GReal dum;
 	#define A(i, j) a[(i) * (m1 + m2 + 1) + (j)]
 	#define AL(i, j) al[(i) * m1 + (j)]
 	#define SWAP(a, b) { dum = (a); (a) = (b); (b) = dum; }
@@ -1666,9 +1398,9 @@ static void BandedBackSubstitution(GDynArray<GReal>& a, const GInt32 n, const GI
 
 
 // resolve banded system for curve fitting
-GError GBSplineCurve2D::SolveBandedSystem(const GDynArray<GReal>& BasisMatrix, const GInt32 MatrixSize,
+GError GBSplineCurve1D::SolveBandedSystem(const GDynArray<GReal>& BasisMatrix, const GInt32 MatrixSize,
 										  const GInt32 LeftSemiBandWidth, const GInt32 RightSemiBandWidth,
-										  GDynArray<GPoint2>& Rhs) {
+										  GDynArray<GReal>& Rhs) {
 
 	GInt32 i, j;
 
@@ -1698,7 +1430,7 @@ GError GBSplineCurve2D::SolveBandedSystem(const GDynArray<GReal>& BasisMatrix, c
 }
 
 // curve (global) fitting
-GError GBSplineCurve2D::GlobalFit(const GInt32 Degree, const GDynArray<GPoint2>& FitPoints,
+GError GBSplineCurve1D::GlobalFit(const GInt32 Degree, const GDynArray<GReal>& FitPoints,
 								  const GReal MinKnotValue, const GReal MaxKnotValue) {
 
 	if ((Degree <= 0) || (Degree >= (GInt32)FitPoints.size()))
@@ -1733,8 +1465,8 @@ GError GBSplineCurve2D::GlobalFit(const GInt32 Degree, const GDynArray<GPoint2>&
 }
 
 // curve (global) fitting with first derivative specified at end points
-GError GBSplineCurve2D::GlobalFit(const GInt32 Degree, const GDynArray<GPoint2>& FitPoints,
-								  const GVector2& Derivative0, const GVector2& Derivative1,
+GError GBSplineCurve1D::GlobalFit(const GInt32 Degree, const GDynArray<GReal>& FitPoints,
+								  const GReal Derivative0, const GReal Derivative1,
 								  const GReal MinKnotValue, const GReal MaxKnotValue) {
 
 	GInt32 i, j, span, n = (GInt32)FitPoints.size() - 1, m;
@@ -1750,7 +1482,7 @@ GError GBSplineCurve2D::GlobalFit(const GInt32 Degree, const GDynArray<GPoint2>&
 	GDynArray<GReal> matrix((n + 3) * (n + 3), 0);
 	GDynArray<GReal> knots(m + 1);
 	GDynArray<GReal> uk(n + 1);
-	GDynArray<GPoint2> rhs(n + 3);
+	GDynArray<GReal> rhs(n + 3);
 	GReal *basisFuncs, oneOverDegree;
 	#define MATRIX(i, j) matrix[(i)*(n + 3) + (j)]
 
@@ -1803,7 +1535,7 @@ GError GBSplineCurve2D::GlobalFit(const GInt32 Degree, const GDynArray<GPoint2>&
 }
 
 // curve (global) natural (second derivaives = 0) fitting
-GError GBSplineCurve2D::GlobalNaturalFit(const GInt32 Degree, const GDynArray<GPoint2>& FitPoints,
+GError GBSplineCurve1D::GlobalNaturalFit(const GInt32 Degree, const GDynArray<GReal>& FitPoints,
 										 const GReal MinKnotValue, const GReal MaxKnotValue) {
 
 	GInt32 i, j, span, n = (GInt32)FitPoints.size() - 1, m;
@@ -1819,7 +1551,7 @@ GError GBSplineCurve2D::GlobalNaturalFit(const GInt32 Degree, const GDynArray<GP
 	GDynArray<GReal> matrix((n + 3) * (n + 3), 0);
 	GDynArray<GReal> knots(m + 1);
 	GDynArray<GReal> uk(n + 1);
-	GDynArray<GPoint2> rhs(n + 3);
+	GDynArray<GReal> rhs(n + 3);
 	GReal *basisFuncs, c;
 	#define MATRIX(i, j) matrix[(i)*(n + 3) + (j)]
 
@@ -1839,10 +1571,10 @@ GError GBSplineCurve2D::GlobalNaturalFit(const GInt32 Degree, const GDynArray<GP
 
 	// build rhs
 	rhs[0] = FitPoints[0];
-	rhs[1] = G_NULL_POINT2;
+	rhs[1] = 0;
 	for (i = 1; i <= n - 1; i++)
 		rhs[i + 1] = FitPoints[i];
-	rhs[n + 1] = G_NULL_POINT2;
+	rhs[n + 1] = 0;
 	rhs[n + 2] = FitPoints[n];
 
 	// set basic structures to the output curve
@@ -1878,8 +1610,8 @@ GError GBSplineCurve2D::GlobalNaturalFit(const GInt32 Degree, const GDynArray<GP
 }
 
 // curve (global) fitting with first derivative specified at each point
-GError GBSplineCurve2D::GlobalFit(const GInt32 Degree, const GDynArray<GPoint2>& FitPoints,
-								  const GDynArray<GVector2>& Derivatives,
+GError GBSplineCurve1D::GlobalFit(const GInt32 Degree, const GDynArray<GReal>& FitPoints,
+								  const GDynArray<GReal>& Derivatives,
 								  const GReal MinKnotValue, const GReal MaxKnotValue) {
 
 	GInt32 n = (GInt32)FitPoints.size() - 1, m, i, j, k, span;
@@ -1896,7 +1628,7 @@ GError GBSplineCurve2D::GlobalFit(const GInt32 Degree, const GDynArray<GPoint2>&
 		m = (n + Degree + 1) + (n + 1);
 
 	GDynArray<GReal> matrix(2 * (n + 1) * 2 * (n + 1), 0);
-	GDynArray<GPoint2> rhs(2 * (n + 1));
+	GDynArray<GReal> rhs(2 * (n + 1));
 	GDynArray<GReal> knots(m + 1);
 	GDynArray<GReal> uk(n + 1);
 	GReal *basisFuncs, *derFuncs, oneOverDegree, u;

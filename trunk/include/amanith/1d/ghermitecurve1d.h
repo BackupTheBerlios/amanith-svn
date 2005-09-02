@@ -1,7 +1,7 @@
 /****************************************************************************
-** $file: amanith/2d/gpolylinecurve2d.h   0.1.0.0   edited Jun 30 08:00
+** $file: amanith/1d/ghermitecurve1d.h   0.1.0.0   edited Jun 30 08:00
 **
-** 2D Polyline curve segment definition.
+** 1D Hermite curve segment definition.
 **
 **
 ** Copyright (C) 2004-2005 Mazatech Inc. All rights reserved.
@@ -26,99 +26,120 @@
 ** not clear to you.
 **********************************************************************/
 
-#ifndef GPOLYLINECURVE2D_H
-#define GPOLYLINECURVE2D_H
+#ifndef GHERMITECURVE1D_H
+#define GHERMITECURVE1D_H
 
 /*!
-	\file gpolylinecurve2d.h
-	\brief Header file for 2D polyline multicurve class.
+	\file ghermitecurve1d.cpp
+	\brief Header file for 1D Hermite multicurve class.
 */
 
-#include "amanith/2d/gmulticurve2d.h"
+#include "amanith/1d/gmulticurve1d.h"
+#include "amanith/1d/gbeziercurve1d.h"
 
 namespace Amanith {
 
 
 	// *********************************************************************
-	//                           GPolyLineCurve2D
+	//                           GHermiteCurve1D
 	// *********************************************************************
-
-	//! GPolyLineCurve2D static class descriptor.
-	static const GClassID G_POLYLINECURVE2D_CLASSID = GClassID("GPolyLineCurve2D", 0x4F63C069, 0x48094CA5, 0xA141CD40, 0x1944335A);
+	
+	//! GHermiteCurve1D static class descriptor.
+	static const GClassID G_HERMITECURVE1D_CLASSID = GClassID("GHermiteCurve1D", 0x3B5F03EB, 0x68B14C3A, 0x85188E50, 0x463A5DFE);
 
 	/*!
-		\struct GPolyLineKey2D
-		\brief Polyline key structure.
+		\struct GHermiteKey1D
+		\brief 1D Hermite key structure.
 
-		This structure represents a polyline key. The key is described by its domain parameter and its point position.
+		This structure represents an 1D Hermite key. The key is described by its domain parameter, point position, incoming
+		tangent and outcoming tangent.
 	*/
-	struct GPolyLineKey2D {
+	struct GHermiteKey1D {
 		//! Domain parameter.
 		GReal Parameter;
-		//! Key value, a 2D geometric point.
-		GPoint2 Value;
+		//! Key value, a 1D geometric point.
+		GReal Value;
+		//! Incoming tangent value.
+		GReal InTangent;
+		//! Outcoming tangent value.
+		GReal OutTangent;
 
-		//! Default constructor, set domain parameter at 0 and point value at origin.
-		GPolyLineKey2D() {
+		//! Default constructor, set domain parameter at 0, point value at origin, and null tangents.
+		GHermiteKey1D() {
 			Parameter = 0;
+			Value = InTangent = OutTangent = 0;
 		}
-		//! Set constructor, specifying domain parameter and the 2D point value.
-		GPolyLineKey2D(const GReal _Parameter, const GPoint2& _Value) : Parameter(_Parameter), Value(_Value) {
+		//! Set constructor, specifying domain parameter and key point; tangents are set to null values.
+		GHermiteKey1D(const GReal _Parameter, const GReal _Value) : Parameter(_Parameter), Value(_Value) {
+			InTangent = OutTangent = 0;
+		}
+		//! Set constructor, specifying all data.
+		GHermiteKey1D(const GReal _Parameter, const GReal _Value, const GReal _InTangent,
+					  const GReal _OutTangent) : Parameter(_Parameter), Value(_Value), InTangent(_InTangent),
+					  OutTangent(_OutTangent) {
 		}
 		//! Copy constructor.
-		GPolyLineKey2D(const GPolyLineKey2D& Source) {
+		GHermiteKey1D(const GHermiteKey1D& Source) {
 			Parameter = Source.Parameter;
 			Value = Source.Value;
+			InTangent = Source.InTangent;
+			OutTangent = Source.OutTangent;
 		}
 		//! Assignment operator.
-		GPolyLineKey2D& operator =(const GPolyLineKey2D& Source) {
+		GHermiteKey1D& operator =(const GHermiteKey1D& Source) {
 			Parameter = Source.Parameter;
 			Value = Source.Value;
+			InTangent = Source.InTangent;
+			OutTangent = Source.OutTangent;
 			return *this;
 		}
 	};
 
 
 	/*!
-		\class GPolyLineCurve2D
-		\brief This class implements a 2D polyline multicurve.
+		\class GHermiteCurve1D
+		\brief This class implements a 1D Hermite multicurve.
 
-		A polyline multicurve is a curve made of straight line traits.
+		An Hermite multicurve is a curve made of Hermite traits. An Hermite trait is a parametric cubic curve, defined
+		by two points and two tangent vectors, as you can see in the image below.
+		\image html herm_trait.gif "Hermite trait example"
+
+		This kind of curve is called 'cardinal', it interpolates the two point and the two tangents. From P0's point
+		of view, T0 is called 'outcoming' tangent. From P1's point of view, T1 is called 'incoming' tangent.
 	*/
-	class G_EXPORT GPolyLineCurve2D : public GMultiCurve2D {
+	class G_EXPORT GHermiteCurve1D : public GMultiCurve1D {
 
 	private:
-		//! Array of polyline keys that build the curve.
-		GDynArray<GPolyLineKey2D> gKeys;
+		struct GHermiteCallBackData {
+			const GHermiteCurve1D* Curve;
+			GUInt32 KeyIndex;
+			// constructor
+			GHermiteCallBackData(const GHermiteCurve1D *_Curve, const GUInt32 _KeyIndex) {
+				Curve = _Curve;
+				KeyIndex = _KeyIndex;
+			}
+		};
+
+		//! Array of Hermite keys that build the curve.
+		GDynArray<GHermiteKey1D> gKeys;
 
 	protected:
 		//! Sort keys, in ascending order respect to domain parameters.
 		void SortKeys();
-		/*!
-			Get max variation (squared chordal distance) in the range [u0; u1]; here are necessary also
-			curve evaluations at the interval ends.
-
-			\param u0 lower bound of interested interval
-			\param u1 upper bound of interested interval
-			\param p0 the point corresponding to the curve evaluation at u0
-			\param p1 the point corresponding to the curve evaluation at u1
-			\note The interval is ensured to be completely inside the curve domain.
-		*/
-		GReal Variation(const GReal u0, const GReal u1,	const GPoint2& p0, const GPoint2& p1) const;
-		//! Cloning function, copies (physically) a Source polyline curve into this curve.
+		//! Cloning function, copies (physically) a Source Hermite curve into this curve.
 		GError BaseClone(const GElement& Source);
 		/*!
 			Curve subdivision.
 
-			Cuts the curve at specified parameter, and return left and right polyline arcs.
+			Cuts the curve at specified parameter, and return left and right Hermite arcs.
 
 			\param u domain parameter specifying where to cut the curve.
 			\param RightCurve if non-NULL, the function must return the right arc generated by cutting operation.
 			\param LeftCurve if non-NULL, the function must return the left arc generated by cutting operation.
 			\note The domain parameter is ensured to be completely inside the curve domain. Furthermore RightCurve and
-			LeftCurve parameters, if specified, are ensured to be GPolyLineCurve2D classes (so cast is type-safe).
+			LeftCurve parameters, if specified, are ensured to be GHermiteCurve1D classes (so cast is type-safe).
 		*/
-		GError DoCut(const GReal u, GCurve2D *RightCurve, GCurve2D *LeftCurve) const;
+		GError DoCut(const GReal u, GCurve1D *RightCurve, GCurve1D *LeftCurve) const;
 		/*!
 			Add a new (key)point for the curve.
 
@@ -131,7 +152,7 @@ namespace Amanith {
 			by another (key)point. In this case the already existing point is overridden by the created point.
 			\return G_NO_ERROR if the function succeeds, an error code otherwise.
 		*/
-		GError DoAddPoint(const GReal Parameter, const GPoint2 *NewPoint, GUInt32& Index, GBool& AlreadyExists);
+		GError DoAddPoint(const GReal Parameter, const GReal *NewPoint, GUInt32& Index, GBool& AlreadyExists);
 		/*!
 			Remove a (key)point from the curve.
 			Index is ensured to be valid and we are sure that after removing we'll have (at least) a minimal
@@ -141,6 +162,40 @@ namespace Amanith {
 			\return G_NO_ERROR if the function succeeds, an error code must be returned otherwise.
 		*/
 		GError DoRemovePoint(const GUInt32 Index);
+		/*!
+			Calculate tangents using Catmull-Rom schema.
+			
+			\param Index0 the lower key index, where to begin to calculate tangents.
+			\param Index1 the upper key index, where to end to calculate tangents.
+		*/
+		void CalcCatmullRomTangents(const GUInt32 Index0, const GUInt32 Index1);
+		/*!
+			Calculate the length of the Index-th Hermite trait, specifying a trait's subdomain range.
+		*/
+		GReal SegmentLength(const GUInt32 Index, const GReal MinParam, const GReal MaxParam,
+							const GReal MaxError) const;
+		/*!
+			Calculate the curve value for a specified Index-th Hermite trait. The passed domain parameter must
+			reside inside the trait's subdomain.
+		*/
+		GReal SegmentEvaluate(const GUInt32 Index, const GReal Parameter) const;
+		/*!
+			Calculate the curve derivative for a specified Index-th Hermite trait. The passed domain parameter must
+			reside inside the trait's subdomain. The order of derivative is specified through Order parameter.
+		*/
+		GReal SegmentDerivative(const GUInt32 Index, const GDerivativeOrder Order, const GReal Parameter) const;
+
+		GReal SegmentTangent(const GUInt32 Index, const GDerivativeOrder Order, const GReal Parameter) const;
+		/*!
+			This method do the actual Bezier conversion.
+
+			\param Index the Hermite trait index to be converted. It must be valid.
+			\param Result the resulting Bezier curve.
+			\return G_NO_ERROR in operation succeeds, an error code otherwise.
+		*/
+		void SegmentToBezierConversion(const GUInt32 Index, GBezierCurve1D& Result) const;
+		// static speed evaluation callback (useful for length evaluation)
+		static GReal SegmentSpeedEvaluationCallBack(const GReal u, void *Data);
 		/*!
 			Get domain parameter corresponding to specified (key)point index.
 			Index is ensured to be valid.
@@ -157,7 +212,7 @@ namespace Amanith {
 			\param Index the point index, is ensured to be always valid.
 			\param NewParamValue the new domain parameter, where to move the specified (key)point. It can be outside
 			current domain.
-			\param NewIndex the new position (internal index) occupied by the moved (key)point. This method	outputs
+			\param NewIndex the new position (internal index) occupied by the moved (key)point. This method outputs
 			this value.
 			\param AlreadyExists this method writes to this flag a G_TRUE value if the point has been
 			moved in a domain position already occupied by another (key)point. In this case the already existing
@@ -168,12 +223,12 @@ namespace Amanith {
 								   GUInt32& NewIndex, GBool& AlreadyExists);
 
 	public:
-		//! Default constructor, constructs and empty polyline curve.
-		GPolyLineCurve2D();
-		//! Constructor with kernel specification, constructs and empty polyline curve.
-		GPolyLineCurve2D(const GElement* Owner);
+		//! Default constructor, constructs and empty Hermite curve.
+		GHermiteCurve1D();
+		//! Constructor with kernel specification, constructs and empty Hermite curve.
+		GHermiteCurve1D(const GElement* Owner);
 		//! Destructor, free all keys and other internal structures.
-		~GPolyLineCurve2D();
+		~GHermiteCurve1D();
 		//! Clear the curve (remove keys, free internal structures and set an empty domain).
 		void Clear();
 		//! Returns number of key points.
@@ -181,32 +236,33 @@ namespace Amanith {
 			return (GInt32)gKeys.size();
 		}
 		/*!
-			Given a domain value, it returns the span index that includes it.
+		Given a domain value, it returns the span index that includes it.
 
-			\param Param the domain parameter
-			\param KeyIndex the lower key index of the interval where Param is included. Param is contained
-			in the interval [KeyIndex, KeyIndex+1)
-			\return G_TRUE if the domain value is inside the current domain, G_FALSE otherwise.
-			\note if Param is equal to DomainEnd(), then the index KeyIndex+1 is not valid. So you must
-			check this case before calling ParamToKeyIndex.
+		\param Param the domain parameter
+		\param KeyIndex the lower key index of the interval where Param is included. Param is contained
+		in the interval [KeyIndex, KeyIndex+1)
+		\return G_TRUE if the domain value is inside the current domain, G_FALSE otherwise.
+		\note if Param is equal to DomainEnd(), then the index KeyIndex+1 is not valid. So you must
+		check this case before calling ParamToKeyIndex.
 		*/
 		GBool ParamToKeyIndex(const GReal Param, GUInt32& KeyIndex) const;
-		//! Get Index-th key point; Index must be valid, else a point with infinitive components is returned.
-		GPoint2 Point(const GInt32 Index) const;
+		//! Get Index-th key point; Index must be valid, else a point with infinitive component is returned.
+		GReal Point(const GInt32 Index) const;
 		//! Set Index-th (key)point; Index must be valid.
-		GError SetPoint(const GInt32 Index, const GPoint2& NewPoint);
+		GError SetPoint(const GInt32 Index, const GReal NewPoint);
 		/*!
-			Construct a new polyline curve, specifying just interpolated (key)points.
+			Construct a new Hermite curve, specifying just interpolated (key)points.
+			Key tangents will be calculated using a Catmull-Rom schema.
 
-			\param NewPoints the array of points of the curve. Each point will be interpolated (polyline curves
+			\param NewPoints the array of points of the curve. Each point will be interpolated (Hermite curves
 			passes through key points).
 			\param NewMinValue the lower bound of the curve domain.
 			\param NewMaxValue the upper bound of the curve domain.
 			\param Uniform if G_TRUE, keys will be generated uniformly (spanning the new domain uniformly). If G_FALSE
-			keys position will be calculated using a chord-length parametrization.
+			keys position will be calculated using length of each Hermite trait.
 			\return G_NO_ERROR if the operation succeeds, an error code otherwise.
 		*/
-		GError SetPoints(const GDynArray<GPoint2>& NewPoints,
+		GError SetPoints(const GDynArray<GReal>& NewPoints,
 						 const GReal NewMinValue, const GReal NewMaxValue, const GBool Uniform = G_FALSE);
 		/*!
 			Get a key, specifying its index.
@@ -215,28 +271,40 @@ namespace Amanith {
 			\param KeyValue the variable where the requested key will be outputted.
 			\return G_NO_ERROR if the operation succeeds, an error code otherwise.
 		*/
-		GError Key(const GUInt32 Index, GPolyLineKey2D& KeyValue) const;
+		GError Key(const GUInt32 Index, GHermiteKey1D& KeyValue) const;
 		//! Get the internal keys array.
-		const GDynArray<GPolyLineKey2D>& Keys() const {
+		const GDynArray<GHermiteKey1D>& Keys() const {
 			return gKeys;
 		}
 		/*!
-			Build the polyline curve, specifying keys.
+			Build the Hermite curve, specifying keys.
 
 			\param NewKeys the keys that will constitute the curve. Can be unsorted by domain values.
 			\return G_NO_ERROR if the operation succeeds, an error code otherwise.
 			\note The specified keys array must contain at least 2 keys, else a G_INVALID_PARAMETER error code will be
 			returned.
 		*/
-		GError SetKeys(const GDynArray<GPolyLineKey2D>& NewKeys);
+		GError SetKeys(const GDynArray<GHermiteKey1D>& NewKeys);
 		/*!
 			Set a new geometric value.
 
 			\param Index the index of the key we want to set. Must be valid.
-			\param NewKeyValue the new point 2D position.
+			\param NewKeyValue the new point value.
+			\param InTangent the new incoming tangent value.
+			\param OutTangent the new outcoming tangent value.
 			\return G_NO_ERROR if the operation succeeds, an error code otherwise.
 		*/
-		GError SetKey(const GUInt32 Index, const GPoint2& NewKeyValue);
+		GError SetKey(const GUInt32 Index, const GReal NewKeyValue, const GReal InTangent, const GReal OutTangent);
+		/*
+			Add a key to the curve.
+
+			\param NewKey the key to add.
+			\param InsertedIndex the index (into the internal keys array) where the key has been inserted.
+			\param AlreadyExists a G_TRUE value means that the added key has overridden an already existing key, because
+			they occupied the same domain position.
+		
+		GError AddKey(const GHermiteKey1D& NewKey, GUInt32& InsertedIndex, GBool& AlreadyExists);*/
+
 		/*!
 			Set curve domain.
 
@@ -252,41 +320,17 @@ namespace Amanith {
 		*/
 		GError SetDomain(const GReal NewMinValue, const GReal NewMaxValue);
 		/*!
-			Intersect the polyline curve with a normalized ray, and returns a list of intersections.
-
-			\param NormalizedRay a normalized ray used for intersection test. Ray must be normalized, else incorrect
-			results are possible.
-			\param Intersections every found intersection will be appended to this array. Each intersection is a 2D
-			vector; it has at position 0 the curve parameter (domain) value corresponding to the intersection, and at
-			position 1 the ray parameter value corresponding to the intersection.
-			\param Precision the precision used to find every solution.
-			\param MaxIterations number of max iterations this method can loop for each found solution.
-			\note For polyline curves the MaxIterations parameter is not used, but still required for consistent public
-			interface.
-		*/
-		GBool IntersectRay(const GRay2& NormalizedRay, GDynArray<GVector2>& Intersections,
-						   const GReal Precision = G_EPSILON, const GInt32 MaxIterations = 100) const;
-		/*!
-			Flats the curve specifying a max error/variation (squared chordal distance).
-
-			\param Contour a dynamic array where this function has to append generated points.
-			\param MaxDeviation maximum squared chordal distance we wanna reach (maximum permitted deviation).
-			\param IncludeLastPoint if G_TRUE the function must append last curve point (the point corresponding to
-			domain upper bound parameter). If G_FALSE last point must not be included.
-			\note For polyline curves the MaxDeviation parameter is not used, but still required for consistent public
-			interface.
-		*/
-		GError Flatten(GDynArray<GPoint2>& Contour, const GReal MaxDeviation,
-					   const GBool IncludeLastPoint = G_TRUE) const;
-		/*!
 			Returns the length of the curve between the 2 specified global domain values.
+
+			The implementation take care of every Hermite trait. Because at each key point the curve can be (in general)
+			only continuous (and not differentiable), we must calculate the length as the sum of single interested
+			Hermite traits length.
 
 			\param u0 the lower bound of integral
 			\param u1 the upper bound of integral
 			\param MaxError the maximum relative error (precision) at witch we wanna calculate length.
 			\return The length of curve, calculated in the domain interval [u0; u1].
-			\note For polyline curves the MaxError parameter is not used, but still required for consistent public
-			interface.
+			\note Before integration, the specified interval is checked and clamped to be be valid for this curve domain.
 		*/
 		GReal Length(const GReal u0, const GReal u1, const GReal MaxError = G_EPSILON) const;
 		/*! 
@@ -296,7 +340,7 @@ namespace Amanith {
 			\note if specified domain parameter is out of domain, StartPoint() or EndPoint() are returned (depending of
 			witch side the parameter is out).
 		*/
-		GPoint2 Evaluate(const GReal u) const;
+		GReal Evaluate(const GReal u) const;
 		/*!
 			Return the curve derivative calculated at specified domain parameter.
 
@@ -304,45 +348,57 @@ namespace Amanith {
 			\param u the domain parameter at witch we wanna evaluate curve derivative.
 			\note specified domain parameter is clamped by domain interval.
 		*/
-		GVector2 Derivative(const GDerivativeOrder Order, const GReal u) const;
+		GReal Derivative(const GDerivativeOrder Order, const GReal u) const;
+		/*!
+			Hermite to cubic Bezier conversion.
+
+			This method converts an Hermite trait into an equivalent cubic Bezier representation. The conversion can be
+			easily derived equaling their power series representations.
+
+			\param Index the Hermite trait index to be converted (the trait will be the one defined by (key)points
+			Index and Index+1). It must be valid.
+			\param Result the resulting Bezier curve.
+			\return G_NO_ERROR in operation succeeds, an error code otherwise.
+		*/
+		GError SegmentToBezier(const GUInt32 Index, GBezierCurve1D& Result);
 		//! Get class descriptor.
 		inline const GClassID& ClassID() const {
-			return G_POLYLINECURVE2D_CLASSID;
+			return G_HERMITECURVE1D_CLASSID;
 		}
 		//! Get base class (father class) descriptor.
 		inline const GClassID& DerivedClassID() const {
-			return G_MULTICURVE2D_CLASSID;
+			return G_MULTICURVE1D_CLASSID;
 		}
 	};
 
 
 	// *********************************************************************
-	//                        GPolyLineCurve2DProxy
+	//                        GHermiteCurve1DProxy
 	// *********************************************************************
 
 	/*!
-		\class GPolyLineCurve2DProxy
-		\brief This class implements a GPolyLineCurve2D proxy (provider).
+		\class GHermiteCurve1DProxy
+		\brief This class implements a GHermiteCurve1D proxy (provider).
 
-		This proxy provides the creation of GPolyLineCurve2D class instances.
+		This proxy provides the creation of GHermiteCurve1D class instances.
 	*/
-	class G_EXPORT GPolyLineCurve2DProxy : public GElementProxy {
+	class G_EXPORT GHermiteCurve1DProxy : public GElementProxy {
 	public:
-		//! Creates a new GPolyLineCurve2D instance
+		//! Creates a new GHermiteCurve1D instance
 		GElement* CreateNew(const GElement* Owner = NULL) const {
-			return new GPolyLineCurve2D(Owner);
+			return new GHermiteCurve1D(Owner);
 		}
 		//! Get class descriptor of elements type "provided" by this proxy.
 		const GClassID& ClassID() const {
-			return G_POLYLINECURVE2D_CLASSID;
+			return G_HERMITECURVE1D_CLASSID;
 		}
 		//! Get base class (father class) descriptor of elements type "provided" by this proxy.
 		const GClassID& DerivedClassID() const {
-			return G_MULTICURVE2D_CLASSID;
+			return G_MULTICURVE1D_CLASSID;
 		}
 	};
-	//! Static proxy for GPolyLineCurve2D class.
-	static const GPolyLineCurve2DProxy G_POLYLINECURVE2D_PROXY;
+	//! Static proxy for GHermiteCurve1D class.
+	static const GHermiteCurve1DProxy G_HERMITECURVE1D_PROXY;
 
 };	// end namespace Amanith
 

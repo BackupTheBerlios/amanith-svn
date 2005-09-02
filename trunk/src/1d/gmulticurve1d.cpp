@@ -1,7 +1,7 @@
 /****************************************************************************
-** $file: amanith/2d/src/gmulticurve2d.cpp   0.1.0.0   edited Jun 30 08:00
+** $file: amanith/1d/src/gmulticurve1d.cpp   0.1.0.0   edited Jun 30 08:00
 **
-** 2D Base multicurve segment implementation.
+** 1D Base multicurve segment implementation.
 **
 **
 ** Copyright (C) 2004-2005 Mazatech Inc. All rights reserved.
@@ -27,38 +27,38 @@
 **********************************************************************/
 
 /*!
-	\file gmulticurve2d.cpp
-	\brief Implementation file for GMultiCurve2D class.
+	\file gmulticurve1d.cpp
+	\brief Implementation file for GMultiCurve1D class.
 */
 
-#include "amanith/2d/gmulticurve2d.h"
+#include "amanith/1d/gmulticurve1d.h"
 
 namespace Amanith {
 
 
 // *********************************************************************
-//                           GMultiCurve2D
+//                           GMultiCurve1D
 // *********************************************************************
 
 // constructor
-GMultiCurve2D::GMultiCurve2D() : GCurve2D() {
+GMultiCurve1D::GMultiCurve1D() : GCurve1D() {
 }
 
 // constructor
-GMultiCurve2D::GMultiCurve2D(const GElement* Owner) : GCurve2D(Owner) {
+GMultiCurve1D::GMultiCurve1D(const GElement* Owner) : GCurve1D(Owner) {
 }
 
 // destructor
-GMultiCurve2D::~GMultiCurve2D() {
+GMultiCurve1D::~GMultiCurve1D() {
 }
 
 // cloning function
-GError GMultiCurve2D::BaseClone(const GElement& Source) {
-	return GCurve2D::BaseClone(Source);
+GError GMultiCurve1D::BaseClone(const GElement& Source) {
+	return GCurve1D::BaseClone(Source);
 }
 
 // get parameter corresponding to specified point index
-GError GMultiCurve2D::PointParameter(const GUInt32 Index, GReal& Parameter) const {
+GError GMultiCurve1D::PointParameter(const GUInt32 Index, GReal& Parameter) const {
 
 	GInt32 i = PointsCount();
 
@@ -73,7 +73,7 @@ GError GMultiCurve2D::PointParameter(const GUInt32 Index, GReal& Parameter) cons
 }
 
 // set parameter corresponding to specified point index
-GError GMultiCurve2D::SetPointParameter(const GUInt32 Index, const GReal NewParamValue,
+GError GMultiCurve1D::SetPointParameter(const GUInt32 Index, const GReal NewParamValue,
 										GUInt32& NewIndex, GBool& AlreadyExists) {
 
 	GInt32 i = PointsCount();
@@ -90,17 +90,17 @@ GError GMultiCurve2D::SetPointParameter(const GUInt32 Index, const GReal NewPara
 	if (err == G_NO_ERROR) {
 		// we have to update domain interval in the case that point has been front/back "appended"
 		if (NewParamValue < DomainStart() - G_EPSILON)
-			err = GCurve2D::SetDomain(NewParamValue, DomainEnd());
+			err = GCurve1D::SetDomain(NewParamValue, DomainEnd());
 		else
 		if (NewParamValue > DomainEnd() + G_EPSILON)
-			err = GCurve2D::SetDomain(DomainStart(), NewParamValue);
+			err = GCurve1D::SetDomain(DomainStart(), NewParamValue);
 	}
 	return err;
 }
 
 
 // add point on curve, at the specified parameter
-GError GMultiCurve2D::AddPoint(const GReal Parameter, GUInt32& Index, GBool& AlreadyExists) {
+GError GMultiCurve1D::AddPoint(const GReal Parameter, GUInt32& Index, GBool& AlreadyExists) {
 
 	// operation can be done only if curve is still valid (at least made of 2 keys)
 	if (PointsCount() < 2)
@@ -123,7 +123,7 @@ GError GMultiCurve2D::AddPoint(const GReal Parameter, GUInt32& Index, GBool& Alr
 	return DoAddPoint(Parameter, NULL, Index, AlreadyExists);
 }
 
-GError GMultiCurve2D::AddPoint(const GReal Parameter, const GPoint2& Point, GUInt32& Index, GBool& AlreadyExists) {
+GError GMultiCurve1D::AddPoint(const GReal Parameter, const GReal Point, GUInt32& Index, GBool& AlreadyExists) {
 
 	GError err = DoAddPoint(Parameter, &Point, Index, AlreadyExists);
 
@@ -131,20 +131,20 @@ GError GMultiCurve2D::AddPoint(const GReal Parameter, const GPoint2& Point, GUIn
 		G_ASSERT(PointsCount() > 0);
 
 		if (PointsCount() == 1)
-			GCurve2D::SetDomain(Parameter, Parameter);
+			GCurve1D::SetDomain(Parameter, Parameter);
 		else {
 			// we have to update parameter interval in the case that point has been front/back "appended"
 			if (Parameter < DomainStart() - G_EPSILON)
-				GCurve2D::SetDomain(Parameter, DomainEnd());
+				GCurve1D::SetDomain(Parameter, DomainEnd());
 			else
 			if (Parameter > DomainEnd() + G_EPSILON)
-				GCurve2D::SetDomain(DomainStart(), Parameter);
+				GCurve1D::SetDomain(DomainStart(), Parameter);
 		}
 	}
 	return err;
 }
 
-GError GMultiCurve2D::RemovePoint(const GUInt32 Index) {
+GError GMultiCurve1D::RemovePoint(const GUInt32 Index) {
 
 	GInt32 i = PointsCount();
 	GError err;
@@ -163,24 +163,24 @@ GError GMultiCurve2D::RemovePoint(const GUInt32 Index) {
 
 		GInt32 j = PointsCount();
 		if (j == 0)
-			GCurve2D::SetDomain(G_MIN_REAL, G_MIN_REAL);
+			GCurve1D::SetDomain(G_MIN_REAL, G_MIN_REAL);
 		else
 		if (j == 1) {
 			err = DoGetPointParameter(0, u);
 			if (err == G_NO_ERROR)
-				GCurve2D::SetDomain(u, u);
+				GCurve1D::SetDomain(u, u);
 		}
 		else {
 			if (Index == 0) {
 				err = DoGetPointParameter(0, u);
 				if (err == G_NO_ERROR)
-					GCurve2D::SetDomain(u, DomainEnd());
+					GCurve1D::SetDomain(u, DomainEnd());
 			}
 			else
 			if ((GInt32)Index == i - 1) {
 				err = DoGetPointParameter(j - 1, u);
 				if (err == G_NO_ERROR)
-					GCurve2D::SetDomain(DomainStart(), u);
+					GCurve1D::SetDomain(DomainStart(), u);
 			}
 		}
 	}

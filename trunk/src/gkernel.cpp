@@ -30,6 +30,13 @@
 
 // lets include standard plugin for registration
 #include "amanith/gelement.h"
+#include "amanith/gproperty.h"
+#include "amanith/1d/gcurve1d.h"
+#include "amanith/1d/gbeziercurve1d.h"
+#include "amanith/1d/gbsplinecurve1d.h"
+#include "amanith/1d/gmulticurve1d.h"
+#include "amanith/1d/gpolylinecurve1d.h"
+#include "amanith/1d/ghermitecurve1d.h"
 #include "amanith/2d/gpixelmap.h"
 #include "amanith/2d/gfont2d.h"
 #include "amanith/2d/gmesh2d.h"
@@ -152,6 +159,8 @@ GError GKernel::BaseClone(const GElement& Source) {
 void GKernel::RegisterProxies() {
 
 	RegisterElementProxy(G_ELEMENT_PROXY);
+	RegisterElementProxy(G_ANIMELEMENT_PROXY);
+	RegisterElementProxy(G_PROPERTY_PROXY);
 	RegisterElementProxy(G_IMPEXP_PROXY);
 	RegisterElementProxy(G_KERNEL_PROXY);
 
@@ -171,8 +180,15 @@ void GKernel::RegisterProxies() {
 		RegisterElementProxy(G_FONTSIMPEXP_PROXY);
 	#endif
 
+	// 1D stuff
+	RegisterElementProxy(G_CURVE1D_PROXY);
+	RegisterElementProxy(G_BEZIERCURVE1D_PROXY);
+	RegisterElementProxy(G_BSPLINECURVE1D_PROXY);
+	RegisterElementProxy(G_MULTICURVE1D_PROXY);
+	RegisterElementProxy(G_POLYLINECURVE1D_PROXY);
+	RegisterElementProxy(G_HERMITECURVE1D_PROXY);
+	// 2D stuff
 	RegisterElementProxy(G_FONT2D_PROXY);
-//	RegisterElementProxy(G_MESH2D_PROXY);
 	RegisterElementProxy(G_PATH2D_PROXY);
 	RegisterElementProxy(G_CURVE2D_PROXY);
 	RegisterElementProxy(G_BEZIERCURVE2D_PROXY);
@@ -180,6 +196,11 @@ void GKernel::RegisterProxies() {
 	RegisterElementProxy(G_MULTICURVE2D_PROXY);
 	RegisterElementProxy(G_POLYLINECURVE2D_PROXY);
 	RegisterElementProxy(G_HERMITECURVE2D_PROXY);
+
+	// animation stuff
+	RegisterElementProxy(G_CONSTANTPROPERTY1D_PROXY);
+	RegisterElementProxy(G_LINEARPROPERTY1D_PROXY);
+	RegisterElementProxy(G_HERMITEPROPERTY1D_PROXY);
 }
 
 /*!

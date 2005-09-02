@@ -326,7 +326,7 @@ int WINAPI WinMain(	HINSTANCE	hInstance,			// Instance
 			if (keys[VK_F1]) {						// Is F1 Being Pressed?
 				keys[VK_F1] = FALSE;
 				s = "Number of GL functions supported over OpenGL 1.1 standard: ";
-				s += StrUtils::ToString(gExtManager->SupportedFunctions().size()) + "\n\n";
+				s += StrUtils::ToString((unsigned int)gExtManager->SupportedFunctions().size()) + "\n\n";
 				s += "TextureUnitsCount: " + StrUtils::ToString(gExtManager->TextureUnitsCount()) + "\n";
 				if (gExtManager->IsFunctionSupported("glCopyTexSubImage3D"))
 					s += "glCopyTexSubImage3D is supported\n";
@@ -405,5 +405,5 @@ int WINAPI WinMain(	HINSTANCE	hInstance,			// Instance
 	// Shutdown
 	KillGLWindow();									// Kill The Window
 	KillApp();
-	return (msg.wParam);							// Exit The Program
+	return (int)(msg.wParam);							// Exit The Program
 }

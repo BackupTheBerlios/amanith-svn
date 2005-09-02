@@ -137,6 +137,9 @@
 			<File
 				RelativePath="..\..\src\gpluglib.cpp">
 			</File>
+			<File
+				RelativePath="..\..\src\gproperty.cpp">
+			</File>
 			<Filter
 				Name="2d"
 				Filter="">
@@ -214,6 +217,28 @@
 					RelativePath="..\..\src\support\gutilities.cpp">
 				</File>
 			</Filter>
+			<Filter
+				Name="1d"
+				Filter="">
+				<File
+					RelativePath="..\..\src\1d\gbeziercurve1d.cpp">
+				</File>
+				<File
+					RelativePath="..\..\src\1d\gbsplinecurve1d.cpp">
+				</File>
+				<File
+					RelativePath="..\..\src\1d\gcurve1d.cpp">
+				</File>
+				<File
+					RelativePath="..\..\src\1d\ghermitecurve1d.cpp">
+				</File>
+				<File
+					RelativePath="..\..\src\1d\gmulticurve1d.cpp">
+				</File>
+				<File
+					RelativePath="..\..\src\1d\gpolylinecurve1d.cpp">
+				</File>
+			</Filter>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -245,6 +270,9 @@
 			</File>
 			<File
 				RelativePath="..\..\include\amanith\gpluglib.h">
+			</File>
+			<File
+				RelativePath="..\..\include\amanith\gproperty.h">
 			</File>
 			<Filter
 				Name="2d"
@@ -382,6 +410,28 @@
 				</File>
 				<File
 					RelativePath="..\..\include\amanith\support\gutilities.h">
+				</File>
+			</Filter>
+			<Filter
+				Name="1d"
+				Filter="">
+				<File
+					RelativePath="..\..\include\amanith\1d\gbeziercurve1d.h">
+				</File>
+				<File
+					RelativePath="..\..\include\amanith\1d\gbsplinecurve1d.h">
+				</File>
+				<File
+					RelativePath="..\..\include\amanith\1d\gcurve1d.h">
+				</File>
+				<File
+					RelativePath="..\..\include\amanith\1d\ghermitecurve1d.h">
+				</File>
+				<File
+					RelativePath="..\..\include\amanith\1d\gmulticurve1d.h">
+				</File>
+				<File
+					RelativePath="..\..\include\amanith\1d\gpolylinecurve1d.h">
 				</File>
 			</Filter>
 		</Filter>

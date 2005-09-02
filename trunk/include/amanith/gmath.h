@@ -963,6 +963,13 @@ namespace Amanith {
 		}
 
 		/*!
+			Return a random number between X1 and X2 (int version)
+		*/
+		inline GUInt32 RangeRandom(const GInt32 X1, const GInt32 X2) {
+			return ((std::rand() % (X2 - X1 + 1)) + X1);
+		}
+
+		/*!
 			Degree to radian conversion (float version).
 
 			\param DegValue value to convert, expressed in degrees.
