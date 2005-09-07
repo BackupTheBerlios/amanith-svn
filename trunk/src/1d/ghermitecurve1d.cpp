@@ -72,17 +72,17 @@ GError GHermiteCurve1D::BaseClone(const GElement& Source) {
 }
 
 // get Index-th control point
-GReal GHermiteCurve1D::Point(const GInt32 Index) const {
+GReal GHermiteCurve1D::Point(const GUInt32 Index) const {
 
-	if ((Index < 0) || (Index >= PointsCount()))
+	if (Index >= PointsCount())
 		return G_MIN_REAL;
 	return gKeys[Index].Value;
 }
 
 // set Index-th control point
-GError GHermiteCurve1D::SetPoint(const GInt32 Index, const GReal NewPoint) {
+GError GHermiteCurve1D::SetPoint(const GUInt32 Index, const GReal NewPoint) {
 
-	if ((Index < 0) || (Index >= PointsCount()))
+	if (Index >= PointsCount())
 		return G_OUT_OF_RANGE;
 	gKeys[Index].Value = NewPoint;
 	return G_NO_ERROR;
@@ -91,7 +91,7 @@ GError GHermiteCurve1D::SetPoint(const GInt32 Index, const GReal NewPoint) {
 // get a key
 GError GHermiteCurve1D::Key(const GUInt32 Index, GHermiteKey1D& KeyValue) const {
 
-	if (Index >= (GUInt32)PointsCount())
+	if (Index >= PointsCount())
 		return G_OUT_OF_RANGE;
 	KeyValue = gKeys[Index];
 	return G_NO_ERROR;
@@ -101,9 +101,7 @@ GError GHermiteCurve1D::Key(const GUInt32 Index, GHermiteKey1D& KeyValue) const 
 GError GHermiteCurve1D::SetKey(const GUInt32 Index, const GReal NewKeyValue,
 							   const GReal InTangent, const GReal OutTangent) {
 
-	GInt32 i = PointsCount();
-
-	if ((GInt32)Index >= i)
+	if (Index >= PointsCount())
 		return G_OUT_OF_RANGE;
 
 	gKeys[Index].Value = NewKeyValue;
@@ -123,7 +121,7 @@ GError GHermiteCurve1D::DoGetPointParameter(const GUInt32 Index, GReal& Paramete
 GError GHermiteCurve1D::DoSetPointParameter(const GUInt32 Index, const GReal NewParamValue,
 											GUInt32& NewIndex, GBool& AlreadyExists) {
 
-	GUInt32 i, j = (GUInt32)PointsCount(), deleteIndex = 0;
+	GUInt32 i, j = PointsCount(), deleteIndex = 0;
 	GError err;
 	GReal dtdu = 0, dtdu1 = 0, dtdu2 = 0;
 	GBool b, sameInterval, deleteKey;
@@ -256,7 +254,7 @@ void GHermiteCurve1D::CalcCatmullRomTangents(const GUInt32 Index0, const GUInt32
 	}
 
 	// full Catmull-Rom schema (3 or more keys)
-	GUInt32 i, j = (GUInt32)PointsCount(), i0, i1;
+	GUInt32 i, j = PointsCount(), i0, i1;
 	GReal cso, csi;
 	GReal v1, v2;
 
@@ -307,7 +305,7 @@ GReal GHermiteCurve1D::SegmentSpeedEvaluationCallBack(const GReal u, void *Data)
 GReal GHermiteCurve1D::SegmentLength(const GUInt32 Index, const GReal MinParam, const GReal MaxParam,
 									 const GReal MaxError) const {
 
-	G_ASSERT((GInt32)Index < PointsCount() - 1);
+	G_ASSERT((GInt32)Index < (GInt32)PointsCount() - 1);
 	G_ASSERT(MinParam >= gKeys[Index].Parameter && MaxParam <= gKeys[Index + 1].Parameter);
 
 	GHermiteCallBackData callBackData(this, Index);
@@ -322,7 +320,7 @@ GReal GHermiteCurve1D::SegmentLength(const GUInt32 Index, const GReal MinParam, 
 // Index is valid and also parameter value is inside segment range
 GReal GHermiteCurve1D::SegmentEvaluate(const GUInt32 Index, const GReal Parameter) const {
 
-	G_ASSERT((GInt32)Index < PointsCount() - 1);
+	G_ASSERT((GInt32)Index < (GInt32)PointsCount() - 1);
 	G_ASSERT(Parameter >= gKeys[Index].Parameter && Parameter <= gKeys[Index + 1].Parameter);
 
 	GReal t = (Parameter - gKeys[Index].Parameter) / (gKeys[Index + 1].Parameter - gKeys[Index].Parameter);
@@ -340,7 +338,7 @@ GReal GHermiteCurve1D::SegmentEvaluate(const GUInt32 Index, const GReal Paramete
 GReal GHermiteCurve1D::SegmentTangent(const GUInt32 Index, const GDerivativeOrder Order,
 									  const GReal Parameter) const {
 
-	G_ASSERT((GInt32)Index < PointsCount() - 1);
+	G_ASSERT((GInt32)Index < (GInt32)PointsCount() - 1);
 	G_ASSERT(Parameter >= gKeys[Index].Parameter && Parameter <= gKeys[Index + 1].Parameter);
 
 	GReal dtdu = 1 / (gKeys[Index + 1].Parameter - gKeys[Index].Parameter);
@@ -374,7 +372,7 @@ GReal GHermiteCurve1D::SegmentTangent(const GUInt32 Index, const GDerivativeOrde
 GReal GHermiteCurve1D::SegmentDerivative(const GUInt32 Index, const GDerivativeOrder Order,
 										 const GReal Parameter) const{
 
-	G_ASSERT((GInt32)Index < PointsCount() - 1);
+	G_ASSERT((GInt32)Index < (GInt32)PointsCount() - 1);
 	G_ASSERT(Parameter >= gKeys[Index].Parameter && Parameter <= gKeys[Index + 1].Parameter);
 
 	GReal dtdu = 1 / (gKeys[Index + 1].Parameter - gKeys[Index].Parameter);
@@ -577,7 +575,7 @@ GError GHermiteCurve1D::DoCut(const GReal u, GCurve1D *RightCurve, GCurve1D *Lef
 GError GHermiteCurve1D::DoAddPoint(const GReal Parameter, const GReal *NewPoint, GUInt32& Index,
 								   GBool& AlreadyExists) {
 
-	GInt32 i = PointsCount();
+	GInt32 i = (GInt32)PointsCount();
 
 	// empty curve
 	if (i == 0) {
@@ -645,7 +643,7 @@ GError GHermiteCurve1D::DoAddPoint(const GReal Parameter, const GReal *NewPoint,
 		gKeys.push_back(GHermiteKey1D(Parameter, *NewPoint));
 		// build tangent
 		CalcCatmullRomTangents(PointsCount() - 1, PointsCount() - 1);
-		Index = (GUInt32)PointsCount() - 1;
+		Index = PointsCount() - 1;
 		AlreadyExists = G_FALSE;
 		return G_NO_ERROR;
 	}
@@ -653,7 +651,7 @@ GError GHermiteCurve1D::DoAddPoint(const GReal Parameter, const GReal *NewPoint,
 	if (Parameter >= DomainEnd() - G_EPSILON) {
 		if (NewPoint)
 			gKeys[PointsCount() - 1].Value = *NewPoint;
-		Index = (GUInt32)PointsCount() - 1;
+		Index = PointsCount() - 1;
 		AlreadyExists = G_TRUE;
 		return G_NO_ERROR;
 	}
@@ -724,7 +722,7 @@ GError GHermiteCurve1D::DoAddPoint(const GReal Parameter, const GReal *NewPoint,
 // (at least) a minimal (2-keys made) multi-curve
 GError GHermiteCurve1D::DoRemovePoint(const GUInt32 Index) {
 
-	GUInt32 i = (GUInt32)PointsCount();
+	GUInt32 i = PointsCount();
 	GDynArray<GHermiteKey1D>::iterator it = gKeys.begin();
 
 	// we are sure that before removing we have at least 3 keys
@@ -752,7 +750,7 @@ GError GHermiteCurve1D::DoRemovePoint(const GUInt32 Index) {
 GError GHermiteCurve1D::SetDomain(const GReal NewMinValue, const GReal NewMaxValue) {
 	
 	GInterval<GReal> newInterval(NewMinValue, NewMaxValue);
-	GUInt32 i, j = (GUInt32)PointsCount();
+	GUInt32 i, j = PointsCount();
 	GReal s, k;
 
 	// check if new range is empty
@@ -791,7 +789,7 @@ GError GHermiteCurve1D::SetDomain(const GReal NewMinValue, const GReal NewMaxVal
 // suppose that Index is valid
 void GHermiteCurve1D::SegmentToBezierConversion(const GUInt32 Index, GBezierCurve1D& Result) const {
 
-	G_ASSERT((GInt32)Index < PointsCount() - 1);
+	G_ASSERT((GInt32)Index < (GInt32)PointsCount() - 1);
 	Result.SetPoints(gKeys[Index].Value, (gKeys[Index].OutTangent / 3) + gKeys[Index].Value,
 					 gKeys[Index + 1].Value - (gKeys[Index + 1].InTangent / 3), gKeys[Index + 1].Value);
 	Result.SetDomain(gKeys[Index].Parameter, gKeys[Index + 1].Parameter);
@@ -800,7 +798,7 @@ void GHermiteCurve1D::SegmentToBezierConversion(const GUInt32 Index, GBezierCurv
 // convert the Index-th segment (from key (i) to key (i-1)) into a cubic Bezier form
 GError GHermiteCurve1D::SegmentToBezier(const GUInt32 Index, GBezierCurve1D& Result) {
 
-	if ((GInt32)Index >= PointsCount() - 1)
+	if ((GInt32)Index >= (GInt32)PointsCount() - 1)
 		return G_OUT_OF_RANGE;
 
 	SegmentToBezierConversion(Index, Result);
@@ -827,7 +825,7 @@ GReal GHermiteCurve1D::Length(const GReal u0, const GReal u1, const GReal MaxErr
 
 	// loops over interested segments
 	i = keyIndex;
-	j = (GUInt32)PointsCount();
+	j = PointsCount();
 	result = 0;
 	while (i < j) {
 		if (requestedInterval.End() > gKeys[i + 1].Parameter) {
@@ -901,5 +899,50 @@ GReal GHermiteCurve1D::Derivative(const GDerivativeOrder Order, const GReal u) c
 	return SegmentDerivative(keyIndex, Order, uu);
 }
 
+void GHermiteCurve1D::DerivativeLR(const GDerivativeOrder Order, const GReal u,
+								   GReal& LeftDerivative, GReal& RightDerivative) const {
+
+	if (PointsCount() < 2) {
+		LeftDerivative = RightDerivative = G_MIN_REAL;
+		return;
+	}
+
+	// clamp parameter inside valid interval
+	if (u <= DomainStart())
+		LeftDerivative = RightDerivative = SegmentDerivative(0, Order, DomainStart());
+	else
+	if (u >= DomainEnd())
+		LeftDerivative = RightDerivative = SegmentDerivative(PointsCount() - 2, Order, DomainEnd());
+	else {
+		GUInt32 keyIndex;
+#ifdef _DEBUG
+		GBool b = ParamToKeyIndex(u, keyIndex);
+		G_ASSERT (b == G_TRUE);
+#else
+		ParamToKeyIndex(u, keyIndex);
+#endif
+		// test if point is shared
+		if (GMath::Abs(u - gKeys[keyIndex].Parameter) <= G_EPSILON) {
+			LeftDerivative = SegmentDerivative(keyIndex - 1, Order, u);
+			RightDerivative = SegmentDerivative(keyIndex, Order, u);
+		}
+		else
+			// non-shared point
+			LeftDerivative = RightDerivative = SegmentDerivative(keyIndex, Order, u);
+	}
+}
+
+void GHermiteCurve1D::Scale(const GReal Pivot, const GReal ScaleAmount) {
+
+	GUInt32 i, j = (GUInt32)gKeys.size();
+	GReal p;
+
+	for (i = 0; i < j; i++) {
+		p = gKeys[i].Value;
+		gKeys[i].Value = (((p - Pivot) * ScaleAmount) + Pivot);
+		gKeys[i].InTangent = ((((p + gKeys[i].InTangent) - Pivot) * ScaleAmount) + Pivot) - gKeys[i].Value;
+		gKeys[i].OutTangent = ((((p + gKeys[i].OutTangent) - Pivot) * ScaleAmount) + Pivot) - gKeys[i].Value;
+	}
+}
 
 };	// end namespace Amanith

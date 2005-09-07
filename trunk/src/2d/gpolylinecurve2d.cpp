@@ -71,17 +71,17 @@ GError GPolyLineCurve2D::BaseClone(const GElement& Source) {
 }
 
 // get Index-th control point
-GPoint2 GPolyLineCurve2D::Point(const GInt32 Index) const {
+GPoint2 GPolyLineCurve2D::Point(const GUInt32 Index) const {
 
-	if ((Index < 0) || (Index >= PointsCount()))
+	if (Index >= PointsCount())
 		return GPoint2(G_MIN_REAL, G_MIN_REAL);
 	return gKeys[Index].Value;
 }
 
 // set Index-th control point
-GError GPolyLineCurve2D::SetPoint(const GInt32 Index, const GPoint2& NewPoint) {
+GError GPolyLineCurve2D::SetPoint(const GUInt32 Index, const GPoint2& NewPoint) {
 
-	if ((Index < 0) || (Index >= PointsCount()))
+	if (Index >= PointsCount())
 		return G_OUT_OF_RANGE;
 	gKeys[Index].Value = NewPoint;
 	return G_NO_ERROR;
@@ -90,7 +90,7 @@ GError GPolyLineCurve2D::SetPoint(const GInt32 Index, const GPoint2& NewPoint) {
 // get a key
 GError GPolyLineCurve2D::Key(const GUInt32 Index, GPolyLineKey2D& KeyValue) const {
 
-	if ((GInt32)Index >= PointsCount())
+	if (Index >= PointsCount())
 		return G_OUT_OF_RANGE;
 	KeyValue = gKeys[Index];
 	return G_NO_ERROR;
@@ -99,9 +99,7 @@ GError GPolyLineCurve2D::Key(const GUInt32 Index, GPolyLineKey2D& KeyValue) cons
 // set a key
 GError GPolyLineCurve2D::SetKey(const GUInt32 Index, const GPoint2& NewKeyValue) {
 
-	GInt32 i = PointsCount();
-
-	if ((GInt32)Index >= i)
+	if (Index >= PointsCount())
 		return G_OUT_OF_RANGE;
 
 	gKeys[Index].Value = NewKeyValue;
@@ -119,7 +117,7 @@ GError GPolyLineCurve2D::DoGetPointParameter(const GUInt32 Index, GReal& Paramet
 GError GPolyLineCurve2D::DoSetPointParameter(const GUInt32 Index, const GReal NewParamValue,
 											 GUInt32& NewIndex, GBool& AlreadyExists) {
 
-	GUInt32 i, j = (GUInt32)PointsCount(), deleteIndex = 0;
+	GUInt32 i, j = PointsCount(), deleteIndex = 0;
 	GError err;
 	GBool b, sameInterval, deleteKey;
 
@@ -343,7 +341,7 @@ GReal GPolyLineCurve2D::Variation(const GReal u0, const GReal u1, const GPoint2&
 	b = ParamToKeyIndex(u0, keyIndex);
 	if (b) {
 		keyIndex++;
-		i = (GUInt32)PointsCount();
+		i = PointsCount();
 		dist = -1;
 		parameter = u0;
 		while (keyIndex < i &&  gKeys[keyIndex].Parameter < u1) {
@@ -414,7 +412,7 @@ GError GPolyLineCurve2D::DoCut(const GReal u, GCurve2D *RightCurve, GCurve2D *Le
 GError GPolyLineCurve2D::DoAddPoint(const GReal Parameter, const GPoint2 *NewPoint, GUInt32& Index,
 									GBool& AlreadyExists) {
 
-	GInt32 i = PointsCount();
+	GInt32 i = (GInt32)PointsCount();
 
 	// empty curve
 	if (i == 0) {
@@ -475,7 +473,7 @@ GError GPolyLineCurve2D::DoAddPoint(const GReal Parameter, const GPoint2 *NewPoi
 		if (!NewPoint)
 			return G_INVALID_OPERATION;
 		gKeys.push_back(GPolyLineKey2D(Parameter, *NewPoint));
-		Index = (GUInt32)PointsCount() - 1;
+		Index = PointsCount() - 1;
 		AlreadyExists = G_FALSE;
 		return G_NO_ERROR;
 	}
@@ -483,7 +481,7 @@ GError GPolyLineCurve2D::DoAddPoint(const GReal Parameter, const GPoint2 *NewPoi
 	if (Parameter >= DomainEnd() - G_EPSILON) {
 		if (NewPoint)
 			gKeys[PointsCount() - 1].Value = *NewPoint;
-		Index = (GUInt32)PointsCount() - 1;
+		Index = PointsCount() - 1;
 		AlreadyExists = G_TRUE;
 		return G_NO_ERROR;
 	}
@@ -547,7 +545,7 @@ GError GPolyLineCurve2D::DoRemovePoint(const GUInt32 Index) {
 GError GPolyLineCurve2D::SetDomain(const GReal NewMinValue, const GReal NewMaxValue) {
 	
 	GInterval<GReal> newInterval(NewMinValue, NewMaxValue);
-	GUInt32 i, j = (GUInt32)PointsCount();
+	GUInt32 i, j = PointsCount();
 	GReal s, k;
 
 	// check if new range is empty
@@ -584,10 +582,10 @@ GError GPolyLineCurve2D::SetDomain(const GReal NewMinValue, const GReal NewMaxVa
 
 // intersect the curve with a ray, and returns a list of intersections
 GBool GPolyLineCurve2D::IntersectRay(const GRay2& NormalizedRay, GDynArray<GVector2>& Intersections,
-									 const GReal Precision, const GInt32 MaxIterations) const {
+									 const GReal Precision, const GUInt32 MaxIterations) const {
 
 	GLineSegment2 ls;
-	GInt32 i, j = PointsCount();
+	GInt32 i, j = (GInt32)PointsCount();
 	GUInt32 flags;
 	GPoint2 p;
 	GVector2 intersectionInfo;
@@ -705,7 +703,7 @@ GReal GPolyLineCurve2D::Length(const GReal u0, const GReal u1, const GReal MaxEr
 GError GPolyLineCurve2D::Flatten(GDynArray<GPoint2>& Contour, const GReal MaxDeviation,
 								 const GBool IncludeLastPoint) const {
 
-	GInt32 i, j = PointsCount();
+	GInt32 i, j = (GInt32)PointsCount();
 
 	if (j < 2)
 		return G_INVALID_OPERATION;
@@ -762,7 +760,7 @@ GVector2 GPolyLineCurve2D::Derivative(const GDerivativeOrder Order, const GReal 
 		keyIndex = 1;
 	else
 	if (u >= DomainEnd())
-		keyIndex = (GUInt32)(PointsCount() - 2);
+		keyIndex = PointsCount() - 2;
 	else {
 		b = ParamToKeyIndex(u, keyIndex);
 		G_ASSERT (b == G_TRUE);
@@ -771,5 +769,51 @@ GVector2 GPolyLineCurve2D::Derivative(const GDerivativeOrder Order, const GReal 
 	return ((gKeys[keyIndex + 1].Value - gKeys[keyIndex].Value) * dtdu);
 }
 
+void GPolyLineCurve2D::DerivativeLR(const GDerivativeOrder Order, const GReal u,
+									GVector2& LeftDerivative, GVector2& RightDerivative) const {
+
+	if (Order >= G_SECOND_ORDER_DERIVATIVE || PointsCount() < 2) {
+		LeftDerivative = RightDerivative = GVector2(0, 0);
+		return;
+	}
+
+	GReal dtdu;
+	GUInt32 keyIndex;
+
+	// clamp parameter inside valid interval
+	if (u <= DomainStart()) {
+		dtdu = gKeys[1].Parameter - gKeys[0].Parameter;
+		LeftDerivative = RightDerivative = (gKeys[1].Value - gKeys[0].Value) * dtdu;
+	}
+	else
+	if (u >= DomainEnd()) {
+		keyIndex = PointsCount() - 2;
+		dtdu = gKeys[keyIndex + 1].Parameter - gKeys[keyIndex].Parameter;
+		LeftDerivative = RightDerivative = (gKeys[keyIndex + 1].Value - gKeys[keyIndex].Value) * dtdu;
+	}
+	else {
+		GUInt32 keyIndex;
+#ifdef _DEBUG
+		GBool b = ParamToKeyIndex(u, keyIndex);
+		G_ASSERT (b == G_TRUE);
+#else
+		ParamToKeyIndex(u, keyIndex);
+#endif
+		// test if point is shared
+		if (GMath::Abs(u - gKeys[keyIndex].Parameter) <= G_EPSILON) {
+			// left derivative
+			dtdu = gKeys[keyIndex].Parameter - gKeys[keyIndex - 1].Parameter;
+			LeftDerivative = (gKeys[keyIndex].Value - gKeys[keyIndex - 1].Value) * dtdu;
+			// right derivative
+			dtdu = gKeys[keyIndex + 1].Parameter - gKeys[keyIndex].Parameter;
+			RightDerivative = (gKeys[keyIndex + 1].Value - gKeys[keyIndex].Value) * dtdu;
+		}
+		else {
+			// non-shared point
+			dtdu = gKeys[keyIndex + 1].Parameter - gKeys[keyIndex].Parameter;
+			LeftDerivative = RightDerivative = (gKeys[keyIndex + 1].Value - gKeys[keyIndex].Value) * dtdu;
+		}
+	}
+}
 
 };	// end namespace Amanith

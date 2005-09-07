@@ -340,8 +340,9 @@ void GCurve2D::Scale(const GPoint2& Pivot, const GReal XScaleAmount, const GReal
 // transform
 void GCurve2D::XForm(const GMatrix23& Matrix) {
 
-	GInt32 i, j = PointsCount();
+	GUInt32 i, j = PointsCount();
 	GPoint2 p;
+
 	for (i = 0; i < j; i++) {
 		p = Matrix * Point(i);
 		SetPoint(i, p);
@@ -351,7 +352,7 @@ void GCurve2D::XForm(const GMatrix23& Matrix) {
 // transform with projection option
 void GCurve2D::XForm(const GMatrix33& Matrix, const GBool DoProjection) {
 
-	GInt32 i, j = PointsCount();
+	GUInt32 i, j = PointsCount();
 	GPoint2 p;
 
 	if (DoProjection == G_FALSE) {

@@ -166,8 +166,8 @@ namespace Amanith {
 		//! Clear the curve (remove keys, free internal structures and set an empty domain).
 		void Clear();
 		//! Returns number of key points.
-		inline GInt32 PointsCount() const {
-			return (GInt32)gKeys.size();
+		inline GUInt32 PointsCount() const {
+			return (GUInt32)gKeys.size();
 		}
 		/*!
 			Given a domain value, it returns the span index that includes it.
@@ -181,9 +181,9 @@ namespace Amanith {
 		*/
 		GBool ParamToKeyIndex(const GReal Param, GUInt32& KeyIndex) const;
 		//! Get Index-th key point; Index must be valid, else a point with infinitive components is returned.
-		GReal Point(const GInt32 Index) const;
+		GReal Point(const GUInt32 Index) const;
 		//! Set Index-th (key)point; Index must be valid.
-		GError SetPoint(const GInt32 Index, const GReal NewPoint);
+		GError SetPoint(const GUInt32 Index, const GReal NewPoint);
 		/*!
 			Construct a new polyline curve, specifying just interpolated (key)points.
 
@@ -267,6 +267,20 @@ namespace Amanith {
 			\note specified domain parameter is clamped by domain interval.
 		*/
 		GReal Derivative(const GDerivativeOrder Order, const GReal u) const;
+		/*!
+			Return the curve derivative calculated at specified domain parameter. This method differs from
+			the one of base GCurve1D class in the number of returned values. This is due to the possibility
+			that the curve is continuous but not derivable (in the sense that left and right derivatives
+			are different).
+
+			\param Order the order of derivative.
+			\param u the domain parameter at witch we wanna evaluate curve derivative.
+			\param LeftDerivative the left derivative.
+			\param RightDerivative the right derivative.
+			\note specified domain parameter is clamped by domain interval.
+		*/
+		void DerivativeLR(const GDerivativeOrder Order, const GReal u,
+						  GReal& LeftDerivative, GReal& RightDerivative) const;
 		//! Get class descriptor.
 		inline const GClassID& ClassID() const {
 			return G_POLYLINECURVE1D_CLASSID;

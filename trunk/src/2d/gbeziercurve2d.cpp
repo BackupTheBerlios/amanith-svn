@@ -74,29 +74,29 @@ void GBezierCurve2D::Clear() {
 }
 
 // get number of control points
-GInt32 GBezierCurve2D::PointsCount() const {
+GUInt32 GBezierCurve2D::PointsCount() const {
 
-	return (GInt32)gPoints.size();
+	return (GUInt32)gPoints.size();
 }
 
 // get curve degree
 GInt32 GBezierCurve2D::Degree() const {
 
-	return (PointsCount() - 1);
+	return ((GInt32)PointsCount() - 1);
 }
 
 // get Index-th point
-GPoint2 GBezierCurve2D::Point(const GInt32 Index) const {
+GPoint2 GBezierCurve2D::Point(const GUInt32 Index) const {
 
-	if ((Index < 0) || (Index >= PointsCount()))
+	if (Index >= PointsCount())
 		return GPoint2(G_MIN_REAL, G_MIN_REAL);
 	return gPoints[Index];
 }
 
 // set Index-th point
-GError GBezierCurve2D::SetPoint(const GInt32 Index, const GPoint2& NewPoint) {
+GError GBezierCurve2D::SetPoint(const GUInt32 Index, const GPoint2& NewPoint) {
 
-	if ((Index < 0) || (Index >= PointsCount()))
+	if (Index >= PointsCount())
 		return G_OUT_OF_RANGE;
 	// copy new point
 	gPoints[Index] = NewPoint;
@@ -197,7 +197,7 @@ GInt32 GBezierCurve2D::CrossingCountX() const {
 	GInt32 sign, old_sign;
 
 	sign = old_sign = GMath::Sign(gPoints[0][G_Y]);
-	j = PointsCount() - 1;
+	j = (GInt32)PointsCount() - 1;
 	for (i = 1; i <= j; i++) {
 		sign = GMath::Sign(gPoints[i][G_Y]);
 		if (sign != old_sign)
@@ -208,8 +208,8 @@ GInt32 GBezierCurve2D::CrossingCountX() const {
 }
 
 // ray intersection based on Newton schema
-GBool GBezierCurve2D::IntersectXRay(GDynArray<GVector2>& Intersections,
-									   const GReal Precision, const GInt32 MaxIterations) const {
+GBool GBezierCurve2D::IntersectXRay(GDynArray<GVector2>& Intersections, const GReal Precision,
+									const GUInt32 MaxIterations) const {
 
 	GInt32 crossCount;
 	GReal u;
@@ -227,7 +227,7 @@ GBool GBezierCurve2D::IntersectXRay(GDynArray<GVector2>& Intersections,
 		GReal relerr;
 		GReal a, b, c, d = 0, e = 0, xm, p, q, r, s, tol1;
 		GPoint2 fa, fb, fc;
-		GInt32 i;
+		GUInt32 i;
 
 		relerr = GMath::Max(G_EPSILON, GMath::Abs(Precision));
 		a = DomainStart();
@@ -322,39 +322,29 @@ GBool GBezierCurve2D::IntersectXRay(GDynArray<GVector2>& Intersections,
 }
 
 // returns control polygon length
-GReal GBezierCurve2D::ControlPolygonLength(const GInt32 FromIndex, const GInt32 ToIndex) const {
+GReal GBezierCurve2D::ControlPolygonLength(const GUInt32 FromIndex, const GUInt32 ToIndex) const {
 
-	GInt32 i, j0, j1;
-	GReal l;
+	GInterval<GInt32> requestedInterval((GInt32)FromIndex, (GInt32)ToIndex);
+	GInterval<GInt32> permittedInterval(0, (GInt32)PointsCount() - 1);
 
-	// make sure that FromIndex is <= ToIndex
-	if (FromIndex > ToIndex) {
-		j0 = ToIndex;
-		j1 = FromIndex;
-	}
-	else {
-		j0 = FromIndex;
-		j1 = ToIndex;
-	}
 	// just to be sure if some value is out of range
-	j0 = GMath::Max(j0, 0);
-	j1 = GMath::Min(j1, PointsCount() - 1);
-	l = 0;
-	for (i = j0; i < j1; i++)
+	requestedInterval &= permittedInterval;
+	GReal l = 0;
+	for (GInt32 i = requestedInterval.Start(); i < requestedInterval.End(); i++)
 		l += Distance(gPoints[i + 1],  gPoints[i]);
 	return l;
 }
 
 // intersect the curve with a ray, and returns a list of intersections
 GBool GBezierCurve2D::IntersectRay(const GRay2& NormalizedRay, GDynArray<GVector2>& Intersections,
-								const GReal Precision, const GInt32 MaxIterations) const {
+								const GReal Precision, const GUInt32 MaxIterations) const {
 
 	if (PointsCount() <= 1)
 		return G_FALSE;
 
 	GMatrix33 rayTrans, rayRot, rayMatrix;
 	GBezierCurve2D tmpCurve = (*this);
-	GInt32 i, j;
+	GUInt32 i, j;
 	GBool b;
 	
 	// build a matrix that makes ray to become X axis, at origin = (0, 0)
@@ -370,7 +360,10 @@ GBool GBezierCurve2D::IntersectRay(const GRay2& NormalizedRay, GDynArray<GVector
 	for (i = 0; i < j; i++)
 		tmpCurve.gPoints[i] = rayMatrix * gPoints[i];
 
-	b = tmpCurve.IntersectXRay(Intersections, Precision, MaxIterations);
+	if (MaxIterations == 0)
+		b = tmpCurve.IntersectXRay(Intersections, Precision, 1);
+	else
+		b = tmpCurve.IntersectXRay(Intersections, Precision, MaxIterations);
 	return b;
 }
 
@@ -605,7 +598,7 @@ void GBezierCurve2D::BuildForwDiff() const {
 	for (i = 0; i < j; i++)
 		gForwDiff1[i] = (j / Domain().Length()) * (gPoints[i + 1] - gPoints[i]);
 	// calculate second order forward differences
-	j = Degree() - 1;
+	j--;
 	gForwDiff2.resize(j);
 	for (i = 0; i < j; i++)
 		gForwDiff2[i] = (j / Domain().Length()) * (gForwDiff1[i + 1] - gForwDiff1[i]);
@@ -892,16 +885,20 @@ GError GBezierCurve2D::Flatten3(GDynArray<GPoint2>& Contour, const GReal MaxDevi
 	tmpBez.gPoints = gPoints;
 	tmpBez.SetDomain(0, 1);
 
+	GPoint2 p1(tmpBez.gPoints[0]), p2(tmpBez.gPoints[1]), p3(tmpBez.gPoints[2]), p4(tmpBez.gPoints[3]);
+
+	// fix for the 3 first point aligned, use slow method
+	GReal area = TwiceSignedArea(p1, p2, p3);
+	if (GMath::Abs(area) < 0.001f * GMath::Max(GMath::Abs(p1[G_X] - p4[G_X]), GMath::Abs(p1[G_Y] - p4[G_Y]))) {
+		return GCurve2D::Flatten(Contour, MaxDeviation, IncludeLastPoint);
+	}
+
 	GReal flatness = GMath::Abs(MaxDeviation);
 	if (flatness < 1)
 		flatness = GMath::Sqrt(flatness);
 	else
 		flatness = GMath::Sqr(flatness);
 
-	GPoint2 p1(tmpBez.gPoints[0]), p2(tmpBez.gPoints[1]), p3(tmpBez.gPoints[2]), p4(tmpBez.gPoints[3]);
-    if (p2[G_X] == p3[G_X] && p2[G_Y] == p3[G_Y]) {
-		p2[G_X] += 0.001f * GMath::Max(GMath::Abs(p1[G_X] - p4[G_X]), GMath::Abs(p1[G_Y] - p4[G_Y]));
-	}
 	// x(t) = ax*t^3 + bx*t^2 + ex*t + dx
 	GReal cx = 3 * (p2[G_X] - p1[G_X]);
 	GReal cy = 3 * (p2[G_Y] - p1[G_Y]);			
@@ -1028,14 +1025,14 @@ GError GBezierCurve2D::Flatten3(GDynArray<GPoint2>& Contour, const GReal MaxDevi
 GError GBezierCurve2D::Flatten(GDynArray<GPoint2>& Contour, const GReal MaxDeviation,
 							const GBool IncludeLastPoint) const {
 
-	GInt32 i;
+	GUInt32 i;
 	GError err;
 
 	if (MaxDeviation <= 0)
 		return G_INVALID_PARAMETER;
 
 	i = PointsCount();
-	if (i <= 0)
+	if (i == 0)
 		return G_NO_ERROR;
 
 	// optimized version for quadratic curves

@@ -71,29 +71,29 @@ void GBezierCurve1D::Clear() {
 }
 
 // get number of control points
-GInt32 GBezierCurve1D::PointsCount() const {
+GUInt32 GBezierCurve1D::PointsCount() const {
 
-	return (GInt32)gPoints.size();
+	return (GUInt32)gPoints.size();
 }
 
 // get curve degree
 GInt32 GBezierCurve1D::Degree() const {
 
-	return (PointsCount() - 1);
+	return ((GInt32)PointsCount() - 1);
 }
 
 // get Index-th point
-GReal GBezierCurve1D::Point(const GInt32 Index) const {
+GReal GBezierCurve1D::Point(const GUInt32 Index) const {
 
-	if ((Index < 0) || (Index >= PointsCount()))
+	if (Index >= PointsCount())
 		return G_MIN_REAL;
 	return gPoints[Index];
 }
 
 // set Index-th point
-GError GBezierCurve1D::SetPoint(const GInt32 Index, const GReal NewPoint) {
+GError GBezierCurve1D::SetPoint(const GUInt32 Index, const GReal NewPoint) {
 
-	if ((Index < 0) || (Index >= PointsCount()))
+	if (Index >= PointsCount())
 		return G_OUT_OF_RANGE;
 	// copy new point
 	gPoints[Index] = NewPoint;
@@ -396,7 +396,7 @@ void GBezierCurve1D::BuildForwDiff() const {
 	for (i = 0; i < j; i++)
 		gForwDiff1[i] = (j / Domain().Length()) * (gPoints[i + 1] - gPoints[i]);
 	// calculate second order forward differences
-	j = Degree() - 1;
+	j--;
 	gForwDiff2.resize(j);
 	for (i = 0; i < j; i++)
 		gForwDiff2[i] = (j / Domain().Length()) * (gForwDiff1[i + 1] - gForwDiff1[i]);

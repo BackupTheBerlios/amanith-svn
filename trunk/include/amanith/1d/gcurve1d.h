@@ -118,16 +118,16 @@ namespace Amanith {
 			return G_NO_ERROR;
 		}
 		//! Returns number of points of the curve (typically control points).
-		virtual GInt32 PointsCount() const = 0;
+		virtual GUInt32 PointsCount() const = 0;
 		/*!
 			Clear the curve (remove control points and internal structures)
 			\note <b>this method must be implemented by all derived classes</b>.
 		*/
 		virtual void Clear() = 0;
 		//! Get Index-th point. <b>This method must be implemented by all derived classes</b>.
-		virtual GReal Point(const GInt32 Index) const = 0;
+		virtual GReal Point(const GUInt32 Index) const = 0;
 		//! Set Index-th point. <b>This method must be implemented by all derived classes</b>.
-		virtual GError SetPoint(const GInt32 Index, const GReal NewValue) = 0;
+		virtual GError SetPoint(const GUInt32 Index, const GReal NewValue) = 0;
 		/*! 
 			Return the curve value calculated at specified domain parameter.
 			
@@ -273,10 +273,11 @@ namespace Amanith {
 		/*!
 			Scale all curve points around a pivot point.
 
-			\param Pivot the pivot point (the center of scaling)
-			\param ScaleAmount the scale factor
+			\param Pivot the pivot point (the center of scaling).
+			\param ScaleAmount the scale factor.
+			\note default behavior is to scale all point using Point() and SetPoint() methods.
 		*/
-		void Scale(const GReal Pivot, const GReal ScaleAmount);
+		virtual void Scale(const GReal Pivot, const GReal ScaleAmount);
 		//! Get class descriptor
 		inline const GClassID& ClassID() const {
 			return G_CURVE1D_CLASSID;

@@ -27,7 +27,6 @@
 **********************************************************************/
 
 #include "amanith/2d/gpath2d.h"
-#include "amanith/2d/gmulticurve2d.h"
 #include "amanith/gerror.h"
 
 /*!
@@ -43,12 +42,12 @@ namespace Amanith {
 // *********************************************************************
 
 // constructor
-GPath2D::GPath2D() : GElement(), gDomain(G_MIN_REAL, G_MIN_REAL) {
+GPath2D::GPath2D() : GMultiCurve2D() {
 
 	gClosed = G_FALSE;
 }
 // constructor
-GPath2D::GPath2D(const GElement* Owner) : GElement(Owner), gDomain(G_MIN_REAL, G_MIN_REAL) {
+GPath2D::GPath2D(const GElement* Owner) : GMultiCurve2D(Owner) {
 
 	gClosed = G_FALSE;
 }
@@ -62,9 +61,8 @@ GPath2D::~GPath2D() {
 // clear the entire path
 void GPath2D::Clear() {
 
-	//DeleteSubPaths();
 	DeleteSegments();
-	gDomain.Set(G_MIN_REAL, G_MIN_REAL);
+	GCurve2D::SetDomain(G_MIN_REAL, G_MIN_REAL);
 	gClosed = G_FALSE;
 }
 
@@ -142,10 +140,8 @@ GError GPath2D::BaseClone(const GElement& Source) {
 	if (err == G_NO_ERROR) {
 		// copy "closed" flag
 		gClosed = k.gClosed;
-		// copy knots interval
-		gDomain = k.gDomain;
-		// GAnimElement cloning
-		return GElement::BaseClone(Source);
+		// GMultiCurve2D cloning
+		return GMultiCurve2D::BaseClone(Source);
 	}
 	else
 		return err;
@@ -182,22 +178,24 @@ GError GPath2D::SetDomain(const GReal NewMinValue, const GReal NewMaxValue) {
 	if (newInterval.IsEmpty())
 		return G_INVALID_PARAMETER;
 
-	ratio = newInterval.Length() / gDomain.Length();
-	start = newInterval.Start();
-	for (i = 0; i < j - 1; i++) {
+	if (j > 0) {
+		ratio = newInterval.Length() / Domain().Length();
+		start = newInterval.Start();
+		for (i = 0; i < j - 1; i++) {
+			curve = gSegments[i];
+			G_ASSERT(curve != NULL);
+			lSeg = curve->Domain().Length();
+			end = start + (lSeg * ratio);
+			curve->SetDomain(start, end);
+			start = end;
+		}
+		// do last segment reparametrization (avoiding imprecision due to rescaling)
 		curve = gSegments[i];
 		G_ASSERT(curve != NULL);
-		lSeg = curve->Domain().Length();
-		end = start + (lSeg * ratio);
-		curve->SetDomain(start, end);
-		start = end;
+		curve->SetDomain(start, newInterval.End());
 	}
-	// do last segment reparametrization (avoiding imprecision due to rescaling)
-	curve = gSegments[i];
-	G_ASSERT(curve != NULL);
-	curve->SetDomain(start, newInterval.End());
 	// now assign internal interval
-	gDomain = newInterval;
+	GCurve2D::SetDomain(newInterval.Start(), newInterval.End());
 	return G_NO_ERROR;
 }
 
@@ -257,23 +255,20 @@ GUInt32 GPath2D::PointsCount() const {
 	}
 }
 
-GUInt32 GPath2D::PointsCountAndLocate(const GUInt32 GlobalIndex,
-									  GUInt32& SegmentIndex, GUInt32& LocalIndex, GBool& Shared) const {
+GUInt32 GPath2D::PointsCountAndLocate(const GUInt32 GlobalIndex, GUInt32& SegmentIndex, GUInt32& LocalIndex,
+									  GBool& Shared) const {
 
-	GUInt32 c, i, j = (GUInt32)gSegments.size(), ptsCount;
-	GUInt32 index;
-
-	ptsCount = PointsCount();
-	index = GlobalIndex % ptsCount;
+	GUInt32 c, i, j = (GUInt32)gSegments.size(), ptsCount = PointsCount();
+	G_ASSERT(GlobalIndex < ptsCount);
 
 	c = 0;
 	i = 0;
-	while (c < index && i < j) {
+	while (c < GlobalIndex && i < j) {
 		c += (gSegments[i]->PointsCount() - 1);
 		i++;
 	}
 
-	if (c == index) {
+	if (c == GlobalIndex) {
 		if (i == 0) {
 			Shared = gClosed;
 			SegmentIndex = 0;
@@ -300,9 +295,24 @@ GUInt32 GPath2D::PointsCountAndLocate(const GUInt32 GlobalIndex,
 	else {
 		Shared = G_FALSE;
 		SegmentIndex = i - 1;
-		LocalIndex = (GInt32)index - (GInt32)c + (GInt32)(gSegments[SegmentIndex]->PointsCount() - 1);
+		LocalIndex = (GInt32)GlobalIndex - (GInt32)c + (GInt32)(gSegments[SegmentIndex]->PointsCount() - 1);
 	}
 	return ptsCount;
+}
+
+
+// given a segment index, returns the global point-index of the first point of the specified segment
+GError GPath2D::FirstPointInSegment(const GUInt32 SegmentIndex, GUInt32& PointIndex) const {
+
+	GUInt32 i, j = (GUInt32)gSegments.size();
+
+	if (SegmentIndex >= j)
+		return G_OUT_OF_RANGE;
+
+	PointIndex = 0;
+	for (i = 0; i < SegmentIndex; ++i)
+		PointIndex += (gSegments[i]->PointsCount() - 1);
+	return G_NO_ERROR;
 }
 
 GError GPath2D::SetPoint(const GUInt32 Index, const GPoint2& NewValue) {
@@ -310,6 +320,9 @@ GError GPath2D::SetPoint(const GUInt32 Index, const GPoint2& NewValue) {
 	GUInt32 i, segIndex, locIndex;
 	GBool shared;
 	GError err;
+
+	if (Index >= PointsCount())
+		return G_OUT_OF_RANGE;
 
 	i = PointsCountAndLocate(Index, segIndex, locIndex, shared);
 	// if this path has no point, return error
@@ -334,76 +347,20 @@ GError GPath2D::SetPoint(const GUInt32 Index, const GPoint2& NewValue) {
 	return err;
 }
 
-GError GPath2D::Point(const GUInt32 Index, GPoint2& WantedPoint) const {
+GPoint2 GPath2D::Point(const GUInt32 Index) const {
 
 	GUInt32 i, segIndex, locIndex;
 	GBool shared;
 
+	if (Index >= PointsCount())
+		return GPoint2(G_MIN_REAL, G_MIN_REAL);
+
 	i = PointsCountAndLocate(Index, segIndex, locIndex, shared);
 	// if this path has no point, return error
 	if (i == 0)
-		return G_INVALID_OPERATION;
+		return GPoint2(G_MIN_REAL, G_MIN_REAL);
 
-	WantedPoint = gSegments[segIndex]->Point(locIndex);
-	return G_NO_ERROR;
-}
-
-GError GPath2D::AddPoint(const GReal Param) {
-
-	GUInt32 i;
-	GError err;
-	GBool shared;
-	GCurve2D *rightCurve, *leftCurve, *cuttedCurve;
-	GMultiCurve2D *multiCurve;
-
-	if (Param < DomainStart() || Param > DomainEnd())
-		return G_OUT_OF_RANGE;
-
-	// now we are sure that we are inside knots interval
-	err = ParamToSegmentIndex(Param, i, shared);
-	if (err != G_NO_ERROR)
-		return err;
-
-	if (shared || Param == DomainStart() || Param == DomainEnd()) {
-		// just do nothing...
-	}
-	else {
-		// first we must check if the segment is a multicurve; in this case just call AddPoint of the
-		// multicurve...
-		if (gSegments[i]->IsOfType(G_MULTICURVE2D_CLASSID)) {
-			multiCurve = (GMultiCurve2D *)gSegments[i];
-			err = multiCurve->AddPoint(Param, i, shared);
-			return err;
-		}
-		// ...else cut the segment
-		cuttedCurve = gSegments[i];
-		// first try to create the 2 new pieces
-		rightCurve = (GCurve2D *)CreateNew(cuttedCurve->ClassID());
-		if (!rightCurve)
-			return G_UNSUPPORTED_CLASSID;
-		leftCurve = (GCurve2D *)CreateNew(cuttedCurve->ClassID());
-		if (!leftCurve) {
-			delete rightCurve;
-			return G_UNSUPPORTED_CLASSID;
-		}
-		// cut identified segment
-		err = cuttedCurve->Cut(Param, rightCurve, leftCurve);
-		if (err == G_NO_ERROR) {
-			// curve will be replaced, in order, by leftCurve and rightCurve
-			delete cuttedCurve;
-			gSegments[i] = leftCurve;
-			GDynArray<GCurve2D *>::iterator it = gSegments.begin();
-			it += (i + 1);
-			gSegments.insert(it, rightCurve);
-		}
-		else {
-			// if something was gone wrong with cutting operation, we have to free memory allocated
-			// for cut pieces
-			delete rightCurve;
-			delete leftCurve;
-		}
-	}
-	return err;
+	return gSegments[segIndex]->Point(locIndex);
 }
 
 GError GPath2D::SegmentType(const GUInt32 Index, GClassID& Type) const {
@@ -444,14 +401,13 @@ GError GPath2D::AppendSegment(const GCurve2D& Curve) {
 			return G_INVALID_PARAMETER;
 		}
 		// update path knots interval
-		gDomain = newCurve->Domain();
+		GCurve2D::SetDomain(newCurve->Domain().Start(), newCurve->Domain().End());
 		return G_NO_ERROR;
 	}
 
-	if ((Curve.DomainEnd() < DomainStart()) ||
-		(GMath::Abs(Curve.DomainEnd() - DomainStart()) <= 2 * G_EPSILON)) {
+	if (GMath::Abs(Curve.DomainEnd() - DomainStart()) <= G_EPSILON) {
 		// check if last point is equal (under a machine precision) to the first point of current curve
-		if (LengthSquared(StartPoint() - Curve.EndPoint()) > 4 * G_EPSILON * G_EPSILON)
+		if (Distance(StartPoint(), Curve.EndPoint()) > G_EPSILON)
 			return G_INVALID_PARAMETER;
 		// append the curve at the beginning
 		newCurve = (GCurve2D *)CreateNew(Curve.ClassID());
@@ -473,14 +429,13 @@ GError GPath2D::AppendSegment(const GCurve2D& Curve) {
 			return G_INVALID_PARAMETER;
 		}
 		// update path start global parameter value
-		gDomain.SetStart(newCurve->Domain().Start());
+		GCurve2D::SetDomain(newCurve->Domain().Start(), DomainEnd());
 		return G_NO_ERROR;
 	}
 	else
-	if ((Curve.DomainStart() > DomainEnd()) ||
-		(GMath::Abs(Curve.DomainStart() - DomainEnd()) <= 2 * G_EPSILON)) {
+	if (GMath::Abs(Curve.DomainStart() - DomainEnd()) <= G_EPSILON) {
 		// check if start point is equal (under a machine precision) to the end point of current curve
-		if (LengthSquared(EndPoint() - Curve.StartPoint()) > 4 * G_EPSILON * G_EPSILON)
+		if (Distance(EndPoint(), Curve.StartPoint()) > G_EPSILON)
 			return G_INVALID_PARAMETER;
 		// append the curve at the end
 		newCurve = (GCurve2D *)CreateNew(Curve.ClassID());
@@ -502,7 +457,7 @@ GError GPath2D::AppendSegment(const GCurve2D& Curve) {
 			return G_INVALID_PARAMETER;
 		}
 		// update path end global parameter value
-		gDomain.SetEnd(newCurve->Domain().End());
+		GCurve2D::SetDomain(DomainStart(), newCurve->Domain().End());
 		return G_NO_ERROR;
 	}
 	else
@@ -514,9 +469,8 @@ GError GPath2D::AppendPath(const GPath2D& Path) {
 
 	GInt32 i, j = (GInt32)Path.gSegments.size(), k;
 	GError err;
-	GReal d;
 	GCurve2D *tmpCurve;
-	GInterval<GReal> tmpInterval(gDomain);  // for rollback purpose
+	GInterval<GReal> tmpInterval(Domain());  // for rollback purpose
 
 	if (gClosed || Path.gClosed)
 		return G_INVALID_OPERATION;
@@ -529,10 +483,9 @@ GError GPath2D::AppendPath(const GPath2D& Path) {
 		return BaseClone(Path);
 	}
 
-	d = GMath::Abs(Path.DomainEnd() - DomainStart());
-	if (Path.DomainEnd() < DomainStart() || d <= 2 * G_EPSILON) {
+	if (GMath::Abs(Path.DomainEnd() - DomainStart()) <= G_EPSILON) {
 		// check if last point is equal (under a machine precision) to the first point of current path
-		if (LengthSquared(StartPoint() - Path.EndPoint()) > 4 * G_EPSILON * G_EPSILON)
+		if (Distance(StartPoint(), Path.EndPoint()) > G_EPSILON)
 			return G_INVALID_PARAMETER;
 
 		err = G_NO_ERROR;
@@ -549,16 +502,15 @@ GError GPath2D::AppendPath(const GPath2D& Path) {
 					gSegments.erase(gSegments.begin());
 				}
 				// restore knots interval
-				gDomain = tmpInterval;
+				GCurve2D::SetDomain(tmpInterval.Start(), tmpInterval.End());
 			}
 		}
 		return err;
 	}
 	else {
-		d = GMath::Abs(Path.DomainStart() - DomainEnd());
-		if (Path.DomainStart() > DomainEnd() || d <= 2 * G_EPSILON) {
+		if (GMath::Abs(Path.DomainStart() - DomainEnd()) <= G_EPSILON) {
 			// check if start point is equal (under a machine precision) to the end point of current path
-			if (LengthSquared(EndPoint() - Path.StartPoint()) > 4 * G_EPSILON * G_EPSILON)
+			if (Distance(EndPoint(), Path.StartPoint()) > G_EPSILON)
 				return G_INVALID_PARAMETER;
 
 			err = G_NO_ERROR;
@@ -575,7 +527,7 @@ GError GPath2D::AppendPath(const GPath2D& Path) {
 						gSegments.pop_back();
 					}
 					// restore knots interval
-					gDomain = tmpInterval;
+					GCurve2D::SetDomain(tmpInterval.Start(), tmpInterval.End());
 				}
 			}
 			return err;
@@ -584,33 +536,6 @@ GError GPath2D::AppendPath(const GPath2D& Path) {
 			// we can't add a curve segment in the middle of the path
 			return G_INVALID_OPERATION;
 	}
-}
-
-// translate
-void GPath2D::Translate(const GVector2& Translation) {
-
-	GUInt32 i, j = (GUInt32)gSegments.size();
-
-	for (i = 0; i < j; i++)
-		gSegments[i]->Translate(Translation);
-}
-
-// rotate
-void GPath2D::Rotate(const GPoint2& Pivot, const GReal RadAmount) {
-
-	GUInt32 i, j = (GUInt32)gSegments.size();
-
-	for (i = 0; i < j; i++)
-		gSegments[i]->Rotate(Pivot, RadAmount);
-}
-
-// scale
-void GPath2D::Scale(const GPoint2& Pivot, const GReal XScaleAmount, const GReal YScaleAmount) {
-
-	GUInt32 i, j = (GUInt32)gSegments.size();
-
-	for (i = 0; i < j; i++)
-		gSegments[i]->Scale(Pivot, XScaleAmount, YScaleAmount);
 }
 
 // transform
@@ -635,55 +560,122 @@ GError GPath2D::Segment(const GUInt32 Index, GCurve2D& Curve) const {
 
 	GUInt32 i = (GUInt32)gSegments.size();
 
+	// empty path
 	if (i == 0)
 		return G_INVALID_OPERATION;
+	// index must be valid
+	if (Index >= i)
+		return G_OUT_OF_RANGE;
 	// copy Index-thm segment into output curve
-	return Curve.CopyFrom(*gSegments[Index % i]);
+	return Curve.CopyFrom(*gSegments[Index]);
 }
 
-GError GPath2D::SetSegment(const GUInt32 Index, GCurve2D& Curve) {
+GError GPath2D::SetSegment(const GUInt32 Index, const GCurve2D& Curve) {
 
-	#define PRECISION 4 * G_EPSILON * G_EPSILON
 	GUInt32 i = (GUInt32)gSegments.size();
 	GCurve2D *newCurve, *existingCurve;
 	GError err;
 
+	// empty path
 	if (i == 0)
 		return G_INVALID_OPERATION;
+	// index must be valid
+	if (Index >= i)
+		return G_OUT_OF_RANGE;
+	// specified curve segment must be made of at least 2 points
 	if (Curve.PointsCount() < 2)
 		return G_INVALID_PARAMETER;
 
-	existingCurve = gSegments[Index % i];
-	// first check if end-points are geometrically identical under the specified precision
-	if (LengthSquared(Curve.StartPoint() - existingCurve->StartPoint()) > PRECISION)
+	existingCurve = gSegments[Index];
+
+	// first check if end-points are parametrically identical under epsilon precision
+	if (GMath::Abs(Curve.DomainStart() - existingCurve->DomainStart()) > G_EPSILON)
 		return G_INVALID_PARAMETER;
-	if (LengthSquared(Curve.EndPoint() - existingCurve->EndPoint()) > PRECISION)
+	if (GMath::Abs(Curve.DomainEnd() - existingCurve->DomainEnd()) > G_EPSILON)
 		return G_INVALID_PARAMETER;
 
-	// create a new curve of the same type
-	newCurve = (GCurve2D *)CreateNew(Curve.ClassID());
-	if (!newCurve)
-		return G_UNSUPPORTED_CLASSID;
-	// copy the source curve
-	err = newCurve->CopyFrom(Curve);
-	if (err != G_NO_ERROR) {
-		delete newCurve;
-		return err;
+	// then check if end-points are geometrically identical under epsilon precision
+	if (Distance(Curve.StartPoint(), existingCurve->StartPoint()) > G_EPSILON)
+		return G_INVALID_PARAMETER;
+	if (Distance(Curve.EndPoint(), existingCurve->EndPoint()) > G_EPSILON)
+		return G_INVALID_PARAMETER;
+
+	// path case
+	if (Curve.IsOfType(G_PATH2D_CLASSID)) {
+		// cast is type-safe
+		const GPath2D& path = (const GPath2D&)Curve;
+		GUInt32 j = path.SegmentsCount();
+		GDynArray<GCurve2D *>tmpSegments;
+		GBool rollBack = G_FALSE;
+
+		for (i = 0; i < j; i++) {
+			newCurve = (GCurve2D *)CreateNew(path.gSegments[i]->ClassID());
+			if (newCurve != NULL) {
+				// clone i-th segment
+				err = newCurve->CopyFrom(*(path.gSegments[i]));
+				if (err == G_NO_ERROR) {
+					// to avoid numeric instabilities, force end-points
+					if (i == 0)
+						newCurve->SetStartPoint(existingCurve->StartPoint());
+					if (i == j - 1)
+						newCurve->SetEndPoint(existingCurve->EndPoint());
+					// push the curve into temporary array
+					tmpSegments.push_back(newCurve);
+				}
+				else {
+					rollBack = G_TRUE;
+					break;
+				}
+			}
+			else {
+				rollBack = G_TRUE;
+				break;
+			}
+		}
+		if (rollBack) {
+			// delete all temporary segments
+			j = (GUInt32)tmpSegments.size();
+			for (i = 0; i < j; i++) {
+				newCurve = tmpSegments[i];
+				delete newCurve;
+			}
+			return G_MEMORY_ERROR;
+		}
+		else {
+			// now insert cloned segments inside this path, replacing existingCurve (Index-th segment)
+			GDynArray<GCurve2D *>::iterator it = gSegments.begin();
+			it += (Index + 1);
+			gSegments.insert(it, tmpSegments.begin(), tmpSegments.end());
+			// remove the replaced segment
+			it = gSegments.begin();
+			it += Index;
+			gSegments.erase(it);
+			// delete memory of the replaced segment
+			delete existingCurve;
+			return G_NO_ERROR;
+		}
 	}
-	// to avoid numeric instabilities, force end-points
-	newCurve->SetStartPoint(existingCurve->StartPoint());
-	newCurve->SetEndPoint(existingCurve->EndPoint());
-	// reparametrize knots interval to match existingCurve's one
-	err = newCurve->SetDomain(existingCurve->DomainStart(), existingCurve->DomainEnd());
-	if (err == G_NO_ERROR) {
-		// now replace existing curve with the new one
-		gSegments[Index % i] = newCurve;
+	// a "normal" curve
+	else {
+		// create a new curve of the same type
+		newCurve = (GCurve2D *)CreateNew(Curve.ClassID());
+		if (!newCurve)
+			return G_UNSUPPORTED_CLASSID;
+		// copy the source curve
+		err = newCurve->CopyFrom(Curve);
+		if (err != G_NO_ERROR) {
+			delete newCurve;
+			return err;
+		}
+		// to avoid numeric instabilities, force end-points
+		newCurve->SetStartPoint(existingCurve->StartPoint());
+		newCurve->SetEndPoint(existingCurve->EndPoint());
+		// replace existing curve with the new one
+		gSegments[Index] = newCurve;
 		// delete "old" curve
 		delete existingCurve;
 		return G_NO_ERROR;
 	}
-	delete newCurve;
-	return err;
 }
 
 GError GPath2D::RemoveSegment(const GUInt32 Index, GPath2D *RightPath) {
@@ -694,14 +686,17 @@ GError GPath2D::RemoveSegment(const GUInt32 Index, GPath2D *RightPath) {
 	if (i == 0)
 		return G_INVALID_OPERATION;
 
-	k = (GInt32)Index % i;
+	if ((GInt32)Index >= i)
+		return G_OUT_OF_RANGE;
+
+	k = (GInt32)Index;
 	if (gClosed) {
 		// open path at gSegments[k]->DomainEnd()
-		err = Cut(gSegments[k]->DomainEnd(), (GPath2D *)NULL, (GPath2D *)NULL);
+		err = OpenPath(gSegments[k]->DomainEnd());
 		if (err == G_NO_ERROR) {
-			// after cut, the segment that we wanna remove has become the last one (into internal gSegments array)
+			// after opened, the segment that we wanna remove has become the last one (into internal gSegments array)
 			GCurve2D *curve = gSegments[i - 1];
-			gDomain.SetEnd(curve->DomainStart());
+			GCurve2D::SetDomain(DomainStart(), curve->DomainStart());
 			gSegments.pop_back();
 			delete curve;
 		}
@@ -715,10 +710,11 @@ GError GPath2D::RemoveSegment(const GUInt32 Index, GPath2D *RightPath) {
 			err = RightPath->CloneSegments(gSegments, k + 1, i - 1);
 			if (err != G_NO_ERROR)
 				return err;
-			RightPath->gDomain.Set(gSegments[k + 1]->DomainStart(), DomainEnd());
+			// set domain range: note that just interval interval must be changed, cloned segments are ok!
+			RightPath->GCurve2D::SetDomain(gSegments[k + 1]->DomainStart(), DomainEnd());
 		}
 		// now remove all foregoing segments from this path
-		gDomain.SetEnd(gSegments[k]->DomainStart());
+		GCurve2D::SetDomain(DomainStart(), gSegments[k]->DomainStart());
 		for (j = i - 1; j >= k; j--) {
 			GCurve2D *curve = gSegments[j];
 			G_ASSERT(curve != NULL);
@@ -729,205 +725,268 @@ GError GPath2D::RemoveSegment(const GUInt32 Index, GPath2D *RightPath) {
 	}
 }
 
-// cut the path, giving the 2 paths
-GError GPath2D::Cut(const GReal Param, GPath2D *RightPath, GPath2D *LeftPath) {
+GError GPath2D::OpenPath(const GReal Parameter) {
+
+	// if the path is already open, do nothing
+	if (!gClosed)
+		return G_NO_ERROR;
+	// empty path
+	if (gSegments.size() == 0)
+		return G_INVALID_OPERATION;
+	// we are at domain boundary
+	if ((GMath::Abs(Parameter - DomainStart()) <= G_EPSILON) || (GMath::Abs(Parameter - DomainEnd()) <= G_EPSILON)) {
+		gClosed = G_FALSE;
+		return G_NO_ERROR;
+	}
+	// parameter must reside into domain
+	if (!Domain().IsInInterval(Parameter))
+		return G_OUT_OF_RANGE;
 
 	GInt32 i, j, k;
 	GBool shared;
-	GError err;
-	GCurve2D *cuttedCurve, *rightCurve, *leftCurve;
+	GError err = ParamToSegmentIndex(Parameter, (GUInt32 &)i, shared);
+	G_ASSERT(err == G_NO_ERROR);
 
-	err = ParamToSegmentIndex(Param, (GUInt32 &)i, shared);
-	if (err != G_NO_ERROR)
-		return err;
+	// shared point
+	if (shared) {
+		GDynArray<GCurve2D *> tmpSegs;
+		GReal newMinKnotParam, newMaxKnotParam, l;
 
-	if (gClosed) {
-		if (shared) {
+		j = (GInt32)gSegments.size();
+		newMinKnotParam = Parameter;
+		// first push all foregoing segments
+		for (k = i; k < j; k++)
+			tmpSegs.push_back(gSegments[k]);
+		// for all previous segments we reparametrize their knots and push them into temp array
+		newMaxKnotParam = DomainEnd();
+		for (k = 0; k <= i - 1; k++) {
+			l = gSegments[k]->Domain().Length();
+			gSegments[k]->SetDomain(newMaxKnotParam, newMaxKnotParam + l);
+			tmpSegs.push_back(gSegments[k]);
+			newMaxKnotParam += l;
+		}
+		// copy temporary segments container into the internal one
+		gSegments = tmpSegs;
+		// shift internal knots interval
+		SetDomain(DomainStart(), DomainEnd());
+		// now path is open
+		gClosed = G_FALSE;
+		return G_NO_ERROR;
+	}
+	else {
+		GCurve2D *leftCurve, *rightCurve;
+
+		leftCurve = (GCurve2D *)CreateNew(gSegments[i]->ClassID());
+		rightCurve = (GCurve2D *)CreateNew(gSegments[i]->ClassID());
+		if (!leftCurve || !rightCurve)
+			return G_UNSUPPORTED_CLASSID;
+
+		err = gSegments[i]->Cut(Parameter, rightCurve, leftCurve);
+		if (err == G_NO_ERROR) {
+			GCurve2D *curveToDelete = gSegments[i];  // keep track of this segment because it must be deleted
 			GDynArray<GCurve2D *> tmpSegs;
-			GReal newMinKnotParam, newMaxKnotParam, l;
+			GReal newMaxKnotParam, l;
 
+			// first push right-cut curve
+			tmpSegs.push_back(rightCurve);
+			// push all foregoing segments
 			j = (GInt32)gSegments.size();
-			newMinKnotParam = Param;
-			// first push all foregoing segments
-			for (k = i; k < j; k++)
+			for (k = i + 1; k < j; k++)
 				tmpSegs.push_back(gSegments[k]);
 			// for all previous segments we reparametrize their knots and push them into temp array
 			newMaxKnotParam = DomainEnd();
-			for (k = 0; k <= i - 1; k++) {
+			for (k = 0; k < i; k++) {
 				l = gSegments[k]->Domain().Length();
 				gSegments[k]->SetDomain(newMaxKnotParam, newMaxKnotParam + l);
 				tmpSegs.push_back(gSegments[k]);
 				newMaxKnotParam += l;
 			}
+			// now push the left-cut curve
+			l = leftCurve->Domain().Length();
+			leftCurve->SetDomain(newMaxKnotParam, newMaxKnotParam + l);
+			tmpSegs.push_back(leftCurve);
 			// copy temporary segments container into the internal one
 			gSegments = tmpSegs;
 			// shift internal knots interval
 			SetDomain(DomainStart(), DomainEnd());
 			// now path is open
 			gClosed = G_FALSE;
+			// delete original(not cut) curve segment and return
+			delete curveToDelete;
 			return G_NO_ERROR;
 		}
 		else {
-			err = AddPoint(Param);
-			if (err == G_NO_ERROR) {
-				GDynArray<GCurve2D *> tmpSegs;
-				GReal newMinKnotParam, newMaxKnotParam, l;
-
-				j = (GInt32)gSegments.size();
-				newMinKnotParam = Param;
-				// first push all foregoing segments
-				for (k = i + 1; k < j; k++)
-					tmpSegs.push_back(gSegments[k]);
-				// for all previous segments we reparametrize their knots and push them into temp array
-				newMaxKnotParam = DomainEnd();
-				for (k = 0; k <= i; k++) {
-					l = gSegments[k]->Domain().Length();
-					gSegments[k]->SetDomain(newMaxKnotParam, newMaxKnotParam + l);
-					tmpSegs.push_back(gSegments[k]);
-					newMaxKnotParam += l;
-				}
-				// copy temporary segments container into the internal one
-				gSegments = tmpSegs;
-				// shift internal knots interval
-				SetDomain(DomainStart(), DomainEnd());
-				// now path is open
-				gClosed = G_FALSE;
-				return G_NO_ERROR;
-			}
-			else
-				return err;
+			// delete temporary curves
+			delete leftCurve;
+			delete rightCurve;
+			return err;
 		}
 	}
-	else {
-		if (!LeftPath && !RightPath)
-			return G_NO_ERROR;
+}
 
-		if (GMath::Abs(Param - DomainEnd()) <= 2 * G_EPSILON) {
-			if (LeftPath)
-				LeftPath->CopyFrom(*this);
-			if (RightPath)
+// cut the path, giving the 2 paths
+GError GPath2D::DoCut(const GReal u, GCurve2D *RightCurve, GCurve2D *LeftCurve) const {
+
+	GInt32 i, j;
+	GBool shared;
+	GError err;
+	GCurve2D *cuttedCurve, *rightCurve, *leftCurve;
+	
+	if (gClosed) {
+		GPath2D *tmpPath = (GPath2D *)CreateNew(G_PATH2D_CLASSID);
+
+		if (!tmpPath)
+			return G_UNSUPPORTED_CLASSID;
+
+		err = tmpPath->CopyFrom(*this);
+		if (err == G_NO_ERROR) {
+			// open the path
+			tmpPath->gClosed = G_FALSE;
+			err = tmpPath->DoCut(u, RightCurve, LeftCurve);
+			if (err == G_NO_ERROR) {
+				// cut paths are open
+				if (RightCurve)
+					((GPath2D *)RightCurve)->gClosed = G_FALSE;
+				if (LeftCurve)
+					((GPath2D *)LeftCurve)->gClosed = G_FALSE;
+			}
+		}
+		delete tmpPath;
+		return err;
+	}
+
+	err = ParamToSegmentIndex(u, (GUInt32 &)i, shared);
+	if (err != G_NO_ERROR)
+		return err;
+
+	// type cast is safe
+	GPath2D *RightPath = (GPath2D *)RightCurve;
+	GPath2D *LeftPath = (GPath2D *)LeftCurve;
+
+	if (GMath::Abs(u - DomainEnd()) <= 2 * G_EPSILON) {
+		if (LeftPath)
+			LeftPath->CopyFrom(*this);
+		if (RightPath)
+			RightPath->Clear();
+		return G_NO_ERROR;
+	}
+	else {
+		j = (GInt32)gSegments.size();
+		if (shared) {
+			err = G_NO_ERROR;
+			// first empty output paths, then set knots interval and finally copy segments
+			if (LeftPath) {
+				LeftPath->Clear();
+				LeftPath->SetDomain(DomainStart(), u);
+				err = LeftPath->CloneSegments(gSegments, 0, i - 1);
+			}
+			if (RightPath) {
 				RightPath->Clear();
-			return G_NO_ERROR;
+				RightPath->SetDomain(u, DomainEnd());
+				err = RightPath->CloneSegments(gSegments, i, j - 1);
+			}
+			return err;
 		}
 		else {
-			j = (GInt32)gSegments.size();
-			if (shared) {
-				err = G_NO_ERROR;
-				// first empty output paths, then set knots interval and finally copy segments
+			cuttedCurve = gSegments[i];
+			G_ASSERT(cuttedCurve != NULL);
+			rightCurve = leftCurve = NULL;
+			// first try to create cut pieces (NB: memory allocation will be done by "destination" path's
+			// kernel, just because to be memory consistent and avoid that if "my" kernel will be destroyed
+			// also cut pieces will be destroyed)
+			if (RightPath) {
+				rightCurve = (GCurve2D *)RightPath->CreateNew(cuttedCurve->ClassID());
+				if (!rightCurve)
+					return G_UNSUPPORTED_CLASSID;
+			}
+			if (LeftPath) {
+				leftCurve = (GCurve2D *)LeftPath->CreateNew(cuttedCurve->ClassID());
+				if (!leftCurve) {
+					delete rightCurve;
+					return G_UNSUPPORTED_CLASSID;
+				}
+			}
+			err = cuttedCurve->Cut(u, rightCurve, leftCurve);
+			if (err == G_NO_ERROR) {
 				if (LeftPath) {
+					// first empty output path
 					LeftPath->Clear();
-					LeftPath->gDomain.Set(DomainStart(), Param);
+					// LeftPath will be composed by all previous uncut segments and the left piece
+					// of cut segment
 					err = LeftPath->CloneSegments(gSegments, 0, i - 1);
+					if (err != G_NO_ERROR)
+						goto rollBack;
+					LeftPath->PushBackCurve(leftCurve);
+					// set knots interval: note that internal segment have already right intervals, so
+					// a call to base GCurve2D class is enough
+					LeftPath->GCurve2D::SetDomain(DomainStart(), u);
+					LeftPath->gClosed = G_FALSE;
 				}
 				if (RightPath) {
+					// first empty output path
 					RightPath->Clear();
-					RightPath->gDomain.Set(Param, DomainEnd());
-					err = RightPath->CloneSegments(gSegments, i, j - 1);
+					// RightPath will be composed by the right piece of cut segment plus all foregoing
+					// uncut segments
+					RightPath->PushBackCurve(rightCurve);
+					err = RightPath->CloneSegments(gSegments, i + 1, j - 1);
+					if (err != G_NO_ERROR) {
+						// remove rightCurve
+						RightPath->gSegments.pop_back();
+						goto rollBack;
+					}
+					// set knots interval: note that internal segment have already right intervals, so
+					// a call to base GCurve2D class is enough
+					RightPath->GCurve2D::SetDomain(u, DomainEnd());
+					RightPath->gClosed = G_FALSE;
 				}
-				return err;
+				return G_NO_ERROR;
 			}
-			else {
-				cuttedCurve = gSegments[i];
-				G_ASSERT(cuttedCurve != NULL);
-				rightCurve = leftCurve = NULL;
-				// first try to create cut pieces (NB: memory allocation will be done by "destination" path's
-				// kernel, just because to be memory consistent and avoid that if "my" kernel will be destroyed
-				// also cut pieces will be destroyed)
-				if (RightPath) {
-					rightCurve = (GCurve2D *)RightPath->CreateNew(cuttedCurve->ClassID());
-					if (!rightCurve)
-						return G_UNSUPPORTED_CLASSID;
-				}
-				if (LeftPath) {
-					leftCurve = (GCurve2D *)LeftPath->CreateNew(cuttedCurve->ClassID());
-					if (!leftCurve) {
-						delete rightCurve;
-						return G_UNSUPPORTED_CLASSID;
-					}
-				}
-
-				err = cuttedCurve->Cut(Param, rightCurve, leftCurve);
-				if (err == G_NO_ERROR) {
-					if (LeftPath) {
-						// first empty output path
-						LeftPath->Clear();
-						// LeftPath will be composed by all previous uncut segments and the left piece
-						// of cut segment
-						err = LeftPath->CloneSegments(gSegments, 0, i - 1);
-						if (err != G_NO_ERROR)
-							goto rollBack;
-						LeftPath->PushBackCurve(leftCurve);
-						// set knots interval
-						LeftPath->gDomain.Set(DomainStart(), Param);
-						LeftPath->gClosed = G_FALSE;
-					}
-					if (RightPath) {
-						// first empty output path
-						RightPath->Clear();
-						// RightPath will be composed by the right piece of cut segment plus all foregoing
-						// uncut segments
-						RightPath->PushBackCurve(rightCurve);
-						err = RightPath->CloneSegments(gSegments, i + 1, j - 1);
-						if (err != G_NO_ERROR) {
-							RightPath->gSegments.pop_back();
-							goto rollBack;
-						}
-						// set knots interval
-						RightPath->gDomain.Set(Param, DomainEnd());
-						RightPath->gClosed = G_FALSE;
-					}
-					return G_NO_ERROR;
-				}
 rollBack:
-				// if something was gone wrong with cutting operation, we have to free memory allocated
-				// for cut pieces
-				delete rightCurve;
-				delete leftCurve;
-				return err;
-			}
+			// if something was gone wrong with cutting operation, we have to free memory allocated
+			// for cut pieces
+			delete rightCurve;
+			delete leftCurve;
+			return err;
 		}
 	}
 }
 
 // cut a slice from the path, giving the path that represents the cut away part
-GError GPath2D::Cut(const GReal StartParam, const GReal EndParam, GPath2D *OutPath) {
+GError GPath2D::TwoWaysCut(const GReal u0, const GReal u1, GCurve2D *OutCurve) const {
 
 	GError err;
 
-	if (!OutPath)
+	if (!OutCurve)
 		return G_NO_ERROR;
 
 	// ensure that output path is of the same type of source (uncut) path
-	if (ClassID() != OutPath->ClassID())
+	if (ClassID() != OutCurve->ClassID())
 		/*!
 			\todo a possible power solution would be to temporary instance a path of the same type,
 			then do cutting and if possible convert cut path into wanted type.
 		*/
 		return G_MISSED_FEATURE;
 
+	// type cast is safe
+	GPath2D *OutPath = (GPath2D *)OutCurve;
+
 	if (gClosed) {
-		if (!gDomain.IsInInterval(StartParam) || !gDomain.IsInInterval(EndParam))
+		if (!Domain().IsInInterval(u0) || !Domain().IsInInterval(u1))
 			return G_INVALID_PARAMETER;
 
-		if (StartParam <= EndParam) {
+		if (u0 <= u1) {
 			// temp path used just for support
-			/*GPath2D *tmpPath = (GPath2D *)OutPath->CreateNew(ClassID());
+			GPath2D *tmpPath = (GPath2D *)OutPath->CreateNew(ClassID());
 			if (!tmpPath)
 				return G_UNSUPPORTED_CLASSID;
-			// the trick here is to clone me (only curve segments, we doesn't care about sub-paths)
-			// and set "closed" flag to false; then call Cut function again
-			err = tmpPath->CloneSegments(gSegments, 0, gSegments.size() - 1);
+			// the trick here is to clone me and set "closed" flag to false; then call Cut function again
+			err = tmpPath->CopyFrom(*this);
 			if (err == G_NO_ERROR) {
 				tmpPath->gClosed = G_FALSE;
-				err = tmpPath->Cut(StartParam, EndParam, OutPath);
+				err = tmpPath->Cut(u0, u1, OutPath);
 			}
 			// delete temporary path and return error code
-			delete tmpPath;*/
-
-			// here is a version without cloning, maybe it's not thread safe now 
-			gClosed = G_FALSE;
-			err = Cut(StartParam, EndParam, OutPath);
-			gClosed = G_TRUE;
+			delete tmpPath;
 			return err;
 		}
 		else {
@@ -935,43 +994,23 @@ GError GPath2D::Cut(const GReal StartParam, const GReal EndParam, GPath2D *OutPa
 			GPath2D *tmpPath = (GPath2D *)OutPath->CreateNew(ClassID());
 			if (!tmpPath)
 				return G_UNSUPPORTED_CLASSID;
-			// clone me (only curve segments and interval flags, we doesn't care about sub-paths)
-			tmpPath->gClosed = G_TRUE;
-			tmpPath->gDomain = gDomain;
-			err = tmpPath->CloneSegments(gSegments, 0, (GInt32)gSegments.size() - 1);
+
+			// clone me
+			err = tmpPath->CopyFrom(*this);
+
 			if (err == G_NO_ERROR) {
 				// just open the tmpPath
-				err = tmpPath->Cut(StartParam, (GPath2D *)NULL, (GPath2D *)NULL);
+				err = tmpPath->OpenPath(u0);
 				if (err == G_NO_ERROR)
-					err = tmpPath->Cut(EndParam + (DomainEnd() - StartParam), (GPath2D *)NULL, OutPath);
+					err = tmpPath->DoCut(u1 + (DomainEnd() - u0), (GPath2D *)NULL, OutPath);
 			}
 			// delete temporary path and return error code
 			delete tmpPath;
 			return err;
 		}
 	}
-	else {
-		GPath2D *left;
-		GInterval<GReal> requestedInterval(StartParam, EndParam);
-		requestedInterval &= gDomain;
-		if (requestedInterval.IsEmpty())
-			return G_INVALID_OPERATION;
-		// first try to create cut pieces (NB: memory allocation will be done by "destination" path's
-		// kernel, just because to be memory consistent and avoid that if "my" kernel will be destroyed
-		// also cut pieces will be destroyed)
-		left = (GPath2D *)OutPath->CreateNew(ClassID());
-		if (!left)
-			return G_UNSUPPORTED_CLASSID;
-
-		err = Cut(requestedInterval.End(), (GPath2D *)NULL, left);
-		if (err == G_NO_ERROR)
-			err = left->Cut(requestedInterval.Start(), OutPath, (GPath2D *)NULL);
-		// path is not closed
-		OutPath->gClosed = G_FALSE;
-		// free temporary paths
-		delete left;
-		return err;
-	}
+	else
+		return GCurve2D::Cut(u0, u1, OutPath);
 }
 
 // giving CurvePos = Length(t), it solve for t = Inverse(Length(s))
@@ -1011,38 +1050,9 @@ GBool GPath2D::GlobalParameter(GReal& Result, const GReal PathPos,
 	return G_TRUE;
 }
 
-// cut the path by length
-GError GPath2D::CutByLength(const GReal PathPos, GPath2D *RightPath, GPath2D *LeftPath, const GReal MaxError) {
-
-	GReal u;
-
-	if (!RightPath && !LeftPath)
-		return G_NO_ERROR;
-
-	// first do inverse mapping
-	GlobalParameter(u, PathPos, MaxError);
-	// and then cut
-	return Cut(u, RightPath, LeftPath);
-}
-
-// cut the path by length
-GError GPath2D::CutByLength(const GReal PathPos0, const GReal PathPos1, GPath2D *OutPath, const GReal MaxError) {
-
-	GReal u0, u1;
-
-	if (!OutPath)
-		return G_NO_ERROR;
-
-	// first do inverse mapping
-	GlobalParameter(u0, PathPos0, MaxError);
-	GlobalParameter(u1, PathPos1, MaxError);
-	// and then cut
-	return Cut(u0, u1, OutPath);
-}
-
 // intersect the curve with a ray, and returns a list of intersections
 GBool GPath2D::IntersectRay(const GRay2& NormalizedRay, GDynArray<GVector2>& Intersections,
-							const GReal Precision, const GInt32 MaxIterations) const {
+							const GReal Precision, const GUInt32 MaxIterations) const {
 
 	GUInt32 i, j = (GUInt32)gSegments.size(), k, w;
 	GReal lastIntersection, tolerance;
@@ -1092,200 +1102,307 @@ GError GPath2D::Flatten(GDynArray<GPoint2>& Contour, const GReal MaxDeviation,
 }
 
 // return the curve value calculated at global parameter u
-GPoint2 GPath2D::Evaluate(const GReal Param) const {
+GPoint2 GPath2D::Evaluate(const GReal u) const {
 
 	GUInt32 i;
-	GReal u;
+	GReal uu;
 	GError err;
 	GBool shared;
 
 	// clamp parameter into permitted interval
-	if (Param < DomainStart())
-		u = DomainStart();
+	if (u < DomainStart())
+		uu = DomainStart();
 	else
-	if (Param > DomainEnd())
-		u = DomainEnd();
+	if (u > DomainEnd())
+		uu = DomainEnd();
 	else
-		u = Param;
+		uu = u;
 
-	err = ParamToSegmentIndex(u, i, shared);
+	err = ParamToSegmentIndex(uu, i, shared);
 	if (err == G_NO_ERROR)
-		return gSegments[i]->Evaluate(u);
+		return gSegments[i]->Evaluate(uu);
 	else
 		return GPoint2(G_MIN_REAL, G_MIN_REAL);
 }
 
 // return the derivate Order-th calculated at global parameter u
-GVector2 GPath2D::Derivative(const GDerivativeOrder Order, const GReal Param, const GBool Right) const {
+GVector2 GPath2D::Derivative(const GDerivativeOrder Order, const GReal u) const {
 
 	GUInt32 i;
-	GReal u;
+	GReal uu;
 	GError err;
 	GBool shared;
 
 	// clamp parameter into permitted interval
-	if (Param < DomainStart())
-		u = DomainStart();
+	if (u < DomainStart())
+		uu = DomainStart();
 	else
-	if (Param > DomainEnd())
-		u = DomainEnd();
+	if (u > DomainEnd())
+		uu = DomainEnd();
 	else
-		u = Param;
+		uu = u;
 
-	err = ParamToSegmentIndex(u, i, shared);
+	err = ParamToSegmentIndex(uu, i, shared);
 	if (err != G_NO_ERROR)
 		return GVector2(0, 0);
 
-	if (!shared)
-		return gSegments[i]->Derivative(Order, u);
-	else {
-		if (Right)
-			return gSegments[i]->Derivative(Order, u);
-		else {
-			if (i > 0)
-				return gSegments[i - 1]->Derivative(Order, u);
-			else
-				return gSegments[gSegments.size() - 1]->Derivative(Order, u);
-		}
-	}
+	return gSegments[i]->Derivative(Order, uu);
 }
 
-// get curve tangent (specifying global parameter)
-GVector2 GPath2D::Tangent(const GReal Param, const GBool Right) const {
+void GPath2D::DerivativeLR(const GDerivativeOrder Order, const GReal u,
+						   GVector2& LeftDerivative, GVector2& RightDerivative) const {
 
 	GUInt32 i;
-	GReal u;
+	GReal uu;
 	GError err;
 	GBool shared;
 
 	// clamp parameter into permitted interval
-	if (Param < DomainStart())
-		u = DomainStart();
+	if (u < DomainStart())
+		uu = DomainStart();
 	else
-	if (Param > DomainEnd())
-		u = DomainEnd();
+	if (u > DomainEnd())
+		uu = DomainEnd();
 	else
-		u = Param;
+		uu = u;
 
-	err = ParamToSegmentIndex(u, i, shared);
-	if (err != G_NO_ERROR)
-		return GVector2(0, 0);
+	err = ParamToSegmentIndex(uu, i, shared);
+	if (err != G_NO_ERROR) {
+		LeftDerivative = RightDerivative = GVector2(0, 0);
+		return;
+	}
 
-	if (!shared)
-		return gSegments[i]->Tangent(u);
-	else {
-		if (Right)
-			return gSegments[i]->Tangent(u);
-		else {
-			if (i > 0)
-				return gSegments[i - 1]->Tangent(u);
-			else
-				return gSegments[gSegments.size() - 1]->Tangent(u);
+	if (!shared) {
+		if (gSegments[i]->IsOfType(G_MULTICURVE2D_CLASSID)) {
+			GMultiCurve2D *tmpCurve = (GMultiCurve2D *)gSegments[i];
+			tmpCurve->DerivativeLR(Order, uu, LeftDerivative, RightDerivative);
 		}
+		else {
+			LeftDerivative = RightDerivative = gSegments[i]->Derivative(Order, uu);
+		}
+	}
+	else {
+		LeftDerivative = RightDerivative = gSegments[i]->Derivative(Order, uu);
 	}
 }
 
-// get curve normal (specifying global parameter)
-GVector2 GPath2D::Normal(const GReal Param, const GBool Right) const {
+GError GPath2D::DoGetPointParameter(const GUInt32 Index, GReal& Parameter) const {
 
-	GUInt32 i;
-	GReal u;
-	GError err;
-	GBool shared;
-
-	// clamp parameter into permitted interval
-	if (Param < DomainStart())
-		u = DomainStart();
-	else
-	if (Param > DomainEnd())
-		u = DomainEnd();
-	else
-		u = Param;
-
-	err = ParamToSegmentIndex(u, i, shared);
-	if (err != G_NO_ERROR)
-		return GVector2(0, 0);
-
-	if (!shared)
-		return gSegments[i]->Normal(u);
-	else {
-		if (Right)
-			return gSegments[i]->Normal(u);
-		else {
-			if (i > 0)
-				return gSegments[i - 1]->Normal(u);
-			else
-				return gSegments[gSegments.size() - 1]->Normal(u);
-		}
+	// just to avoid warning...
+	if (Index && Parameter) {
 	}
+	return G_INVALID_OPERATION;
 }
 
-// get curvature (specifying global parameter)
-GReal GPath2D::Curvature(const GReal Param, const GBool Right) const {
+GError GPath2D::DoSetPointParameter(const GUInt32 Index, const GReal NewParamValue,
+									GUInt32& NewIndex, GBool& AlreadyExists) {
 
-	GUInt32 i;
-	GReal u;
-	GError err;
-	GBool shared;
-
-	// clamp parameter into permitted interval
-	if (Param < DomainStart())
-		u = DomainStart();
-	else
-	if (Param > DomainEnd())
-		u = DomainEnd();
-	else
-		u = Param;
-
-	err = ParamToSegmentIndex(u, i, shared);
-	if (err != G_NO_ERROR)
-		return 0;
-
-	if (!shared)
-		return gSegments[i]->Curvature(u);
-	else {
-		if (Right)
-			return gSegments[i]->Curvature(u);
-		else {
-			if (i > 0)
-				return gSegments[i - 1]->Curvature(u);
-			else
-				return gSegments[gSegments.size() - 1]->Curvature(u);
-		}
+	// just to avoid warning...
+	if (Index && NewParamValue && NewIndex && AlreadyExists) {
 	}
+	return G_INVALID_OPERATION;
 }
 
-// get curve speed (specifying global parameter)
-GReal GPath2D::Speed(const GReal Param, const GBool Right) const {
+GError GPath2D::DoRemovePoint(const GUInt32 Index) {
 
-	GUInt32 i;
-	GReal u;
+	// just to avoid warning...
+	if (Index) {
+	}
+	return G_INVALID_OPERATION;
+}
+
+GError GPath2D::DoAddPoint(const GReal Parameter, const GPoint2 *NewPoint, GUInt32& Index, GBool& AlreadyExists) {
+
+	GUInt32 i, j;
 	GError err;
 	GBool shared;
+	GCurve2D *rightCurve, *leftCurve, *cuttedCurve;
+	GMultiCurve2D *multiCurve;
 
-	// clamp parameter into permitted interval
-	if (Param < DomainStart())
-		u = DomainStart();
-	else
-	if (Param > DomainEnd())
-		u = DomainEnd();
-	else
-		u = Param;
+	if (gSegments.size() == 0)
+		return G_INVALID_OPERATION;
 
-	err = ParamToSegmentIndex(u, i, shared);
-	if (err != G_NO_ERROR)
-		return 0;
-
-	if (!shared)
-		return gSegments[i]->Speed(u);
-	else {
-		if (Right)
-			return gSegments[i]->Speed(u);
-		else {
-			if (i > 0)
-				return gSegments[i - 1]->Speed(u);
+	// add point ON path
+	if (!NewPoint) {
+		// now we are sure that we are inside knots interval
+		err = ParamToSegmentIndex(Parameter, i, shared);
+		G_ASSERT(err == G_NO_ERROR);
+		// first point
+		if (GMath::Abs(Parameter - DomainStart()) <= G_EPSILON) {
+			AlreadyExists = G_TRUE;
+			Index = 0;
+			return G_NO_ERROR;
+		}
+		else
+		// last point
+		if (GMath::Abs(Parameter - DomainEnd()) <= G_EPSILON) {
+			AlreadyExists = G_TRUE;
+			if (gClosed)
+				Index = 0;
 			else
-				return gSegments[gSegments.size() - 1]->Speed(u);
+				Index = PointsCount() - 1;
+			return G_NO_ERROR;
+		}
+		else
+		// shared point (different form start and end point)
+		if (shared) {
+			AlreadyExists = G_TRUE;
+			err = FirstPointInSegment(i, Index);
+			G_ASSERT(err == G_NO_ERROR);
+			return err;
+		}
+		// point not shared
+		else {
+			// first we must check if the segment is a multicurve; in this case just call AddPoint of the
+			// multicurve...
+			if (gSegments[i]->IsOfType(G_MULTICURVE2D_CLASSID)) {
+				multiCurve = (GMultiCurve2D *)gSegments[i];
+				err = multiCurve->AddPoint(Parameter, Index, AlreadyExists);
+				if (err == G_NO_ERROR) {
+					err = FirstPointInSegment(i, j);
+					G_ASSERT(err == G_NO_ERROR);
+					Index += j;
+				}
+				return err;
+			}
+			// ...else cut the segment (in this case point is not shared and we are considering a NON multicurve)
+			cuttedCurve = gSegments[i];
+			// first try to create the 2 new pieces
+			rightCurve = (GCurve2D *)CreateNew(cuttedCurve->ClassID());
+			if (!rightCurve)
+				return G_UNSUPPORTED_CLASSID;
+			leftCurve = (GCurve2D *)CreateNew(cuttedCurve->ClassID());
+			if (!leftCurve) {
+				delete rightCurve;
+				return G_UNSUPPORTED_CLASSID;
+			}
+			// cut identified segment
+			err = cuttedCurve->Cut(Parameter, rightCurve, leftCurve);
+			if (err == G_NO_ERROR) {
+				// curve will be replaced, in order, by leftCurve and rightCurve
+				delete cuttedCurve;
+				gSegments[i] = leftCurve;
+				GDynArray<GCurve2D *>::iterator it = gSegments.begin();
+				it += (i + 1);
+				gSegments.insert(it, rightCurve);
+				// point is new and global index is calculated
+				AlreadyExists = G_FALSE;
+				return FirstPointInSegment(i + 1, Index);
+			}
+			else {
+				// if something was gone wrong with cutting operation, we have to free memory allocated
+				// for cut pieces
+				delete rightCurve;
+				delete leftCurve;
+				return err;
+			}
+		}
+	}
+	// add point inside or outside the domain, and new geometric position is specified
+	else {
+		// if path is closed and parameter is outside domain, operation in not valid
+		if (gClosed && (Parameter <= DomainStart() || Parameter > DomainEnd()))
+			return G_INVALID_OPERATION;
+
+		// if path is open we can add a point outside domain if and only if the corresponding curve
+		// segment is a multicurve
+		if (Parameter < DomainStart() - G_EPSILON) {
+			G_ASSERT(gClosed == G_FALSE);
+			if (gSegments[0]->IsOfType(G_MULTICURVE2D_CLASSID)) {
+				multiCurve = (GMultiCurve2D *)gSegments[0];
+				return multiCurve->AddPoint(Parameter, *NewPoint, Index, AlreadyExists);
+			}
+			else
+				return G_INVALID_OPERATION;
+		}
+		else
+		// we are at the first start point (path can be closed or open)
+		if (Parameter < DomainStart() + G_EPSILON) {
+			SetStartPoint(*NewPoint);
+			Index = 0;
+			AlreadyExists = G_TRUE;
+			return G_NO_ERROR;
+		}
+		else
+		// if path is open we can add a point outside domain if and only if the corresponding curve
+		// segment is a multicurve
+		if (Parameter > DomainEnd() + G_EPSILON) {
+			G_ASSERT(gClosed == G_FALSE);
+			i = (GUInt32)gSegments.size() - 1;
+			if (gSegments[i]->IsOfType(G_MULTICURVE2D_CLASSID)) {
+				multiCurve = (GMultiCurve2D *)gSegments[i];
+				err = multiCurve->AddPoint(Parameter, *NewPoint, Index, AlreadyExists);
+				if (err == G_NO_ERROR)
+					Index = PointsCount() - 1;
+				return err;
+			}
+			else
+				return G_INVALID_OPERATION;
+		}
+		else
+		// we are at the last point (path can be closed or open)
+		if (Parameter > DomainEnd() - G_EPSILON) {
+			SetEndPoint(*NewPoint);
+			if (gClosed)
+				Index = 0;
+			else
+				Index = PointsCount() - 1;
+			AlreadyExists = G_TRUE;
+			return G_NO_ERROR;
+		}
+		// we are completely inside path domain
+		else {
+			// now we are sure that we are inside knots interval
+			err = ParamToSegmentIndex(Parameter, i, shared);
+			G_ASSERT(err == G_NO_ERROR);
+
+			// first we must check if the segment is a multicurve; in this case just call AddPoint of the
+			// multicurve...
+			if (gSegments[i]->IsOfType(G_MULTICURVE2D_CLASSID)) {
+				multiCurve = (GMultiCurve2D *)gSegments[i];
+				err = multiCurve->AddPoint(Parameter, *NewPoint, Index, AlreadyExists);
+				if (err == G_NO_ERROR) {
+					err = FirstPointInSegment(i, j);
+					G_ASSERT(err == G_NO_ERROR);
+					Index += j;
+				}
+				return err;
+			}
+			// ...else cut the segment (in this case point is not shared and we are considering a NON multicurve)
+			cuttedCurve = gSegments[i];
+			// first try to create the 2 new pieces
+			rightCurve = (GCurve2D *)CreateNew(cuttedCurve->ClassID());
+			if (!rightCurve)
+				return G_UNSUPPORTED_CLASSID;
+			leftCurve = (GCurve2D *)CreateNew(cuttedCurve->ClassID());
+			if (!leftCurve) {
+				delete rightCurve;
+				return G_UNSUPPORTED_CLASSID;
+			}
+			// cut identified segment
+			err = cuttedCurve->Cut(Parameter, rightCurve, leftCurve);
+			if (err == G_NO_ERROR) {
+				// curve will be replaced, in order, by leftCurve and rightCurve
+				delete cuttedCurve;
+				// move the point to the specified position
+				leftCurve->SetEndPoint(*NewPoint);
+				rightCurve->SetStartPoint(*NewPoint);
+				// insert left and right curves
+				gSegments[i] = leftCurve;
+				GDynArray<GCurve2D *>::iterator it = gSegments.begin();
+				it += (i + 1);
+				gSegments.insert(it, rightCurve);
+				// point is new and global index is calculated
+				AlreadyExists = G_FALSE;
+				return FirstPointInSegment(i + 1, Index);
+			}
+			else {
+				// if something was gone wrong with cutting operation, we have to free memory allocated
+				// for cut pieces
+				delete rightCurve;
+				delete leftCurve;
+				return err;
+			}
 		}
 	}
 }
@@ -1300,7 +1417,7 @@ void GPath2D::ClosePath(const GBool MoveStartPoint) {
 		SetEndPoint(StartPoint());
 	gClosed = G_TRUE;
 }
-
+/*
 // set path start point
 void GPath2D::SetStartPoint(const GPoint2& NewValue) {
 
@@ -1325,7 +1442,7 @@ void GPath2D::SetEndPoint(const GPoint2& NewValue) {
 	if (gClosed)
 		gSegments[0]->SetStartPoint(NewValue);
 	gSegments[i - 1]->SetEndPoint(NewValue);
-}
+}*/
 
 // calculate path piece length, with the assumption that StartParam <= EndParam
 GReal GPath2D::CalcLength(const GReal StartParam, const GReal EndParam, const GReal MaxError) const {
@@ -1340,7 +1457,7 @@ GReal GPath2D::CalcLength(const GReal StartParam, const GReal EndParam, const GR
 	GInterval<GReal> requestedInterval(StartParam, EndParam);
 
 	// check if requested interval is not empty
-	requestedInterval &= gDomain;
+	requestedInterval &= Domain();
 	if (requestedInterval.IsEmpty())
 		return 0;
 	// find the start segment index
@@ -1374,17 +1491,17 @@ GReal GPath2D::CalcLength(const GReal StartParam, const GReal EndParam, const GR
 }
 
 // returns the length of the path curve between the 2 specified global parameter values
-GReal GPath2D::Length(const GReal StartParam, const GReal EndParam, const GReal MaxError) const {
+GReal GPath2D::Length(const GReal u0, const GReal u1, const GReal MaxError) const {
 
 	// for a closed path, we must consider a "wrapping" global parameter; so for example, if a path goes
 	// from 0.0 to 10.0, and we call Length(8.0, 2.0) we must return Length(0.0, 2.0) + Length(8.0, 10.0)
 	if (gClosed) {
-		if (gDomain.IsInInterval(StartParam) && gDomain.IsInInterval(EndParam)) {
-			if (StartParam <= EndParam)
-				return CalcLength(StartParam, EndParam, MaxError);
+		if (Domain().IsInInterval(u0) && Domain().IsInInterval(u1)) {
+			if (u0 <= u1)
+				return CalcLength(u0, u1, MaxError);
 			else {
-				GReal l1 = CalcLength(StartParam, DomainEnd(), MaxError);
-				GReal l2 = CalcLength(DomainStart(), EndParam, MaxError);
+				GReal l1 = CalcLength(u0, DomainEnd(), MaxError);
+				GReal l2 = CalcLength(DomainStart(), u1, MaxError);
 				return (l1 + l2);
 			}
 		}
@@ -1392,14 +1509,55 @@ GReal GPath2D::Length(const GReal StartParam, const GReal EndParam, const GReal 
 			return 0;
 	}
 	else {
-		if (StartParam <= EndParam)
-			return CalcLength(StartParam, EndParam, MaxError);
+		if (u0 <= u1)
+			return CalcLength(u0, u1, MaxError);
 		else
-			return CalcLength(EndParam, StartParam, MaxError);
+			return CalcLength(u1, u0, MaxError);
 	}
 }
 
-// get curve start point
+
+GReal GPath2D::Variation(const GReal u0, const GReal u1, const GPoint2& p0, const GPoint2& p1) const {
+
+	G_ASSERT(u0 <= u1);
+
+	GUInt32 i, j;
+	GCurve2D *curve;
+	GReal localVar;
+	GError err;
+	GBool shared;
+
+	// find the start segment index
+	err = ParamToSegmentIndex(u0, i, shared);
+	if (err != G_NO_ERROR)
+		return 0;
+	// loops over interested segments
+	j = (GUInt32)gSegments.size();
+	localVar = 0;
+	while (i < j) {
+		curve = gSegments[i];
+		G_ASSERT(curve != NULL);
+		if (u1 > curve->DomainEnd()) {
+			if (curve->DomainStart() < u0)
+				localVar = GMath::Max(localVar, curve->Variation(u0, curve->DomainEnd()));
+			else
+				localVar = GMath::Max(localVar, curve->Variation(curve->DomainStart(), curve->DomainEnd()));
+			// jump to the next segment
+			i++;
+		}
+		// this is the case of the last interested segment, so calculate the remaining curve piece and exit
+		else {
+			if (curve->DomainStart() < u0)
+				localVar = GMath::Max(localVar, curve->Variation(u0, u1));
+			else
+				localVar = GMath::Max(localVar, curve->Variation(curve->DomainStart(), u1));
+			break;
+		}
+	}
+	return localVar;
+}
+
+/*// get curve start point
 GPoint2 GPath2D::StartPoint() const {
 
 	if (gSegments.size() == 0)
@@ -1416,6 +1574,6 @@ GPoint2 GPath2D::EndPoint() const {
 		return GPoint2(G_MIN_REAL, G_MIN_REAL);
 	else
 		return gSegments[i - 1]->EndPoint();
-}
+}*/
 
 };	// end namespace Amanith

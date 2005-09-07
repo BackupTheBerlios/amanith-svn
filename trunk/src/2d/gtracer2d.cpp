@@ -135,12 +135,12 @@ GError GTracedContour::ConvertToPath(GPath2D& Path) const {
 
 			i--;
 			tmpPolyline.SetPoints(polyPts, u0, u);
-			err = Path.AppendSegment(tmpPolyline);
+			err = Path.AppendCurve(tmpPolyline);
 		}
 		else {
 			tmpBezier.SetPoints(cursor, gPoints[i].Points[0], gPoints[i].Points[1], gPoints[i].Points[2]);
 			tmpBezier.SetDomain(u, u + step);
-			err = Path.AppendSegment(tmpBezier);
+			err = Path.AppendCurve(tmpBezier);
 
 			cursor = gPoints[i].Points[2];
 			u += step;

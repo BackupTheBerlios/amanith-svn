@@ -1,3 +1,29 @@
+2005-09-07
+
+	* Version 0.2 Alpha.
+	==========================
+
+	* Implemented correct transformations to GHermiteCurve2D/1D classes (now also tangents are properly handled).
+
+	* Fixed several little bugs into GPath2D class.
+
+	* Fixed a bug in B-Spline SetPoints() method that prevented to build a correct opened spline.
+
+	* Fixed a wrong cubic Bezier flattening in some rare degenerative cases.
+
+	* Added new methods to class GMultiCurve that make possible to extract derivatives, tangents, normals and curvatures in non-derivable
+	point parameter. In this case two values will be returned (left and right one).
+
+	* Added animations support. GAnimElement class is the base class to derive to and get animations support automatically.
+
+	* GCurve1D and GCurve2D classes now derive from GAnimElement; added Point() and SetPoint() methods that support time animations, so
+	control points now can be animated.
+
+	* GPath2D class has now be derived from GMultiCurve2D.
+
+	* Added an examples showing Amanith animations: animcolor.
+
+
 2005-08-03
 
 	* Version 0.1 Final.

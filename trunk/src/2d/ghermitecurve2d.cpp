@@ -28,6 +28,7 @@
 
 #include "amanith/2d/ghermitecurve2d.h"
 #include "amanith/numerics/gintegration.h"
+#include "amanith/geometry/gxform.h"
 #include <algorithm>
 
 /*!
@@ -72,17 +73,17 @@ GError GHermiteCurve2D::BaseClone(const GElement& Source) {
 }
 
 // get Index-th control point
-GPoint2 GHermiteCurve2D::Point(const GInt32 Index) const {
+GPoint2 GHermiteCurve2D::Point(const GUInt32 Index) const {
 
-	if ((Index < 0) || (Index >= PointsCount()))
+	if (Index >= PointsCount())
 		return GPoint2(G_MIN_REAL, G_MIN_REAL);
 	return gKeys[Index].Value;
 }
 
 // set Index-th control point
-GError GHermiteCurve2D::SetPoint(const GInt32 Index, const GPoint2& NewPoint) {
+GError GHermiteCurve2D::SetPoint(const GUInt32 Index, const GPoint2& NewPoint) {
 
-	if ((Index < 0) || (Index >= PointsCount()))
+	if (Index >= PointsCount())
 		return G_OUT_OF_RANGE;
 	gKeys[Index].Value = NewPoint;
 	return G_NO_ERROR;
@@ -91,7 +92,7 @@ GError GHermiteCurve2D::SetPoint(const GInt32 Index, const GPoint2& NewPoint) {
 // get a key
 GError GHermiteCurve2D::Key(const GUInt32 Index, GHermiteKey2D& KeyValue) const {
 
-	if (Index >= (GUInt32)PointsCount())
+	if (Index >= PointsCount())
 		return G_OUT_OF_RANGE;
 	KeyValue = gKeys[Index];
 	return G_NO_ERROR;
@@ -101,9 +102,7 @@ GError GHermiteCurve2D::Key(const GUInt32 Index, GHermiteKey2D& KeyValue) const 
 GError GHermiteCurve2D::SetKey(const GUInt32 Index, const GPoint2& NewKeyValue,
 							   const GVector2& InTangent, const GVector2& OutTangent) {
 
-	GInt32 i = PointsCount();
-
-	if ((GInt32)Index >= i)
+	if (Index >= PointsCount())
 		return G_OUT_OF_RANGE;
 
 	gKeys[Index].Value = NewKeyValue;
@@ -123,7 +122,7 @@ GError GHermiteCurve2D::DoGetPointParameter(const GUInt32 Index, GReal& Paramete
 GError GHermiteCurve2D::DoSetPointParameter(const GUInt32 Index, const GReal NewParamValue,
 											GUInt32& NewIndex, GBool& AlreadyExists) {
 
-	GUInt32 i, j = (GUInt32)PointsCount(), deleteIndex = 0;
+	GUInt32 i, j = PointsCount(), deleteIndex = 0;
 	GError err;
 	GReal dtdu = 0, dtdu1 = 0, dtdu2 = 0;
 	GBool b, sameInterval, deleteKey;
@@ -256,7 +255,7 @@ void GHermiteCurve2D::CalcCatmullRomTangents(const GUInt32 Index0, const GUInt32
 	}
 
 	// full Catmull-Rom schema (3 or more keys)
-	GUInt32 i, j = (GUInt32)PointsCount(), i0, i1;
+	GUInt32 i, j = PointsCount(), i0, i1;
 	GReal cso, csi;
 	GVector2 v1, v2;
 
@@ -307,7 +306,7 @@ GReal GHermiteCurve2D::SegmentSpeedEvaluationCallBack(const GReal u, void *Data)
 GReal GHermiteCurve2D::SegmentLength(const GUInt32 Index, const GReal MinParam, const GReal MaxParam,
 									 const GReal MaxError) const {
 
-	G_ASSERT((GInt32)Index < PointsCount() - 1);
+	G_ASSERT((GInt32)Index < (GInt32)PointsCount() - 1);
 	G_ASSERT(MinParam >= gKeys[Index].Parameter && MaxParam <= gKeys[Index + 1].Parameter);
 
 	GHermiteCallBackData callBackData(this, Index);
@@ -322,7 +321,7 @@ GReal GHermiteCurve2D::SegmentLength(const GUInt32 Index, const GReal MinParam, 
 // Index is valid and also parameter value is inside segment range
 GPoint2 GHermiteCurve2D::SegmentEvaluate(const GUInt32 Index, const GReal Parameter) const {
 
-	G_ASSERT((GInt32)Index < PointsCount() - 1);
+	G_ASSERT((GInt32)Index < (GInt32)PointsCount() - 1);
 	G_ASSERT(Parameter >= gKeys[Index].Parameter && Parameter <= gKeys[Index + 1].Parameter);
 
 	GReal t = (Parameter - gKeys[Index].Parameter) / (gKeys[Index + 1].Parameter - gKeys[Index].Parameter);
@@ -340,7 +339,7 @@ GPoint2 GHermiteCurve2D::SegmentEvaluate(const GUInt32 Index, const GReal Parame
 GVector2 GHermiteCurve2D::SegmentTangent(const GUInt32 Index, const GDerivativeOrder Order,
 										 const GReal Parameter) const {
 
-	G_ASSERT((GInt32)Index < PointsCount() - 1);
+	G_ASSERT((GInt32)Index < (GInt32)PointsCount() - 1);
 	G_ASSERT(Parameter >= gKeys[Index].Parameter && Parameter <= gKeys[Index + 1].Parameter);
 
 	GReal dtdu = 1 / (gKeys[Index + 1].Parameter - gKeys[Index].Parameter);
@@ -374,7 +373,7 @@ GVector2 GHermiteCurve2D::SegmentTangent(const GUInt32 Index, const GDerivativeO
 GVector2 GHermiteCurve2D::SegmentDerivative(const GUInt32 Index, const GDerivativeOrder Order,
 											const GReal Parameter) const{
 
-	G_ASSERT((GInt32)Index < PointsCount() - 1);
+	G_ASSERT((GInt32)Index < (GInt32)PointsCount() - 1);
 	G_ASSERT(Parameter >= gKeys[Index].Parameter && Parameter <= gKeys[Index + 1].Parameter);
 
 	GReal dtdu = 1 / (gKeys[Index + 1].Parameter - gKeys[Index].Parameter);
@@ -391,7 +390,7 @@ GVector2 GHermiteCurve2D::SegmentDerivative(const GUInt32 Index, const GDerivati
 // Index is valid and also parameter range is inside specified segment range
 GReal GHermiteCurve2D::SegmentVariation(const GUInt32 Index, const GReal MinParam, const GReal MaxParam) const {
 
-	G_ASSERT((GInt32)Index < PointsCount() - 1);
+	G_ASSERT((GInt32)Index < (GInt32)PointsCount() - 1);
 	G_ASSERT(MinParam >= gKeys[Index].Parameter && MaxParam <= gKeys[Index + 1].Parameter);
 
 	GUInt32 i, numSeg;
@@ -537,7 +536,7 @@ GBool GHermiteCurve2D::ParamToKeyIndex(const GReal Param, GUInt32& KeyIndex) con
 // curve evaluations at the interval ends
 GReal GHermiteCurve2D::Variation(const GReal u0, const GReal u1, const GPoint2& p0, const GPoint2& p1) const {
 
-	GUInt32 keyIndex, j = (GUInt32)PointsCount(), i;
+	GUInt32 keyIndex, j = PointsCount(), i;
 
 	if (j < 2)
 		return 0;
@@ -659,7 +658,6 @@ GError GHermiteCurve2D::DoCut(const GReal u, GCurve2D *RightCurve, GCurve2D *Lef
 
 		if (b)
 			rCurve->gKeys[1].InTangent *= (dtdu2 / dtdu);
-
 	}
 	return G_NO_ERROR;
 }
@@ -668,7 +666,7 @@ GError GHermiteCurve2D::DoCut(const GReal u, GCurve2D *RightCurve, GCurve2D *Lef
 GError GHermiteCurve2D::DoAddPoint(const GReal Parameter, const GPoint2 *NewPoint, GUInt32& Index,
 								   GBool& AlreadyExists) {
 
-	GInt32 i = PointsCount();
+	GInt32 i = (GInt32)PointsCount();
 
 	// empty curve
 	if (i == 0) {
@@ -736,7 +734,7 @@ GError GHermiteCurve2D::DoAddPoint(const GReal Parameter, const GPoint2 *NewPoin
 		gKeys.push_back(GHermiteKey2D(Parameter, *NewPoint));
 		// build tangent
 		CalcCatmullRomTangents(PointsCount() - 1, PointsCount() - 1);
-		Index = (GUInt32)PointsCount() - 1;
+		Index = PointsCount() - 1;
 		AlreadyExists = G_FALSE;
 		return G_NO_ERROR;
 	}
@@ -744,7 +742,7 @@ GError GHermiteCurve2D::DoAddPoint(const GReal Parameter, const GPoint2 *NewPoin
 	if (Parameter >= DomainEnd() - G_EPSILON) {
 		if (NewPoint)
 			gKeys[PointsCount() - 1].Value = *NewPoint;
-		Index = (GUInt32)PointsCount() - 1;
+		Index = PointsCount() - 1;
 		AlreadyExists = G_TRUE;
 		return G_NO_ERROR;
 	}
@@ -815,7 +813,7 @@ GError GHermiteCurve2D::DoAddPoint(const GReal Parameter, const GPoint2 *NewPoin
 // (at least) a minimal (2-keys made) multi-curve
 GError GHermiteCurve2D::DoRemovePoint(const GUInt32 Index) {
 
-	GUInt32 i = (GUInt32)PointsCount();
+	GUInt32 i = PointsCount();
 	GDynArray<GHermiteKey2D>::iterator it = gKeys.begin();
 
 	// we are sure that before removing we have at least 3 keys
@@ -843,7 +841,7 @@ GError GHermiteCurve2D::DoRemovePoint(const GUInt32 Index) {
 GError GHermiteCurve2D::SetDomain(const GReal NewMinValue, const GReal NewMaxValue) {
 	
 	GInterval<GReal> newInterval(NewMinValue, NewMaxValue);
-	GUInt32 i, j = (GUInt32)PointsCount();
+	GUInt32 i, j = PointsCount();
 	GReal s, k;
 
 	// check if new range is empty
@@ -882,7 +880,7 @@ GError GHermiteCurve2D::SetDomain(const GReal NewMinValue, const GReal NewMaxVal
 // suppose that Index is valid
 void GHermiteCurve2D::SegmentToBezierConversion(const GUInt32 Index, GBezierCurve2D& Result) const {
 
-	G_ASSERT((GInt32)Index < PointsCount() - 1);
+	G_ASSERT((GInt32)Index < (GInt32)PointsCount() - 1);
 	Result.SetPoints(gKeys[Index].Value, (gKeys[Index].OutTangent / 3) + gKeys[Index].Value,
 					 gKeys[Index + 1].Value - (gKeys[Index + 1].InTangent / 3), gKeys[Index + 1].Value);
 	Result.SetDomain(gKeys[Index].Parameter, gKeys[Index + 1].Parameter);
@@ -891,7 +889,7 @@ void GHermiteCurve2D::SegmentToBezierConversion(const GUInt32 Index, GBezierCurv
 // convert the Index-th segment (from key (i) to key (i-1)) into a cubic Bezier form
 GError GHermiteCurve2D::SegmentToBezier(const GUInt32 Index, GBezierCurve2D& Result) {
 
-	if ((GInt32)Index >= PointsCount() - 1)
+	if ((GInt32)Index >= (GInt32)PointsCount() - 1)
 		return G_OUT_OF_RANGE;
 
 	SegmentToBezierConversion(Index, Result);
@@ -902,9 +900,9 @@ GError GHermiteCurve2D::SegmentToBezier(const GUInt32 Index, GBezierCurve2D& Res
 // Index is valid
 GBool GHermiteCurve2D::SegmentIntersectRay(const GUInt32 Index, const GRay2& NormalizedRay,
 										   GDynArray<GVector2>& Intersections,
-										   const GReal Precision, const GInt32 MaxIterations) const {
+										   const GReal Precision, const GUInt32 MaxIterations) const {
 
-	G_ASSERT((GInt32)Index < PointsCount() - 1);
+	G_ASSERT((GInt32)Index < (GInt32)PointsCount() - 1);
 
 	// convert Hermite curve into a Bezier form
 	GBezierCurve2D tmpBez;
@@ -917,9 +915,9 @@ GBool GHermiteCurve2D::SegmentIntersectRay(const GUInt32 Index, const GRay2& Nor
 
 // intersect the curve with a ray, and returns a list of intersections
 GBool GHermiteCurve2D::IntersectRay(const GRay2& NormalizedRay, GDynArray<GVector2>& Intersections,
-									 const GReal Precision, const GInt32 MaxIterations) const {
+									 const GReal Precision, const GUInt32 MaxIterations) const {
 
-	GUInt32 i, j = (GUInt32)PointsCount(), k, w;
+	GUInt32 i, j = PointsCount(), k, w;
 
 	if (j < 2)
 		return G_FALSE;
@@ -966,7 +964,7 @@ GReal GHermiteCurve2D::Length(const GReal u0, const GReal u1, const GReal MaxErr
 
 	// loops over interested segments
 	i = keyIndex;
-	j = (GUInt32)PointsCount();
+	j = PointsCount();
 	result = 0;
 	while (i < j) {
 		if (requestedInterval.End() > gKeys[i + 1].Parameter) {
@@ -994,7 +992,7 @@ GReal GHermiteCurve2D::Length(const GReal u0, const GReal u1, const GReal MaxErr
 GError GHermiteCurve2D::SegmentFlatten(const GUInt32 Index, GDynArray<GPoint2>& Contour,
 									   const GReal MaxDeviation, const GBool IncludeLastPoint) const {
 
-   G_ASSERT((GInt32)Index < PointsCount() - 1);
+   G_ASSERT((GInt32)Index < (GInt32)PointsCount() - 1);
    GBezierCurve2D tmpBez;
    GError err;
 
@@ -1007,7 +1005,7 @@ GError GHermiteCurve2D::SegmentFlatten(const GUInt32 Index, GDynArray<GPoint2>& 
 GError GHermiteCurve2D::Flatten(GDynArray<GPoint2>& Contour, const GReal MaxDeviation,
 								const GBool IncludeLastPoint) const {
 	
-	GInt32 i, j = PointsCount();
+	GInt32 i, j = (GInt32)PointsCount();
 	GError err;
 
 	if (j < 2)
@@ -1076,5 +1074,109 @@ GVector2 GHermiteCurve2D::Derivative(const GDerivativeOrder Order, const GReal u
 	return SegmentDerivative(keyIndex, Order, uu);
 }
 
+void GHermiteCurve2D::DerivativeLR(const GDerivativeOrder Order, const GReal u,
+								   GVector2& LeftDerivative, GVector2& RightDerivative) const {
 
+	if (PointsCount() < 2) {
+		LeftDerivative = RightDerivative = GVector2(0, 0);
+		return;
+	}
+
+	// clamp parameter inside valid interval
+	if (u <= DomainStart())
+		LeftDerivative = RightDerivative = SegmentDerivative(0, Order, DomainStart());
+	else
+	if (u >= DomainEnd())
+		LeftDerivative = RightDerivative = SegmentDerivative(PointsCount() - 2, Order, DomainEnd());
+	else {
+		GUInt32 keyIndex;
+#ifdef _DEBUG
+		GBool b = ParamToKeyIndex(u, keyIndex);
+		G_ASSERT (b == G_TRUE);
+#else
+		ParamToKeyIndex(u, keyIndex);
+#endif
+		// test if point is shared
+		if (GMath::Abs(u - gKeys[keyIndex].Parameter) <= G_EPSILON) {
+			LeftDerivative = SegmentDerivative(keyIndex - 1, Order, u);
+			RightDerivative = SegmentDerivative(keyIndex, Order, u);
+		}
+		else
+			// non-shared point
+			LeftDerivative = RightDerivative = SegmentDerivative(keyIndex, Order, u);
+	}
+}
+
+// transform
+void GHermiteCurve2D::XForm(const GMatrix23& Matrix) {
+
+	GUInt32 i, j = (GUInt32)gKeys.size();
+	GPoint2 p, pIn, pOut;
+
+	for (i = 0; i < j; i++) {
+		p = Matrix * gKeys[i].Value;
+		// tangents are temporary "transformed" into point (adding point of application)
+		pIn = Matrix * GPoint2(gKeys[i].Value + gKeys[i].InTangent);
+		pOut = Matrix * GPoint2(gKeys[i].Value + gKeys[i].InTangent);
+		gKeys[i].Value = p;
+		gKeys[i].InTangent = (pIn - gKeys[i].Value);
+		gKeys[i].OutTangent = (pOut - gKeys[i].Value);
+	}
+}
+
+// transform
+void GHermiteCurve2D::XForm(const GMatrix33& Matrix, const GBool DoProjection) {
+
+	GUInt32 i, j = (GUInt32)gKeys.size();
+	GPoint2 p, pIn, pOut;
+
+	if (DoProjection == G_FALSE) {
+		for (i = 0; i < j; i++) {
+			p = Matrix * gKeys[i].Value;
+			// tangents are temporary "transformed" into point (adding point of application)
+			pIn = Matrix * GPoint2(gKeys[i].Value + gKeys[i].InTangent);
+			pOut = Matrix * GPoint2(gKeys[i].Value + gKeys[i].InTangent);
+			gKeys[i].Value = p;
+			gKeys[i].InTangent = (pIn - gKeys[i].Value);
+			gKeys[i].OutTangent = (pOut - gKeys[i].Value);
+		}
+	}
+	else {
+
+		GPoint3 q(0, 0, 1), w;
+		GPoint2 unTransfValue;
+		for (i = 0; i < j; i++) {
+
+			// transform point
+			unTransfValue = p = gKeys[i].Value;
+			q.Set(p[G_X], p[G_Y]);
+			w = Matrix * q;
+			// do projective division
+			if (GMath::Abs(w[G_Z]) <= 2 * G_EPSILON)
+				gKeys[i].Value.Set(w[G_X], w[G_Y]);
+			else
+				gKeys[i].Value.Set(w[G_X] / w[G_Z], w[G_Y] / w[G_Z]);
+
+			// transform incoming tangent
+			pIn = (gKeys[i].InTangent + unTransfValue);
+			q.Set(pIn[G_X], pIn[G_Y]);
+			w = Matrix * q;
+			// do projective division
+			if (GMath::Abs(w[G_Z]) <= 2 * G_EPSILON)
+				gKeys[i].InTangent.Set(w[G_X] - gKeys[i].Value[G_X], w[G_Y] - gKeys[G_Y].Value[G_Y]);
+			else
+				gKeys[i].InTangent.Set(w[G_X] / w[G_Z] - gKeys[i].Value[G_X], w[G_Y] / w[G_Z] - gKeys[G_Y].Value[G_Y]);
+
+			// transform outcoming tangent
+			pOut = (gKeys[i].OutTangent + unTransfValue);
+			q.Set(pOut[G_X], pOut[G_Y]);
+			w = Matrix * q;
+			// do projective division
+			if (GMath::Abs(w[G_Z]) <= 2 * G_EPSILON)
+				gKeys[i].OutTangent.Set(w[G_X] - gKeys[i].Value[G_X], w[G_Y] - gKeys[G_Y].Value[G_Y]);
+			else
+				gKeys[i].OutTangent.Set(w[G_X] / w[G_Z] - gKeys[i].Value[G_X], w[G_Y] / w[G_Z] - gKeys[G_Y].Value[G_Y]);
+		}
+	}
+}
 };	// end namespace Amanith

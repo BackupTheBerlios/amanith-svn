@@ -266,8 +266,8 @@ namespace Amanith {
 	//                      GConstantProperty1DProxy
 	// *********************************************************************
 	/*!
-		\class GLinearProperty1DProxy
-		\brief This class implements a GLinearProperty1D proxy (provider).
+		\class GConstantProperty1DProxy
+		\brief This class implements a GConstantProperty1D proxy (provider).
 
 		This proxy provides the creation of GConstantProperty1D class instances.
 	*/

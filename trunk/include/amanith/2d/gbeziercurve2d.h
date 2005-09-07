@@ -135,7 +135,7 @@ namespace Amanith {
 			\note this function uses the Brent method to refine each found intersection. For more information about
 			Brent's method, pleas check this site http://mathworld.wolfram.com/BrentsMethod.html.
 		*/
-		GBool IntersectXRay(GDynArray<GVector2>& Intersections, const GReal Precision, const GInt32 MaxIterations) const;
+		GBool IntersectXRay(GDynArray<GVector2>& Intersections, const GReal Precision, const GUInt32 MaxIterations) const;
 		//! Cloning function, copies (physically) a Source Bezier curve into this curve.
 		GError BaseClone(const GElement& Source);
 		/*!
@@ -228,7 +228,7 @@ namespace Amanith {
 		//! Clear the curve (remove control points, free internal structures and set an empty domain).
 		void Clear();
 		//! Returns number of control points.
-		GInt32 PointsCount() const;
+		GUInt32 PointsCount() const;
 		//! Get curve degree; this value is equal to PointsCount() - 1.
 		GInt32 Degree() const;
 		//! Get control points array.
@@ -236,9 +236,9 @@ namespace Amanith {
 			return gPoints;
 		}
 		//! Get Index-th control point; Index must be valid, else a point with infinitive components is returned.
-		GPoint2 Point(const GInt32 Index) const;
+		GPoint2 Point(const GUInt32 Index) const;
 		//! Set Index-th control point; Index must be valid.
-		GError SetPoint(const GInt32 Index, const GPoint2& NewPoint);
+		GError SetPoint(const GUInt32 Index, const GPoint2& NewPoint);
 		/*!
 			Build the Bezier curve, specifying control points. This is the only method to build a Bezier curve.
 
@@ -373,7 +373,7 @@ namespace Amanith {
 			method).
 		*/
 		GBool IntersectRay(const GRay2& NormalizedRay, GDynArray<GVector2>& Intersections,
-						   const GReal Precision = G_EPSILON, const GInt32 MaxIterations = 100) const;
+						   const GReal Precision = G_EPSILON, const GUInt32 MaxIterations = 100) const;
 		//!	Returns number of intersection between control polygon and a ray.
 		GInt32 CrossingCount(const GRay2& Ray) const;
 		/*!
@@ -383,7 +383,7 @@ namespace Amanith {
 			\param ToIndex upper index of considered control points.
 			\return control polygon length, for specified control points range.
 		*/
-		GReal ControlPolygonLength(const GInt32 FromIndex, const GInt32 ToIndex) const;
+		GReal ControlPolygonLength(const GUInt32 FromIndex, const GUInt32 ToIndex) const;
 		/*!
 			Flats the curve specifying a max error/variation (squared chordal distance).
 

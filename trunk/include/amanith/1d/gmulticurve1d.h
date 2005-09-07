@@ -182,10 +182,9 @@ namespace Amanith {
 			curve, because a multicurve must be composed of at least 2 points.
 		*/
 		GError RemovePoint(const GUInt32 Index);
-
 		/*!
 			Return the curve derivative calculated at specified domain parameter. This method differs from
-			the one of base GCurve1D class in the number of returned value. This is due to the possibility
+			the one of base GCurve1D class in the number of returned values. This is due to the possibility
 			that the curve is continuous but not derivable (in the sense that left and right derivatives
 			are different).
 
@@ -193,12 +192,41 @@ namespace Amanith {
 			\param u the domain parameter at witch we wanna evaluate curve derivative.
 			\param LeftDerivative the left derivative.
 			\param RightDerivative the right derivative.
-			\note specified domain parameter is clamped by domain interval.
+			\note specified domain parameter is clamped by domain interval; the default behavior is to return
+			LeftDerivative = RightDerivative = Derivative(Order, u).
 		*/
 		virtual void DerivativeLR(const GDerivativeOrder Order, const GReal u, GReal& LeftDerivative, GReal& RightDerivative) const {
 			LeftDerivative = RightDerivative = this->Derivative(Order, u);
 		}
+		/*!
+			Return the curve tangent calculated at specified domain parameter. This method differs from
+			the one of base GCurve1D class in the number of returned values. This is due to the possibility
+			that the curve is continuous but not derivable (in the sense that left and right derivatives
+			are different).
 
+			\param u the domain parameter at witch we wanna evaluate curve tangent(s).
+			\param LeftTangent the left normalized (unit length) tangent vector.
+			\param RightTangent the right normalized (unit length) tangent vector.
+			\note specified domain parameter is clamped by domain interval.
+		*/
+		inline void TangentLR(const GReal u, GReal& LeftTangent, GReal& RightTangent) const {
+			DerivativeLR(G_FIRST_ORDER_DERIVATIVE, u, LeftTangent, RightTangent);
+		}
+		/*!
+			Return the curve speed calculated at specified domain parameter. 
+			With 'speed', here's intended the length of the curve's first derivative vector.
+			This method differs from the one of base GCurve1D class in the number of returned
+			values. This is due to the possibility that the curve is continuous but not derivable (in the
+			sense that left and right derivatives are different).
+
+			\param u the domain parameter at witch we wanna evaluate curve speed(s).
+			\param LeftSpeed the speed corresponding to the left derivative vector.
+			\param RightSpeed the speed corresponding to the right derivative vector.
+			\note specified domain parameter is clamped by domain interval.
+		*/
+		inline void SpeedLR(const GReal u, GReal& LeftSpeed, GReal& RightSpeed) const {
+			DerivativeLR(G_FIRST_ORDER_DERIVATIVE, u, LeftSpeed, RightSpeed);
+		}
 		//! Get class descriptor
 		inline const GClassID& ClassID() const {
 			return G_MULTICURVE1D_CLASSID;

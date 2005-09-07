@@ -177,8 +177,8 @@ namespace Amanith {
 		//! Clear the curve (remove keys, free internal structures and set an empty domain).
 		void Clear();
 		//! Returns number of key points.
-		inline GInt32 PointsCount() const {
-			return (GInt32)gKeys.size();
+		inline GUInt32 PointsCount() const {
+			return (GUInt32)gKeys.size();
 		}
 		/*!
 			Given a domain value, it returns the span index that includes it.
@@ -192,9 +192,9 @@ namespace Amanith {
 		*/
 		GBool ParamToKeyIndex(const GReal Param, GUInt32& KeyIndex) const;
 		//! Get Index-th key point; Index must be valid, else a point with infinitive components is returned.
-		GPoint2 Point(const GInt32 Index) const;
+		GPoint2 Point(const GUInt32 Index) const;
 		//! Set Index-th (key)point; Index must be valid.
-		GError SetPoint(const GInt32 Index, const GPoint2& NewPoint);
+		GError SetPoint(const GUInt32 Index, const GPoint2& NewPoint);
 		/*!
 			Construct a new polyline curve, specifying just interpolated (key)points.
 
@@ -265,7 +265,7 @@ namespace Amanith {
 			interface.
 		*/
 		GBool IntersectRay(const GRay2& NormalizedRay, GDynArray<GVector2>& Intersections,
-						   const GReal Precision = G_EPSILON, const GInt32 MaxIterations = 100) const;
+						   const GReal Precision = G_EPSILON, const GUInt32 MaxIterations = 100) const;
 		/*!
 			Flats the curve specifying a max error/variation (squared chordal distance).
 
@@ -278,7 +278,7 @@ namespace Amanith {
 		*/
 		GError Flatten(GDynArray<GPoint2>& Contour, const GReal MaxDeviation,
 					   const GBool IncludeLastPoint = G_TRUE) const;
-		/*!
+		/*urve!
 			Returns the length of the curve between the 2 specified global domain values.
 
 			\param u0 the lower bound of integral
@@ -305,6 +305,20 @@ namespace Amanith {
 			\note specified domain parameter is clamped by domain interval.
 		*/
 		GVector2 Derivative(const GDerivativeOrder Order, const GReal u) const;
+		/*!
+			Return the curve derivative calculated at specified domain parameter. This method differs from
+			the one of base GCurve2D class in the number of returned values. This is due to the possibility
+			that the curve is continuous but not derivable (in the sense that left and right derivatives
+			are different).
+
+			\param Order the order of derivative.
+			\param u the domain parameter at witch we wanna evaluate curve derivative.
+			\param LeftDerivative the left derivative.
+			\param RightDerivative the right derivative.
+			\note specified domain parameter is clamped by domain interval.
+		*/
+		void DerivativeLR(const GDerivativeOrder Order, const GReal u,
+						  GVector2& LeftDerivative, GVector2& RightDerivative) const;
 		//! Get class descriptor.
 		inline const GClassID& ClassID() const {
 			return G_POLYLINECURVE2D_CLASSID;

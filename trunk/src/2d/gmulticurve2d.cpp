@@ -57,16 +57,74 @@ GError GMultiCurve2D::BaseClone(const GElement& Source) {
 	return GCurve2D::BaseClone(Source);
 }
 
+// get curve tangent (specifying global parameter)
+void GMultiCurve2D::TangentLR(const GReal u, GVector2& LeftTangent, GVector2& RightTangent) const {
+
+	DerivativeLR(G_FIRST_ORDER_DERIVATIVE, u, LeftTangent, RightTangent);
+	LeftTangent.Normalize();
+	RightTangent.Normalize();
+}
+
+// get curve normal (specifying global parameter)
+void GMultiCurve2D::NormalLR(const GReal u, GVector2& LeftNormal, GVector2& RightNormal) const {
+
+	TangentLR(u, LeftNormal, RightNormal);
+	LeftNormal.Swap(G_X, G_Y);
+	LeftNormal[G_Y] = -LeftNormal[G_Y];
+	RightNormal.Swap(G_X, G_Y);
+	RightNormal[G_Y] = -LeftNormal[G_Y];
+}
+
+// get curvature (specifying global parameter)
+void GMultiCurve2D::CurvatureLR(const GReal u, GReal& LeftCurvature, GReal& RightCurvature) const {
+
+	// we have to calculate curvature K(u), from differential calculus:
+	// v = first derivate vector
+	// t = second derivate vector
+	// --> k(u) = | v(u) cross t(u) | / |v(u)|^3
+	GVector2 vL, vR;
+	GVector2 tL, tR;	
+	
+	DerivativeLR(G_FIRST_ORDER_DERIVATIVE, u, vL, vR);
+	DerivativeLR(G_SECOND_ORDER_DERIVATIVE, u, tL, tR);
+
+	GReal lL = vL.LengthSquared();
+	GReal lR = vR.LengthSquared();
+
+	if (lL > G_EPSILON)
+		LeftCurvature =  ((vL[G_X] * tL[G_Y]) - (vL[G_X] * tL[G_Y])) * (GMath::Pow(lL, (GReal)-1.5));
+	else
+		// degenerated case, we can't calculate curvature
+		LeftCurvature = 0;
+
+	if (lR > G_EPSILON)
+		RightCurvature =  ((vR[G_X] * tR[G_Y]) - (vR[G_X] * tR[G_Y])) * (GMath::Pow(lR, (GReal)-1.5));
+	else
+		// degenerated case, we can't calculate curvature
+		RightCurvature = 0;
+}
+
+// get curve speed (specifying global parameter)
+void GMultiCurve2D::SpeedLR(const GReal u, GReal& LeftSpeed, GReal& RightSpeed) const {
+
+	GVector2 tL, tR;
+	
+	DerivativeLR(G_FIRST_ORDER_DERIVATIVE, u, tL, tR);
+	LeftSpeed = tL.Length();
+	RightSpeed = tR.Length();
+}
+
+
 // get parameter corresponding to specified point index
 GError GMultiCurve2D::PointParameter(const GUInt32 Index, GReal& Parameter) const {
 
-	GInt32 i = PointsCount();
+	GUInt32 i = PointsCount();
 
 	// operation can be done only if curve is still valid (at least made of 2 keys)
-	if (i <= 0)
+	if (i == 0)
 		return G_INVALID_OPERATION;
 
-	if ((GInt32)Index >= i)
+	if (Index >= i)
 		return G_OUT_OF_RANGE;
 
 	return DoGetPointParameter(Index, Parameter);
@@ -76,14 +134,14 @@ GError GMultiCurve2D::PointParameter(const GUInt32 Index, GReal& Parameter) cons
 GError GMultiCurve2D::SetPointParameter(const GUInt32 Index, const GReal NewParamValue,
 										GUInt32& NewIndex, GBool& AlreadyExists) {
 
-	GInt32 i = PointsCount();
+	GUInt32 i = PointsCount();
 	GError err;
 
 	// operation can be done only if curve is still valid (at least made of 2 keys)
-	if (i <= 0)
+	if (i == 0)
 		return G_INVALID_OPERATION;
 
-	if ((GInt32)Index >= i)
+	if (Index >= i)
 		return G_OUT_OF_RANGE;
 
 	err = DoSetPointParameter(Index, NewParamValue, NewIndex, AlreadyExists);
@@ -106,16 +164,6 @@ GError GMultiCurve2D::AddPoint(const GReal Parameter, GUInt32& Index, GBool& Alr
 	if (PointsCount() < 2)
 		return G_INVALID_OPERATION;
 
-	if (GMath::Abs(Parameter - DomainStart()) <= G_EPSILON) {
-		Index = 0;
-		AlreadyExists = G_TRUE;
-		return G_NO_ERROR;
-	}
-	if (GMath::Abs(Parameter - DomainEnd()) <= G_EPSILON) {
-		Index = PointsCount() - 1;
-		AlreadyExists = G_TRUE;
-		return G_NO_ERROR;
-	}
 	// check out of range
 	if (Parameter < DomainStart() || Parameter > DomainEnd())
 		return G_OUT_OF_RANGE;
@@ -146,22 +194,22 @@ GError GMultiCurve2D::AddPoint(const GReal Parameter, const GPoint2& Point, GUIn
 
 GError GMultiCurve2D::RemovePoint(const GUInt32 Index) {
 
-	GInt32 i = PointsCount();
+	GUInt32 i = PointsCount();
 	GError err;
 	GReal u;
 
 	// operation can be done only if curve is still valid (at least made of 2 keys)
-	if (i <= 0)
+	if (i == 0)
 		return G_INVALID_OPERATION;
 
-	if ((GInt32)Index >= i)
+	if (Index >= i)
 		return G_OUT_OF_RANGE;
 
 	err = DoRemovePoint(Index);
 	// if we have remove first or last point, parameter range must be updated
 	if (err == G_NO_ERROR) {
 
-		GInt32 j = PointsCount();
+		GUInt32 j = PointsCount();
 		if (j == 0)
 			GCurve2D::SetDomain(G_MIN_REAL, G_MIN_REAL);
 		else
@@ -177,7 +225,7 @@ GError GMultiCurve2D::RemovePoint(const GUInt32 Index) {
 					GCurve2D::SetDomain(u, DomainEnd());
 			}
 			else
-			if ((GInt32)Index == i - 1) {
+			if (Index == i - 1) {
 				err = DoGetPointParameter(j - 1, u);
 				if (err == G_NO_ERROR)
 					GCurve2D::SetDomain(DomainStart(), u);

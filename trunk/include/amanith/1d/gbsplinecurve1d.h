@@ -202,11 +202,11 @@ namespace Amanith {
 		//! Clear the curve (remove control points, free internal structures and set an empty domain).
 		void Clear();
 		//! Returns number of control points.
-		GInt32 PointsCount() const;
+		GUInt32 PointsCount() const;
 		//! Get curve degree.
 		GInt32 Degree() const;
 		//! Get Index-th control point; Index must be valid, else a point with infinitive components is returned.
-		GReal Point(const GInt32 Index) const;
+		GReal Point(const GUInt32 Index) const;
 		//! Get control points array.
 		inline const GDynArray<GReal>& Points() const {
 			return gPoints;
@@ -228,7 +228,7 @@ namespace Amanith {
 		//! Get knots multiplicities.
 		void Multiplicities(GDynArray<GKnotMultiplicity>& Values) const;
 		//! Set Index-th control point; Index must be valid.
-		GError SetPoint(const GInt32 Index, const GReal NewPoint);
+		GError SetPoint(const GUInt32 Index, const GReal NewPoint);
 		/*!
 			Construct a B-spline curve, specifying control points and degree. Example:
 \code

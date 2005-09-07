@@ -717,7 +717,7 @@ GError GFontCharContour2D::ConvertToPath(GPath2D& Path) const {
 		if (k == 4) {
 			tmpBezier.SetPoints(pts[ofs], pts[ofs + 1], pts[ofs + 2], pts[ofs + 3]);
 			tmpBezier.SetDomain(u, u + step);
-			err = Path.AppendSegment(tmpBezier);
+			err = Path.AppendCurve(tmpBezier);
 			if (err != G_NO_ERROR)
 				return err;
 
@@ -728,7 +728,7 @@ GError GFontCharContour2D::ConvertToPath(GPath2D& Path) const {
 		if (k == 3) {
 			tmpBezier.SetPoints(pts[ofs], pts[ofs + 1], pts[ofs + 2]);
 			tmpBezier.SetDomain(u, u + step);
-			err = Path.AppendSegment(tmpBezier);
+			err = Path.AppendCurve(tmpBezier);
 			if (err != G_NO_ERROR)
 				return err;
 
@@ -751,7 +751,7 @@ GError GFontCharContour2D::ConvertToPath(GPath2D& Path) const {
 
 			i--;
 			tmpPolyline.SetPoints(polyPts, u0, u);
-			err = Path.AppendSegment(tmpPolyline);
+			err = Path.AppendCurve(tmpPolyline);
 			if (err != G_NO_ERROR)
 				return err;
 		}

@@ -51,7 +51,7 @@ QGLWidgetTest::QGLWidgetTest(QWidget * parent) : QGLWidget(parent) {
 	gVertices.push_back(GPoint2(8, 11));
 	bezCurve.SetPoints(gVertices);
 	bezCurve.SetDomain(0, (GReal)0.2);
-	gPath->AppendSegment(bezCurve);
+	gPath->AppendCurve(bezCurve);
 	// another bezier segment
 	gVertices.clear();
 	gVertices.push_back(GPoint2(8, 11));
@@ -60,7 +60,7 @@ QGLWidgetTest::QGLWidgetTest(QWidget * parent) : QGLWidget(parent) {
 	gVertices.push_back(GPoint2(13, 5));
 	bezCurve.SetPoints(gVertices);
 	bezCurve.SetDomain((GReal)0.2, (GReal)0.5);
-	gPath->AppendSegment(bezCurve);
+	gPath->AppendCurve(bezCurve);
 	// b-spline curve segment
 	gVertices.clear();
 	gVertices.push_back(GPoint2(13, 5));
@@ -68,7 +68,7 @@ QGLWidgetTest::QGLWidgetTest(QWidget * parent) : QGLWidget(parent) {
 	gVertices.push_back(GPoint2(10, 8));
 	gVertices.push_back(GPoint2(8, 3));
 	bsplineCurve.SetPoints(gVertices, 3, (GReal)0.5, 1);
-	gPath->AppendSegment(bsplineCurve);
+	gPath->AppendCurve(bsplineCurve);
 	// close the path
 	gPath->ClosePath();
 
@@ -163,16 +163,22 @@ void QGLWidgetTest::Draw(const GPath2D* Path) {
 	glLineWidth(1.0f);
 	glColor3f(0.0f, 0.5f, 1.0f);
 	glBegin(GL_LINES);
-	if (Path->IsClosed())
-		numSegs = Path->PointsCount();
-	else
-		numSegs = Path->PointsCount() - 1;
-	for (i = 0; i < numSegs; i++) {
-		Path->Point(i, p1);
-		Path->Point(i + 1, p2);
+
+	numSegs = Path->PointsCount();
+	for (i = 0; i < numSegs - 1; i++) {
+		p1 = Path->Point(i);
+		p2 = Path->Point(i + 1);
 		glVertex3f(p1[G_X], p1[G_Y], 1.0f);
 		glVertex3f(p2[G_X], p2[G_Y], 1.0f);
 	}
+	// draw last control polygon segment
+	if (Path->IsClosed()) {
+		p1 = p2;
+		p2 = Path->Point(0);
+		glVertex3f(p1[G_X], p1[G_Y], 1.0f);
+		glVertex3f(p2[G_X], p2[G_Y], 1.0f);
+	}
+
 	// draw ray used for intersection test
 	glColor3f(1.0f, 0.3f, 0.1f);
 	glVertex3f(gIntersectionRay.Origin()[G_X], gIntersectionRay.Origin()[G_Y], 1.0f);

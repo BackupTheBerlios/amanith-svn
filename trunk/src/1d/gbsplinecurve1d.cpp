@@ -77,9 +77,9 @@ void GBSplineCurve1D::Clear() {
 }
 
 // get number of control points
-GInt32 GBSplineCurve1D::PointsCount() const {
+GUInt32 GBSplineCurve1D::PointsCount() const {
 
-	return (GInt32)gPoints.size();
+	return (GUInt32)gPoints.size();
 }
 
 // get curve degree
@@ -89,17 +89,17 @@ GInt32 GBSplineCurve1D::Degree() const {
 }
 
 // get Index-th point
-GReal GBSplineCurve1D::Point(const GInt32 Index) const {
+GReal GBSplineCurve1D::Point(const GUInt32 Index) const {
 
-	if ((Index < 0) || (Index >= PointsCount()))
+	if (Index >= PointsCount())
 		return G_MIN_REAL;
 	return gPoints[Index];
 }
 
 // set Index-th point
-GError GBSplineCurve1D::SetPoint(const GInt32 Index, const GReal NewPoint) {
+GError GBSplineCurve1D::SetPoint(const GUInt32 Index, const GReal NewPoint) {
 
-	if ((Index < 0) || (Index >= PointsCount()))
+	if (Index >= PointsCount())
 		return G_OUT_OF_RANGE;
 	// copy new point
 	gPoints[Index] = NewPoint;
@@ -171,8 +171,8 @@ GError GBSplineCurve1D::SetPoints(const GDynArray<GReal>& NewPoints, const GDynA
 	gBasisFuncEval.resize((gDegree + 1 + 3) * (gDegree + 1));
 	gModified = G_TRUE;
 	// set opened flag
-	gOpened = IsClamped();
 	GCurve1D::SetDomain(Knots[0], Knots[Knots.size() -1]);
+	gOpened = IsClamped();
 	return G_NO_ERROR;
 }
 
@@ -199,7 +199,7 @@ GError GBSplineCurve1D::InsertKnot(const GReal u) {
 	if ((u < DomainStart()) || (u > DomainEnd()))
 		return G_INVALID_PARAMETER;
 
-	GInt32 i, span, s, pc = PointsCount(), kc = KnotsCount();
+	GInt32 i, span, s, pc = (GInt32)PointsCount(), kc = KnotsCount();
 	GDynArray<GReal> newPoints(pc + 1);
 	GDynArray<GReal> newKnots(kc + 1);
 	GReal c, den;
@@ -458,7 +458,7 @@ GInt32 GBSplineCurve1D::FindSpan(const GReal u) const {
 
 	if (gOpened) {
 		if (u >= DomainEnd())
-			return PointsCount() - 1;
+			return (GInt32)PointsCount() - 1;
 	}
 	j = (GInt32)gKnots.size() - 1;
 	for (i = 0; i < j; i++)
@@ -475,7 +475,7 @@ GInt32 GBSplineCurve1D::FindSpanMult(const GReal u, GInt32& Multiplicity) const 
 	if (gOpened) {
 		if (u >= DomainEnd()) {
 			Multiplicity = gDegree + 1;
-			return PointsCount() - 1;
+			return (GInt32)PointsCount() - 1;
 		}
 	}
 	j = (GInt32)gKnots.size() - 1;
@@ -546,7 +546,7 @@ GReal GBSplineCurve1D::Evaluate(const GReal u) const {
 	GReal uu;
 	GReal *c;
 
-	if (PointsCount() <= 0)
+	if (PointsCount() == 0)
 		return G_MIN_REAL;
 	
 	// clamp parameter inside valid interval
@@ -634,7 +634,7 @@ void GBSplineCurve1D::BuildForwDiff() const {
 	GReal k;
 
 	// calculate first order forward differences
-	j = PointsCount() - 1;
+	j = (GInt32)PointsCount() - 1;
 	gForwDiff1.resize(j);
 	for (i = 0; i < j; i++) {
 		k = (gKnots[i + gDegree + 1] - gKnots[i + 1]);
@@ -646,7 +646,7 @@ void GBSplineCurve1D::BuildForwDiff() const {
 			gForwDiff1[i] = 0;
 	}
 	// calculate second order forward differences
-	j = PointsCount() - 2;
+	j--;
 	gForwDiff2.resize(j);
 	for (i = 0; i < j; i++) {
 		k = (gKnots[i + gDegree + 1] - gKnots[i + 2]);
@@ -696,7 +696,7 @@ GReal* GBSplineCurve1D::BasisFuncDerivatives(const GInt32 Order, const GInt32 Sp
 	// just to be sure with degree
 	p = GMath::Min(Degree, gDegree);
 
-	n = PointsCount() - 1;
+	n = (GInt32)PointsCount() - 1;
 	left = &gBasisFuncEval[0];
 	right = &gBasisFuncEval[p + 1];
 
@@ -777,7 +777,7 @@ GReal GBSplineCurve1D::Derivative(const GDerivativeOrder Order, const GReal u) c
 	GInt32 j, span;
 	GReal uu, *c;
 
-	if (PointsCount() <= 0)
+	if (PointsCount() == 0)
 		return G_MIN_REAL;
 	// clamp parameter inside valid interval
 	if (u < DomainStart())
@@ -850,7 +850,7 @@ GError GBSplineCurve1D::LowerDegree(GBSplineCurve1D& OutputCurve) const {
 	j = (GInt32)tmpMult.size();
 	s = j - 2;
 	// nSigned = (numer of new control points) - 1
-	nSigned = (PointsCount() - 1) - s - 1;
+	nSigned = ((GInt32)PointsCount() - 1) - s - 1;
 	// mSigned must satisfy mSigned = nSigned + (Degree() - 1) + 1
 	mSigned = 0;
 	// note that a knot multiplicity can be 1, witch implies that the knot is not present
@@ -887,7 +887,7 @@ GError GBSplineCurve1D::LowerDegree(GBSplineCurve1D& OutputCurve) const {
 	b = p + 1;
 	cind = 1;
 	mult = p;
-	m = (PointsCount() - 1) + p + 1;
+	m = ((GInt32)PointsCount() - 1) + p + 1;
 	Pw[0] = gPoints[0];
 	// compute left end of knot vector
 	for (i = 0; i <= ph; i++)
@@ -1021,7 +1021,7 @@ GError GBSplineCurve1D::HigherDegree(const GInt32 HowManyTimes, GBSplineCurve1D&
 	// leftmost control points of the next Bezier segment
 	GDynArray<GReal> Nextbpts(p - 1);
 	// new control points
-	GDynArray<GReal> Qw(PointsCount() + s + 1);
+	GDynArray<GReal> Qw((GInt32)PointsCount() + s + 1);
 	// new knots
 	GDynArray<GReal> Uh(KnotsCount() + s + 2);
 	// knot insertion alphas
@@ -1029,7 +1029,7 @@ GError GBSplineCurve1D::HigherDegree(const GInt32 HowManyTimes, GBSplineCurve1D&
 	// useful macro
 	#define BEZALFS(i, j) bezalfs[(i) * (p + 1) + (j)]
 
-	m = PointsCount() + p;
+	m = (GInt32)PointsCount() + p;
 	ph = p + t;
 	ph2 = ph / 2;
 	// compute Bezier degree elevation coefficients
@@ -1208,7 +1208,7 @@ GError GBSplineCurve1D::DoCut(const GReal u, GCurve1D *RightCurve, GCurve1D *Lef
 	for (i = 0; i <= k - gDegree; i++)
 		leftPoints.push_back(gPoints[i]);
 	// right untouched control points	
-	j = PointsCount() - 1;
+	j = (GInt32)PointsCount() - 1;
 	for (i = j; i >= k - s; i--)
 		rightPoints.push_back(gPoints[i]);
 	// create first step Deboor polygon

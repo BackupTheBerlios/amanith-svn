@@ -517,7 +517,6 @@ namespace Amanith {
 		\param v1 the first vector.
 		\param v2 the second vector.
 	*/
-
 	template<typename DATA_TYPE>
 	DATA_TYPE Cross(const GVect<DATA_TYPE, 2>& v1, const GVect<DATA_TYPE, 2>& v2) {
 		return ((v1[G_X] * v2[G_Y]) - (v2[G_X] * v1[G_Y]));

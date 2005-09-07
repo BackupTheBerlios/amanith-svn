@@ -30,7 +30,7 @@
 #define GHERMITECURVE2D_H
 
 /*!
-	\file ghermitecurve2d.cpp
+	\file ghermitecurve2d.h
 	\brief Header file for 2D Hermite multicurve class.
 */
 
@@ -225,7 +225,7 @@ namespace Amanith {
 		*/
 		GBool SegmentIntersectRay(const GUInt32 Index, const GRay2& NormalizedRay,
 								  GDynArray<GVector2>& Intersections,
-								  const GReal Precision, const GInt32 MaxIterations) const;
+								  const GReal Precision, const GUInt32 MaxIterations) const;
 		/*!
 			Flats an Hermite trait, specifying a max error/variation (squared chordal distance).
 
@@ -285,8 +285,8 @@ namespace Amanith {
 		//! Clear the curve (remove keys, free internal structures and set an empty domain).
 		void Clear();
 		//! Returns number of key points.
-		inline GInt32 PointsCount() const {
-			return (GInt32)gKeys.size();
+		inline GUInt32 PointsCount() const {
+			return (GUInt32)gKeys.size();
 		}
 		/*!
 			Given a domain value, it returns the span index that includes it.
@@ -300,9 +300,9 @@ namespace Amanith {
 		*/
 		GBool ParamToKeyIndex(const GReal Param, GUInt32& KeyIndex) const;
 		//! Get Index-th key point; Index must be valid, else a point with infinitive components is returned.
-		GPoint2 Point(const GInt32 Index) const;
+		GPoint2 Point(const GUInt32 Index) const;
 		//! Set Index-th (key)point; Index must be valid.
-		GError SetPoint(const GInt32 Index, const GPoint2& NewPoint);
+		GError SetPoint(const GUInt32 Index, const GPoint2& NewPoint);
 		/*!
 			Construct a new Hermite curve, specifying just interpolated (key)points.
 			Key tangents will be calculated using a Catmull-Rom schema.
@@ -392,7 +392,7 @@ namespace Amanith {
 			makes possible to exploit all Bezier characteristics.
 		*/
 		GBool IntersectRay(const GRay2& NormalizedRay, GDynArray<GVector2>& Intersections,
-						   const GReal Precision = G_EPSILON, const GInt32 MaxIterations = 100) const;
+						   const GReal Precision = G_EPSILON, const GUInt32 MaxIterations = 100) const;
 		/*!
 			Returns the length of the curve between the 2 specified global domain values.
 
@@ -424,6 +424,20 @@ namespace Amanith {
 		*/
 		GVector2 Derivative(const GDerivativeOrder Order, const GReal u) const;
 		/*!
+			Return the curve derivative calculated at specified domain parameter. This method differs from
+			the one of base GCurve2D class in the number of returned values. This is due to the possibility
+			that the curve is continuous but not derivable (in the sense that left and right derivatives
+			are different).
+
+			\param Order the order of derivative.
+			\param u the domain parameter at witch we wanna evaluate curve derivative.
+			\param LeftDerivative the left derivative.
+			\param RightDerivative the right derivative.
+			\note specified domain parameter is clamped by domain interval.
+		*/
+		void DerivativeLR(const GDerivativeOrder Order, const GReal u,
+						  GVector2& LeftDerivative, GVector2& RightDerivative) const;
+		/*!
 			Hermite to cubic Bezier conversion.
 
 			This method converts an Hermite trait into an equivalent cubic Bezier representation. The conversion can be
@@ -446,6 +460,23 @@ namespace Amanith {
 			call Bezier specific high-optimized flattening routines.
 		*/
 		GError Flatten(GDynArray<GPoint2>& Contour, const GReal MaxDeviation, const GBool IncludeLastPoint = G_TRUE) const;
+		/*!
+			Apply an affine transformation to all key points and tangents.
+
+			\param Matrix a 2x3 matrix, specifying the affine transformation.
+			\note the leftmost 2x2 matrix contains the rotation/scale portion, the last column vector contains the
+			translation.
+		*/
+		void XForm(const GMatrix23& Matrix);
+		/*!
+			Apply full transformation to all key points and tangents.
+
+			\param Matrix a 3x3 matrix, specifying the transformation.
+			\param DoProjection if G_TRUE the projective transformation (described by the last row vector of matrix) will
+			be done. In this case all transformed vertexes will be divided by the last W component. If G_FALSE only the
+			affine portion will be used for transformation, and no projective division will be executed.
+		*/
+		void XForm(const GMatrix33& Matrix, const GBool DoProjection = G_TRUE);
 		//! Get class descriptor.
 		inline const GClassID& ClassID() const {
 			return G_HERMITECURVE2D_CLASSID;

@@ -60,13 +60,13 @@ GError GMultiCurve1D::BaseClone(const GElement& Source) {
 // get parameter corresponding to specified point index
 GError GMultiCurve1D::PointParameter(const GUInt32 Index, GReal& Parameter) const {
 
-	GInt32 i = PointsCount();
+	GUInt32 i = PointsCount();
 
 	// operation can be done only if curve is still valid (at least made of 2 keys)
-	if (i <= 0)
+	if (i == 0)
 		return G_INVALID_OPERATION;
 
-	if ((GInt32)Index >= i)
+	if (Index >= i)
 		return G_OUT_OF_RANGE;
 
 	return DoGetPointParameter(Index, Parameter);
@@ -76,14 +76,14 @@ GError GMultiCurve1D::PointParameter(const GUInt32 Index, GReal& Parameter) cons
 GError GMultiCurve1D::SetPointParameter(const GUInt32 Index, const GReal NewParamValue,
 										GUInt32& NewIndex, GBool& AlreadyExists) {
 
-	GInt32 i = PointsCount();
+	GUInt32 i = PointsCount();
 	GError err;
 
 	// operation can be done only if curve is still valid (at least made of 2 keys)
-	if (i <= 0)
+	if (i == 0)
 		return G_INVALID_OPERATION;
 
-	if ((GInt32)Index >= i)
+	if (Index >= i)
 		return G_OUT_OF_RANGE;
 
 	err = DoSetPointParameter(Index, NewParamValue, NewIndex, AlreadyExists);
@@ -106,16 +106,6 @@ GError GMultiCurve1D::AddPoint(const GReal Parameter, GUInt32& Index, GBool& Alr
 	if (PointsCount() < 2)
 		return G_INVALID_OPERATION;
 
-	if (GMath::Abs(Parameter - DomainStart()) <= G_EPSILON) {
-		Index = 0;
-		AlreadyExists = G_TRUE;
-		return G_NO_ERROR;
-	}
-	if (GMath::Abs(Parameter - DomainEnd()) <= G_EPSILON) {
-		Index = PointsCount() - 1;
-		AlreadyExists = G_TRUE;
-		return G_NO_ERROR;
-	}
 	// check out of range
 	if (Parameter < DomainStart() || Parameter > DomainEnd())
 		return G_OUT_OF_RANGE;
@@ -146,22 +136,22 @@ GError GMultiCurve1D::AddPoint(const GReal Parameter, const GReal Point, GUInt32
 
 GError GMultiCurve1D::RemovePoint(const GUInt32 Index) {
 
-	GInt32 i = PointsCount();
+	GUInt32 i = PointsCount();
 	GError err;
 	GReal u;
 
 	// operation can be done only if curve is still valid (at least made of 2 keys)
-	if (i <= 0)
+	if (i == 0)
 		return G_INVALID_OPERATION;
 
-	if ((GInt32)Index >= i)
+	if (Index >= i)
 		return G_OUT_OF_RANGE;
 
 	err = DoRemovePoint(Index);
 	// if we have remove first or last point, parameter range must be updated
 	if (err == G_NO_ERROR) {
 
-		GInt32 j = PointsCount();
+		GUInt32 j = PointsCount();
 		if (j == 0)
 			GCurve1D::SetDomain(G_MIN_REAL, G_MIN_REAL);
 		else
@@ -177,7 +167,7 @@ GError GMultiCurve1D::RemovePoint(const GUInt32 Index) {
 					GCurve1D::SetDomain(u, DomainEnd());
 			}
 			else
-			if ((GInt32)Index == i - 1) {
+			if (Index == i - 1) {
 				err = DoGetPointParameter(j - 1, u);
 				if (err == G_NO_ERROR)
 					GCurve1D::SetDomain(DomainStart(), u);

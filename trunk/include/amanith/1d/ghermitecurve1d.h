@@ -30,7 +30,7 @@
 #define GHERMITECURVE1D_H
 
 /*!
-	\file ghermitecurve1d.cpp
+	\file ghermitecurve1d.h
 	\brief Header file for 1D Hermite multicurve class.
 */
 
@@ -232,8 +232,8 @@ namespace Amanith {
 		//! Clear the curve (remove keys, free internal structures and set an empty domain).
 		void Clear();
 		//! Returns number of key points.
-		inline GInt32 PointsCount() const {
-			return (GInt32)gKeys.size();
+		inline GUInt32 PointsCount() const {
+			return (GUInt32)gKeys.size();
 		}
 		/*!
 		Given a domain value, it returns the span index that includes it.
@@ -247,9 +247,9 @@ namespace Amanith {
 		*/
 		GBool ParamToKeyIndex(const GReal Param, GUInt32& KeyIndex) const;
 		//! Get Index-th key point; Index must be valid, else a point with infinitive component is returned.
-		GReal Point(const GInt32 Index) const;
+		GReal Point(const GUInt32 Index) const;
 		//! Set Index-th (key)point; Index must be valid.
-		GError SetPoint(const GInt32 Index, const GReal NewPoint);
+		GError SetPoint(const GUInt32 Index, const GReal NewPoint);
 		/*!
 			Construct a new Hermite curve, specifying just interpolated (key)points.
 			Key tangents will be calculated using a Catmull-Rom schema.
@@ -350,6 +350,20 @@ namespace Amanith {
 		*/
 		GReal Derivative(const GDerivativeOrder Order, const GReal u) const;
 		/*!
+			Return the curve derivative calculated at specified domain parameter. This method differs from
+			the one of base GCurve1D class in the number of returned values. This is due to the possibility
+			that the curve is continuous but not derivable (in the sense that left and right derivatives
+			are different).
+
+			\param Order the order of derivative.
+			\param u the domain parameter at witch we wanna evaluate curve derivative.
+			\param LeftDerivative the left derivative.
+			\param RightDerivative the right derivative.
+			\note specified domain parameter is clamped by domain interval.
+		*/
+		void DerivativeLR(const GDerivativeOrder Order, const GReal u,
+						  GReal& LeftDerivative, GReal& RightDerivative) const;
+		/*!
 			Hermite to cubic Bezier conversion.
 
 			This method converts an Hermite trait into an equivalent cubic Bezier representation. The conversion can be
@@ -361,6 +375,14 @@ namespace Amanith {
 			\return G_NO_ERROR in operation succeeds, an error code otherwise.
 		*/
 		GError SegmentToBezier(const GUInt32 Index, GBezierCurve1D& Result);
+		/*!
+			Scale all curve points around a pivot point. This member has been overridden to take care of
+			tangents too.
+
+			\param Pivot the pivot point (the center of scaling).
+			\param ScaleAmount the scale factor.
+		*/
+		void Scale(const GReal Pivot, const GReal ScaleAmount);
 		//! Get class descriptor.
 		inline const GClassID& ClassID() const {
 			return G_HERMITECURVE1D_CLASSID;

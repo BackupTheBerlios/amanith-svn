@@ -219,7 +219,7 @@ GError GCurve1D::CutByLength(const GReal CurvePos0, const GReal CurvePos1, GCurv
 // translate
 void GCurve1D::Translate(const GReal Translation) {
 
-	GInt32 i, j = PointsCount();
+	GUInt32 i, j = PointsCount();
 
 	for (i = 0; i < j; ++i)
 		SetPoint(i, Translation + Point(i));
@@ -228,7 +228,7 @@ void GCurve1D::Translate(const GReal Translation) {
 // scale
 void GCurve1D::Scale(const GReal Pivot, const GReal ScaleAmount) {
 
-	GInt32 i, j = PointsCount();
+	GUInt32 i, j = PointsCount();
 
 	for (i = 0; i < j; ++i)
 		SetPoint(i, ((Point(i) - Pivot) * ScaleAmount) + Pivot);

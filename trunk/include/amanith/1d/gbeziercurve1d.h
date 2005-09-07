@@ -125,7 +125,7 @@ namespace Amanith {
 		//! Clear the curve (remove control points, free internal structures and set an empty domain).
 		void Clear();
 		//! Returns number of control points.
-		GInt32 PointsCount() const;
+		GUInt32 PointsCount() const;
 		//! Get curve degree; this value is equal to PointsCount() - 1.
 		GInt32 Degree() const;
 		//! Get control points array.
@@ -133,9 +133,9 @@ namespace Amanith {
 			return gPoints;
 		}
 		//! Get Index-th control point; Index must be valid, else a point with infinitive components is returned.
-		GReal Point(const GInt32 Index) const;
+		GReal Point(const GUInt32 Index) const;
 		//! Set Index-th control point; Index must be valid.
-		GError SetPoint(const GInt32 Index, const GReal NewPoint);
+		GError SetPoint(const GUInt32 Index, const GReal NewPoint);
 		/*!
 			Build the Bezier curve, specifying control points. This is the only method to build a Bezier curve.
 
