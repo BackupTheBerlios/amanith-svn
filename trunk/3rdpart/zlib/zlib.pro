@@ -13,6 +13,10 @@ win32: {
     }
 }
 
+linux-g++-64 {
+    QMAKE_CFLAGS += -fPIC 
+}
+
 unix: TARGET = zlib
 
 TEMPLATE = lib

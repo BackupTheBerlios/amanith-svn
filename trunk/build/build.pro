@@ -18,6 +18,7 @@ DEPENDPATH += $$(AMANITHDIR)/src
 #*********************************************************
 SOURCES = gelement.cpp \
           gproperty.cpp \
+          gmultiproperty.cpp \
           gkernel.cpp \
           gerror.cpp \
           gimpexp.cpp \
@@ -40,6 +41,7 @@ SOURCES = gelement.cpp \
           2d/gpixelmap.cpp \
           2d/gfont2d.cpp \
           2d/gtesselator2d.cpp \
+          2d/ganimtrsnode2d.cpp \
           numerics/geigen.cpp \
           numerics/gintegration.cpp \
           geometry/gaffineparts.cpp \

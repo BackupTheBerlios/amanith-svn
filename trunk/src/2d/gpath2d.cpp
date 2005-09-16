@@ -1516,7 +1516,7 @@ GReal GPath2D::Length(const GReal u0, const GReal u1, const GReal MaxError) cons
 	}
 }
 
-
+/*
 GReal GPath2D::Variation(const GReal u0, const GReal u1, const GPoint2& p0, const GPoint2& p1) const {
 
 	G_ASSERT(u0 <= u1);
@@ -1555,25 +1555,22 @@ GReal GPath2D::Variation(const GReal u0, const GReal u1, const GPoint2& p0, cons
 		}
 	}
 	return localVar;
-}
-
-/*// get curve start point
-GPoint2 GPath2D::StartPoint() const {
-
-	if (gSegments.size() == 0)
-		return GPoint2(G_MIN_REAL, G_MIN_REAL);
-	else
-		return gSegments[0]->StartPoint();
-}
-
-// get curve end point
-GPoint2 GPath2D::EndPoint() const {
-
-	GUInt32 i = (GUInt32)gSegments.size();
-	if (i == 0)
-		return GPoint2(G_MIN_REAL, G_MIN_REAL);
-	else
-		return gSegments[i - 1]->EndPoint();
 }*/
+
+GReal GPath2D::Variation() const {
+
+	GUInt32 i, j = (GUInt32)gSegments.size();
+
+	if (j == 0)
+		return 0;
+
+	GReal tmpDist, dist = -1;
+	for (i = 0; i < j; ++i) {
+		tmpDist = gSegments[i]->Variation();
+		if (tmpDist > dist)
+			dist = tmpDist;
+	}
+	return dist;
+}
 
 };	// end namespace Amanith

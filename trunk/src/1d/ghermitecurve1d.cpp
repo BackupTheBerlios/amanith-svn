@@ -58,7 +58,7 @@ GHermiteCurve1D::~GHermiteCurve1D() {
 void GHermiteCurve1D::Clear() {
 
 	gKeys.clear();
-	GCurve1D::SetDomain(G_MIN_REAL, G_MIN_REAL);
+	GCurve1D::Clear();
 }
 
 // cloning function

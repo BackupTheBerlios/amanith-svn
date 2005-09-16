@@ -32,6 +32,7 @@
 #include "amanith/gclassid.h"
 #include "amanith/geometry/ginterval.h"
 #include "amanith/geometry/gvect.h"
+#include "amanith/geometry/gmatrix.h"
 #include "amanith/gmath.h"
 #include "amanith/support/gutilities.h"
 
@@ -227,9 +228,94 @@ namespace Amanith {
 
 
 	// *********************************************************************
+	//                              GKeyValue
+	// *********************************************************************
+
+	// key types
+	enum GKeyType {
+		G_UNDEFINED_KEY,
+		G_BOOL_KEY,
+		G_INT_KEY,
+		G_REAL_KEY,
+		G_VECTOR2_KEY,
+		G_VECTOR3_KEY,
+		G_VECTOR4_KEY
+	};
+
+	class G_EXPORT GKeyValue {
+
+		friend class GProperty;
+
+	private:
+		GKeyType gType;
+		GTimeValue gTimePos;
+		GVector4 gValue;
+		//void* gCustomData;
+
+	protected:
+		void SetUndefined() {
+			gType = G_UNDEFINED_KEY;
+			gValue.Set(G_MIN_REAL, G_MIN_REAL, G_MIN_REAL, G_MIN_REAL);
+			gTimePos = G_MIN_REAL;
+			//gCustomData = NULL;
+		}
+
+	public:
+		GKeyValue();
+		GKeyValue(const GBool Value);
+		GKeyValue(const GInt32 Value);
+		GKeyValue(const GReal Value);
+		GKeyValue(const GVector2& Value);
+		GKeyValue(const GVector3& Value);
+		GKeyValue(const GVector4& Value);
+		GKeyValue(const GTimeValue TimePos, const GBool Value);
+		GKeyValue(const GTimeValue TimePos, const GInt32 Value);
+		GKeyValue(const GTimeValue TimePos, const GReal Value);
+		GKeyValue(const GTimeValue TimePos, const GVector2& Value);
+		GKeyValue(const GTimeValue TimePos, const GVector3& Value);
+		GKeyValue(const GTimeValue TimePos, const GVector4& Value);
+
+		void SetValue(const GBool Value);
+		void SetValue(const GInt32 Value);
+		void SetValue(const GReal Value);//, const GReal InTangent = 0, const GReal OutTangent = 0);
+		void SetValue(const GVector2& Value);//, const GVector2& InTangent = G_NULL_POINT2, const GVector2& OutTangent = G_NULL_POINT2);
+		void SetValue(const GVector3& Value);//, const GVector3& InTangent = G_NULL_POINT3, const GVector3& OutTangent = G_NULL_POINT3);
+		void SetValue(const GVector4& Value);//, const GVector4& InTangent = G_NULL_POINT4, const GVector4& OutTangent = G_NULL_POINT4);
+		/*void SetCustomData(void* CustomData) {
+			gCustomData = CustomData;
+		}*/
+		// get key type
+		inline GKeyType KeyType() const {
+			return gType;
+		}
+		void SetKeyType(const GKeyType NewType) {
+			gType = NewType;
+		}
+		// get key position (timeline position)
+		inline GTimeValue TimePosition() const {
+			return gTimePos;
+		}
+		void SetTimePosition(const GTimeValue NewTimePos) {
+			gTimePos = NewTimePos;
+		}
+		GBool BoolValue() const;
+		GInt32 IntValue() const;
+		GReal RealValue() const;
+		GVector2 Vect2Value() const;
+		GVector3 Vect3Value() const;
+		GVector4 Vect4Value() const;
+		// get custom data associated with this key
+		/*inline void *CustomData() const {
+			return gCustomData;
+		}*/
+	};
+
+
+	// *********************************************************************
 	//                             GAnimElement
 	// *********************************************************************
 	static const GClassID G_ANIMELEMENT_CLASSID = GClassID("GAnimElement", 0x8B98ACC9, 0x577E4416, 0xB9230A4A, 0xE4762EEE);
+
 	// forward declaration
 	class GProperty;
 
@@ -238,12 +324,11 @@ namespace Amanith {
 		// internal list of properties
 		GDynArray<GProperty*> gProperties;
 
+	protected:
 		// delete and empty all properties
 		void DeleteProperties(void);
 		// clone properties
 		GError CloneProperties(const GAnimElement& Source);
-
-	protected:
 		// find a property given its name
 		GProperty* FindProperty(const GString& Name, GUInt32& PropIndex) const;
 		// base clone function
@@ -262,8 +347,8 @@ namespace Amanith {
 			DeleteProperties();
 		}
 		// Add a property
-		GProperty* AddProperty(const GString& Name, const GClassID& ClassID, GBool& AlreadyExist,
-							   GUInt32& PropertyIndex);
+		GProperty* AddProperty(const GString& Name, const GClassID& ClassID, const GKeyValue& DefaultValue,
+							   GBool& AlreadyExist, GUInt32& PropertyIndex);
 		// Get an existing property (given its name)
 		GProperty* Property(const GString& Name) const;
 		// get an existing property (given its index)
@@ -272,13 +357,20 @@ namespace Amanith {
 		GBool RemoveProperty(const GString& Name);
 		// remove the specified property form internal list
 		GBool RemoveProperty(const GUInt32 Index);
+		// remove and free all properties
+		inline void RemoveProperties() {
+			// delete all properties
+			DeleteProperties();
+		}
+		// rename a property
+		GError RenameProperty(const GString& CurrentName, const GString& NewName);
 		// get full list of properties
 		const GDynArray<GProperty*>& Properties() const {
 			return gProperties;
 		}
 		//! Get number of properties.
-		inline const GInt32 PropertiesCount() const {
-			return (GInt32)gProperties.size();
+		inline const GUInt32 PropertiesCount() const {
+			return (GUInt32)gProperties.size();
 		}
 		//! Get class descriptor
 		inline const GClassID& ClassID() const {
@@ -317,98 +409,17 @@ namespace Amanith {
 
 
 	// *********************************************************************
-	//                              GKeyValue
-	// *********************************************************************
-
-	// key types
-	enum GKeyType {
-		G_UNDEFINED_KEY,
-		G_BOOL_KEY,
-		G_INT_KEY,
-		G_REAL_KEY,
-		G_VECTOR2_KEY,
-		G_VECTOR3_KEY,
-		G_VECTOR4_KEY
-	};
-
-	class G_EXPORT GKeyValue {
-
-		friend class GProperty;
-
-	private:
-		GKeyType gType;
-		GTimeValue gTimePos;
-		GVector4 gValue;
-		void* gCustomData;
-
-	protected:
-		void SetUndefined() {
-			gType = G_UNDEFINED_KEY;
-			gValue.Set(G_MIN_REAL, G_MIN_REAL, G_MIN_REAL, G_MIN_REAL);
-			gTimePos = G_MIN_REAL;
-			gCustomData = NULL;
-		}
-
-	public:
-		GKeyValue();
-		GKeyValue(const GBool Value);
-		GKeyValue(const GInt32 Value);
-		GKeyValue(const GReal Value);
-		GKeyValue(const GVector2& Value);
-		GKeyValue(const GVector3& Value);
-		GKeyValue(const GVector4& Value);
-		GKeyValue(const GTimeValue TimePos, const GBool Value);
-		GKeyValue(const GTimeValue TimePos, const GInt32 Value);
-		GKeyValue(const GTimeValue TimePos, const GReal Value);
-		GKeyValue(const GTimeValue TimePos, const GVector2& Value);
-		GKeyValue(const GTimeValue TimePos, const GVector3& Value);
-		GKeyValue(const GTimeValue TimePos, const GVector4& Value);
-
-		void SetValue(const GBool Value);
-		void SetValue(const GInt32 Value);
-		void SetValue(const GReal Value);//, const GReal InTangent = 0, const GReal OutTangent = 0);
-		void SetValue(const GVector2& Value);//, const GVector2& InTangent = G_NULL_POINT2, const GVector2& OutTangent = G_NULL_POINT2);
-		void SetValue(const GVector3& Value);//, const GVector3& InTangent = G_NULL_POINT3, const GVector3& OutTangent = G_NULL_POINT3);
-		void SetValue(const GVector4& Value);//, const GVector4& InTangent = G_NULL_POINT4, const GVector4& OutTangent = G_NULL_POINT4);
-		void SetCustomData(void* CustomData) {
-			gCustomData = CustomData;
-		}
-		// get key type
-		inline GKeyType KeyType() const {
-			return gType;
-		}
-		void SetKeyType(const GKeyType NewType) {
-			gType = NewType;
-		}
-		// get key position (timeline position)
-		inline GTimeValue TimePosition() const {
-			return gTimePos;
-		}
-		void SetTimePosition(const GTimeValue NewTimePos) {
-			gTimePos = NewTimePos;
-		}
-		GBool BoolValue() const;
-		GInt32 IntValue() const;
-		GReal RealValue() const;
-		GVector2 Vect2Value() const;
-		GVector3 Vect3Value() const;
-		GVector4 Vect4Value() const;
-		// get custom data associated with this key
-		inline void *CustomData() const {
-			return gCustomData;
-		}
-	};
-
-
-	// *********************************************************************
 	//                             GProperty
 	// *********************************************************************
 	static const GClassID G_PROPERTY_CLASSID = GClassID("GProperty", 0xF7858DAE, 0xAACB4E8A, 0x8F8F65C3, 0x9695F42E);
 
-	// OOR (Out Of Range) type definition
+	//! Available OOR (Out Of Range) type definition
 	enum GOORType {
+		//! Constant
 		G_CONSTANT_OOR,
+		//! Loop (also known as 'wrap')
 		G_LOOP_OOR,
+		//! Ping-pong
 		G_PINGPONG_OOR
 	};
 
@@ -417,6 +428,7 @@ namespace Amanith {
 		G_ABSOLUTE_VALUE,
 		G_RELATIVE_VALUE
 	};
+
 
 	class G_EXPORT GProperty : public GAnimElement {
 
@@ -430,14 +442,16 @@ namespace Amanith {
 		GOORType gOORAfter;
 		GBool gIsKeyBased;
 		GProperty *gEaseProperty;
+		// cached value, used to store a valid value when the last remained key is going to be removed/deleted
+		GKeyValue gCachedValue;
 
 	protected:
+		// set property name
 		GError SetName(const GString& NewName);
-
+		// set keybased internal flag
 		inline void SetIsKeyBased(const GBool IsKeyBased) {
 			gIsKeyBased = IsKeyBased;
 		}
-
 		// here is ensured that Index is valid; <b>This method MUST be implemented by all keybased properties</b>
 		virtual GError DoGetKey(const GUInt32 Index, GKeyValue& OutputKey) const {
 			// just to avoid warnings...
@@ -447,31 +461,39 @@ namespace Amanith {
 			OutputKey.SetUndefined();
 			return G_MISSED_FEATURE;
 		}
-
-		// get local value; Time is ensured to be inside life-interval.
-		virtual GError DoGetValue(GKeyValue& OutputValue, GTimeInterval& ValidInterval, const GTimeValue Time,
+		// here is ensured that Index is valid; <b>This method MUST be implemented by all keybased properties</b>
+		virtual GError DoSetKey(const GUInt32 Index, const GKeyValue& NewKeyValue) {
+			// just to avoid warnings...
+			if (Index == 0 && NewKeyValue.KeyType()) {
+			}
+			// signal that this method has not been implemented
+			return G_MISSED_FEATURE;
+		}
+		// get local value; TimePos is ensured to be inside life-interval.
+		// ValidInterval is the validity interval to update; property validity interval should be intersected
+		// with this interval.
+		virtual GError DoGetValue(GKeyValue& OutputValue, GTimeInterval& ValidInterval, const GTimeValue TimePos,
 								  const GValueMethod GetMethod) const {
 
 			OutputValue.SetUndefined();
 			// just to avoid warnings...
-			if (ValidInterval.IsEmpty() && Time == 0 && GetMethod == G_ABSOLUTE_VALUE) {
+			if (ValidInterval.IsEmpty() && TimePos == 0 && GetMethod == G_ABSOLUTE_VALUE) {
 			}
 			return G_MISSED_FEATURE;
 		}
-		// set local value; InputValue.TimePosition can be outside range, behavior is to append key
+		// set local value; TimePos can be outside range, behavior is to append key
 		// and expand domain
-		virtual GError DoSetValue(const GKeyValue& InputValue, const GValueMethod SetMethod) {
+		virtual GError DoSetValue(const GKeyValue& InputValue, const GTimeValue TimePos, const GValueMethod SetMethod) {
 			// just to avoid warnings...
-			if (InputValue.TimePosition() == 0 && SetMethod == G_ABSOLUTE_VALUE) {
+			if (InputValue.RealValue() == 0 && SetMethod == G_ABSOLUTE_VALUE && TimePos) {
 			}
 			return G_MISSED_FEATURE;
 		}
-
 		// add a point ON curve, Time is ensured to be inside domain;
 		// <b>This method must be implemented by all keybased properties</b>
-		virtual GError DoAddKey(const GTimeValue Time, GUInt32& Index, GBool& AlreadyExists) {
+		virtual GError DoAddKey(const GTimeValue TimePos, GUInt32& Index, GBool& AlreadyExists) {
 			// just to avoid warnings...
-			if (Time == 0 && Index && AlreadyExists) {
+			if (TimePos == 0 && Index && AlreadyExists) {
 			}
 			return G_MISSED_FEATURE;
 		}
@@ -489,12 +511,10 @@ namespace Amanith {
 			}
 			return G_MISSED_FEATURE;
 		}
-
 		// <b>this method MUST be implemented by all keybased properties</b>
 		virtual GInt32 DoGetKeysCount() const {
 			return -1;
 		}
-
 		// <b>this method MUST be implemented by all keybased properties</b>
 		virtual GError DoSetKeys(const GDynArray<GKeyValue>& Keys) {
 			// just to avoid warnings
@@ -513,6 +533,16 @@ namespace Amanith {
 		GProperty(const GElement* Owner);
 		// destructor, delete all keys and internal ease curve (if it exists)
 		~GProperty();
+		/*
+			Clear the property, the default implementation is:
+
+			for keybased properties: remove all keys, calling RemoveKey method; then delete all sub-properties.
+			for non keybased property: nothing.
+
+			NB: ease property will not be removed nor deleted. The default/cached value will be the value
+			associated to the first key.
+		*/
+		virtual void Clear();
 		// get property name
 		inline const GString& Name() const {
 			return gName;
@@ -523,6 +553,24 @@ namespace Amanith {
 		}
 		// get time domain range; <b>Every procedural property MUST implement this method</b>
 		virtual GTimeInterval Domain() const;
+
+		//! Get default value.
+		inline const GKeyValue& DefaultValue() const {
+			return gCachedValue;
+		}
+		//! Set default value. If passed value is not of the same type as HandledType()
+		inline void SetDefaultValue(const GKeyValue& NewValue) {
+
+			if (NewValue.KeyType() != HandledType()) {
+				if (gCachedValue.KeyType() == G_UNDEFINED_KEY) {
+					// apply a default 0 value
+					gCachedValue.SetValue(GVector4(0, 0, 0, 0));
+					gCachedValue.SetKeyType(HandledType());
+				}
+			}
+			else
+				gCachedValue = NewValue;
+		}
 		// true if keybased, procedural otherwise
 		inline GBool IsKeyBased() const {
 			return gIsKeyBased;
@@ -535,26 +583,35 @@ namespace Amanith {
 		}
 		// get key, specifying index
 		GError Key(const GUInt32 Index, GKeyValue& OutputKey) const;
-		// get a key at a specified time; if the key does not exists it returns NULL pointer;
-		// if the key exists, the "index" parameter tell its internal array position
-		//GError Key(const GTimeValue Time, GKey& OutputKey, GUInt32& Index) const;
-
+		// set a key value, specifying key index (NewKeyValue time position will be ignored)
+		GError SetKey(const GUInt32 Index, const GKeyValue& NewKeyValue);
+		// add a key on curve
 		GError AddKey(const GTimeValue Time, GUInt32& Index, GBool& AlreadyExists);
+		// move a key to a different time position
 		GError MoveKey(const GUInt32 Index, const GReal NewTimePos,	GUInt32& NewIndex, GBool& AlreadyExists);
+		// remove a key by index
 		GError RemoveKey(const GUInt32 Index);
+		// set all keys (they don't need to be sorted by time)
 		GError SetKeys(const GDynArray<GKeyValue>& Keys);
-
+		// remove all keys; NB: the default/cached value will be the value associated to the first key.
+		GError RemoveKeys();
+		// get property value at a specified time position.
+		// ValidInterval is the validity interval to update; property validity interval should be intersected
+		// with this interval.
 		virtual GError Value(GKeyValue& OutputValue, GTimeInterval& ValidInterval,
-							 const GTimeValue Time = 0, const GValueMethod GetMethod = G_ABSOLUTE_VALUE) const;
-		// set the property value (add a new key)
-		virtual GError SetValue(const GKeyValue& InputValue, const GValueMethod SetMethod = G_ABSOLUTE_VALUE);
-
-		// get ease property
+							 const GTimeValue TimePos = 0, const GValueMethod GetMethod = G_ABSOLUTE_VALUE) const;
+		// set the property value (add a new key); InputValue
+		virtual GError SetValue(const GKeyValue& InputValue, const GTimeValue TimePos = 0,
+								const GValueMethod SetMethod = G_ABSOLUTE_VALUE);
+		// get ease property; please do not call delete on returned pointer; if you want to remove ease property
+		// please call RemoveEaseProperty method
 		inline GProperty* EaseProperty() const {
 			return gEaseProperty;
 		}
 		// set ease property
 		GError SetEaseProperty(const GProperty& EaseProperty);
+		// remove and delete ease property
+		void RemoveEaseProperty();
 		// if keybased, am i applying easy spline?
 		inline const GBool ApplyEase() {
 			if (!gIsKeyBased)
@@ -583,7 +640,7 @@ namespace Amanith {
 		}
 		// remap a (possible out of range) time into the corresponding one that it's ensured to lie
 		// inside domain interval
-		GTimeValue OORTime(const GTimeValue Time) const;
+		GTimeValue OORTime(const GTimeValue TimePos) const;
 		// <b>Every property MUST implement this method</b>
 		virtual GKeyType HandledType() const {
 			return G_UNDEFINED_KEY;
@@ -593,6 +650,13 @@ namespace Amanith {
 	// *********************************************************************
 	//                              GPropertyProxy
 	// *********************************************************************
+	/*!
+		\class GPropertyProxy
+		\brief This class implements a GProperty proxy (provider).
+
+		This proxy does not override CreateNew() method because we don't wanna make a creation of a GProperty
+		class possible.
+	*/
 	class G_EXPORT GPropertyProxy : public GElementProxy {
 	public:
 		//! Get class descriptor of elements type "provided" by this proxy.
@@ -604,7 +668,7 @@ namespace Amanith {
 			return G_ANIMELEMENT_CLASSID;
 		}
 	};
-
+	//! Static proxy for GProperty class.
 	static const GPropertyProxy G_PROPERTY_PROXY;
 
 };	// end namespace Amanith

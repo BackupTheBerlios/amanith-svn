@@ -657,7 +657,7 @@ GError GTesselator2D::Tesselate(const GDynArray<GPoint2>& Points, const GDynArra
 }
 
 GError GTesselator2D::Tesselate(const GDynArray<GPoint2>& Points, const GDynArray<GInt32>& PointsPerContour,
-								GDynArray< GPoint<GDouble, 2> >& TriangPoints, GDynArray< GUInt32 >& TriangIds,
+								GDynArray< GPoint<GDouble, 2> >& TriangPoints, GDynArray< GULong >& TriangIds,
 								const GFillRule FillRule) {
 
 	GExtVertex* extVertex;
@@ -2013,7 +2013,7 @@ cleanRegions:
 }
 
 
-void GTesselator2D::TessellateMonotoneRegion(const GActiveRegion* Region, GDynArray<GUInt32>& PointsIds,
+void GTesselator2D::TessellateMonotoneRegion(const GActiveRegion* Region, GDynArray<GULong>& PointsIds,
 											 GTessDescriptor& Descriptor) {
 
 	GMeshEdge2D<GDouble> *up, *lo;
@@ -2038,9 +2038,9 @@ void GTesselator2D::TessellateMonotoneRegion(const GActiveRegion* Region, GDynAr
 				G_ASSERT(tempEdge != NULL);
 				
 				// output indexes
-				PointsIds.push_back((GUInt32)lo->Dest()->CustomData());
-				PointsIds.push_back((GUInt32)lo->Lnext()->Dest()->CustomData());
-				PointsIds.push_back((GUInt32)lo->Org()->CustomData());
+				PointsIds.push_back((GULong)lo->Dest()->CustomData());
+				PointsIds.push_back((GULong)lo->Lnext()->Dest()->CustomData());
+				PointsIds.push_back((GULong)lo->Org()->CustomData());
 
 				// we have to trace a diagonal from lo->Lnext->Dest to lo->Org
 				GMesh2D<GDouble>::Splice(lo, tempEdge->Sym());
@@ -2060,9 +2060,9 @@ void GTesselator2D::TessellateMonotoneRegion(const GActiveRegion* Region, GDynAr
 				tempEdge = Descriptor.TargetMesh.AddEdge();
 				G_ASSERT(tempEdge != NULL);
 				// output indexes
-				PointsIds.push_back((GUInt32)up->Lprev()->Org()->CustomData());
-				PointsIds.push_back((GUInt32)up->Org()->CustomData());
-				PointsIds.push_back((GUInt32)up->Dest()->CustomData());
+				PointsIds.push_back((GULong)up->Lprev()->Org()->CustomData());
+				PointsIds.push_back((GULong)up->Org()->CustomData());
+				PointsIds.push_back((GULong)up->Dest()->CustomData());
 
 				// we have to trace a diagonal from up->Dest to up->Lprev->Org
 				GMesh2D<GDouble>::Splice(up->Lprev(), tempEdge->Sym());
@@ -2083,9 +2083,9 @@ void GTesselator2D::TessellateMonotoneRegion(const GActiveRegion* Region, GDynAr
 		GMeshEdge2D<GDouble> *tempEdge = Descriptor.TargetMesh.AddEdge();
 		G_ASSERT(tempEdge != NULL);
 		// output indexes
-		PointsIds.push_back((GUInt32)lo->Dest()->CustomData());
-		PointsIds.push_back((GUInt32)lo->Lnext()->Dest()->CustomData());
-		PointsIds.push_back((GUInt32)lo->Org()->CustomData());
+		PointsIds.push_back((GULong)lo->Dest()->CustomData());
+		PointsIds.push_back((GULong)lo->Lnext()->Dest()->CustomData());
+		PointsIds.push_back((GULong)lo->Org()->CustomData());
 		// we have to trace a diagonal from lo->Lnext->Dest to lo->Org
 		GMesh2D<GDouble>::Splice(lo, tempEdge->Sym());
 		GMesh2D<GDouble>::Splice(lo->Lnext()->Lnext(), tempEdge);
@@ -2094,9 +2094,9 @@ void GTesselator2D::TessellateMonotoneRegion(const GActiveRegion* Region, GDynAr
 		lo = tempEdge->Sym();
 	}
 	// output indexes
-	PointsIds.push_back((GUInt32)lo->Org()->CustomData());
-	PointsIds.push_back((GUInt32)lo->Dest()->CustomData());
-	PointsIds.push_back((GUInt32)lo->Lnext()->Dest()->CustomData());
+	PointsIds.push_back((GULong)lo->Org()->CustomData());
+	PointsIds.push_back((GULong)lo->Dest()->CustomData());
+	PointsIds.push_back((GULong)lo->Lnext()->Dest()->CustomData());
 }
 
 void GTesselator2D::TessellateMonotoneRegion(const GActiveRegion* Region, GDynArray< GPoint<GDouble, 2> >& Points,

@@ -59,7 +59,7 @@ GHermiteCurve2D::~GHermiteCurve2D() {
 void GHermiteCurve2D::Clear() {
 
 	gKeys.clear();
-	GCurve2D::SetDomain(G_MIN_REAL, G_MIN_REAL);
+	GCurve2D::Clear();
 }
 
 // cloning function
@@ -386,6 +386,19 @@ GVector2 GHermiteCurve2D::SegmentDerivative(const GUInt32 Index, const GDerivati
 		return (SegmentTangent(Index, Order, Parameter) * (dtdu * dtdu));
 }
 
+GReal GHermiteCurve2D::SegmentVariation(const GUInt32 Index) const {
+
+   G_ASSERT((GInt32)Index < (GInt32)PointsCount() - 1);
+   GBezierCurve2D tmpBez;
+   //GError err;
+
+   SegmentToBezierConversion(Index, tmpBez);
+   return tmpBez.Variation();
+   //err = tmpBez.Flatten(Contour, MaxDeviation, IncludeLastPoint);
+   //return err;
+}
+
+/*
 // calculate variation on i-th segment (key (i) to key (i+1)); it suppose that
 // Index is valid and also parameter range is inside specified segment range
 GReal GHermiteCurve2D::SegmentVariation(const GUInt32 Index, const GReal MinParam, const GReal MaxParam) const {
@@ -416,6 +429,7 @@ GReal GHermiteCurve2D::SegmentVariation(const GUInt32 Index, const GReal MinPara
 	}
 	return curVariation;
 }
+*/
 
 // set control points
 GError GHermiteCurve2D::SetPoints(const GDynArray<GPoint2>& NewPoints,
@@ -532,6 +546,25 @@ GBool GHermiteCurve2D::ParamToKeyIndex(const GReal Param, GUInt32& KeyIndex) con
 	return G_TRUE;
 }
 
+// get max variation (chordal distance) in the domain range
+GReal GHermiteCurve2D::Variation() const {
+
+	GUInt32 i, j = (GUInt32)gKeys.size();
+
+	if (j < 2)
+		return 0;
+
+	// calculate variation as the max variation of all Hermite segments
+	GReal tmpDist, dist = -1;
+
+	for (i = 0; i < j - 1; ++i) {
+		tmpDist = SegmentVariation(i);
+		if (tmpDist > dist)
+			dist = tmpDist;
+	}
+	return dist;
+}
+/*
 // get max variation (chordal distance) in the range [u0;u1]; here are necessary also
 // curve evaluations at the interval ends
 GReal GHermiteCurve2D::Variation(const GReal u0, const GReal u1, const GPoint2& p0, const GPoint2& p1) const {
@@ -590,7 +623,7 @@ GReal GHermiteCurve2D::Variation(const GReal u0, const GReal u1, const GPoint2& 
 		}
 	}
 	return result;
-}
+}*/
 
 // cut the curve, giving the 2 new set of control points that represents 2 poly-line curves (with the
 // same degree of the original one)

@@ -137,7 +137,7 @@ namespace Amanith {
 		GElement* CreateNew(const GString& ClassName);
 		//! Is 'InspectedType' of type (equal or derived) 'Class_ID' ?
 		GBool IsTypeOfType(const GClassID& InspectedType, const GClassID& Class_ID) const;
-		//! Ask for a supported element type
+		//! Ask for a supported element type.
 		GBool IsSupported(const GClassID& Class_ID) const;
 		//! Load an external plugin, specifying a filter class descriptor
 		GError LoadPlugin(const GChar8 *FullFileName, const GClassID* Filter = NULL);

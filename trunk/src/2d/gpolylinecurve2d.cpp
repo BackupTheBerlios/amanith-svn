@@ -57,7 +57,7 @@ GPolyLineCurve2D::~GPolyLineCurve2D() {
 void GPolyLineCurve2D::Clear() {
 
 	gKeys.clear();
-	GCurve2D::SetDomain(G_MIN_REAL, G_MIN_REAL);
+	GCurve2D::Clear();
 }
 
 // cloning function
@@ -329,10 +329,25 @@ GBool GPolyLineCurve2D::ParamToKeyIndex(const GReal Param, GUInt32& KeyIndex) co
 	return G_TRUE;
 }
 
-// get max variation (chordal distance) in the range [u0;u1]; here are necessary also
-// curve evaluations at the interval ends
-GReal GPolyLineCurve2D::Variation(const GReal u0, const GReal u1, const GPoint2& p0, const GPoint2& p1) const {
+// get max variation (chordal distance) in the domain range
+//GReal GPolyLineCurve2D::Variation(const GReal u0, const GReal u1, const GPoint2& p0, const GPoint2& p1) const {
+GReal GPolyLineCurve2D::Variation() const {
 
+	GUInt32 i, j = (GUInt32)gKeys.size();
+
+	if (j < 3)
+		return 0;
+
+	GReal tmpDist, dist = -1;
+	GLineSegment2 ls(gKeys[0].Value, gKeys[j - 1].Value);
+
+	for (i = 1; i < j - 1; ++i) {
+		tmpDist = DistanceSquared(gKeys[i].Value, ls);
+		if (tmpDist > dist)
+			dist = tmpDist;
+	}
+	return dist;
+/*
 	GLineSegment2 ls(p0, p1);
 	GUInt32 keyIndex, i;
 	GReal parameter, dist, tmpDist;
@@ -353,7 +368,7 @@ GReal GPolyLineCurve2D::Variation(const GReal u0, const GReal u1, const GPoint2&
 		}
 		return dist;
 	}
-	return 0;
+	return 0;*/
 }
 
 // cut the curve, giving the 2 new set of control points that represents 2 poly-line curves (with the

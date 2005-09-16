@@ -32,6 +32,7 @@
 #include "amanith/geometry/gxformconv.h"
 #include "amanith/gerror.h"
 #include "amanith/numerics/gintegration.h"
+#include "amanith/gmultiproperty.h"
 
 /*!
 	\file gcurve2d.cpp
@@ -54,6 +55,14 @@ GCurve2D::GCurve2D(const GElement* Owner) : GElement(Owner), gDomain(0, 1) {
 
 // destructor
 GCurve2D::~GCurve2D() {
+
+	Clear();
+}
+
+void GCurve2D::Clear() {
+
+	// set an empty domain
+	gDomain.Set(G_MIN_REAL, G_MIN_REAL);
 }
 
 // get curve tangent (specifying global parameter)
@@ -97,7 +106,7 @@ GReal GCurve2D::Speed(const GReal u) const {
 }
 
 // get max variation (chordal distance) in the (global parameter) range [u0;u1]
-GReal GCurve2D::Variation(const GReal u0, const GReal u1) const {
+/*GReal GCurve2D::Variation(const GReal u0, const GReal u1) const {
 
 	GInterval<GReal> requestedInterval(u0, u1);
 	requestedInterval &= gDomain;
@@ -108,8 +117,9 @@ GReal GCurve2D::Variation(const GReal u0, const GReal u1) const {
 	GPoint2 p0 = Evaluate(u0);
 	GPoint2 p1 = Evaluate(u1);
 	return Variation(u0, u1, p0, p1);
-}
+}*/
 
+/*
 // flats (tessellates) the curve specifying a max error/variation (chordal distance)
 GError GCurve2D::Flatten(const GReal u0, const GReal u1, const GPoint2& p0, const GPoint2& p1,
 						GDynArray<GPoint2>& Contour, const GReal MaxDeviation) const {
@@ -151,7 +161,7 @@ GError GCurve2D::Flatten(GDynArray<GPoint2>& Contour, const GReal MaxDeviation,
 	if ((err == G_NO_ERROR) && (IncludeLastPoint))
 		Contour.push_back(p1);
 	return err;
-}
+}*/
 
 // returns the length of the curve between the 2 specified global parameter values
 GReal GCurve2D::Length(const GReal u0, const GReal u1, const GReal MaxError) const {

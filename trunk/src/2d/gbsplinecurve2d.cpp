@@ -77,6 +77,7 @@ void GBSplineCurve2D::Clear() {
 	gForwDiff1.clear();
 	gForwDiff2.clear();
 	gBasisFuncEval.clear();
+	GCurve2D::Clear();
 }
 
 // get number of control points
@@ -1475,17 +1476,35 @@ GError GBSplineCurve2D::DoCut(const GReal u, GCurve2D *RightCurve, GCurve2D *Lef
 	return G_NO_ERROR;
 }
 
+GError GBSplineCurve2D::Flatten(const GReal u0, const GReal u1, const GPoint2& p0, const GPoint2& p1,
+								GDynArray<GPoint2>& Contour, const GReal MaxDeviation) const {
+
+	// calculate current variation
+	GReal tmpVar = Variation(u0, u1, p0, p1);
+	// if it's too big lets split the curve for flattening
+	if ((tmpVar > MaxDeviation) && (GMath::Abs(u1 - u0) > 2 * G_EPSILON)) {
+		// pivot point
+		GReal uPivot = (u0 + u1) * (GReal)0.5;
+		GPoint2 vPivot = Evaluate(uPivot);
+		// flat left part
+		Flatten(u0, uPivot, p0, vPivot, Contour, MaxDeviation);
+		// flat right part
+		Flatten(uPivot, u1, vPivot, p1, Contour, MaxDeviation);
+	}
+	// in this case we can push a "good" point
+	else
+		Contour.push_back(p0);
+	return G_NO_ERROR;
+}
+
 // flats (tessellates) the curve specifying a max error/variation (chordal distance)
 GError GBSplineCurve2D::Flatten(GDynArray<GPoint2>& Contour, const GReal MaxDeviation,
 								const GBool IncludeLastPoint) const {
 
-	GUInt32 i;
-	GError err;
-
 	if (MaxDeviation <= 0)
 		return G_INVALID_PARAMETER;
 
-	i = PointsCount();
+	GUInt32 i = PointsCount();
 	if (i == 0)
 		return G_NO_ERROR;
 
@@ -1499,17 +1518,32 @@ GError GBSplineCurve2D::Flatten(GDynArray<GPoint2>& Contour, const GReal MaxDevi
 		p1 = Evaluate(DomainEnd());
 	}
 
-	err = GCurve2D::Flatten(DomainStart(), DomainEnd(), p0, p1, Contour, MaxDeviation);
+	GError err = Flatten(DomainStart(), DomainEnd(), p0, p1, Contour, MaxDeviation);
 	if ((err == G_NO_ERROR) && (IncludeLastPoint))
 		Contour.push_back(p1);
-
 	return err;
+}
+
+// get max variation (chordal distance) in the domain range
+GReal GBSplineCurve2D::Variation() const {
+
+	GUInt32 i = (GUInt32)gPoints.size();
+
+	if (i < 2)
+		return 0;
+
+	if (gOpened)
+		return Variation(DomainStart(), DomainEnd(), gPoints[0], gPoints[i - 1]);
+	else {
+		GPoint2 p0 = Evaluate(DomainStart());
+		GPoint2 p1 = Evaluate(DomainEnd());
+		return Variation(DomainStart(), DomainEnd(), p0, p1);
+	}
 }
 
 // get max variation (chordal distance) in the range [u0;u1]; here are necessary also
 // curve evaluations at the interval ends
-GReal GBSplineCurve2D::Variation(const GReal u0, const GReal u1,
-								const GPoint2& p0, const GPoint2& p1) const {
+GReal GBSplineCurve2D::Variation(const GReal u0, const GReal u1, const GPoint2& p0, const GPoint2& p1) const {
 
 	GInt32 i, numSeg;
 	GReal step, u, curVariation, tmpVariation;

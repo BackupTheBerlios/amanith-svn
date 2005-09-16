@@ -140,7 +140,7 @@ namespace Amanith {
 			GDynArray<GExtVertex *> ExtVertices;
 			GDynArray<GMeshToAVL *> ExtEdges;
 			GDynArray<GActiveRegion *> ActiveRegions;
-			GUInt32 VertexID;
+			GULong VertexID;
 
 			// constructor
 			GTessDescriptor() {
@@ -225,7 +225,7 @@ namespace Amanith {
 
 		void TessellateMonotoneRegion(const GActiveRegion* Region, GDynArray< GPoint<GDouble, 2> >& Points,
 									  GTessDescriptor& Descriptor);
-		void TessellateMonotoneRegion(const GActiveRegion* Region, GDynArray<GUInt32>& PointsIds,
+		void TessellateMonotoneRegion(const GActiveRegion* Region, GDynArray<GULong>& PointsIds,
 									  GTessDescriptor& Descriptor);
 
 		// searching into RingEdge's origin ring, return that edge that span the smaller angle in CCW
@@ -306,10 +306,10 @@ namespace Amanith {
 	idx.push_back(3);
 
 	GDynArray< GPoint<GDouble, 2> > triPoints;
-	GDynArray<GInt32> triIndexes;
+	GDynArray<GULong> triIndexes;
 	GTesselator2D tesselator;
 
-	tesselator.Tesselate(pts, idx, triPoints);
+	tesselator.Tesselate(pts, idx, triPoints, triIndexes);
 	for (GUInt32 i = 0; i < triPoints.size(); i+=3)
 		DrawTriangle(triPoints[triIndexes[i]], triPoints[triIndexes[i + 1]], triPoints[triIndexes[i + 2]]);
 \endcode
@@ -325,7 +325,7 @@ namespace Amanith {
 			\note Please keep OddFill parameter G_TRUE. This is the only supported mode for this version.
 		*/
 		GError Tesselate(const GDynArray<GPoint2>& Points, const GDynArray<GInt32>& PointsPerContour,
-						 GDynArray< GPoint<GDouble, 2> >& TriangPoints, GDynArray< GUInt32 >& TriangIds,
+						 GDynArray< GPoint<GDouble, 2> >& TriangPoints, GDynArray< GULong >& TriangIds,
 						 const GFillRule FillRule = G_ODD_RULE);
 
 	};

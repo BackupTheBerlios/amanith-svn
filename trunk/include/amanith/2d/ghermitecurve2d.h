@@ -124,7 +124,7 @@ namespace Amanith {
 	protected:
 		//! Sort keys, in ascending order respect to domain parameters.
 		void SortKeys();
-		/*!
+		/*
 			Get max variation (squared chordal distance) in the range [u0; u1]; here are necessary also
 			curve evaluations at the interval ends.
 
@@ -133,8 +133,9 @@ namespace Amanith {
 			\param p0 the point corresponding to the curve evaluation at u0
 			\param p1 the point corresponding to the curve evaluation at u1
 			\note The interval is ensured to be completely inside the curve domain.
-		*/
-		GReal Variation(const GReal u0, const GReal u1,	const GPoint2& p0, const GPoint2& p1) const;
+		
+		GReal Variation(const GReal u0, const GReal u1,	const GPoint2& p0, const GPoint2& p1) const;*/
+
 		//! Cloning function, copies (physically) a Source Hermite curve into this curve.
 		GError BaseClone(const GElement& Source);
 		/*!
@@ -195,7 +196,7 @@ namespace Amanith {
 		GVector2 SegmentDerivative(const GUInt32 Index, const GDerivativeOrder Order, const GReal Parameter) const;
 
 		GVector2 SegmentTangent(const GUInt32 Index, const GDerivativeOrder Order, const GReal Parameter) const;
-		/*!
+		/*
 			Get max variation (squared chordal distance) for a specified Hermite trait in the
 			range [MinParam; MaxParam].
 
@@ -203,8 +204,16 @@ namespace Amanith {
 			\param MinParam the lower bound of interested domain range; it must be inside trait's subdomain
 			\param MaxParam the upper bound of interested domain range; it must be inside trait's subdomain
 			\return the estimated squared chordal distance.
+
+		GReal SegmentVariation(const GUInt32 Index, const GReal MinParam, const GReal MaxParam) const;*/
+
+		/*!
+			Get max variation (squared chordal distance) for a specified Hermite trait in its domain.
+
+			\param Index the index of Hermite trait that we test for ray intersection.
+			\return the estimated squared chordal distance.
 		*/
-		GReal SegmentVariation(const GUInt32 Index, const GReal MinParam, const GReal MaxParam) const;
+		GReal SegmentVariation(const GUInt32 Index) const;
 		/*!
 			Intersect an Hermite trait with a normalized ray, and returns a list of intersections.
 
@@ -349,17 +358,6 @@ namespace Amanith {
 		*/
 		GError SetKey(const GUInt32 Index, const GPoint2& NewKeyValue, const GVector2& InTangent,
 					  const GVector2& OutTangent);
-
-		/*
-			Add a key to the curve.
-
-			\param NewKey the key to add.
-			\param InsertedIndex the index (into the internal keys array) where the key has been inserted.
-			\param AlreadyExists a G_TRUE value means that the added key has overridden an already existing key, because
-			they occupied the same domain position.
-
-		GError AddKey(const GHermiteKey2D& NewKey, GUInt32& InsertedIndex, GBool& AlreadyExists);*/
-
 		/*!
 			Set curve domain.
 
@@ -460,6 +458,10 @@ namespace Amanith {
 			call Bezier specific high-optimized flattening routines.
 		*/
 		GError Flatten(GDynArray<GPoint2>& Contour, const GReal MaxDeviation, const GBool IncludeLastPoint = G_TRUE) const;
+		/*!
+			Get variation (squared chordal distance) in the current domain range.
+		*/
+		GReal Variation() const;
 		/*!
 			Apply an affine transformation to all key points and tangents.
 

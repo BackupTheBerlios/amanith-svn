@@ -26,10 +26,10 @@
 ** not clear to you.
 **********************************************************************/
 
-#include "amanith/gelement.h"
 #include "amanith/gkernel.h"
-#include "amanith/gproperty.h"
 #include "amanith/support/gutilities.h"
+#include "amanith/geometry/gxformconv.h"
+#include "amanith/gmultiproperty.h"
 
 /*!
 	\file gelement.cpp
@@ -216,7 +216,7 @@ GKeyValue::GKeyValue(const GBool Value) {
 
 	gType = G_BOOL_KEY;
 	gTimePos = 0;
-	gCustomData = NULL;
+//	gCustomData = NULL;
 	if (Value)
 		gValue[0] = (GReal)1;
 }
@@ -225,7 +225,7 @@ GKeyValue::GKeyValue(const GInt32 Value) {
 
 	gType = G_INT_KEY;
 	gTimePos = 0;
-	gCustomData = NULL;
+	//gCustomData = NULL;
 	// cast can be ensured "exact" for 23/52 bits (mantissa precision)
 	if (Value)
 		gValue[0] = (GReal)Value;
@@ -235,7 +235,7 @@ GKeyValue::GKeyValue(const GReal Value) {
 
 	gType = G_REAL_KEY;
 	gTimePos = 0;
-	gCustomData = NULL;
+	//gCustomData = NULL;
 	gValue[0] = Value;
 }
 
@@ -243,7 +243,7 @@ GKeyValue::GKeyValue(const GVector2& Value) {
 
 	gType = G_VECTOR2_KEY;
 	gTimePos = 0;
-	gCustomData = NULL;
+	//gCustomData = NULL;
 	gValue.Set(Value[0], Value[1]);
 }
 
@@ -251,7 +251,7 @@ GKeyValue::GKeyValue(const GVector3& Value) {
 
 	gType = G_VECTOR3_KEY;
 	gTimePos = 0;
-	gCustomData = NULL;
+	//gCustomData = NULL;
 	gValue.Set(Value[0], Value[1], Value[2]);
 }
 
@@ -259,7 +259,7 @@ GKeyValue::GKeyValue(const GVector4& Value) {
 
 	gType = G_VECTOR4_KEY;
 	gTimePos = 0;
-	gCustomData = NULL;
+	//gCustomData = NULL;
 	gValue = Value;
 }
 
@@ -374,6 +374,7 @@ GProperty::GProperty() : GAnimElement() {
 	gOORBefore = G_CONSTANT_OOR;
 	gOORAfter = G_CONSTANT_OOR;
 	gEaseProperty = NULL;
+	gCachedValue.SetUndefined();
 }
 
 GProperty::GProperty(const GElement* Owner) : GAnimElement(Owner) {
@@ -384,6 +385,7 @@ GProperty::GProperty(const GElement* Owner) : GAnimElement(Owner) {
 	gOORBefore = G_CONSTANT_OOR;
 	gOORAfter = G_CONSTANT_OOR;
 	gEaseProperty = NULL;
+	gCachedValue.SetUndefined();
 }
 
 // destructor
@@ -391,6 +393,28 @@ GProperty::~GProperty() {
 
 	if (gEaseProperty)
 		delete gEaseProperty;
+
+	Clear();
+}
+
+GError GProperty::RemoveKeys() {
+
+	if (!IsKeyBased())
+		return G_INVALID_OPERATION;
+
+	// remove all keys
+	GInt32 i, j = DoGetKeysCount();
+
+	for (i = j - 1; i >= 0; i--)
+		DoRemoveKey(i);
+
+	return G_NO_ERROR;
+}
+
+void GProperty::Clear() {
+
+	RemoveKeys();
+	DeleteProperties();
 }
 
 GError GProperty::SetName(const GString& NewName) {
@@ -415,17 +439,27 @@ GError GProperty::Key(const GUInt32 Index, GKeyValue& OutputKey) const {
 	return DoGetKey(Index, OutputKey);
 }
 
-GError GProperty::AddKey(const GTimeValue Time, GUInt32& Index, GBool& AlreadyExists) {
+// set a key value, specifying key index
+GError GProperty::SetKey(const GUInt32 Index, const GKeyValue& NewKeyValue) {
 
 	if (!IsKeyBased())
 		return G_INVALID_OPERATION;
 
-	GTimeInterval myRange = Domain();
-
-	if (!myRange.IsInInterval(Time))
+	if ((GInt32)Index >= KeysCount())
 		return G_OUT_OF_RANGE;
 
-	return DoAddKey(Time, Index, AlreadyExists);
+	return DoSetKey(Index, NewKeyValue);
+}
+
+GError GProperty::AddKey(const GTimeValue TimePos, GUInt32& Index, GBool& AlreadyExists) {
+
+	if (!IsKeyBased())
+		return G_INVALID_OPERATION;
+
+	if (!Domain().IsInInterval(TimePos))
+		return G_OUT_OF_RANGE;
+
+	return DoAddKey(TimePos, Index, AlreadyExists);
 }
 
 GError GProperty::MoveKey(const GUInt32 Index, const GReal NewTimePos, GUInt32& NewIndex, GBool& AlreadyExists) {
@@ -444,10 +478,20 @@ GError GProperty::RemoveKey(const GUInt32 Index) {
 	if (!IsKeyBased())
 		return G_INVALID_OPERATION;
 
-	if ((GInt32)Index >= KeysCount())
+	GInt32 i = KeysCount();
+
+	if ((GInt32)Index >= i)
 		return G_OUT_OF_RANGE;
 
-	return DoRemoveKey(Index);
+	GError err;
+
+	// if i'm going to remove the only remain key, we must synchronize cached value to that key
+	if (i == 1) {
+		err = DoGetKey(Index, gCachedValue);
+		G_ASSERT(err == G_NO_ERROR);
+	}
+	err = DoRemoveKey(Index);
+	return err;
 }
 
 GError GProperty::SetKeys(const GDynArray<GKeyValue>& Keys) {
@@ -478,6 +522,12 @@ GError GProperty::SetEaseProperty(const GProperty& EaseProperty) {
 		return gEaseProperty->CopyFrom(EaseProperty);
 	else
 		return G_MEMORY_ERROR;
+}
+
+void GProperty::RemoveEaseProperty() {
+
+	if (gEaseProperty)
+		delete gEaseProperty;
 }
 
 // get time range
@@ -523,10 +573,11 @@ GError GProperty::BaseClone(const GElement& Source) {
 	gOORBefore = p.gOORBefore;
 	gOORAfter = p.gOORAfter;
 	gIsKeyBased = p.gIsKeyBased;
+	gCachedValue = p.gCachedValue;
 	return GAnimElement::BaseClone(Source);
 }
 
-GError GProperty::Value(GKeyValue& OutputValue, GTimeInterval& ValidInterval, const GTimeValue Time,
+GError GProperty::Value(GKeyValue& OutputValue, GTimeInterval& ValidInterval, const GTimeValue TimePos,
 						const GValueMethod GetMethod) const {
 
 	GTimeInterval myRange, easeValid, localValid;
@@ -537,30 +588,49 @@ GError GProperty::Value(GKeyValue& OutputValue, GTimeInterval& ValidInterval, co
 
 	//! \todo Implement relative value getting.
 	if (GetMethod == G_RELATIVE_VALUE)
-		return G_UNSUPPORTED_CLASSID;
+		return G_MISSED_FEATURE;
+
+	// if there aren't keys (and the property is keybased), return default/cached value
+	if (IsKeyBased() && DoGetKeysCount() <= 0) {
+		//ValidInterval = G_FOREVER_TIMEINTERVAL;
+		OutputValue = gCachedValue;
+		OutputValue.SetTimePosition(TimePos);
+		return G_NO_ERROR;
+	}
 
 	// set validity intervals to 'forvever'
 	localValid = G_FOREVER_TIMEINTERVAL;
+	easeValid = G_FOREVER_TIMEINTERVAL;
 	myRange = Domain();
-	tmpTime = Time;
+	tmpTime = TimePos;
 
 	// apply ease (time curve)
 	if (gApplyEase && gEaseProperty) {
 		
 		GKeyValue easeValue;
 
-		err = gEaseProperty->Value(easeValue, easeValid, tmpTime, G_ABSOLUTE_VALUE);
-		if (err != G_NO_ERROR)
-			return err;
-		tmpTime = easeValue.RealValue();
+		// if ease property is keybased, it must contain at least one key
+		if (gEaseProperty->IsKeyBased() && gEaseProperty->KeysCount() > 0) {
+			err = gEaseProperty->Value(easeValue, easeValid, tmpTime, G_ABSOLUTE_VALUE);
+			if (err != G_NO_ERROR)
+				return err;
+			tmpTime = easeValue.RealValue();
+		}
+		// if the ease property is procedural (not keybased) we have to get its value
+		else {
+			err = gEaseProperty->Value(easeValue, easeValid, tmpTime, G_ABSOLUTE_VALUE);
+			if (err != G_NO_ERROR)
+				return err;
+			tmpTime = easeValue.RealValue();
+		}
 	}
 
 	err = G_NO_ERROR;
 	if (myRange.IsEmpty() || myRange.IsInInterval(tmpTime))
 		// in this case we haven't to use OOR
-		err = DoGetValue(OutputValue, localValid, tmpTime, G_ABSOLUTE_VALUE);
+		err = DoGetValue(OutputValue, localValid, tmpTime, GetMethod);
 	else {
-		// lets see if time is in timerange, and get the correct OOR
+		// lets see if time is in time range, and get the correct OOR
 		if (tmpTime <= myRange.Start())
 			usedOOR = OORBefore();
 		else
@@ -570,17 +640,17 @@ GError GProperty::Value(GKeyValue& OutputValue, GTimeInterval& ValidInterval, co
 
 			case G_CONSTANT_OOR:
 				if (tmpTime < myRange.Start()) {
-					err = DoGetValue(OutputValue, localValid, myRange.Start(), G_ABSOLUTE_VALUE);
+					err = DoGetValue(OutputValue, localValid, myRange.Start(), GetMethod);
 					localValid.Set(G_MIN_REAL, myRange.Start());
 				}
 				else {
-					err = DoGetValue(OutputValue, localValid, myRange.End(), G_ABSOLUTE_VALUE);
+					err = DoGetValue(OutputValue, localValid, myRange.End(), GetMethod);
 					localValid.Set(myRange.End(), G_MAX_REAL);
 				}
 				break;
 
 			case G_LOOP_OOR:
-				err = DoGetValue(OutputValue, localValid, myRange.CycleValue(tmpTime), G_ABSOLUTE_VALUE);
+				err = DoGetValue(OutputValue, localValid, myRange.CycleValue(tmpTime), GetMethod);
 				break;
 
 			case G_PINGPONG_OOR:
@@ -588,27 +658,27 @@ GError GProperty::Value(GKeyValue& OutputValue, GTimeInterval& ValidInterval, co
 				cycledTime = myRange.CycleValue(tmpTime);
 				if (nCycles & 1)
 					cycledTime = myRange.End() - (cycledTime - myRange.Start());
-				err = DoGetValue(OutputValue, localValid, cycledTime, G_ABSOLUTE_VALUE);
+				err = DoGetValue(OutputValue, localValid, cycledTime, GetMethod);
 				break;
 		}
 	}
 
-	ValidInterval = localValid;
+	ValidInterval &= localValid;
 	ValidInterval &= easeValid;
-
 	if (ValidInterval.IsEmpty())
-		ValidInterval.Set(Time, Time);
+		ValidInterval.Set(TimePos, TimePos);
 
 	return err;
 }
 
 // set property value at a specific time position
-GError GProperty::SetValue(const GKeyValue& InputValue, const GValueMethod SetMethod) {
+GError GProperty::SetValue(const GKeyValue& InputValue, const GTimeValue TimePos, const GValueMethod SetMethod) {
 
 	if (InputValue.KeyType() != HandledType())
 		return G_INVALID_PARAMETER;
 
 	GKeyValue tmpKey(InputValue);
+	tmpKey.SetTimePosition(TimePos);
 
 	// apply ease (time curve)
 	if (gApplyEase && gEaseProperty) {
@@ -616,17 +686,17 @@ GError GProperty::SetValue(const GKeyValue& InputValue, const GValueMethod SetMe
 		GKeyValue easeValue;
 
 		GTimeInterval easeValid = G_FOREVER_TIMEINTERVAL;
-		GError err = gEaseProperty->Value(easeValue, easeValid, InputValue.TimePosition(), G_ABSOLUTE_VALUE);
+		GError err = gEaseProperty->Value(easeValue, easeValid, TimePos, G_ABSOLUTE_VALUE);
 		if (err != G_NO_ERROR)
 			return err;
 		tmpKey.SetTimePosition(easeValue.RealValue());
 	}
-	return DoSetValue(tmpKey, SetMethod);
+	return DoSetValue(tmpKey, tmpKey.TimePosition(), SetMethod);
 }
 
 // remap a (possible out of range) time into the corresponding one that it's ensured to lie
 // inside domain interval
-GTimeValue GProperty::OORTime(const GTimeValue Time) const {
+GTimeValue GProperty::OORTime(const GTimeValue TimePos) const {
 
 	GOORType usedOOR;
 	GTimeValue cycledTime;
@@ -637,30 +707,30 @@ GTimeValue GProperty::OORTime(const GTimeValue Time) const {
 		return myRange.Start();
 
 	// if specified time is already inside domain, then return it
-	if (myRange.IsInInterval(Time))
-		return Time;
+	if (myRange.IsInInterval(TimePos))
+		return TimePos;
 
-	// lets see if time is in timerange, and get the correct OOR
-	if (Time <= myRange.Start())
+	// lets see if time is in time range, and get the correct OOR
+	if (TimePos <= myRange.Start())
 		usedOOR = OORBefore();
 	else
 		usedOOR = OORAfter();
 
 	switch (usedOOR) {
 		case G_CONSTANT_OOR:
-			if (Time < myRange.Start())
+			if (TimePos < myRange.Start())
 				return myRange.Start();
 			else
 				return myRange.End();
 			break;
 
 		case G_LOOP_OOR:
-			return myRange.CycleValue(Time);
+			return myRange.CycleValue(TimePos);
 			break;
 
 		case G_PINGPONG_OOR:
-			nCycles = myRange.CyclesCount(Time);
-			cycledTime = myRange.CycleValue(Time);
+			nCycles = myRange.CyclesCount(TimePos);
+			cycledTime = myRange.CycleValue(TimePos);
 			if (nCycles & 1)
 				cycledTime = myRange.End() - (cycledTime - myRange.Start());
 			return cycledTime;
@@ -712,7 +782,7 @@ GError GAnimElement::CloneProperties(const GAnimElement& Source) {
 		srcProp = *it;
 		G_ASSERT(srcProp != NULL);
 
-		tmpProp = AddProperty(srcProp->Name(), srcProp->ClassID(), alreadyExists, i);
+		tmpProp = AddProperty(srcProp->Name(), srcProp->ClassID(), GKeyValue(), alreadyExists, i);
 		if (tmpProp) {
 			// lets do copy
 			err = tmpProp->CopyFrom(*srcProp);
@@ -760,9 +830,27 @@ GProperty* GAnimElement::FindProperty(const GString& Name, GUInt32& PropIndex) c
 	}
 }
 
+// rename a property
+GError GAnimElement::RenameProperty(const GString& CurrentName, const GString& NewName) {
+
+	GUInt32 index;
+	GProperty *curProp = FindProperty(CurrentName, index);
+
+	if (curProp) {
+		// find if a property with NewName name already exists; in this case rename operation is not valid
+		GProperty *newProp = FindProperty(NewName, index);
+		if (newProp)
+			return G_INVALID_OPERATION;
+		else
+			return curProp->SetName(NewName);
+	}
+	else
+		return G_ENTRY_ALREADY_EXISTS;
+}
+
 // add a property
-GProperty* GAnimElement::AddProperty(const GString& Name, const GClassID& ClassID, GBool& AlreadyExist,
-									 GUInt32& PropertyIndex) {
+GProperty* GAnimElement::AddProperty(const GString& Name, const GClassID& ClassID, const GKeyValue& DefaultValue,
+									 GBool& AlreadyExist, GUInt32& PropertyIndex) {
 
 	GProperty* tmpProp;
 
@@ -778,6 +866,9 @@ GProperty* GAnimElement::AddProperty(const GString& Name, const GClassID& ClassI
 		tmpProp = (GProperty *)CreateNew(ClassID);
 		// if creation has succeed, set property name and push it into internal list
 		if (tmpProp) {
+			// set default/cached
+			tmpProp->SetDefaultValue(DefaultValue);
+			// set name
 			tmpProp->SetName(Name);
 			// insert the property maintaining the order (by name, case-insensitive)
 			GDynArray<GProperty *>::iterator it = gProperties.begin();
@@ -836,6 +927,5 @@ GBool GAnimElement::RemoveProperty(const GUInt32 Index) {
 	delete tmpProp;
 	return G_TRUE;
 }
-
 
 }

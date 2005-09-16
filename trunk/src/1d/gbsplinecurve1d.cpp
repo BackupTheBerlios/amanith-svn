@@ -74,6 +74,7 @@ void GBSplineCurve1D::Clear() {
 	gForwDiff1.clear();
 	gForwDiff2.clear();
 	gBasisFuncEval.clear();
+	GCurve1D::Clear();
 }
 
 // get number of control points

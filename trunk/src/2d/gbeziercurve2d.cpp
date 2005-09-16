@@ -59,8 +59,6 @@ GBezierCurve2D::GBezierCurve2D(const GElement* Owner) : GCurve2D(Owner) {
 
 // destructor
 GBezierCurve2D::~GBezierCurve2D() {
-
-	Clear();
 }
 
 // clear the curve (remove control points and set an empty knots interval)
@@ -70,7 +68,7 @@ void GBezierCurve2D::Clear() {
 	gForwDiff1.clear();
 	gForwDiff2.clear();
 	gModified = G_FALSE;
-	GCurve2D::SetDomain(G_MIN_REAL, G_MIN_REAL);
+	GCurve2D::Clear();
 }
 
 // get number of control points
@@ -812,12 +810,12 @@ void GBezierCurve2D::ExciseInflectionPoint(const GReal Flex, const GReal Flatnes
 		
 	G_ASSERT (Degree() == 3);
 
-	if (Flex < 0) {
+	if (Flex <= 0) {
 		ParamMinus = ParamPlus = -1;
 		return;
 	}
 	else
-	if (Flex > 1) {
+	if (Flex >= 1) {
 		ParamMinus = ParamPlus = 2;
 		return;
 	}
@@ -887,37 +885,35 @@ GError GBezierCurve2D::Flatten3(GDynArray<GPoint2>& Contour, const GReal MaxDevi
 
 	GPoint2 p1(tmpBez.gPoints[0]), p2(tmpBez.gPoints[1]), p3(tmpBez.gPoints[2]), p4(tmpBez.gPoints[3]);
 
-	// fix for the 3 first point aligned, use slow method
-	GReal area = TwiceSignedArea(p1, p2, p3);
-	if (GMath::Abs(area) < 0.001f * GMath::Max(GMath::Abs(p1[G_X] - p4[G_X]), GMath::Abs(p1[G_Y] - p4[G_Y]))) {
-		return GCurve2D::Flatten(Contour, MaxDeviation, IncludeLastPoint);
+	if (p2 == p3) {
+		p2[G_X] += (GReal)0.0001 * GMath::Max(GMath::Abs(p1[G_X] - p4[G_X]), GMath::Abs(p1[G_Y] - p4[G_Y]));
 	}
 
+	// MaxDeviation is a squared chordal distance, we must report to this value to a linear chordal distance
 	GReal flatness = GMath::Abs(MaxDeviation);
 	if (flatness < 1)
 		flatness = GMath::Sqrt(flatness);
 	else
 		flatness = GMath::Sqr(flatness);
 
-	// x(t) = ax*t^3 + bx*t^2 + ex*t + dx
-	GReal cx = 3 * (p2[G_X] - p1[G_X]);
-	GReal cy = 3 * (p2[G_Y] - p1[G_Y]);			
-	GReal ex = 3 * (p2[G_X] - p3[G_X]);
-	GReal ey = 3 * (p2[G_Y] - p3[G_Y]);
-	GReal bx = -cx - ex;
-	GReal by = -cy - ey;
-	GReal ax = (ex - bx) / 3 + p4[G_X] - p3[G_X];
-	GReal ay = (ey - by) / 3 + p4[G_Y] - p3[G_Y];
-
-	GBezierCurve2D bez1, bez2;
+	GReal cx = (p2[G_X] - p1[G_X]);
+	GReal cy = (p2[G_Y] - p1[G_Y]);			
+	GReal ex = (p2[G_X] - p3[G_X]);
+	GReal ey = (p2[G_Y] - p3[G_Y]);
+	GReal bx = (-cx) + (-ex);
+	GReal by = (-cy) + (-ey);
+	GReal ax = (ex - bx) + p4[G_X] - p3[G_X];
+	GReal ay = (ey - by) + p4[G_Y] - p3[G_Y];
 
 	GReal ip1Minus, ip1, ip1Plus, ip2Minus, ip2, ip2Plus, cusp;
-	if (!FindInflectionPoints(ax, bx, cx, ay, by, cy, ip1, ip2, cusp)) {
+	if (!FindInflectionPoints(ax, 3 * bx, 3 * cx, ay, 3 * by, 3 * cy, ip1, ip2, cusp)) {
 		tmpBez.ParabolicApproxBezierPointsNoInflPts(flatness, Contour);
 		if (IncludeLastPoint)
 			Contour.push_back(p4);
 		return G_NO_ERROR;
 	}
+
+	GBezierCurve2D bez1, bez2;
 
 	tmpBez.ExciseInflectionPoint(ip1, flatness, ip1Minus, ip1Plus);
 	tmpBez.ExciseInflectionPoint(ip2, flatness, ip2Minus, ip2Plus);
@@ -1021,35 +1017,70 @@ GError GBezierCurve2D::Flatten3(GDynArray<GPoint2>& Contour, const GReal MaxDevi
 	return G_NO_ERROR;
  }
 
+
+ GError GBezierCurve2D::Flatten(const GReal u0, const GReal u1, const GPoint2& p0, const GPoint2& p1,
+								GDynArray<GPoint2>& Contour, const GReal MaxDeviation) const {
+
+	// calculate current variation
+	GReal tmpVar = Variation(u0, u1, p0, p1);
+	// if it's too big lets split the curve for flattening
+	if ((tmpVar > MaxDeviation) && (GMath::Abs(u1 - u0) > 2 * G_EPSILON)) {
+		// pivot point
+		GReal uPivot = (u0 + u1) * (GReal)0.5;
+		GPoint2 vPivot = Evaluate(uPivot);
+		// flat left part
+		Flatten(u0, uPivot, p0, vPivot, Contour, MaxDeviation);
+		// flat right part
+		Flatten(uPivot, u1, vPivot, p1, Contour, MaxDeviation);
+	}
+	// in this case we can push a "good" point
+	else
+		Contour.push_back(p0);
+	return G_NO_ERROR;
+}
+
 // flats (tessellates) the curve specifying a max error/variation (chordal distance)
 GError GBezierCurve2D::Flatten(GDynArray<GPoint2>& Contour, const GReal MaxDeviation,
 							const GBool IncludeLastPoint) const {
 
-	GUInt32 i;
-	GError err;
-
 	if (MaxDeviation <= 0)
 		return G_INVALID_PARAMETER;
 
-	i = PointsCount();
-	if (i == 0)
+	GInt32 deg = Degree();
+
+	if (deg <= 0)
 		return G_NO_ERROR;
 
 	// optimized version for quadratic curves
-	if (Degree() == 2)
+	if (deg == 2)
 		return Flatten2(Contour, MaxDeviation, IncludeLastPoint);
 	else
-	if (Degree() == 3)
+	if (deg == 3)
 		return Flatten3(Contour, MaxDeviation, IncludeLastPoint);
+	else {
+		GPoint2 p0(gPoints[0]);
+		GPoint2 p1(gPoints[deg]);
 
-	GPoint2 p0(gPoints[0]);
-	GPoint2 p1(gPoints[i - 1]);
+		GError err = Flatten(DomainStart(), DomainEnd(), p0, p1, Contour, MaxDeviation);
+		if ((err == G_NO_ERROR) && (IncludeLastPoint))
+			Contour.push_back(p1);
+		return err;
+	}
+}
 
-	err = GCurve2D::Flatten(DomainStart(), DomainEnd(), p0, p1, Contour, MaxDeviation);
-	if ((err == G_NO_ERROR) && (IncludeLastPoint))
-		Contour.push_back(p1);
+// get max variation (squared chordal distance) in the domain range
+GReal GBezierCurve2D::Variation() const {
 
-	return err;
+	GInt32 deg = Degree();
+
+	if (deg <= 1)
+		return 0;
+
+	//! \todo Optimized variation for a cubic curve
+	if (deg == 3)
+		return Variation(DomainStart(), DomainEnd(), gPoints[0], gPoints[deg]);
+	else
+		return Variation(DomainStart(), DomainEnd(), gPoints[0], gPoints[deg]);
 }
 
 // get max variation (squared chordal distance) in the range [u0;u1]; here are necessary also

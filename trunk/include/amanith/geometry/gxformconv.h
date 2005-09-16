@@ -44,7 +44,7 @@ namespace Amanith {
 	//! Build a translation matrix, setting last column with specified translation
 	template <typename DATA_TYPE, GUInt32 ROWS, GUInt32 COLS, GUInt32 TRANS_SIZE>
 	void TranslationToMatrix(GMatrix<DATA_TYPE, ROWS, COLS>& Result,
-							const GVect<DATA_TYPE, TRANS_SIZE>& Translation) {
+							const GVectBase<DATA_TYPE, TRANS_SIZE>& Translation) {
 
 		G_ASSERT((ROWS > TRANS_SIZE - 1) && (COLS > TRANS_SIZE));
 		Identity(Result);
@@ -251,7 +251,7 @@ namespace Amanith {
 		ScaleToMatrix() versions.
 	*/
 	template <typename DATA_TYPE, GUInt32 ROWS, GUInt32 COLS, GUInt32 SIZE>
-	void ScaleToMatrix(GMatrix<DATA_TYPE, ROWS, COLS>& Result,	const GVect<DATA_TYPE, SIZE>& ScaleFactors) {
+	void ScaleToMatrix(GMatrix<DATA_TYPE, ROWS, COLS>& Result,	const GVectBase<DATA_TYPE, SIZE>& ScaleFactors) {
 
 		GUInt32 i, j = GMath::Min(ROWS, COLS, SIZE);
 

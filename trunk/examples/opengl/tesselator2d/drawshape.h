@@ -40,7 +40,7 @@ private:
 	GKernel *gKernel;
 	GPixelMap *gTexture;
 	GDynArray< GPoint<GDouble, 2> > gTrianglesPts;
-	GDynArray<GUInt32> gTrianglesIdx;
+	GDynArray<GULong> gTrianglesIdx;
 	GDynArray<GPoint2> gContoursPoints;
 	GDynArray<GInt32> gContoursIndexes;
 
@@ -55,7 +55,7 @@ private:
 
 	void setLightAndTransform();					// Set initial light and transform
 	void setDefaultGlobalStates();					// Set initial states
-	void DrawTriangles(const GDynArray< GPoint<GDouble, 2> >& Points, const GDynArray<GUInt32>& Indexes);
+	void DrawTriangles(const GDynArray< GPoint<GDouble, 2> >& Points, const GDynArray<GULong>& Indexes);
 	void BuildShape(const GFloat RadAngle1, const GFloat RadAngle2, const GFloat RadAngle3);
 	void GenerateTessellation();
 

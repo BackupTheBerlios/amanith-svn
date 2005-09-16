@@ -27,7 +27,7 @@
 **********************************************************************/
 
 #include "amanith/gproperty.h"
-#include "amanith/support/gutilities.h"
+//#include "amanith/support/gutilities.h"
 
 /*!
 	\file gproperty.cpp
@@ -63,9 +63,14 @@ GError GHermiteProperty1D::DoGetKey(const GUInt32 Index, GKeyValue& OutputKey) c
 	return err;
 }
 
-GError GHermiteProperty1D::DoAddKey(const GTimeValue Time, GUInt32& Index, GBool& AlreadyExists) {
+GError GHermiteProperty1D::DoSetKey(const GUInt32 Index, const GKeyValue& NewKeyValue) {
 
-	return gInterpolationCurve.AddPoint(Time, Index, AlreadyExists);
+	return gInterpolationCurve.SetPoint(Index, NewKeyValue.RealValue());
+}
+
+GError GHermiteProperty1D::DoAddKey(const GTimeValue TimePos, GUInt32& Index, GBool& AlreadyExists) {
+
+	return gInterpolationCurve.AddPoint(TimePos, Index, AlreadyExists);
 }
 
 GError GHermiteProperty1D::DoMoveKey(const GUInt32 Index, const GReal NewTimePos, GUInt32& NewIndex,
@@ -79,7 +84,7 @@ GError GHermiteProperty1D::DoRemoveKey(const GUInt32 Index) {
 	return gInterpolationCurve.RemovePoint(Index);
 }
 
-GError GHermiteProperty1D::DoGetValue(GKeyValue& OutputValue, GTimeInterval& ValidInterval, const GTimeValue Time,
+GError GHermiteProperty1D::DoGetValue(GKeyValue& OutputValue, GTimeInterval& ValidInterval, const GTimeValue TimePos,
 									  const GValueMethod GetMethod) const {
 
 	//! \todo Implement GHermiteProperty1D::DoGetValue with G_RELATIVE_VALUE calculation method.
@@ -90,29 +95,32 @@ GError GHermiteProperty1D::DoGetValue(GKeyValue& OutputValue, GTimeInterval& Val
 	GInt32 i = gInterpolationCurve.PointsCount();
 
 	if (i == 0) {
+		G_ASSERT(0 == 1);
+		/*
 		OutputValue.SetValue(G_MIN_REAL);
-		OutputValue.SetTimePosition(Time);
-		ValidInterval = G_NEVER_TIMEINTERVAL;
+		OutputValue.SetTimePosition(TimePos);
+		ValidInterval = G_NEVER_TIMEINTERVAL;*/
 		return G_NO_ERROR;
 	}
 	else
 	if (i == 1) {
 		OutputValue.SetValue(gInterpolationCurve.Point(0));
-		OutputValue.SetTimePosition(Time);
-		ValidInterval = G_FOREVER_TIMEINTERVAL;
+		OutputValue.SetTimePosition(TimePos);
+		//ValidInterval = G_FOREVER_TIMEINTERVAL;
 	}
 	else {
 		// extract value
-		localValue = gInterpolationCurve.Evaluate(Time);
+		localValue = gInterpolationCurve.Evaluate(TimePos);
 		OutputValue.SetValue(localValue);
-		OutputValue.SetTimePosition(Time);
+		OutputValue.SetTimePosition(TimePos);
 		// set interval of validity
-		ValidInterval.Set(Time, Time);
+		ValidInterval &= GTimeInterval(TimePos, TimePos);
 	}
 	return G_NO_ERROR;
 }
 
-GError GHermiteProperty1D::DoSetValue(const GKeyValue& InputValue, const GValueMethod SetMethod) {
+GError GHermiteProperty1D::DoSetValue(const GKeyValue& InputValue, const GTimeValue TimePos, 
+									  const GValueMethod SetMethod) {
 
 	//! \todo Implement GHermiteProperty1D::DoSetValue with G_RELATIVE_VALUE calculation method.
 	if (SetMethod == G_RELATIVE_VALUE)
@@ -121,7 +129,7 @@ GError GHermiteProperty1D::DoSetValue(const GKeyValue& InputValue, const GValueM
 	GUInt32 i;
 	GBool alreadyExist;
 
-	return gInterpolationCurve.AddPoint(InputValue.TimePosition(), InputValue.RealValue(), i, alreadyExist);
+	return gInterpolationCurve.AddPoint(TimePos, InputValue.RealValue(), i, alreadyExist);
 }
 
 GInt32 GHermiteProperty1D::DoGetKeysCount() const {
@@ -180,9 +188,14 @@ GError GLinearProperty1D::DoGetKey(const GUInt32 Index, GKeyValue& OutputKey) co
 	return err;
 }
 
-GError GLinearProperty1D::DoAddKey(const GTimeValue Time, GUInt32& Index, GBool& AlreadyExists) {
+GError GLinearProperty1D::DoSetKey(const GUInt32 Index, const GKeyValue& NewKeyValue) {
 
-	return gInterpolationCurve.AddPoint(Time, Index, AlreadyExists);
+	return gInterpolationCurve.SetPoint(Index, NewKeyValue.RealValue());
+}
+
+GError GLinearProperty1D::DoAddKey(const GTimeValue TimePos, GUInt32& Index, GBool& AlreadyExists) {
+
+	return gInterpolationCurve.AddPoint(TimePos, Index, AlreadyExists);
 }
 
 GError GLinearProperty1D::DoMoveKey(const GUInt32 Index, const GReal NewTimePos, GUInt32& NewIndex,
@@ -196,7 +209,7 @@ GError GLinearProperty1D::DoRemoveKey(const GUInt32 Index) {
 	return gInterpolationCurve.RemovePoint(Index);
 }
 
-GError GLinearProperty1D::DoGetValue(GKeyValue& OutputValue, GTimeInterval& ValidInterval, const GTimeValue Time,
+GError GLinearProperty1D::DoGetValue(GKeyValue& OutputValue, GTimeInterval& ValidInterval, const GTimeValue TimePos,
 									  const GValueMethod GetMethod) const {
 
 	//! \todo Implement GLinearProperty1D::DoGetValue with G_RELATIVE_VALUE calculation method.
@@ -207,29 +220,30 @@ GError GLinearProperty1D::DoGetValue(GKeyValue& OutputValue, GTimeInterval& Vali
 	GInt32 i = gInterpolationCurve.PointsCount();
 
 	if (i == 0) {
-		OutputValue.SetValue(G_MIN_REAL);
+		G_ASSERT(0 == 1);
+		/*OutputValue.SetValue(G_MIN_REAL);
 		OutputValue.SetTimePosition(Time);
-		ValidInterval = G_NEVER_TIMEINTERVAL;
+		ValidInterval = G_NEVER_TIMEINTERVAL;*/
 		return G_NO_ERROR;
 	}
 	else
 	if (i == 1) {
 		OutputValue.SetValue(gInterpolationCurve.Point(0));
-		OutputValue.SetTimePosition(Time);
-		ValidInterval = G_FOREVER_TIMEINTERVAL;
+		OutputValue.SetTimePosition(TimePos);
+		//ValidInterval = G_FOREVER_TIMEINTERVAL;
 	}
 	else {
 		// extract value
-		localValue = gInterpolationCurve.Evaluate(Time);
+		localValue = gInterpolationCurve.Evaluate(TimePos);
 		OutputValue.SetValue(localValue);
-		OutputValue.SetTimePosition(Time);
+		OutputValue.SetTimePosition(TimePos);
 		// set interval of validity
-		ValidInterval.Set(Time, Time);
+		ValidInterval &= GTimeInterval(TimePos, TimePos);
 	}
 	return G_NO_ERROR;
 }
 
-GError GLinearProperty1D::DoSetValue(const GKeyValue& InputValue, const GValueMethod SetMethod) {
+GError GLinearProperty1D::DoSetValue(const GKeyValue& InputValue, const GTimeValue TimePos, const GValueMethod SetMethod) {
 
 	//! \todo Implement GLinearProperty1D::DoSetValue with G_RELATIVE_VALUE calculation method.
 	if (SetMethod == G_RELATIVE_VALUE)
@@ -238,7 +252,7 @@ GError GLinearProperty1D::DoSetValue(const GKeyValue& InputValue, const GValueMe
 	GUInt32 i;
 	GBool alreadyExist;
 
-	return gInterpolationCurve.AddPoint(InputValue.TimePosition(), InputValue.RealValue(), i, alreadyExist);
+	return gInterpolationCurve.AddPoint(TimePos, InputValue.RealValue(), i, alreadyExist);
 }
 
 GInt32 GLinearProperty1D::DoGetKeysCount() const {
@@ -297,9 +311,14 @@ GError GConstantProperty1D::DoGetKey(const GUInt32 Index, GKeyValue& OutputKey) 
 	return err;
 }
 
-GError GConstantProperty1D::DoAddKey(const GTimeValue Time, GUInt32& Index, GBool& AlreadyExists) {
+GError GConstantProperty1D::DoSetKey(const GUInt32 Index, const GKeyValue& NewKeyValue) {
 
-	return gInterpolationCurve.AddPoint(Time, Index, AlreadyExists);
+	return gInterpolationCurve.SetPoint(Index, NewKeyValue.RealValue());
+}
+
+GError GConstantProperty1D::DoAddKey(const GTimeValue TimePos, GUInt32& Index, GBool& AlreadyExists) {
+
+	return gInterpolationCurve.AddPoint(TimePos, Index, AlreadyExists);
 }
 
 GError GConstantProperty1D::DoMoveKey(const GUInt32 Index, const GReal NewTimePos, GUInt32& NewIndex,
@@ -313,7 +332,7 @@ GError GConstantProperty1D::DoRemoveKey(const GUInt32 Index) {
 	return gInterpolationCurve.RemovePoint(Index);
 }
 
-GError GConstantProperty1D::DoGetValue(GKeyValue& OutputValue, GTimeInterval& ValidInterval, const GTimeValue Time,
+GError GConstantProperty1D::DoGetValue(GKeyValue& OutputValue, GTimeInterval& ValidInterval, const GTimeValue TimePos,
 									   const GValueMethod GetMethod) const {
 
 	//! \todo Implement GConstantProperty1D::DoGetValue with G_RELATIVE_VALUE calculation method.
@@ -323,46 +342,48 @@ GError GConstantProperty1D::DoGetValue(GKeyValue& OutputValue, GTimeInterval& Va
 	GInt32 i = gInterpolationCurve.PointsCount();
 
 	if (i == 0) {
-		OutputValue.SetValue(G_MIN_REAL);
+		/*OutputValue.SetValue(G_MIN_REAL);
 		OutputValue.SetTimePosition(Time);
-		ValidInterval = G_NEVER_TIMEINTERVAL;
+		ValidInterval = G_NEVER_TIMEINTERVAL;*/
+		G_ASSERT(0 == 1);
 		return G_NO_ERROR;
 	}
 	else
 	if (i == 1) {
 		OutputValue.SetValue(gInterpolationCurve.Point(0));
-		OutputValue.SetTimePosition(Time);
-		ValidInterval = G_FOREVER_TIMEINTERVAL;
+		OutputValue.SetTimePosition(TimePos);
+		//ValidInterval = G_FOREVER_TIMEINTERVAL;
 	}
 	else {
 		GUInt32 keyIndex;
 
 		// this check is needed because ParamToKeyIndex return the lower key index of the interval where time
 		// is included. If Time is equal to DomainEnd(), then the index keyIndex+1 is not valid!
-		if (Time == gInterpolationCurve.DomainEnd()) {
+		if (TimePos == gInterpolationCurve.DomainEnd()) {
 			OutputValue.SetValue(gInterpolationCurve.EndPoint());
-			OutputValue.SetTimePosition(Time);
+			OutputValue.SetTimePosition(TimePos);
 			// set interval of validity
-			ValidInterval.Set(Time, Time);
+			ValidInterval &= GTimeInterval(TimePos, TimePos);
 		}
 		else {
-			GBool b = gInterpolationCurve.ParamToKeyIndex(Time, keyIndex);
+			GBool b = gInterpolationCurve.ParamToKeyIndex(TimePos, keyIndex);
 			G_ASSERT(b == G_TRUE);
 			if (b != G_TRUE)
 				return G_UNKNOWN_ERROR;
 			// extract value
 			OutputValue.SetValue(gInterpolationCurve.Point(keyIndex));
-			OutputValue.SetTimePosition(Time);
+			OutputValue.SetTimePosition(TimePos);
 			// set interval of validity
 			GReal t;
 			gInterpolationCurve.PointParameter(keyIndex + 1, t);
-			ValidInterval.Set(Time, t);
+			ValidInterval &= GTimeInterval(TimePos, t);
 		}
 	}
 	return G_NO_ERROR;
 }
 
-GError GConstantProperty1D::DoSetValue(const GKeyValue& InputValue, const GValueMethod SetMethod) {
+GError GConstantProperty1D::DoSetValue(const GKeyValue& InputValue, const GTimeValue TimePos,
+									   const GValueMethod SetMethod) {
 
 	//! \todo Implement GConstantProperty1D::DoSetValue with G_RELATIVE_VALUE calculation method.
 	if (SetMethod == G_RELATIVE_VALUE)
@@ -371,7 +392,7 @@ GError GConstantProperty1D::DoSetValue(const GKeyValue& InputValue, const GValue
 	GUInt32 i;
 	GBool alreadyExist;
 
-	return gInterpolationCurve.AddPoint(InputValue.TimePosition(), InputValue.RealValue(), i, alreadyExist);
+	return gInterpolationCurve.AddPoint(TimePos, InputValue.RealValue(), i, alreadyExist);
 }
 
 GInt32 GConstantProperty1D::DoGetKeysCount() const {

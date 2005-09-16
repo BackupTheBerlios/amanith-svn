@@ -18,7 +18,6 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/GX"
 				Optimization="0"
 				AdditionalIncludeDirectories="$(AMANITHDIR)/include"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;DOUBLE_REAL_TYPE;G_MAKE_DLL;GLEW_BUILD;G_MAKE_PLUGIN;_OPENGLEXT_PLUGIN"
@@ -132,6 +131,9 @@
 				RelativePath="..\..\src\gkernel.cpp">
 			</File>
 			<File
+				RelativePath="..\..\src\gmultiproperty.cpp">
+			</File>
+			<File
 				RelativePath="..\..\src\gopenglext.cpp">
 			</File>
 			<File
@@ -143,6 +145,9 @@
 			<Filter
 				Name="2d"
 				Filter="">
+				<File
+					RelativePath="..\..\src\2d\ganimtrsnode2d.cpp">
+				</File>
 				<File
 					RelativePath="..\..\src\2d\gbeziercurve2d.cpp">
 				</File>
@@ -266,6 +271,9 @@
 				RelativePath="..\..\include\amanith\gmath.h">
 			</File>
 			<File
+				RelativePath="..\..\include\amanith\gmultiproperty.h">
+			</File>
+			<File
 				RelativePath="..\..\include\amanith\gopenglext.h">
 			</File>
 			<File
@@ -277,6 +285,9 @@
 			<Filter
 				Name="2d"
 				Filter="">
+				<File
+					RelativePath="..\..\include\amanith\2d\ganimtrsnode2d.h">
+				</File>
 				<File
 					RelativePath="..\..\include\amanith\2d\gbeziercurve2d.h">
 				</File>

@@ -75,7 +75,7 @@ namespace Amanith {
 		GInterval<GReal> gDomain;
 
 	protected:
-		/*!
+		/*
 			Get max variation (squared chordal distance) in the range [u0; u1]; here are necessary also
 			curve evaluations at the interval ends.
 
@@ -85,9 +85,10 @@ namespace Amanith {
 			\param p1 the point corresponding to the curve evaluation at u1.
 			\note The interval is ensured to be completely inside the curve domain.	<b>This method must be implemented
 			by every derived classes</b>.
-		*/
-		virtual GReal Variation(const GReal u0, const GReal u1,	const GPoint2& p0, const GPoint2& p1) const = 0;
-		/*!
+		
+		virtual GReal Variation(const GReal u0, const GReal u1,	const GPoint2& p0, const GPoint2& p1) const = 0;*/
+
+		/*
 			Flats the curve specifying a max error/variation (squared chordal distance).
 
 			The default behavior is to split the curve at midpoint, and then call recursively this function on
@@ -101,9 +102,9 @@ namespace Amanith {
 			\param Contour a dynamic array where this function has to append generated points
 			\param MaxDeviation maximum squared chordal distance we wanna reach (maximum permitted deviation).
 			\note The interval is ensured to be completely inside the curve domain.
-		*/
+		
 		virtual GError Flatten(const GReal u0, const GReal u1, const GPoint2& p0, const GPoint2& p1,
-							   GDynArray<GPoint2>& Contour, const GReal MaxDeviation) const;
+							   GDynArray<GPoint2>& Contour, const GReal MaxDeviation) const;*/
 		/*!
 			Curve subdivision.
 
@@ -127,7 +128,7 @@ namespace Amanith {
 		GCurve2D();
 		//! Constructor with kernel specification, constructs and empty curve.
 		GCurve2D(const GElement* Owner);
-		//! Destructor
+		//! Destructor, it calls Clear() function.
 		virtual ~GCurve2D();
 		//! Get domain lower bound (it corresponds to the start point).
 		inline GReal DomainStart() const {
@@ -149,10 +150,16 @@ namespace Amanith {
 		//! Returns number of points of the curve (typically control points).
 		virtual GUInt32 PointsCount() const = 0;
 		/*!
-			Clear the curve (remove control points and internal structures)
-			\note <b>this method must be implemented by all derived classes</b>.
+			Clear the curve, it makes this curve to be 'empty'.
+
+			The default implementation is to set internal domain as [-inf, -inf].
+			Every further implementation should be done ensuring that 2 or more	consecutive calls to this
+			method do not make the class to crash.
+
+			\note <b>this method must be implemented by all derived classes if some other internal structures or
+			data have been allocated</b>.
 		*/
-		virtual void Clear() = 0;
+		virtual void Clear();
 		//! Get Index-th point. <b>This method must be implemented by all derived classes</b>.
 		virtual GPoint2 Point(const GUInt32 Index) const = 0;
 		//! Set Index-th point. <b>This method must be implemented by all derived classes</b>.
@@ -183,9 +190,10 @@ namespace Amanith {
 			\param MaxDeviation maximum squared chordal distance we wanna reach (maximum permitted deviation).
 			\param IncludeLastPoint if G_TRUE the function must append last curve point (the point corresponding to
 			domain upper bound parameter). If G_FALSE last point must not be included.
+			\note <b>this method must be implemented by all derived classes</b>.
 		*/
 		virtual GError Flatten(GDynArray<GPoint2>& Contour, const GReal MaxDeviation,
-								const GBool IncludeLastPoint = G_TRUE) const;
+							   const GBool IncludeLastPoint = G_TRUE) const = 0;
 		/*! 
 			Return the curve value calculated at specified domain parameter.
 			
@@ -319,9 +327,11 @@ namespace Amanith {
 		*/
 		GReal Speed(const GReal u) const;
 		/*!
-			Get variation (squared chordal distance) in the domain range [u0; u1]
+			Get variation (squared chordal distance) in the current domain range.
+
+			\note <b>This method must be implemented by all derived classes.
 		*/
-		GReal Variation(const GReal u0, const GReal u1) const;
+		virtual GReal Variation() const = 0;
 		//! Get start point of curve; this is the point corresponding to the domain lower bound.
 		inline GPoint2 StartPoint() const {
 			return Point(0);

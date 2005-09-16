@@ -43,7 +43,7 @@ namespace Amanith {
 	//                          GHermiteProperty1D
 	// *********************************************************************
 
-	//! GScalarProperty static class descriptor.
+	//! GHermiteProperty1D static class descriptor.
 	static const GClassID G_HERMITEPROPERTY1D_CLASSID = GClassID("GHermiteProperty1D", 0xC224EAE5, 0x8AF4406D, 0xA4D1B6A9, 0xEA3871C5);
 
 	class G_EXPORT GHermiteProperty1D : public GProperty {
@@ -54,24 +54,28 @@ namespace Amanith {
 	protected:
 		// here is ensured that Index is valid;
 		GError DoGetKey(const GUInt32 Index, GKeyValue& OutputKey) const;
-		// add a point ON curve; Time is ensured to be inside domain;
-		GError DoAddKey(const GTimeValue Time, GUInt32& Index, GBool& AlreadyExists);
+		// here is ensured that Index is valid;
+		GError DoSetKey(const GUInt32 Index, const GKeyValue& NewKeyValue);
+		// add a point ON curve; TimePos is ensured to be inside domain;
+		GError DoAddKey(const GTimeValue TimePos, GUInt32& Index, GBool& AlreadyExists);
 		// here is ensured that Index is valid
 		GError DoMoveKey(const GUInt32 Index, const GReal NewTimePos, GUInt32& NewIndex, GBool& AlreadyExists);
 		// Index is ensured to be valid
 		GError DoRemoveKey(const GUInt32 Index);
-		// get local value; Time is ensured to be inside life-interval.
-		GError DoGetValue(GKeyValue& OutputValue, GTimeInterval& ValidInterval, const GTimeValue Time,
+		// get local value; TimePos is ensured to be inside life-interval.
+		// ValidInterval is the validity interval to update; property validity interval should be intersected
+		// with this interval.
+		GError DoGetValue(GKeyValue& OutputValue, GTimeInterval& ValidInterval, const GTimeValue TimePos,
 						  const GValueMethod GetMethod) const;
-		// set local value; InputValue.TimePosition can be outside range, behavior is to append key
+		// set local value; TimePos can be outside range, behavior is to append key
 		// and expand domain
-		GError DoSetValue(const GKeyValue& InputValue, const GValueMethod SetMethod);
+		GError DoSetValue(const GKeyValue& InputValue, const GTimeValue TimePos, const GValueMethod SetMethod);
 		// get number of keys
 		GInt32 DoGetKeysCount() const;
 		// build a new keys track; the specified array is ensure to contain at least 1 key
 		GError DoSetKeys(const GDynArray<GKeyValue>& Keys);
 
-		//! Cloning function, copies (physically) a Source GScalarProperty.
+		//! Cloning function, copies (physically) a Source GHermiteProperty1D class.
 		GError BaseClone(const GElement& Source);
 
 	public:
@@ -87,7 +91,7 @@ namespace Amanith {
 		}
 		//! Get base class (father class) descriptor
 		const GClassID& DerivedClassID() const {
-			return G_ANIMELEMENT_CLASSID;
+			return G_PROPERTY_CLASSID;
 		}
 		GKeyType HandledType() const {
 			return G_REAL_KEY;
@@ -116,7 +120,7 @@ namespace Amanith {
 		}
 		//! Get base class (father class) descriptor of elements type "provided" by this proxy.
 		const GClassID& DerivedClassID() const {
-			return G_ANIMELEMENT_CLASSID;
+			return G_PROPERTY_CLASSID;
 		}
 	};
 	//! Static proxy for GHermiteProperty1D class.
@@ -128,7 +132,7 @@ namespace Amanith {
 	//                          GLinearProperty1D
 	// *********************************************************************
 
-	//! GScalarProperty static class descriptor.
+	//! GLinearProperty1D static class descriptor.
 	static const GClassID G_LINEARPROPERTY1D_CLASSID = GClassID("GLinearProperty1D", 0xB62BE7B5, 0x85534825, 0x88454EE7, 0x55FA0227);
 
 	class G_EXPORT GLinearProperty1D : public GProperty {
@@ -139,24 +143,28 @@ namespace Amanith {
 	protected:
 		// here is ensured that Index is valid;
 		GError DoGetKey(const GUInt32 Index, GKeyValue& OutputKey) const;
-		// add a point ON curve; Time is ensured to be inside domain;
-		GError DoAddKey(const GTimeValue Time, GUInt32& Index, GBool& AlreadyExists);
+		// here is ensured that Index is valid;
+		GError DoSetKey(const GUInt32 Index, const GKeyValue& NewKeyValue);
+		// add a point ON curve; TimePos is ensured to be inside domain;
+		GError DoAddKey(const GTimeValue TimePos, GUInt32& Index, GBool& AlreadyExists);
 		// here is ensured that Index is valid
 		GError DoMoveKey(const GUInt32 Index, const GReal NewTimePos, GUInt32& NewIndex, GBool& AlreadyExists);
 		// Index is ensured to be valid
 		GError DoRemoveKey(const GUInt32 Index);
-		// get local value; Time is ensured to be inside life-interval.
-		GError DoGetValue(GKeyValue& OutputValue, GTimeInterval& ValidInterval, const GTimeValue Time,
+		// get local value; TimePos is ensured to be inside life-interval.
+		// ValidInterval is the validity interval to update; property validity interval should be intersected
+		// with this interval.
+		GError DoGetValue(GKeyValue& OutputValue, GTimeInterval& ValidInterval, const GTimeValue TimePos,
 						  const GValueMethod GetMethod) const;
-		// set local value; InputValue.TimePosition can be outside range, behavior is to append key
+		// set local value; TimePos can be outside range, behavior is to append key
 		// and expand domain
-		GError DoSetValue(const GKeyValue& InputValue, const GValueMethod SetMethod);
+		GError DoSetValue(const GKeyValue& InputValue, const GTimeValue TimePos, const GValueMethod SetMethod);
 		// get number of keys
 		GInt32 DoGetKeysCount() const;
 		// build a new keys track; the specified array is ensure to contain at least 1 key
 		GError DoSetKeys(const GDynArray<GKeyValue>& Keys);
 
-		//! Cloning function, copies (physically) a Source GScalarProperty.
+		//! Cloning function, copies (physically) a Source GLinearProperty1D class.
 		GError BaseClone(const GElement& Source);
 
 	public:
@@ -172,7 +180,7 @@ namespace Amanith {
 		}
 		//! Get base class (father class) descriptor
 		const GClassID& DerivedClassID() const {
-			return G_ANIMELEMENT_CLASSID;
+			return G_PROPERTY_CLASSID;
 		}
 		GKeyType HandledType() const {
 			return G_REAL_KEY;
@@ -200,7 +208,7 @@ namespace Amanith {
 		}
 		//! Get base class (father class) descriptor of elements type "provided" by this proxy.
 		const GClassID& DerivedClassID() const {
-			return G_ANIMELEMENT_CLASSID;
+			return G_PROPERTY_CLASSID;
 		}
 	};
 	//! Static proxy for GLinearProperty1D class.
@@ -211,7 +219,7 @@ namespace Amanith {
 	//                         GConstantProperty1D
 	// *********************************************************************
 
-	//! GScalarProperty static class descriptor.
+	//! GConstantProperty1D static class descriptor.
 	static const GClassID G_CONSTANTPROPERTY1D_CLASSID = GClassID("GConstantProperty1D", 0x911AE34F, 0x0F1E4D62, 0xADA8F342, 0x4E6CC17D);
 
 	class G_EXPORT GConstantProperty1D : public GProperty {
@@ -222,24 +230,28 @@ namespace Amanith {
 	protected:
 		// here is ensured that Index is valid;
 		GError DoGetKey(const GUInt32 Index, GKeyValue& OutputKey) const;
-		// add a point ON curve; Time is ensured to be inside domain;
-		GError DoAddKey(const GTimeValue Time, GUInt32& Index, GBool& AlreadyExists);
+		// here is ensured that Index is valid;
+		GError DoSetKey(const GUInt32 Index, const GKeyValue& NewKeyValue);
+		// add a point ON curve; TimePos is ensured to be inside domain;
+		GError DoAddKey(const GTimeValue TimePos, GUInt32& Index, GBool& AlreadyExists);
 		// here is ensured that Index is valid
 		GError DoMoveKey(const GUInt32 Index, const GReal NewTimePos, GUInt32& NewIndex, GBool& AlreadyExists);
 		// Index is ensured to be valid
 		GError DoRemoveKey(const GUInt32 Index);
-		// get local value; Time is ensured to be inside life-interval.
-		GError DoGetValue(GKeyValue& OutputValue, GTimeInterval& ValidInterval, const GTimeValue Time,
+		// get local value; TimePos is ensured to be inside life-interval.
+		// ValidInterval is the validity interval to update; property validity interval should be intersected
+		// with this interval.
+		GError DoGetValue(GKeyValue& OutputValue, GTimeInterval& ValidInterval, const GTimeValue TimePos,
 						  const GValueMethod GetMethod) const;
-		// set local value; InputValue.TimePosition can be outside range, behavior is to append key
+		// set local value; TimePos can be outside range, behavior is to append key
 		// and expand domain
-		GError DoSetValue(const GKeyValue& InputValue, const GValueMethod SetMethod);
+		GError DoSetValue(const GKeyValue& InputValue, const GTimeValue TimePos, const GValueMethod SetMethod);
 		// get number of keys
 		GInt32 DoGetKeysCount() const;
 		// build a new keys track; the specified array is ensure to contain at least 1 key
 		GError DoSetKeys(const GDynArray<GKeyValue>& Keys);
 
-		//! Cloning function, copies (physically) a Source GScalarProperty.
+		//! Cloning function, copies (physically) a Source GConstantProperty1D class.
 		GError BaseClone(const GElement& Source);
 
 	public:
@@ -255,7 +267,7 @@ namespace Amanith {
 		}
 		//! Get base class (father class) descriptor
 		const GClassID& DerivedClassID() const {
-			return G_ANIMELEMENT_CLASSID;
+			return G_PROPERTY_CLASSID;
 		}
 		GKeyType HandledType() const {
 			return G_REAL_KEY;
@@ -283,7 +295,7 @@ namespace Amanith {
 		}
 		//! Get base class (father class) descriptor of elements type "provided" by this proxy.
 		const GClassID& DerivedClassID() const {
-			return G_ANIMELEMENT_CLASSID;
+			return G_PROPERTY_CLASSID;
 		}
 	};
 	//! Static proxy for GConstantProperty1D class.

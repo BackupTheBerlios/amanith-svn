@@ -224,7 +224,7 @@ namespace Amanith {
 			\note if the path is empty, Path is always added (in this case a physical copy is called).
 		*/
 		GError AppendPath(const GPath2D& Path);
-		/*!
+		/*
 			Get max variation (squared chordal distance) in the range [u0; u1]; here are necessary also
 			curve evaluations at the interval ends.
 
@@ -234,8 +234,8 @@ namespace Amanith {
 			\param p1 the point corresponding to the curve evaluation at u1.
 			\note The interval is ensured to be completely inside the curve domain.	<b>This method must be implemented
 			by every derived classes</b>.
-		*/
-		GReal Variation(const GReal u0, const GReal u1, const GPoint2& p0, const GPoint2& p1) const;
+		
+		GReal Variation(const GReal u0, const GReal u1, const GPoint2& p0, const GPoint2& p1) const;*/
 
 	public:
 		//! Default constructor, build an empty path.
@@ -275,6 +275,10 @@ namespace Amanith {
 			domain upper bound parameter). If G_FALSE last point must not be included.
 		*/
 		GError Flatten(GDynArray<GPoint2>& Contour, const GReal MaxDeviation, const GBool IncludeLastPoint = G_TRUE) const;
+		/*!
+			Get variation (squared chordal distance) in the current domain range.
+		*/
+		GReal Variation() const;
 		/*! 
 			Return the path value calculated at specified domain parameter.
 
@@ -552,7 +556,7 @@ namespace Amanith {
 		}
 		//! Get base class (father class) descriptor
 		const GClassID& DerivedClassID() const {
-			return G_ELEMENT_CLASSID;
+			return G_MULTICURVE2D_CLASSID;
 		}
 	};
 
@@ -569,7 +573,7 @@ namespace Amanith {
 	*/
 	class G_EXPORT GPath2DProxy : public GElementProxy {
 	public:
-		//! Creates a new GBezierCurve2D instance
+		//! Creates a new GPath2D instance
 		GElement* CreateNew(const GElement* Owner = NULL) const {
 			return new GPath2D(Owner);
 		}
@@ -579,10 +583,10 @@ namespace Amanith {
 		}
 		//! Get base class (father class) descriptor of elements type "provided" by this proxy.
 		const GClassID& DerivedClassID() const {
-			return G_ELEMENT_CLASSID;
+			return G_MULTICURVE2D_CLASSID;
 		}
 	};
-
+	//! Static proxy for GPath2D class.
 	static const GPath2DProxy G_PATH2D_PROXY;
 
 };	// end namespace Amanith

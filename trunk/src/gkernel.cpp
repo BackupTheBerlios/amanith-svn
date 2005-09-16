@@ -31,6 +31,7 @@
 // lets include standard plugin for registration
 #include "amanith/gelement.h"
 #include "amanith/gproperty.h"
+#include "amanith/gmultiproperty.h"
 #include "amanith/1d/gcurve1d.h"
 #include "amanith/1d/gbeziercurve1d.h"
 #include "amanith/1d/gbsplinecurve1d.h"
@@ -47,6 +48,7 @@
 #include "amanith/2d/gmulticurve2d.h"
 #include "amanith/2d/gpolylinecurve2d.h"
 #include "amanith/2d/ghermitecurve2d.h"
+#include "amanith/2d/ganimtrsnode2d.h"
 #include "amanith/gimpexp.h"
 #include "amanith/support/gutilities.h"
 
@@ -161,6 +163,7 @@ void GKernel::RegisterProxies() {
 	RegisterElementProxy(G_ELEMENT_PROXY);
 	RegisterElementProxy(G_ANIMELEMENT_PROXY);
 	RegisterElementProxy(G_PROPERTY_PROXY);
+	RegisterElementProxy(G_MULTIPROPERTY1D_PROXY);
 	RegisterElementProxy(G_IMPEXP_PROXY);
 	RegisterElementProxy(G_KERNEL_PROXY);
 
@@ -201,6 +204,16 @@ void GKernel::RegisterProxies() {
 	RegisterElementProxy(G_CONSTANTPROPERTY1D_PROXY);
 	RegisterElementProxy(G_LINEARPROPERTY1D_PROXY);
 	RegisterElementProxy(G_HERMITEPROPERTY1D_PROXY);
+	RegisterElementProxy(G_TWOHERMITEPROPERTY1D_PROXY);
+	RegisterElementProxy(G_THREEHERMITEPROPERTY1D_PROXY);
+	RegisterElementProxy(G_FOURHERMITEPROPERTY1D_PROXY);
+	RegisterElementProxy(G_TWOLINEARPROPERTY1D_PROXY);
+	RegisterElementProxy(G_THREELINEARPROPERTY1D_PROXY);
+	RegisterElementProxy(G_FOURLINEARPROPERTY1D_PROXY);
+	RegisterElementProxy(G_TWOCONSTANTPROPERTY1D_PROXY);
+	RegisterElementProxy(G_THREECONSTANTPROPERTY1D_PROXY);
+	RegisterElementProxy(G_FOURCONSTANTPROPERTY1D_PROXY);
+	RegisterElementProxy(G_ANIMTRSNODE2D_PROXY);
 }
 
 /*!
@@ -628,6 +641,16 @@ inline bool ElementsPtrCmp(const GElement *Element1, const GElement *Element2) {
 	if (e1 < e2)
 		return true;
 	return false;
+}
+
+GBool GKernel::IsSupported(const GClassID& Class_ID) const {
+
+	GInt32 i;
+
+	GError err = FindProxy(Class_ID, i);
+	if (err == G_NO_ERROR)
+		return G_TRUE;
+	return G_FALSE;
 }
 
 // create new element specifying a class descriptor

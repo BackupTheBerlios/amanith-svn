@@ -94,7 +94,7 @@ namespace Amanith {
 	protected:
 		//! Sort keys, in ascending order respect to domain parameters.
 		void SortKeys();
-		/*!
+		/*
 			Get max variation (squared chordal distance) in the range [u0; u1]; here are necessary also
 			curve evaluations at the interval ends.
 
@@ -103,8 +103,9 @@ namespace Amanith {
 			\param p0 the point corresponding to the curve evaluation at u0
 			\param p1 the point corresponding to the curve evaluation at u1
 			\note The interval is ensured to be completely inside the curve domain.
-		*/
+		
 		GReal Variation(const GReal u0, const GReal u1,	const GPoint2& p0, const GPoint2& p1) const;
+		*/
 		//! Cloning function, copies (physically) a Source polyline curve into this curve.
 		GError BaseClone(const GElement& Source);
 		/*!
@@ -266,6 +267,10 @@ namespace Amanith {
 		*/
 		GBool IntersectRay(const GRay2& NormalizedRay, GDynArray<GVector2>& Intersections,
 						   const GReal Precision = G_EPSILON, const GUInt32 MaxIterations = 100) const;
+		/*!
+			Get variation (squared chordal distance) in the current domain range.
+		*/
+		GReal Variation() const;
 		/*!
 			Flats the curve specifying a max error/variation (squared chordal distance).
 

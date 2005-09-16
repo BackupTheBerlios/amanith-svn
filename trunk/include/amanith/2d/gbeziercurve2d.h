@@ -119,6 +119,7 @@ namespace Amanith {
 			\note The interval is ensured to be completely inside the curve domain.
 		*/
 		GReal Variation(const GReal u0, const GReal u1,	const GPoint2& p0, const GPoint2& p1) const;
+
 		//! Returns the number of intersection between control polygon and X axis.
 		GInt32 CrossingCountX() const;
 		/*!
@@ -217,6 +218,23 @@ namespace Amanith {
 			domain upper bound parameter). If G_FALSE last point must not be included.
 		*/
 		GError Flatten3(GDynArray<GPoint2>& Contour, const GReal MaxDeviation, const GBool IncludeLastPoint) const;
+		/*
+			Flats the curve specifying a max error/variation (squared chordal distance).
+
+			The default behavior is to split the curve at midpoint, and then call recursively this function on
+			both curve arcs until maximum permitted deviation has been reached.
+			If you wanna change this behavior just override this function.
+
+			\param u0 lower bound of interested interval
+			\param u1 upper bound of interested interval
+			\param p0 the point corresponding to the curve evaluation at u0
+			\param p1 the point corresponding to the curve evaluation at u1
+			\param Contour a dynamic array where this function has to append generated points
+			\param MaxDeviation maximum squared chordal distance we wanna reach (maximum permitted deviation).
+			\note The interval is ensured to be completely inside the curve domain.
+		*/
+		GError Flatten(const GReal u0, const GReal u1, const GPoint2& p0, const GPoint2& p1,
+					   GDynArray<GPoint2>& Contour, const GReal MaxDeviation) const;
 
 	public:
 		//! Default constructor, creates an empty Bezier.
@@ -395,6 +413,10 @@ namespace Amanith {
 			are	called, for best performance assurance.
 		*/
 		GError Flatten(GDynArray<GPoint2>& Contour, const GReal MaxDeviation, const GBool IncludeLastPoint = G_TRUE) const;
+		/*!
+			Get variation (squared chordal distance) in the current domain range.
+		*/
+		GReal Variation() const;
 		/*! 
 			Return the curve value calculated at specified domain parameter.
 

@@ -98,7 +98,7 @@ namespace Amanith {
 		GCurve1D();
 		//! Constructor with kernel specification, constructs and empty curve.
 		GCurve1D(const GElement* Owner);
-		//! Destructor
+		//! Destructor, it calls Clear() function.
 		virtual ~GCurve1D();
 		//! Get domain lower bound (it corresponds to the start point).
 		inline GReal DomainStart() const {
@@ -120,10 +120,16 @@ namespace Amanith {
 		//! Returns number of points of the curve (typically control points).
 		virtual GUInt32 PointsCount() const = 0;
 		/*!
-			Clear the curve (remove control points and internal structures)
-			\note <b>this method must be implemented by all derived classes</b>.
+			Clear the curve, it makes this curve to be 'empty'.
+
+			The default implementation is to set internal domain as [-inf, -inf].
+			Every further implementation should be done ensuring that 2 or more	consecutive calls to this
+			method do not make the class to crash.
+
+			\note <b>this method must be implemented by all derived classes if some other internal structures or
+			data have been allocated</b>.
 		*/
-		virtual void Clear() = 0;
+		virtual void Clear();
 		//! Get Index-th point. <b>This method must be implemented by all derived classes</b>.
 		virtual GReal Point(const GUInt32 Index) const = 0;
 		//! Set Index-th point. <b>This method must be implemented by all derived classes</b>.

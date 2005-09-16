@@ -51,6 +51,14 @@ GCurve1D::GCurve1D(const GElement* Owner) : GElement(Owner), gDomain(0, 1) {
 
 // destructor
 GCurve1D::~GCurve1D() {
+
+	Clear();
+}
+
+void GCurve1D::Clear() {
+
+	// set an empty domain
+	gDomain.Set(G_MIN_REAL, G_MIN_REAL);
 }
 
 // get curve tangent (specifying global parameter)

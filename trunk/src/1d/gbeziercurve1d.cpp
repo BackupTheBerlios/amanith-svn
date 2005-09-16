@@ -56,8 +56,6 @@ GBezierCurve1D::GBezierCurve1D(const GElement* Owner) : GCurve1D(Owner) {
 
 // destructor
 GBezierCurve1D::~GBezierCurve1D() {
-
-	Clear();
 }
 
 // clear the curve (remove control points and set an empty knots interval)
@@ -67,7 +65,7 @@ void GBezierCurve1D::Clear() {
 	gForwDiff1.clear();
 	gForwDiff2.clear();
 	gModified = G_FALSE;
-	GCurve1D::SetDomain(G_MIN_REAL, G_MIN_REAL);
+	GCurve1D::Clear();
 }
 
 // get number of control points

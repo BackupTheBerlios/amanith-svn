@@ -52,4 +52,6 @@ win32: {
     }
 }
 
-
+linux-g++-64 {
+    QMAKE_CFLAGS += -fPIC 
+}

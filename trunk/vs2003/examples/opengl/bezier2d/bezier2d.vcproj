@@ -18,7 +18,6 @@
 			CharacterSet="2">
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalOptions="/GX"
 				Optimization="0"
 				AdditionalIncludeDirectories="$(AMANITHDIR)/include"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;G_USE_DLL;DOUBLE_REAL_TYPE"

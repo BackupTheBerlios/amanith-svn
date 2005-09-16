@@ -280,7 +280,7 @@ void QGLWidgetTest::initializeGL() {
 //------------------------------------------------------------
 
 void QGLWidgetTest::DrawTriangles(const GDynArray< GPoint<GDouble, 2> >& Points,
-								  const GDynArray<GUInt32>& Indexes) {
+								  const GDynArray<GULong>& Indexes) {
 
 	GUInt32 i, j = Indexes.size();
 	GPoint<GDouble, 2> a, b, c;
