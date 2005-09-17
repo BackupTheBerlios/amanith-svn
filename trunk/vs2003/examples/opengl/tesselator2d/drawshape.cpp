@@ -47,7 +47,7 @@ LRESULT	CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);	// Declaration For WndProc
 GKernel *gKernel;
 GPixelMap *gTexture;
 GDynArray< GPoint<GDouble, 2> > gTrianglesPts;
-GDynArray<GUInt32> gTrianglesIdx;
+GDynArray<GULong> gTrianglesIdx;
 GDynArray<GPoint2> gContoursPoints;
 GDynArray<GInt32> gContoursIndexes;
 GString gDataPath;
@@ -96,7 +96,7 @@ void BuildFont(void) {
 	wglUseFontBitmaps(hDC, 32, 96, base);
 }
 
-void glMyPrint(const char *fmt) {
+void glMyPrint(const char *fmt, ...) {
 
 	char  text[256]; // Holds Our String
 	va_list ap;      // Pointer To List Of Arguments
@@ -107,7 +107,7 @@ void glMyPrint(const char *fmt) {
 	va_end(ap); // Results Are Stored In Text
 	glPushAttrib(GL_LIST_BIT);  // Pushes The Display List Bits
 	glListBase(base - 32); // Sets The Base Character to 32
-	glCallLists(strlen(text), GL_UNSIGNED_BYTE, text);	// Draws The Display List Text
+	glCallLists((GLsizei)strlen(text), GL_UNSIGNED_BYTE, text);	// Draws The Display List Text
 	glPopAttrib(); // Pops The Display List Bits
 }
 
@@ -268,7 +268,7 @@ int InitGL(GLvoid) {
 	return TRUE;
 }
 
-void DrawTriangles(const GDynArray< GPoint<GDouble, 2> >& Points, const GDynArray<GUInt32>& Indexes) {
+void DrawTriangles(const GDynArray< GPoint<GDouble, 2> >& Points, const GDynArray<GULong>& Indexes) {
 
 	GUInt32 i, j = (GUInt32)Indexes.size();
 	GPoint<GDouble, 2> a, b, c;
