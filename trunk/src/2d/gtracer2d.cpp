@@ -978,7 +978,6 @@ GError GTracer2D::Trace(const GPixelMap& Image, GDynArray<GTracedContour>& Paths
 	GUInt32 pixel;
 	GPoint<GInt32, 2> blackPixel;
 	PixelPath path;
-	GDynArray<PixelPath> pathList;
 	GError err;
 	GReal globalScale;
 	PrivateCurve curve;
@@ -1015,7 +1014,6 @@ GError GTracer2D::Trace(const GPixelMap& Image, GDynArray<GTracedContour>& Paths
 		XorUpdate(path, imageCopy, WhiteColor);
 		// if path was "fat" enough, lets append it
 		if (path.Area >= MinArea) {
-			//pathList.push_back(path);
 			err = VectorizePath(path, curve, dir, Alpha, globalScale, (GReal)Image.Height());
 			if (err == G_NO_ERROR) {
 				GTracedContour c(curve.Tags, curve.CurvePoints);

@@ -329,7 +329,7 @@ namespace Amanith {
 		/*!
 			Get variation (squared chordal distance) in the current domain range.
 
-			\note <b>This method must be implemented by all derived classes.
+			\note <b>This method must be implemented by all derived classes</b>.
 		*/
 		virtual GReal Variation() const = 0;
 		//! Get start point of curve; this is the point corresponding to the domain lower bound.
