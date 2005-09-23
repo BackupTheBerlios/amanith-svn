@@ -1279,7 +1279,7 @@ int WINAPI WinMain(	HINSTANCE	hInstance,			// Instance
 			if (keys[78]) {
 				keys[78] = FALSE;
 				gLogicTick /= (GReal)1.2;
-				gBackGroundTimeStep *= (GReal)1.2;
+				gBackGroundTimeStep /= (GReal)1.2;
 			}
 			// O key
 			if (keys[79]) {

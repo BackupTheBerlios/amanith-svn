@@ -33,7 +33,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="opengl32.lib glu32.lib $(AMANITHDIR)/lib/amanith.lib"
-				OutputFile="$(OutDir)/animcolor.exe"
+				OutputFile="./animcolor.exe"
 				LinkIncremental="2"
 				GenerateDebugInformation="TRUE"
 				ProgramDatabaseFile="$(OutDir)/animcolor.pdb"
@@ -80,7 +80,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="opengl32.lib glu32.lib $(AMANITHDIR)/lib/amanith.lib"
-				OutputFile="$(OutDir)/animcolor.exe"
+				OutputFile="./animcolor.exe"
 				LinkIncremental="1"
 				GenerateDebugInformation="FALSE"
 				SubSystem="2"
