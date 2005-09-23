@@ -1,5 +1,5 @@
 /****************************************************************************
-** $file: amanith/gproperty.h   0.1.0.0   edited Jun 30 08:00
+** $file: amanith/gproperty.h   0.1.1.0   edited Sep 24 08:00
 **
 ** Basic animated properties definition.
 **
@@ -46,35 +46,83 @@ namespace Amanith {
 	//! GHermiteProperty1D static class descriptor.
 	static const GClassID G_HERMITEPROPERTY1D_CLASSID = GClassID("GHermiteProperty1D", 0xC224EAE5, 0x8AF4406D, 0xA4D1B6A9, 0xEA3871C5);
 
+	/*!
+		\class GHermiteProperty1D
+		\brief A key-frame based property, that uses an Hermite interpolation schema.
+
+		This animated property handles scalar real type, and interpolates between keys using an Hermite
+		interpolation schema.
+	*/
 	class G_EXPORT GHermiteProperty1D : public GProperty {
 
 	private:
 		GHermiteCurve1D gInterpolationCurve;
 
 	protected:
-		// here is ensured that Index is valid;
+		//! Get a key value by index; here is ensured that Index is valid.
 		GError DoGetKey(const GUInt32 Index, GKeyValue& OutputKey) const;
-		// here is ensured that Index is valid;
+		//! Set a key value by index; here is ensured that Index is valid.
 		GError DoSetKey(const GUInt32 Index, const GKeyValue& NewKeyValue);
-		// add a point ON curve; TimePos is ensured to be inside domain;
+		/*! 
+			Add a point on curve, TimePos is ensured to be inside domain.
+			Index will be the index occupied by the created key.
+			AlreadyExists will be G_TRUE if at the specified TimePos there was already an existing key.
+		*/
 		GError DoAddKey(const GTimeValue TimePos, GUInt32& Index, GBool& AlreadyExists);
-		// here is ensured that Index is valid
+		/*!
+			Move a key to a different time position.
+
+			\param Index the key that we wanna move, it is ensured valid.
+			\param NewTimePos the new time position where to move the Index-th key.
+			\param NewIndex the new index position associated to the moved key.
+			\param AlreadyExists G_TRUE if at specified NewTimePos there was already a key. In this key it
+			will be overridden by the moved key.
+		*/
 		GError DoMoveKey(const GUInt32 Index, const GReal NewTimePos, GUInt32& NewIndex, GBool& AlreadyExists);
-		// Index is ensured to be valid
+		/*!
+			Remove a key by index.
+
+			\param Index key index, is ensured to be valid.
+		*/
 		GError DoRemoveKey(const GUInt32 Index);
-		// get local value; TimePos is ensured to be inside life-interval.
-		// ValidInterval is the validity interval to update; property validity interval should be intersected
-		// with this interval.
+		/*!
+			Get property value at a specified time position.
+
+			\param OutputValue the returned property value.
+			\param ValidInterval the validity interval to update; property validity interval should be intersected
+			with this interval.
+			\param TimePos the time position where to sample the property value. In this method it is ensured
+			to be inside domain interval.
+			\param GetMethod the method used to get value.
+			\return G_NO_ERROR if the operation succeeds, an error code otherwise.
+		*/
 		GError DoGetValue(GKeyValue& OutputValue, GTimeInterval& ValidInterval, const GTimeValue TimePos,
 						  const GValueMethod GetMethod) const;
-		// set local value; TimePos can be outside range, behavior is to append key
-		// and expand domain
-		GError DoSetValue(const GKeyValue& InputValue, const GTimeValue TimePos, const GValueMethod SetMethod);
-		// get number of keys
-		GInt32 DoGetKeysCount() const;
-		// build a new keys track; the specified array is ensure to contain at least 1 key
-		GError DoSetKeys(const GDynArray<GKeyValue>& Keys);
+		/*!
+			Set the property value at a specified time position.
 
+			This method adds a new key at the specified time position, with the passed value.
+			\param InputValue the value to set.
+			\param TimePos the time position where to set the property value.
+			\param SetMethod method used to set the value. For now, the only supported method is
+			G_ABSOLUTE_VALUE.
+			\return G_NO_ERROR if the operation succeeds, an error code otherwise.
+			\note TimePos can be outside range, behavior is to append (at front/back) created key
+			and expand domain.
+		*/
+		GError DoSetValue(const GKeyValue& InputValue, const GTimeValue TimePos, const GValueMethod SetMethod);
+		//! Return the number of keys.
+		GInt32 DoGetKeysCount() const;
+		/*!
+			Set all keys (they don't need to be sorted by time).
+
+			This function rebuilds the property animated track, specifying all the new keys.
+			The specified keys can be in any time-order, they will be sorted internally.
+
+			\param Keys the array of keys, it is ensured to contain at least one entry.
+			\note <b>Every key must be filled with value and time position</b>.
+		*/
+		GError DoSetKeys(const GDynArray<GKeyValue>& Keys);
 		//! Cloning function, copies (physically) a Source GHermiteProperty1D class.
 		GError BaseClone(const GElement& Source);
 
@@ -85,6 +133,22 @@ namespace Amanith {
 		GHermiteProperty1D(const GElement* Owner);
 		//! Destructor
 		~GHermiteProperty1D();
+		/*!
+			Recalculate all keys tangents, using a smoothing schema (Catmull-Rom).
+
+			\param SmoothEnds if G_TRUE, set first and last key tangents to the same value (useful for a looped
+			curve).
+			\note this method do nothing if there aren't at least 2 keys.
+		*/
+		inline void RecalcSmoothTangents(const GBool SmoothEnds = G_TRUE) {
+			gInterpolationCurve.RecalcSmoothTangents(SmoothEnds);
+		}
+		//! Get a full Hermite key, specifying index.
+		GError HermiteKey(const GUInt32 Index, GHermiteKey1D& OutputKey) const;
+		//! Set a full Hermite key, specifying index and all values.
+		GError SetHermiteKey(const GUInt32 Index, const GReal NewKeyValue, const GReal InTangent, const GReal OutTangent);
+		//! Set all keys (they don't need to be sorted by time), specifying full Hermite values.
+		GError SetHermiteKeys(const GDynArray<GHermiteKey1D>& Keys);
 		//! Get class descriptor
 		const GClassID& ClassID() const {
 			return G_HERMITEPROPERTY1D_CLASSID;
@@ -135,35 +199,83 @@ namespace Amanith {
 	//! GLinearProperty1D static class descriptor.
 	static const GClassID G_LINEARPROPERTY1D_CLASSID = GClassID("GLinearProperty1D", 0xB62BE7B5, 0x85534825, 0x88454EE7, 0x55FA0227);
 
+	/*!
+		\class GLinearProperty1D
+		\brief A key-frame based property, that uses a linear interpolation schema.
+
+		This animated property handles scalar real type, and interpolates between keys using a linear
+		interpolation schema.
+	*/
 	class G_EXPORT GLinearProperty1D : public GProperty {
 
 	private:
 		GPolyLineCurve1D gInterpolationCurve;
 
 	protected:
-		// here is ensured that Index is valid;
+		//! Get a key value by index; here is ensured that Index is valid.
 		GError DoGetKey(const GUInt32 Index, GKeyValue& OutputKey) const;
-		// here is ensured that Index is valid;
+		//! Set a key value by index; here is ensured that Index is valid.
 		GError DoSetKey(const GUInt32 Index, const GKeyValue& NewKeyValue);
-		// add a point ON curve; TimePos is ensured to be inside domain;
+		/*! 
+			Add a point on curve, TimePos is ensured to be inside domain.
+			Index will be the index occupied by the created key.
+			AlreadyExists will be G_TRUE if at the specified TimePos there was already an existing key.
+		*/
 		GError DoAddKey(const GTimeValue TimePos, GUInt32& Index, GBool& AlreadyExists);
-		// here is ensured that Index is valid
+		/*!
+			Move a key to a different time position.
+
+			\param Index the key that we wanna move, it is ensured valid.
+			\param NewTimePos the new time position where to move the Index-th key.
+			\param NewIndex the new index position associated to the moved key.
+			\param AlreadyExists G_TRUE if at specified NewTimePos there was already a key. In this key it
+			will be overridden by the moved key.
+		*/
 		GError DoMoveKey(const GUInt32 Index, const GReal NewTimePos, GUInt32& NewIndex, GBool& AlreadyExists);
-		// Index is ensured to be valid
+		/*!
+			Remove a key by index.
+			
+			\param Index key index, is ensured to be valid.
+		*/
 		GError DoRemoveKey(const GUInt32 Index);
-		// get local value; TimePos is ensured to be inside life-interval.
-		// ValidInterval is the validity interval to update; property validity interval should be intersected
-		// with this interval.
+		/*!
+			Get property value at a specified time position.
+
+			\param OutputValue the returned property value.
+			\param ValidInterval the validity interval to update; property validity interval should be intersected
+			with this interval.
+			\param TimePos the time position where to sample the property value. In this method it is ensured
+			to be inside domain interval.
+			\param GetMethod the method used to get value.
+			\return G_NO_ERROR if the operation succeeds, an error code otherwise.
+		*/
 		GError DoGetValue(GKeyValue& OutputValue, GTimeInterval& ValidInterval, const GTimeValue TimePos,
 						  const GValueMethod GetMethod) const;
-		// set local value; TimePos can be outside range, behavior is to append key
-		// and expand domain
-		GError DoSetValue(const GKeyValue& InputValue, const GTimeValue TimePos, const GValueMethod SetMethod);
-		// get number of keys
-		GInt32 DoGetKeysCount() const;
-		// build a new keys track; the specified array is ensure to contain at least 1 key
-		GError DoSetKeys(const GDynArray<GKeyValue>& Keys);
+		/*!
+			Set the property value at a specified time position.
 
+			This method adds a new key at the specified time position, with the passed value.
+			\param InputValue the value to set.
+			\param TimePos the time position where to set the property value.
+			\param SetMethod method used to set the value. For now, the only supported method is
+			G_ABSOLUTE_VALUE.
+			\return G_NO_ERROR if the operation succeeds, an error code otherwise.
+			\note TimePos can be outside range, behavior is to append (at front/back) created key
+			and expand domain.
+		*/
+		GError DoSetValue(const GKeyValue& InputValue, const GTimeValue TimePos, const GValueMethod SetMethod);
+		//! Return the number of keys.
+		GInt32 DoGetKeysCount() const;
+		/*!
+			Set all keys (they don't need to be sorted by time).
+
+			This function rebuilds the property animated track, specifying all the new keys.
+			The specified keys can be in any time-order, they will be sorted internally.
+
+			\param Keys the array of keys, it is ensured to contain at least one entry.
+			\note <b>Every key must be filled with value and time position</b>.
+		*/
+		GError DoSetKeys(const GDynArray<GKeyValue>& Keys);
 		//! Cloning function, copies (physically) a Source GLinearProperty1D class.
 		GError BaseClone(const GElement& Source);
 
@@ -222,35 +334,83 @@ namespace Amanith {
 	//! GConstantProperty1D static class descriptor.
 	static const GClassID G_CONSTANTPROPERTY1D_CLASSID = GClassID("GConstantProperty1D", 0x911AE34F, 0x0F1E4D62, 0xADA8F342, 0x4E6CC17D);
 
+	/*!
+		\class GConstantProperty1D
+		\brief A key-frame based property, that uses a constant interpolation schema.
+
+		This animated property handles scalar real type, and interpolates between keys using a constant
+		interpolation schema.
+	*/
 	class G_EXPORT GConstantProperty1D : public GProperty {
 
 	private:
 		GPolyLineCurve1D gInterpolationCurve;
 
 	protected:
-		// here is ensured that Index is valid;
+		//! Get a key value by index; here is ensured that Index is valid.
 		GError DoGetKey(const GUInt32 Index, GKeyValue& OutputKey) const;
-		// here is ensured that Index is valid;
+		//! Set a key value by index; here is ensured that Index is valid.
 		GError DoSetKey(const GUInt32 Index, const GKeyValue& NewKeyValue);
-		// add a point ON curve; TimePos is ensured to be inside domain;
+		/*! 
+			Add a point on curve, TimePos is ensured to be inside domain.
+			Index will be the index occupied by the created key.
+			AlreadyExists will be G_TRUE if at the specified TimePos there was already an existing key.
+		*/
 		GError DoAddKey(const GTimeValue TimePos, GUInt32& Index, GBool& AlreadyExists);
-		// here is ensured that Index is valid
+		/*!
+			Move a key to a different time position.
+
+			\param Index the key that we wanna move, it is ensured valid.
+			\param NewTimePos the new time position where to move the Index-th key.
+			\param NewIndex the new index position associated to the moved key.
+			\param AlreadyExists G_TRUE if at specified NewTimePos there was already a key. In this key it
+			will be overridden by the moved key.
+		*/
 		GError DoMoveKey(const GUInt32 Index, const GReal NewTimePos, GUInt32& NewIndex, GBool& AlreadyExists);
-		// Index is ensured to be valid
+		/*!
+			Remove a key by index.
+
+			\param Index key index, is ensured to be valid.
+		*/
 		GError DoRemoveKey(const GUInt32 Index);
-		// get local value; TimePos is ensured to be inside life-interval.
-		// ValidInterval is the validity interval to update; property validity interval should be intersected
-		// with this interval.
+		/*!
+			Get property value at a specified time position.
+
+			\param OutputValue the returned property value.
+			\param ValidInterval the validity interval to update; property validity interval should be intersected
+			with this interval.
+			\param TimePos the time position where to sample the property value. In this method it is ensured
+			to be inside domain interval.
+			\param GetMethod the method used to get value.
+			\return G_NO_ERROR if the operation succeeds, an error code otherwise.
+		*/
 		GError DoGetValue(GKeyValue& OutputValue, GTimeInterval& ValidInterval, const GTimeValue TimePos,
 						  const GValueMethod GetMethod) const;
-		// set local value; TimePos can be outside range, behavior is to append key
-		// and expand domain
-		GError DoSetValue(const GKeyValue& InputValue, const GTimeValue TimePos, const GValueMethod SetMethod);
-		// get number of keys
-		GInt32 DoGetKeysCount() const;
-		// build a new keys track; the specified array is ensure to contain at least 1 key
-		GError DoSetKeys(const GDynArray<GKeyValue>& Keys);
+		/*!
+			Set the property value at a specified time position.
 
+			This method adds a new key at the specified time position, with the passed value.
+			\param InputValue the value to set.
+			\param TimePos the time position where to set the property value.
+			\param SetMethod method used to set the value. For now, the only supported method is
+			G_ABSOLUTE_VALUE.
+			\return G_NO_ERROR if the operation succeeds, an error code otherwise.
+			\note TimePos can be outside range, behavior is to append (at front/back) created key
+			and expand domain.
+		*/
+		GError DoSetValue(const GKeyValue& InputValue, const GTimeValue TimePos, const GValueMethod SetMethod);
+		//! Return the number of keys.
+		GInt32 DoGetKeysCount() const;
+		/*!
+			Set all keys (they don't need to be sorted by time).
+
+			This function rebuilds the property animated track, specifying all the new keys.
+			The specified keys can be in any time-order, they will be sorted internally.
+
+			\param Keys the array of keys, it is ensured to contain at least one entry.
+			\note <b>Every key must be filled with value and time position</b>.
+		*/
+		GError DoSetKeys(const GDynArray<GKeyValue>& Keys);
 		//! Cloning function, copies (physically) a Source GConstantProperty1D class.
 		GError BaseClone(const GElement& Source);
 

@@ -27,7 +27,6 @@
 **********************************************************************/
 
 #include "amanith/gproperty.h"
-//#include "amanith/support/gutilities.h"
 
 /*!
 	\file gproperty.cpp
@@ -96,17 +95,12 @@ GError GHermiteProperty1D::DoGetValue(GKeyValue& OutputValue, GTimeInterval& Val
 
 	if (i == 0) {
 		G_ASSERT(0 == 1);
-		/*
-		OutputValue.SetValue(G_MIN_REAL);
-		OutputValue.SetTimePosition(TimePos);
-		ValidInterval = G_NEVER_TIMEINTERVAL;*/
 		return G_NO_ERROR;
 	}
 	else
 	if (i == 1) {
 		OutputValue.SetValue(gInterpolationCurve.Point(0));
 		OutputValue.SetTimePosition(TimePos);
-		//ValidInterval = G_FOREVER_TIMEINTERVAL;
 	}
 	else {
 		// extract value
@@ -146,7 +140,32 @@ GError GHermiteProperty1D::DoSetKeys(const GDynArray<GKeyValue>& Keys) {
 	for (i = 0; i < j; i++)
 		tmpKeys[i] = GHermiteKey1D(Keys[i].TimePosition(), Keys[i].RealValue());
 
-	return gInterpolationCurve.SetKeys(tmpKeys);
+	// here tangents are (0, 0)
+	GError err = gInterpolationCurve.SetKeys(tmpKeys);
+	if (err == G_NO_ERROR) {
+		// now we must re-calculate tangents using Catmull-Rom schema
+		gInterpolationCurve.RecalcSmoothTangents();
+	}
+	return err;
+}
+
+// get a full Hermite key, specifying index
+GError GHermiteProperty1D::HermiteKey(const GUInt32 Index, GHermiteKey1D& OutputKey) const {
+
+	return gInterpolationCurve.Key(Index, OutputKey);
+}
+
+// set a full Hermite key, specifying index and all values
+GError GHermiteProperty1D::SetHermiteKey(const GUInt32 Index, const GReal NewKeyValue,
+										 const GReal InTangent, const GReal OutTangent) {
+
+	return gInterpolationCurve.SetKey(Index, NewKeyValue, InTangent, OutTangent);
+}
+
+// set all keys (they don't need to be sorted by time), specifying full Hermite values
+GError GHermiteProperty1D::SetHermiteKeys(const GDynArray<GHermiteKey1D>& Keys) {
+
+	return gInterpolationCurve.SetKeys(Keys);
 }
 
 GError GHermiteProperty1D::BaseClone(const GElement& Source) {
@@ -221,16 +240,12 @@ GError GLinearProperty1D::DoGetValue(GKeyValue& OutputValue, GTimeInterval& Vali
 
 	if (i == 0) {
 		G_ASSERT(0 == 1);
-		/*OutputValue.SetValue(G_MIN_REAL);
-		OutputValue.SetTimePosition(Time);
-		ValidInterval = G_NEVER_TIMEINTERVAL;*/
 		return G_NO_ERROR;
 	}
 	else
 	if (i == 1) {
 		OutputValue.SetValue(gInterpolationCurve.Point(0));
 		OutputValue.SetTimePosition(TimePos);
-		//ValidInterval = G_FOREVER_TIMEINTERVAL;
 	}
 	else {
 		// extract value
@@ -342,9 +357,6 @@ GError GConstantProperty1D::DoGetValue(GKeyValue& OutputValue, GTimeInterval& Va
 	GInt32 i = gInterpolationCurve.PointsCount();
 
 	if (i == 0) {
-		/*OutputValue.SetValue(G_MIN_REAL);
-		OutputValue.SetTimePosition(Time);
-		ValidInterval = G_NEVER_TIMEINTERVAL;*/
 		G_ASSERT(0 == 1);
 		return G_NO_ERROR;
 	}
@@ -352,7 +364,6 @@ GError GConstantProperty1D::DoGetValue(GKeyValue& OutputValue, GTimeInterval& Va
 	if (i == 1) {
 		OutputValue.SetValue(gInterpolationCurve.Point(0));
 		OutputValue.SetTimePosition(TimePos);
-		//ValidInterval = G_FOREVER_TIMEINTERVAL;
 	}
 	else {
 		GUInt32 keyIndex;

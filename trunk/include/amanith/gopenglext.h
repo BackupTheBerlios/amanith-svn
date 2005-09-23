@@ -1,5 +1,5 @@
 /****************************************************************************
-** $file: amanith/gopenglext.h   0.1.0.0   edited Jun 30 08:00
+** $file: amanith/gopenglext.h   0.1.1.0   edited Sep 24 08:00
 **
 ** Opengl extension manager definition.
 **
@@ -32,6 +32,9 @@
 #include "GL/glew.h"
 // this inclusion to make glew linking working with some platforms (ex: Mac)
 #include "amanith/gelement.h"
+#ifdef G_OS_WIN
+	#include <GL/wglew.h>
+#endif
 
 /*!
 	\file gopenglext.h

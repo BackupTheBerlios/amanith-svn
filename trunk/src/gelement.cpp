@@ -216,7 +216,6 @@ GKeyValue::GKeyValue(const GBool Value) {
 
 	gType = G_BOOL_KEY;
 	gTimePos = 0;
-//	gCustomData = NULL;
 	if (Value)
 		gValue[0] = (GReal)1;
 }
@@ -225,17 +224,14 @@ GKeyValue::GKeyValue(const GInt32 Value) {
 
 	gType = G_INT_KEY;
 	gTimePos = 0;
-	//gCustomData = NULL;
 	// cast can be ensured "exact" for 23/52 bits (mantissa precision)
-	if (Value)
-		gValue[0] = (GReal)Value;
+	gValue[0] = (GReal)Value;
 }
 
 GKeyValue::GKeyValue(const GReal Value) {
 
 	gType = G_REAL_KEY;
 	gTimePos = 0;
-	//gCustomData = NULL;
 	gValue[0] = Value;
 }
 
@@ -243,7 +239,6 @@ GKeyValue::GKeyValue(const GVector2& Value) {
 
 	gType = G_VECTOR2_KEY;
 	gTimePos = 0;
-	//gCustomData = NULL;
 	gValue.Set(Value[0], Value[1]);
 }
 
@@ -251,7 +246,6 @@ GKeyValue::GKeyValue(const GVector3& Value) {
 
 	gType = G_VECTOR3_KEY;
 	gTimePos = 0;
-	//gCustomData = NULL;
 	gValue.Set(Value[0], Value[1], Value[2]);
 }
 
@@ -259,7 +253,6 @@ GKeyValue::GKeyValue(const GVector4& Value) {
 
 	gType = G_VECTOR4_KEY;
 	gTimePos = 0;
-	//gCustomData = NULL;
 	gValue = Value;
 }
 
@@ -744,13 +737,6 @@ GTimeValue GProperty::OORTime(const GTimeValue TimePos) const {
 //                             GAnimElement
 // *********************************************************************
 
-inline bool PropertyNameLE(const GProperty *p1, const GProperty *p2) {
-
-	if (p1->UpperName() <= p2->UpperName())
-		return G_TRUE;
-	return G_FALSE;
-}
-
 // delete and empty all properties
 void GAnimElement::DeleteProperties(void) {
 
@@ -808,6 +794,13 @@ GError GAnimElement::BaseClone(const GElement& Source) {
 	return err;
 }
 
+inline bool PropertyNameLE(const GProperty *p1, const GProperty *p2) {
+
+	if (p1->UpperName() < p2->UpperName())
+		return true;
+	return false;
+}
+
 // find a property given its name
 GProperty* GAnimElement::FindProperty(const GString& Name, GUInt32& PropIndex) const {
 
@@ -817,8 +810,10 @@ GProperty* GAnimElement::FindProperty(const GString& Name, GUInt32& PropIndex) c
 	// do a binary search
 	tmpProp.SetName(Name);
 	it = std::lower_bound(gProperties.begin(), gProperties.end(), &tmpProp, PropertyNameLE);
-	if (it == gProperties.end())
+	if (it == gProperties.end()) {
+		PropIndex = (GUInt32)(it - gProperties.begin());
 		return NULL;
+	}
 	
 	if (tmpProp.UpperName() == (*it)->UpperName()) {
 		PropIndex = (GUInt32)(it - gProperties.begin());
@@ -840,12 +835,12 @@ GError GAnimElement::RenameProperty(const GString& CurrentName, const GString& N
 		// find if a property with NewName name already exists; in this case rename operation is not valid
 		GProperty *newProp = FindProperty(NewName, index);
 		if (newProp)
-			return G_INVALID_OPERATION;
+			return G_ENTRY_ALREADY_EXISTS;
 		else
 			return curProp->SetName(NewName);
 	}
 	else
-		return G_ENTRY_ALREADY_EXISTS;
+		return G_INVALID_PARAMETER;
 }
 
 // add a property

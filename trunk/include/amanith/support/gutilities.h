@@ -1,5 +1,5 @@
 /****************************************************************************
-** $file: amanith/support/gutilities.h   0.1.0.0   edited Jun 30 08:00
+** $file: amanith/support/gutilities.h   0.1.1.0   edited Sep 24 08:00
 **
 ** Global general purpose utilities.
 **
@@ -162,7 +162,7 @@ namespace Amanith {
 		//! Convert a number to its hexadecimal string representation
 		static GString ToHex(const GUInt32 Number, const GUInt32 Width);
 		//! Split a string into a sequence of strings, specifying split separator
-		static GStringList Split(const GString& Value, const GString Separator, GBool Empties = G_FALSE);
+		static GStringList Split(const GString& Value, const GString& Separator, GBool Empties = G_FALSE);
 		//! Joins the string list into a single string with each element separated by the string InterStr
 		static GString Merge(const GStringList& InputList, const GChar8 *InterStr = "");
 		//! Set vector values from string representation
@@ -173,7 +173,7 @@ namespace Amanith {
 			GUInt32 i;
 			GStringList::const_iterator it;
 			// split components
-			GStringList list = StrUtils::Split(',', SourceStr);
+			GStringList list = StrUtils::Split(SourceStr, ",");
 
 			// we MUST have SIZE components
 			if (list.size() != SIZE)

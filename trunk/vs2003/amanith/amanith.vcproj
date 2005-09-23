@@ -83,7 +83,7 @@
 				AdditionalDependencies="opengl32.lib glu32.lib wbemuuid.lib"
 				OutputFile="$(AMANITHDIR)/lib/amanith.dll"
 				LinkIncremental="1"
-				GenerateDebugInformation="TRUE"
+				GenerateDebugInformation="FALSE"
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"

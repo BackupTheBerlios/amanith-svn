@@ -1,34 +1,39 @@
-2005-09-16
+2005-09-24
 
-	* Version 0.2 Alpha.
+	* Version 0.1.1
 	==========================
 
-	* Added 64 bits support under linux (gcc). To achieve this target, we have fixed some GTesselator2D
-	code (in particular the Tesselate method that returns indexed tesselation, now indexes are GULong instead of GUInt32).
+	* Added animations support. GAnimElement class is the base class to derive to and get animations support automatically.
+	GProperty class is the class that realizes animated properties; we have implemented some basic properties (scalar values together
+	constant, linear and hermite interpolation methods). GProperty supports also Out-Of-Range behaviors (constant, loop and ping-pong) as
+	well as ease curves for time acceleration/deceleration.
 
 	* Added a new class, GAnimTRSNode2D that encapsulates an animated TRS (Translation-Rotation-Scale) transformation.
-	It supports a static offset pivot (intended as a full TRS transformation), hierarchy nodes linking/unlinking.
+	It supports a static offset pivot (intended as a full TRS transformation), hierarchy nodes, linking/unlinking.
 
-	* Added DefaultValue() and SetDefaultValue() methods to the GProperty class. These methods permit to set a default value
-	for the property, intended as the value returned when there aren't keys. So the Value() method now returns always a valid
-	value.
+	* Added an example (called animshape2d) showing how Amanith can be used with semplicity to produce wonderfull accelerated animations.
+
+	* Added an example (called animcolor) showing Amanith animations applied to color ramps generation.
+
+	* Added 64 bits support under Linux (with gcc) and Windows (Visual Studio 2005 Beta2). To achieve this target, we have fixed some
+	GTesselator2D code (in particular the Tesselate method that returns indexed tesselation, now indexes are GULong instead of GUInt32).
+
+	* GPath2D class has now be derived from GMultiCurve2D.
+
+	* Added new methods to GMultiCurve class, that make possible to extract derivatives, tangents, normals and curvatures in non-derivable
+	point parameter. In this case two values will be returned (left and right one).
 
 	* Implemented correct transformations to GHermiteCurve2D/1D classes (now also tangents are properly handled).
+
+	* Fixed a bug in the font loader plugin, that made it crash under some conditions.
+
+	* Fixed a bug in GFontChar2D class that sometime made incorrect results in the ConvertToPaths() method.
 
 	* Fixed several little bugs into GPath2D class.
 
 	* Fixed a bug in B-Spline SetPoints() method that prevented to build a correct opened spline.
 
 	* Fixed a wrong cubic Bezier flattening in some rare degenerative cases.
-
-	* Added new methods to class GMultiCurve that make possible to extract derivatives, tangents, normals and curvatures in non-derivable
-	point parameter. In this case two values will be returned (left and right one).
-
-	* Added animations support. GAnimElement class is the base class to derive to and get animations support automatically.
-
-	* GPath2D class has now be derived from GMultiCurve2D.
-
-	* Added an example (called animcolor) showing Amanith animations applied to color ramps generation.
 
 
 2005-08-03

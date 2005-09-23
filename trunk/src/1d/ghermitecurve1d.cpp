@@ -1,5 +1,5 @@
 /****************************************************************************
-** $file: amanith/src/1d/ghermitecurve1d.cpp   0.1.0.0   edited Jun 30 08:00
+** $file: amanith/src/1d/ghermitecurve1d.cpp   0.1.1.0   edited Sep 24 08:00
 **
 ** 1D Hermite curve segment implementation.
 **
@@ -108,6 +108,21 @@ GError GHermiteCurve1D::SetKey(const GUInt32 Index, const GReal NewKeyValue,
 	gKeys[Index].InTangent = InTangent;
 	gKeys[Index].OutTangent = OutTangent;
 	return G_NO_ERROR;
+}
+
+void GHermiteCurve1D::RecalcSmoothTangents(const GBool SmoothEnds) {
+
+	GUInt32 i = (GUInt32)gKeys.size();
+	if (i >= 3) {
+		CalcCatmullRomTangents(0, i - 1);
+		if (SmoothEnds) {
+			GReal smoothTangent = (gKeys[0].OutTangent + gKeys[i - 1].InTangent) / 2;
+			gKeys[0].OutTangent = smoothTangent;
+			gKeys[0].InTangent = smoothTangent;
+			gKeys[i - 1].OutTangent = smoothTangent;
+			gKeys[i - 1].InTangent = smoothTangent;
+		}
+	}
 }
 
 // get parameter corresponding to point index
@@ -472,7 +487,6 @@ GError GHermiteCurve1D::SetKeys(const GDynArray<GHermiteKey1D>& NewKeys) {
 
 	gKeys = NewKeys;
 	SortKeys();
-
 	return GCurve1D::SetDomain(gKeys[0].Parameter, gKeys[j - 1].Parameter);
 }
 

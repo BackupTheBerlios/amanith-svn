@@ -1,5 +1,5 @@
 /****************************************************************************
-** $file: amanith/gglobal.h   0.1.0.0   edited Jun 30 08:00
+** $file: amanith/gglobal.h   0.1.1.0   edited Sep 24 08:00
 **
 ** Global types and constants.
 **
@@ -198,6 +198,10 @@ namespace Amanith {
 	// Win64 core (Windows 95/98/ME/NT/2000/XP)
 	#elif !defined(SAG_COM) && (defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__))
 		#define G_OS_WIN32
+		// some old libraries/application test for _WIN32 instead of the standard WIN32
+		#ifndef _WIN32
+			#define _WIN32
+		#endif
 	#elif defined(__MWERKS__) && defined(__INTEL__)
 		#define G_OS_WIN32
 	// Linux

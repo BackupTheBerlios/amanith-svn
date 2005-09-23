@@ -1,5 +1,5 @@
 /****************************************************************************
-** $file: amanith/1d/gbsplinecurve1d.h   0.1.0.0   edited Jun 30 08:00
+** $file: amanith/1d/gbsplinecurve1d.h   0.1.1.0   edited Sep 24 08:00
 **
 ** 1D B-Spline curve segment definition.
 **

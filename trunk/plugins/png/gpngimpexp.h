@@ -1,5 +1,5 @@
 /****************************************************************************
-** $file: amanith/plugins/png/gpngimpext.h   0.1.0.0   edited Jun 30 08:00
+** $file: amanith/plugins/png/gpngimpext.h   0.1.1.0   edited Sep 24 08:00
 **
 ** 2D Pixelmap PNG import/export plugin interface.
 **

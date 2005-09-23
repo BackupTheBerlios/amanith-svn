@@ -1,5 +1,5 @@
 /****************************************************************************
-** $file: amanith/src/2d/gpath2d.cpp   0.1.0.0   edited Jun 30 08:00
+** $file: amanith/src/2d/gpath2d.cpp   0.1.1.0   edited Sep 24 08:00
 **
 ** 2D Path implementation.
 **
@@ -1417,32 +1417,6 @@ void GPath2D::ClosePath(const GBool MoveStartPoint) {
 		SetEndPoint(StartPoint());
 	gClosed = G_TRUE;
 }
-/*
-// set path start point
-void GPath2D::SetStartPoint(const GPoint2& NewValue) {
-
-	GUInt32 i = (GUInt32)gSegments.size();
-
-	if (i == 0)
-		return;
-	gSegments[0]->SetStartPoint(NewValue);
-	// if path is closed last point must be changed also
-	if (gClosed)
-		gSegments[i - 1]->SetEndPoint(NewValue);
-}
-
-// set path end point
-void GPath2D::SetEndPoint(const GPoint2& NewValue) {
-
-	GUInt32 i = (GUInt32)gSegments.size();
-
-	if (i == 0)
-		return;
-	// if path is closed first point must be changed also
-	if (gClosed)
-		gSegments[0]->SetStartPoint(NewValue);
-	gSegments[i - 1]->SetEndPoint(NewValue);
-}*/
 
 // calculate path piece length, with the assumption that StartParam <= EndParam
 GReal GPath2D::CalcLength(const GReal StartParam, const GReal EndParam, const GReal MaxError) const {
@@ -1515,47 +1489,6 @@ GReal GPath2D::Length(const GReal u0, const GReal u1, const GReal MaxError) cons
 			return CalcLength(u1, u0, MaxError);
 	}
 }
-
-/*
-GReal GPath2D::Variation(const GReal u0, const GReal u1, const GPoint2& p0, const GPoint2& p1) const {
-
-	G_ASSERT(u0 <= u1);
-
-	GUInt32 i, j;
-	GCurve2D *curve;
-	GReal localVar;
-	GError err;
-	GBool shared;
-
-	// find the start segment index
-	err = ParamToSegmentIndex(u0, i, shared);
-	if (err != G_NO_ERROR)
-		return 0;
-	// loops over interested segments
-	j = (GUInt32)gSegments.size();
-	localVar = 0;
-	while (i < j) {
-		curve = gSegments[i];
-		G_ASSERT(curve != NULL);
-		if (u1 > curve->DomainEnd()) {
-			if (curve->DomainStart() < u0)
-				localVar = GMath::Max(localVar, curve->Variation(u0, curve->DomainEnd()));
-			else
-				localVar = GMath::Max(localVar, curve->Variation(curve->DomainStart(), curve->DomainEnd()));
-			// jump to the next segment
-			i++;
-		}
-		// this is the case of the last interested segment, so calculate the remaining curve piece and exit
-		else {
-			if (curve->DomainStart() < u0)
-				localVar = GMath::Max(localVar, curve->Variation(u0, u1));
-			else
-				localVar = GMath::Max(localVar, curve->Variation(curve->DomainStart(), u1));
-			break;
-		}
-	}
-	return localVar;
-}*/
 
 GReal GPath2D::Variation() const {
 

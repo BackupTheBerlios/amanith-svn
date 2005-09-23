@@ -1,5 +1,5 @@
 /****************************************************************************
-** $file: amanith/gimpexp.h   0.1.0.0   edited Jun 30 08:00
+** $file: amanith/gimpexp.h   0.1.1.0   edited Sep 24 08:00
 **
 ** Import/Export plugin interface.
 **

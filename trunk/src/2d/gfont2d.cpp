@@ -1,5 +1,5 @@
 /****************************************************************************
-** $file: amanith/src/2d/gfont.cpp   0.1.0.0   edited Jun 30 08:00
+** $file: amanith/src/2d/gfont.cpp   0.1.1.0   edited Sep 24 08:00
 **
 ** 2D Font implementation.
 **
@@ -62,14 +62,19 @@ void GFontCharContour2D::BuildGoodContour(const GReal Precision, const GDynArray
 	GInt32 first = 0, last = (GInt32)NewPoints.size();
 	GInt32 k1 = first, k2 = k1 + 1, k3, k4, k, skip_next = 0;
 	GInt32 on1 = (PointsFlags[k1] & 1), on2 = (PointsFlags[k2] & 1), on3, on4, isCubic;
+	GInt32 firstOn1 = on1;
 	GInt32 f1 = PointsFlags[k1], f2 = PointsFlags[k2], f3, f4;
 	GPoint2 p1(NewPoints[k1]), p2(NewPoints[k2]), p3, p23, p12, p4, p;
 	GBezierCurve2D tmpBez;
 	GReal l;
 
 	for (k = first + 1; k <= last; ++k) {
-		if (k == last)
-			k3 = first;
+		if (k == last) {
+			if (firstOn1)
+				k3 = first;
+			else
+				k3 = first + 1;
+		}
 		else {
 			k3 = k + 1;
 			if (k3 >= last)
@@ -234,11 +239,16 @@ void GFontCharContour2D::DrawContour(const GDynArray<GPoint2>& ContourPoints, co
 	GInt32 first = 0, last = (GInt32)ContourPoints.size();
 	GInt32 k1 = first, k2 = k1 + 1, k3, k4, k, skip_next = 0;
 	GInt32 on1 = (ContourFlags[k1] & 1), on2 = (ContourFlags[k2] & 1), on3, isCubic;
+	GInt32 firstOn1 = on1;
 	GPoint2 p1(ContourPoints[k1]), p2(ContourPoints[k2]), p3, p23, p12, p4;
 
 	for (k = first + 1; k <= last; ++k) {
-		if (k == last)
-			k3 = first;
+		if (k == last) {
+			if (firstOn1)
+				k3 = first;
+			else
+				k3 = first + 1;
+		}
 		else {
 			k3 = k + 1;
 			if (k3 >= last)
@@ -359,11 +369,16 @@ void GFontCharContour2D::DecomposeBezier(GDynArray<GPoint2>& Points, GDynArray<G
 	GInt32 first = 0, last = (GInt32)gPoints.size();
 	GInt32 k1 = first, k2 = k1 + 1, k3, k4, k, skip_next = 0;
 	GInt32 on1 = (gPointsFlags[k1] & 1), on2 = (gPointsFlags[k2] & 1), on3, isCubic;
+	GInt32 firstOn1 = on1;
 	GPoint2 p1(gPoints[k1]), p2(gPoints[k2]), p3, p23, p12, p4;
 
 	for (k = first + 1; k <= last; ++k) {
-		if (k == last)
-			k3 = first;
+		if (k == last) {
+			if (firstOn1)
+				k3 = first;
+			else
+				k3 = first + 1;
+		}
 		else {
 			k3 = k + 1;
 			if (k3 >= last)

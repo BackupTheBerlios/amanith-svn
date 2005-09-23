@@ -82,7 +82,7 @@
 				AdditionalDependencies="opengl32.lib glu32.lib $(AMANITHDIR)/lib/amanith.lib"
 				OutputFile="./bspline2d.exe"
 				LinkIncremental="1"
-				GenerateDebugInformation="TRUE"
+				GenerateDebugInformation="FALSE"
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"

@@ -289,6 +289,7 @@ void QGLWidgetTest::DrawPalette() {
 		glEnd();
 	}
 	setDefaultGlobalStates();
+	#undef X_SAMPLES
 }
 
 //----- paintGL ----------------------------------------------
@@ -320,7 +321,6 @@ void QGLWidgetTest::resizeGL(int width, int height) {
 	glOrtho(-1.5, 1.5, -1.5, 1.5, -1.5, 1.5);
 	glMatrixMode(GL_MODELVIEW);							// Select The Modelview Matrix
 	glLoadIdentity();
-
 	gDrawPalette = G_TRUE;
 }
 //------------------------------------------------------------
@@ -374,10 +374,6 @@ void QGLWidgetTest::RemoveKey() {
 		return;
 
 	GInt32 i = GMath::RangeRandom(1, gRedAnimC->KeysCount() - 2);
-
-	if (i < 0) {
-		i = i;
-	}
 
 	gRedAnimC->RemoveKey(i);
 	gGreenAnimC->RemoveKey(i);

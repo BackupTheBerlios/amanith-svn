@@ -1,5 +1,5 @@
 /****************************************************************************
-** $file: amanith/src/2d/ghermitecurve2d.cpp   0.1.0.0   edited Jun 30 08:00
+** $file: amanith/src/2d/ghermitecurve2d.cpp   0.1.1.0   edited Sep 24 08:00
 **
 ** 2D Hermite curve segment implementation.
 **
@@ -109,6 +109,21 @@ GError GHermiteCurve2D::SetKey(const GUInt32 Index, const GPoint2& NewKeyValue,
 	gKeys[Index].InTangent = InTangent;
 	gKeys[Index].OutTangent = OutTangent;
 	return G_NO_ERROR;
+}
+
+void GHermiteCurve2D::RecalcSmoothTangents(const GBool SmoothEnds) {
+
+	GUInt32 i = (GUInt32)gKeys.size();
+	if (i >= 3) {
+		CalcCatmullRomTangents(0, i - 1);
+		if (SmoothEnds) {
+			GVector2 smoothTangent = (gKeys[0].OutTangent + gKeys[i - 1].InTangent) / 2;
+			gKeys[0].OutTangent = smoothTangent;
+			gKeys[0].InTangent = smoothTangent;
+			gKeys[i - 1].OutTangent = smoothTangent;
+			gKeys[i - 1].InTangent = smoothTangent;
+		}
+	}
 }
 
 // get parameter corresponding to point index

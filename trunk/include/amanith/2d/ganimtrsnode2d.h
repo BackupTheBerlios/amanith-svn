@@ -1,5 +1,5 @@
 /****************************************************************************
-** $file: amanith/2d/ganimtrsnode2d.h   0.1.0.0   edited Jun 30 08:00
+** $file: amanith/2d/ganimtrsnode2d.h   0.1.1.0   edited Sep 24 08:00
 **
 ** 2D TRS (Translation-Rotation-Scale) animated node definition.
 **
@@ -33,7 +33,7 @@
 
 /*!
 	\file ganimtrsnode2d.h
-	\brief GElement header file.
+	\brief Header file for GAnimTRSNode2D class.
 */
 
 namespace Amanith {
@@ -41,13 +41,14 @@ namespace Amanith {
 	// *********************************************************************
 	//                            GAnimTRSNode2D
 	// *********************************************************************
+	//! GAnimTRSNode2D static class descriptor.
 	static const GClassID G_ANIMTRSNODE2D_CLASSID = GClassID("GAnimTRSNode2D", 0x8510F345, 0xDC5A493E, 0xA26B6033, 0x95095825);
 
 	//! Available coordinates space systems.
 	enum GSpaceSystem {
-		//! Local space
+		//! Local space.
 		G_LOCAL_SPACE = 0,
-		//! World space
+		//! World space.
 		G_WORLD_SPACE = 1
 	};
 
@@ -72,6 +73,8 @@ namespace Amanith {
 		GAnimTRSNode2D *gFather;
 		//! List of children.
 		GDynArray<GAnimTRSNode2D *>gChildren;
+		//! Associated custom/user data
+		void *gCustomData;
 
 	protected:
 		//! Move all position keys by an additive offset vector.
@@ -103,12 +106,24 @@ namespace Amanith {
 		GAnimTRSNode2D(const GElement* Owner);
 		//! Destructor, delete all keys and internal ease curve (if it exists).
 		~GAnimTRSNode2D();
+		//! Get custom/user data associated to this node.
+		inline void *CustomData() const {
+			return gCustomData;
+		}
+		//! Set custom/user data associated to this node.
+		inline void SetCustomData(void* NewData) {
+			gCustomData = NewData;
+		}
 		//! Get the parent node (NULL is root).
 		inline GAnimTRSNode2D *Father() const {
 			return gFather;
 		}
-		//! Set a new father, taking care to transform all internal animated tracks relative to father's tracks.
-		GError SetFather(GAnimTRSNode2D *NewFather);
+		/*!
+			Set a new father, taking care to transform all internal animated tracks relative to father's tracks.
+			If AffectTracks is G_TRUE, all TRS tracks are modified to respect the new father (all existing
+			values are calculate relative to the new father).
+		*/
+		GError SetFather(GAnimTRSNode2D *NewFather, const GBool AffectTracks = G_TRUE);
 		//! Get a flag that indicate if this is a root (fatherless) node.
 		inline GBool IsRoot() const {
 			if (gFather)
@@ -124,6 +139,12 @@ namespace Amanith {
 		//! Get number of children.
 		inline GUInt32 ChildrenCounts() const {
 			return (GUInt32)gChildren.size();
+		}
+		//! Get Index-th child (NULL if it does not exist).
+		inline GAnimTRSNode2D *Child(const GUInt32 Index) const {
+			if (Index >= (GUInt32)gChildren.size())
+				return NULL;
+			return gChildren[Index];
 		}
 		//! Get pivot matrix, it include only pivot transformations.
 		GMatrix33 PivotMatrix() const;
@@ -147,7 +168,7 @@ namespace Amanith {
 		/*!
 			Set position component, specifying a father-related position and time.
 		*/
-		GError SetPosition(const GTimeValue TimePos, const GPoint2& RelPosition);
+		GError SetPosition(const GTimeValue TimePos, const GVectBase<GReal, 2>& RelPosition);
 		/*!
 			Get rotation component (in radiants), specifying time and space type (local or world).
 			ValidInterval is the validity interval for the returned point.
@@ -175,7 +196,7 @@ namespace Amanith {
 			children must be counter-transformed (they tracks will be transformed) to maintain their actual
 			settings.
 		*/
-		GError SetPivotPosition(const GPoint2& NewPosition, const GBool AffectChildren = G_TRUE);
+		GError SetPivotPosition(const GVectBase<GReal, 2>& NewPosition, const GBool AffectChildren = G_TRUE);
 		//! Get pivot rotation (in radiants).
 		inline GReal PivotRotation() const {
 			return gPivotRotation;

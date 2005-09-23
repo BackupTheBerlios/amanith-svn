@@ -1,5 +1,5 @@
 /****************************************************************************
-** $file: amanith/src/ganimtrsnode2d.cpp   0.1.0.0   edited Jun 30 08:00
+** $file: amanith/src/ganimtrsnode2d.cpp   0.1.1.0   edited Sep 24 08:00
 **
 ** 2D TRS (Translation-Rotation-Scale) animated node implementation.
 **
@@ -49,6 +49,7 @@ GAnimTRSNode2D::GAnimTRSNode2D() : GAnimElement() {
 	gPivotRotation = 0;
 	gPivotScale.Set(1, 1);
 	gFather = NULL;
+	gCustomData = NULL;
 	
 	// add TRS properties
 	GBool alreadyExists;
@@ -58,12 +59,12 @@ GAnimTRSNode2D::GAnimTRSNode2D() : GAnimElement() {
 	if (tmpProp) {
 		G_ASSERT(alreadyExists == G_FALSE);
 		// default value for "x" and "y" sub-properties will be set automatically to 0
-		AddProperty("position", G_TWOHERMITEPROPERTY1D_CLASSID, GKeyValue(), alreadyExists, index);
+		tmpProp->AddProperty("position", G_TWOHERMITEPROPERTY1D_CLASSID, GKeyValue(), alreadyExists, index);
 		G_ASSERT(alreadyExists == G_FALSE);
-		AddProperty("rotation", G_HERMITEPROPERTY1D_CLASSID, GKeyValue((GReal)0), alreadyExists, index);
+		tmpProp->AddProperty("rotation", G_HERMITEPROPERTY1D_CLASSID, GKeyValue((GReal)0), alreadyExists, index);
 		G_ASSERT(alreadyExists == G_FALSE);
 		// we must impose a default value of 1 to "x" and "y" sub-properties
-		GProperty *p = AddProperty("scale", G_TWOHERMITEPROPERTY1D_CLASSID, GKeyValue(), alreadyExists, index);
+		GProperty *p = tmpProp->AddProperty("scale", G_TWOHERMITEPROPERTY1D_CLASSID, GKeyValue(), alreadyExists, index);
 		G_ASSERT(alreadyExists == G_FALSE);
 		p->Property("x")->SetDefaultValue(GKeyValue((GReal)1));
 		p->Property("y")->SetDefaultValue(GKeyValue((GReal)1));
@@ -77,6 +78,7 @@ GAnimTRSNode2D::GAnimTRSNode2D(const GElement* Owner) : GAnimElement(Owner) {
 	gPivotRotation = 0;
 	gPivotScale.Set(1, 1);
 	gFather = NULL;
+	gCustomData = NULL;
 
 	// add TRS properties
 	GBool alreadyExists;
@@ -86,12 +88,12 @@ GAnimTRSNode2D::GAnimTRSNode2D(const GElement* Owner) : GAnimElement(Owner) {
 	if (tmpProp) {
 		G_ASSERT(alreadyExists == G_FALSE);
 		// default value for "x" and "y" sub-properties will be set automatically to 0
-		AddProperty("position", G_TWOHERMITEPROPERTY1D_CLASSID, GKeyValue(), alreadyExists, index);
+		tmpProp->AddProperty("position", G_TWOHERMITEPROPERTY1D_CLASSID, GKeyValue(), alreadyExists, index);
 		G_ASSERT(alreadyExists == G_FALSE);
-		AddProperty("rotation", G_HERMITEPROPERTY1D_CLASSID, GKeyValue((GReal)0), alreadyExists, index);
+		tmpProp->AddProperty("rotation", G_HERMITEPROPERTY1D_CLASSID, GKeyValue((GReal)0), alreadyExists, index);
 		G_ASSERT(alreadyExists == G_FALSE);
 		// we must impose a default value of 1 to "x" and "y" sub-properties
-		GProperty *p = AddProperty("scale", G_TWOHERMITEPROPERTY1D_CLASSID, GKeyValue(), alreadyExists, index);
+		GProperty *p = tmpProp->AddProperty("scale", G_TWOHERMITEPROPERTY1D_CLASSID, GKeyValue(), alreadyExists, index);
 		G_ASSERT(alreadyExists == G_FALSE);
 		p->Property("x")->SetDefaultValue(GKeyValue((GReal)1));
 		p->Property("y")->SetDefaultValue(GKeyValue((GReal)1));
@@ -109,6 +111,9 @@ GAnimTRSNode2D::~GAnimTRSNode2D() {
 		// do the detach
 		tmpNode->SetFather(NULL);
 	}
+	// if i have a father, i must detach me from him
+	if (gFather)
+		gFather->DetachChildNode(this);
 }
 
 void GAnimTRSNode2D::DetachChildNode(const GUInt32 ChildIndex) {
@@ -181,61 +186,64 @@ GBool GAnimTRSNode2D::AttachChildNode(GAnimTRSNode2D *Node) {
 	return G_FALSE;
 }
 
-GError GAnimTRSNode2D::SetFather(GAnimTRSNode2D *NewFather) {
+GError GAnimTRSNode2D::SetFather(GAnimTRSNode2D *NewFather, const GBool AffectTracks) {
 
 	GTimeInterval tmpValid;
 
 	// if specified father is NULL, detach this node (it will become a root node)
 	if (!NewFather) {
-		// offset position track
-		GPoint2 wPos = Position(0, G_WORLD_SPACE, tmpValid);
-		GPoint2 lPos = Position(0, G_LOCAL_SPACE, tmpValid);
-		OffsetPositionTrack(wPos - lPos);
-		// offset rotation track
-		GReal wRot = Rotation(0, G_WORLD_SPACE, tmpValid);
-		GReal lRot = Rotation(0, G_LOCAL_SPACE, tmpValid);
-		OffsetRotationTrack(wRot - lRot);
-		// offset scale track
-		GVector2 wScl = Scale(0, G_WORLD_SPACE, tmpValid);
-		GVector2 lScl = Scale(0, G_LOCAL_SPACE, tmpValid);
-		GVector2 tmpScale(wScl);
-		if (GMath::Abs(lScl[G_X]) > G_EPSILON)
-			tmpScale[G_X] /= lScl[G_X];
-		if (GMath::Abs(lScl[G_Y]) > G_EPSILON)
-			tmpScale[G_Y] /= lScl[G_Y];
-		OffsetScaleTrack(tmpScale);
+		if (AffectTracks) {
+			// offset position track
+			GPoint2 wPos = Position(0, G_WORLD_SPACE, tmpValid);
+			GPoint2 lPos = Position(0, G_LOCAL_SPACE, tmpValid);
+			OffsetPositionTrack(wPos - lPos);
+			// offset rotation track
+			GReal wRot = Rotation(0, G_WORLD_SPACE, tmpValid);
+			GReal lRot = Rotation(0, G_LOCAL_SPACE, tmpValid);
+			OffsetRotationTrack(wRot - lRot);
+			// offset scale track
+			GVector2 wScl = Scale(0, G_WORLD_SPACE, tmpValid);
+			GVector2 lScl = Scale(0, G_LOCAL_SPACE, tmpValid);
+			GVector2 tmpScale(wScl);
+			if (GMath::Abs(lScl[G_X]) > G_EPSILON)
+				tmpScale[G_X] /= lScl[G_X];
+			if (GMath::Abs(lScl[G_Y]) > G_EPSILON)
+				tmpScale[G_Y] /= lScl[G_Y];
+			OffsetScaleTrack(tmpScale);
+		}
 		// detach me from my current father (if it exists)
 		if (gFather)
 			gFather->DetachChildNode(this);
 	}
 	else {
-		// offset position track
-		GPoint2 wPos = Position(0, G_WORLD_SPACE, tmpValid);
-		GPoint2 lPos = Position(0, G_LOCAL_SPACE, tmpValid);
-		GPoint2 fwPos = NewFather->Position(0, G_WORLD_SPACE, tmpValid);
-		OffsetPositionTrack(fwPos - wPos - lPos);
-		// offset rotation track
-		GReal wRot = Rotation(0, G_WORLD_SPACE, tmpValid);
-		GReal lRot = Rotation(0, G_LOCAL_SPACE, tmpValid);
-		GReal fwRot = NewFather->Rotation(0, G_WORLD_SPACE, tmpValid);
-		OffsetRotationTrack(fwRot - wRot - lRot);
-		// offset scale track
-		GVector2 wScl = Scale(0, G_WORLD_SPACE, tmpValid);
-		GVector2 lScl = Scale(0, G_LOCAL_SPACE, tmpValid);
-		GPoint2 fwScl = NewFather->Scale(0, G_WORLD_SPACE, tmpValid);
-		GVector2 tmpScale(fwScl);
-		GVector2 tmpDen(wScl[G_X] * lScl[G_X], wScl[G_Y] * lScl[G_Y]);
-		if (GMath::Abs(tmpDen[G_X]) > G_EPSILON)
-			tmpScale[G_X] /= tmpDen[G_X];
-		else
-			tmpScale[G_X] = 1;
+		if (AffectTracks) {
+			// offset position track
+			GPoint2 wPos = Position(0, G_WORLD_SPACE, tmpValid);
+			GPoint2 lPos = Position(0, G_LOCAL_SPACE, tmpValid);
+			GPoint2 fwPos = NewFather->Position(0, G_WORLD_SPACE, tmpValid);
+			OffsetPositionTrack(fwPos - wPos - lPos);
+			// offset rotation track
+			GReal wRot = Rotation(0, G_WORLD_SPACE, tmpValid);
+			GReal lRot = Rotation(0, G_LOCAL_SPACE, tmpValid);
+			GReal fwRot = NewFather->Rotation(0, G_WORLD_SPACE, tmpValid);
+			OffsetRotationTrack(fwRot - wRot - lRot);
+			// offset scale track
+			GVector2 wScl = Scale(0, G_WORLD_SPACE, tmpValid);
+			GVector2 lScl = Scale(0, G_LOCAL_SPACE, tmpValid);
+			GPoint2 fwScl = NewFather->Scale(0, G_WORLD_SPACE, tmpValid);
+			GVector2 tmpScale(fwScl);
+			GVector2 tmpDen(wScl[G_X] * lScl[G_X], wScl[G_Y] * lScl[G_Y]);
+			if (GMath::Abs(tmpDen[G_X]) > G_EPSILON)
+				tmpScale[G_X] /= tmpDen[G_X];
+			else
+				tmpScale[G_X] = 1;
 
-		if (GMath::Abs(tmpDen[G_Y]) > G_EPSILON)
-			tmpScale[G_Y] /= tmpDen[G_Y];
-		else
-			tmpScale[G_Y] = 1;
-		OffsetScaleTrack(tmpScale);
-
+			if (GMath::Abs(tmpDen[G_Y]) > G_EPSILON)
+				tmpScale[G_Y] /= tmpDen[G_Y];
+			else
+				tmpScale[G_Y] = 1;
+			OffsetScaleTrack(tmpScale);
+		}
 		// detach me from my current father (if it exists)
 		if (gFather)
 			gFather->DetachChildNode(this);
@@ -252,7 +260,7 @@ GPoint2 GAnimTRSNode2D::Position(const GTimeValue TimePos, const GSpaceSystem Sp
 	if (!tmpProp)
 		return GPoint2(0, 0);
 
-	tmpProp = tmpProp->Property("translation");
+	tmpProp = tmpProp->Property("position");
 	G_ASSERT(tmpProp);
 	GTimeInterval tmpValid = G_FOREVER_TIMEINTERVAL;
 	GKeyValue xValue, yValue;
@@ -397,7 +405,7 @@ GMatrix33 GAnimTRSNode2D::Matrix(const GTimeValue TimePos, const GSpaceSystem Sp
 	GTimeInterval tmpValid = G_FOREVER_TIMEINTERVAL;
 	GKeyValue xValue, yValue;
 	GError xErr, yErr;
-	GProperty *transProp = tmpProp->Property("translation");
+	GProperty *transProp = tmpProp->Property("position");
 	GProperty *rotProp = tmpProp->Property("rotation");
 	GProperty *scaleProp = tmpProp->Property("scale");
 
@@ -461,7 +469,7 @@ GMatrix33 GAnimTRSNode2D::InverseMatrix(const GTimeValue TimePos, const GSpaceSy
 	GTimeInterval tmpValid = G_FOREVER_TIMEINTERVAL;
 	GKeyValue xValue, yValue;
 	GError xErr, yErr;
-	GProperty *transProp = tmpProp->Property("translation");
+	GProperty *transProp = tmpProp->Property("position");
 	GProperty *rotProp = tmpProp->Property("rotation");
 	GProperty *scaleProp = tmpProp->Property("scale");
 
@@ -516,7 +524,7 @@ GMatrix33 GAnimTRSNode2D::InverseMatrix(const GTimeValue TimePos, const GSpaceSy
 		return invLocalMatrix;
 }
 
-GError GAnimTRSNode2D::SetPosition(const GTimeValue TimePos, const GPoint2& RelPosition) {
+GError GAnimTRSNode2D::SetPosition(const GTimeValue TimePos, const GVectBase<GReal, 2>& RelPosition) {
 
 	GError err;
 	GProperty *tmpProp = Property("transform");
@@ -536,14 +544,14 @@ GError GAnimTRSNode2D::SetPosition(const GTimeValue TimePos, const GPoint2& RelP
 		tmpProp = posProp->Property("x");
 		G_ASSERT(tmpProp != NULL);
 		tmpValue.SetValue(RelPosition[G_X]);
-		err = tmpProp->SetValue(tmpValue, G_ABSOLUTE_VALUE);
+		err = tmpProp->SetValue(tmpValue, TimePos, G_ABSOLUTE_VALUE);
 		if (err != G_NO_ERROR)
 			return err;
 		// set "y" property
 		tmpProp = posProp->Property("y");
 		G_ASSERT(tmpProp != NULL);
 		tmpValue.SetValue(RelPosition[G_Y]);
-		err = tmpProp->SetValue(tmpValue, G_ABSOLUTE_VALUE);
+		err = tmpProp->SetValue(tmpValue, TimePos, G_ABSOLUTE_VALUE);
 	}
 	return err;
 }
@@ -561,7 +569,7 @@ GError GAnimTRSNode2D::SetRotation(const GTimeValue TimePos, const GReal& RelRot
 		GProperty *rotProp = tmpProp->Property("rotation");
 		G_ASSERT(rotProp);
 		GKeyValue tmpValue(TimePos, RelRotation);
-		err = rotProp->SetValue(tmpValue, G_ABSOLUTE_VALUE);
+		err = rotProp->SetValue(tmpValue, TimePos, G_ABSOLUTE_VALUE);
 	}
 	return err;
 }
@@ -587,14 +595,14 @@ GError GAnimTRSNode2D::SetScale(const GTimeValue TimePos, const GVectBase<GReal,
 		tmpProp = scaleProp->Property("x");
 		G_ASSERT(tmpProp != NULL);
 		tmpValue.SetValue(RelScale[G_X]);
-		err = tmpProp->SetValue(tmpValue, G_ABSOLUTE_VALUE);
+		err = tmpProp->SetValue(tmpValue, TimePos, G_ABSOLUTE_VALUE);
 		if (err != G_NO_ERROR)
 			return err;
 		// set "y" property
 		tmpProp = scaleProp->Property("y");
 		G_ASSERT(tmpProp != NULL);
 		tmpValue.SetValue(RelScale[G_Y]);
-		err = tmpProp->SetValue(tmpValue, G_ABSOLUTE_VALUE);
+		err = tmpProp->SetValue(tmpValue, TimePos, G_ABSOLUTE_VALUE);
 	}
 	return err;
 }
@@ -724,7 +732,7 @@ void GAnimTRSNode2D::OffsetScaleTrack(const GVectBase<GReal, 2>& OffsetFactors) 
 	}
 }
 
-GError GAnimTRSNode2D::SetPivotPosition(const GPoint2& NewPosition, const GBool AffectChildren) {
+GError GAnimTRSNode2D::SetPivotPosition(const GVectBase<GReal, 2>& NewPosition, const GBool AffectChildren) {
 
 	// calculate move delta
 	GVector2 delta = NewPosition - gPivotPosition;

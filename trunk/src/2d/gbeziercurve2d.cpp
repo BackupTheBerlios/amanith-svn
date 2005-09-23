@@ -1,5 +1,5 @@
 /****************************************************************************
-** $file: amanith/src/2d/gbezcurve2d.cpp   0.1.0.0   edited Jun 30 08:00
+** $file: amanith/src/2d/gbezcurve2d.cpp   0.1.1.0   edited Sep 24 08:00
 **
 ** 2D Bezier curve segment implementation.
 **
@@ -874,7 +874,7 @@ void GBezierCurve2D::ParabolicApproxBezierPointsNoInflPts(const GReal Flatness, 
 
 // optimized flattening for cubic Bezier
 GError GBezierCurve2D::Flatten3(GDynArray<GPoint2>& Contour, const GReal MaxDeviation,
-							 const GBool IncludeLastPoint) const {
+								const GBool IncludeLastPoint) const {
 
 	if (Degree() != 3)
 		 return G_INVALID_OPERATION;

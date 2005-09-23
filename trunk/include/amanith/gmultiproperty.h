@@ -1,5 +1,5 @@
 /****************************************************************************
-** $file: amanith/gmultiproperty.h   0.1.0.0   edited Jun 30 08:00
+** $file: amanith/gmultiproperty.h   0.1.1.0   edited Sep 24 08:00
 **
 ** Basic animated multi-properties definition.
 **
@@ -46,6 +46,10 @@ namespace Amanith {
 	//! GMultiProperty1D static class descriptor.
 	static const GClassID G_MULTIPROPERTY1D_CLASSID = GClassID("GMultiProperty1D", 0xB654D382, 0x60B34BCD, 0xBB5159A5, 0x4816A30A);
 
+	/*!
+		\class GMultiProperty1D
+		\brief This class represent a multi-property, intended as a container of properties of the same type.
+	*/
 	class G_EXPORT GMultiProperty1D : public GProperty {
 
 	private:
@@ -59,6 +63,9 @@ namespace Amanith {
 
 			\param SubPropertiesCount number of sub-properties to create. It must be positive (greater than 0).
 			\param SubPropertiesType type descriptor of sub-properties.
+			\param DefaultValue the default value associated with each property. If an invalid value is
+			specified (it is not compatible with the value type handled by the SubPropertiesType ClassID), a
+			0(s) default value will be used.
 			\param Labels a list of semicolon separated sub-properties labels. If empty, the a default schema is
 			used; in particular labels will be a sequential natural numbers ("0", "1", "2", ...).
 			\note the number of labels must	match SubPropertiesCount parameter, elsewhere the default label
@@ -122,6 +129,11 @@ namespace Amanith {
 	//! GTwoHermiteProperty1D static class descriptor.
 	static const GClassID G_TWOHERMITEPROPERTY1D_CLASSID = GClassID("GTwoHermiteProperty1D", 0xD6BD3203, 0xCA9D4A7A, 0xA3C6510B, 0xF6BEB7D1);
 
+	/*!
+		\class GTwoHermiteProperty1D
+		\brief This class represent a 2-dimensional Hermite multi-property, a container of two
+		GHermiteProperty1D properties. They are accessible with the default names "x" and "y".
+	*/
 	class G_EXPORT GTwoHermiteProperty1D : public GMultiProperty1D {
 
 	public:
@@ -152,6 +164,10 @@ namespace Amanith {
 	*/
 	class G_EXPORT GTwoHermiteProperty1DProxy : public GElementProxy {
 	public:
+		//! Creates a new GTwoHermiteProperty1D instance
+		GElement* CreateNew(const GElement* Owner = NULL) const {
+			return new GTwoHermiteProperty1D(Owner);
+		}
 		//! Get class descriptor of elements type "provided" by this proxy.
 		const GClassID& ClassID() const {
 			return G_TWOHERMITEPROPERTY1D_CLASSID;
@@ -172,6 +188,11 @@ namespace Amanith {
 	//! GThreeHermiteProperty1D static class descriptor.
 	static const GClassID G_THREEHERMITEPROPERTY1D_CLASSID = GClassID("GThreeHermiteProperty1D", 0x0754D2C8, 0x6C9A4CCE, 0x86C6A732, 0x9977F96E);
 
+	/*!
+		\class GThreeHermiteProperty1D
+		\brief This class represent a 3-dimensional Hermite multi-property, a container of three
+		GHermiteProperty1D properties. They are accessible with the default names "x", "y" and "z".
+	*/
 	class G_EXPORT GThreeHermiteProperty1D : public GMultiProperty1D {
 
 	public:
@@ -202,6 +223,10 @@ namespace Amanith {
 	*/
 	class G_EXPORT GThreeHermiteProperty1DProxy : public GElementProxy {
 	public:
+		//! Creates a new GThreeHermiteProperty1D instance
+		GElement* CreateNew(const GElement* Owner = NULL) const {
+			return new GThreeHermiteProperty1D(Owner);
+		}
 		//! Get class descriptor of elements type "provided" by this proxy.
 		const GClassID& ClassID() const {
 			return G_THREEHERMITEPROPERTY1D_CLASSID;
@@ -222,6 +247,11 @@ namespace Amanith {
 	//! GFourHermiteProperty1D static class descriptor.
 	static const GClassID G_FOURHERMITEPROPERTY1D_CLASSID = GClassID("GFourHermiteProperty1D", 0x717390B9, 0xA5774A37, 0x87DACC89, 0xBDDC1627);
 
+	/*!
+		\class GFourHermiteProperty1D
+		\brief This class represent a 4-dimensional Hermite multi-property, a container of four
+		GHermiteProperty1D properties. They are accessible with the default names "x", "y", "z" and "w".
+	*/
 	class G_EXPORT GFourHermiteProperty1D : public GMultiProperty1D {
 
 	public:
@@ -252,6 +282,10 @@ namespace Amanith {
 	*/
 	class G_EXPORT GFourHermiteProperty1DProxy : public GElementProxy {
 	public:
+		//! Creates a new GFourHermiteProperty1D instance
+		GElement* CreateNew(const GElement* Owner = NULL) const {
+			return new GFourHermiteProperty1D(Owner);
+		}
 		//! Get class descriptor of elements type "provided" by this proxy.
 		const GClassID& ClassID() const {
 			return G_FOURHERMITEPROPERTY1D_CLASSID;
@@ -273,6 +307,11 @@ namespace Amanith {
 	//! GTwoLinearProperty1D static class descriptor.
 	static const GClassID G_TWOLINEARPROPERTY1D_CLASSID = GClassID("GTwoLinearProperty1D", 0x3AC73EB5, 0xD7B1478B, 0x8E9FC33B, 0x02D72F0F);
 
+	/*!
+		\class GTwoLinearProperty1D
+		\brief This class represent a 2-dimensional linear multi-property, a container of two
+		GLinearProperty1D properties. They are accessible with the default names "x" and "y".
+	*/
 	class G_EXPORT GTwoLinearProperty1D : public GMultiProperty1D {
 
 	public:
@@ -303,6 +342,10 @@ namespace Amanith {
 	*/
 	class G_EXPORT GTwoLinearProperty1DProxy : public GElementProxy {
 	public:
+		//! Creates a new GTwoLinearProperty1D instance
+		GElement* CreateNew(const GElement* Owner = NULL) const {
+			return new GTwoLinearProperty1D(Owner);
+		}
 		//! Get class descriptor of elements type "provided" by this proxy.
 		const GClassID& ClassID() const {
 			return G_TWOLINEARPROPERTY1D_CLASSID;
@@ -323,6 +366,11 @@ namespace Amanith {
 	//! GThreeLinearProperty1D static class descriptor.
 	static const GClassID G_THREELINEARPROPERTY1D_CLASSID = GClassID("GThreeLinearProperty1D", 0xE7035327, 0x6E214B81, 0xB7A242E2, 0x9F840B34);
 
+	/*!
+		\class GThreeLinearProperty1D
+		\brief This class represent a 3-dimensional linear multi-property, a container of three
+		GLinearProperty1D properties. They are accessible with the default names "x", "y" and "z".
+	*/
 	class G_EXPORT GThreeLinearProperty1D : public GMultiProperty1D {
 
 	public:
@@ -353,6 +401,10 @@ namespace Amanith {
 	*/
 	class G_EXPORT GThreeLinearProperty1DProxy : public GElementProxy {
 	public:
+		//! Creates a new GThreeLinearProperty1D instance
+		GElement* CreateNew(const GElement* Owner = NULL) const {
+			return new GThreeLinearProperty1D(Owner);
+		}
 		//! Get class descriptor of elements type "provided" by this proxy.
 		const GClassID& ClassID() const {
 			return G_THREELINEARPROPERTY1D_CLASSID;
@@ -374,6 +426,11 @@ namespace Amanith {
 	//! GFourLinearProperty1D static class descriptor.
 	static const GClassID G_FOURLINEARPROPERTY1D_CLASSID = GClassID("GFourLinearProperty1D", 0x32682822, 0x0FEF483C, 0xAF0C07AC, 0x16D467EE);
 
+	/*!
+		\class GFourLinearProperty1D
+		\brief This class represent a 4-dimensional linear multi-property, a container of four
+		GLinearProperty1D properties. They are accessible with the default names "x", "y", "z" and "w".
+	*/
 	class G_EXPORT GFourLinearProperty1D : public GMultiProperty1D {
 
 	public:
@@ -397,13 +454,17 @@ namespace Amanith {
 	//                       GFourLinearProperty1DProxy
 	// *********************************************************************
 	/*!
-	\class GFourLinearProperty1DProxy
-	\brief This class implements a GFourLinearProperty1D proxy (provider).
+		\class GFourLinearProperty1DProxy
+		\brief This class implements a GFourLinearProperty1D proxy (provider).
 
-	This proxy provides the creation of GFourLinearProperty1D class instances.
+		This proxy provides the creation of GFourLinearProperty1D class instances.
 	*/
 	class G_EXPORT GFourLinearProperty1DProxy : public GElementProxy {
 	public:
+		//! Creates a new GFourLinearProperty1D instance
+		GElement* CreateNew(const GElement* Owner = NULL) const {
+			return new GFourLinearProperty1D(Owner);
+		}
 		//! Get class descriptor of elements type "provided" by this proxy.
 		const GClassID& ClassID() const {
 			return G_FOURLINEARPROPERTY1D_CLASSID;
@@ -424,6 +485,11 @@ namespace Amanith {
 	//! GTwoConstantProperty1D static class descriptor.
 	static const GClassID G_TWOCONSTANTPROPERTY1D_CLASSID = GClassID("GTwoConstantProperty1D", 0x8471E976, 0x817D4F43, 0x8A202AA8, 0x0DE55C4E);
 
+	/*!
+		\class GTwoConstantProperty1D
+		\brief This class represent a 2-dimensional constant multi-property, a container of two
+		GConstantProperty1D properties. They are accessible with the default names "x" and "y".
+	*/
 	class G_EXPORT GTwoConstantProperty1D : public GMultiProperty1D {
 
 	public:
@@ -454,6 +520,10 @@ namespace Amanith {
 	*/
 	class G_EXPORT GTwoConstantProperty1DProxy : public GElementProxy {
 	public:
+		//! Creates a new GTwoConstantProperty1D instance
+		GElement* CreateNew(const GElement* Owner = NULL) const {
+			return new GTwoConstantProperty1D(Owner);
+		}
 		//! Get class descriptor of elements type "provided" by this proxy.
 		const GClassID& ClassID() const {
 			return G_TWOCONSTANTPROPERTY1D_CLASSID;
@@ -474,6 +544,11 @@ namespace Amanith {
 	//! GThreeConstantProperty1D static class descriptor.
 	static const GClassID G_THREECONSTANTPROPERTY1D_CLASSID = GClassID("GThreeConstantProperty1D", 0xF4CCF61F, 0x208D4C8B, 0x80DAA479, 0x12DEBE23);
 
+	/*!
+		\class GThreeConstantProperty1D
+		\brief This class represent a 3-dimensional constant multi-property, a container of three
+		GConstantProperty1D properties. They are accessible with the default names "x", "y" and "z".
+	*/
 	class G_EXPORT GThreeConstantProperty1D : public GMultiProperty1D {
 
 	public:
@@ -504,6 +579,10 @@ namespace Amanith {
 	*/
 	class G_EXPORT GThreeConstantProperty1DProxy : public GElementProxy {
 	public:
+		//! Creates a new GThreeConstantProperty1D instance
+		GElement* CreateNew(const GElement* Owner = NULL) const {
+			return new GThreeConstantProperty1D(Owner);
+		}
 		//! Get class descriptor of elements type "provided" by this proxy.
 		const GClassID& ClassID() const {
 			return G_THREECONSTANTPROPERTY1D_CLASSID;
@@ -524,6 +603,11 @@ namespace Amanith {
 	//! GFourConstantProperty1D static class descriptor.
 	static const GClassID G_FOURCONSTANTPROPERTY1D_CLASSID = GClassID("GFourConstantProperty1D", 0x13D2DDAE, 0xFF144B3F, 0x8185427B, 0xFE8ACA4B);
 
+	/*!
+		\class GFourConstantProperty1D
+		\brief This class represent a 4-dimensional constant multi-property, a container of four
+		GConstantProperty1D properties. They are accessible with the default names "x", "y", "z" and "w".
+	*/
 	class G_EXPORT GFourConstantProperty1D : public GMultiProperty1D {
 
 	public:
@@ -554,6 +638,10 @@ namespace Amanith {
 	*/
 	class G_EXPORT GFourConstantProperty1DProxy : public GElementProxy {
 	public:
+		//! Creates a new GFourConstantProperty1D instance
+		GElement* CreateNew(const GElement* Owner = NULL) const {
+			return new GFourConstantProperty1D(Owner);
+		}
 		//! Get class descriptor of elements type "provided" by this proxy.
 		const GClassID& ClassID() const {
 			return G_FOURCONSTANTPROPERTY1D_CLASSID;

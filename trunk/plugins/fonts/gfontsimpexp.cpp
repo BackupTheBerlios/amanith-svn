@@ -1,5 +1,5 @@
 /****************************************************************************
-** $file: amanith/plugins/fonts/gfontimpext.cpp   0.1.0.0   edited Jun 30 08:00
+** $file: amanith/plugins/fonts/gfontimpext.cpp   0.1.1.0   edited Sep 24 08:00
 **
 ** 2D Font import/export plugin implementation.
 **
@@ -60,11 +60,6 @@ GFontsImpExp::GFontsImpExp(const GElement* Owner) : GImpExp(Owner) {
 
 // destructor
 GFontsImpExp::~GFontsImpExp() {
-
-	FT_Error error;
-
-	error = FT_Done_FreeType(gFontLibrary);
-	gFontLibraryInitialized = G_FALSE;
 }
 
 // initialize FreeType library
@@ -72,11 +67,11 @@ GError GFontsImpExp::InitFTLibrary() {
 
 	FT_Error error;
 
-	if (gFontLibraryInitialized == false) {
+	if (gFontLibraryInitialized == G_FALSE) {
 		error = FT_Init_FreeType(&gFontLibrary);
 		if (error)
 			return G_MEMORY_ERROR;
-		gFontLibraryInitialized = true;
+		gFontLibraryInitialized = G_TRUE;
 	}
 	return G_NO_ERROR;
 }
@@ -393,8 +388,14 @@ GError GFontsImpExp::DoRead(const GChar8 *FullFileName, GElement& Element, const
 		if (StrUtils::SameText(it->OptionName, "scale"))
 			scale = (GReal)StrUtils::ToDouble(it->OptionValue);
 	}
+	// init freetype2 library
 	InitFTLibrary();
-	return ReadFont(FullFileName, Element, outerCCW, metricsFile, scale);
+	// read the font
+	GError err = ReadFont(FullFileName, Element, outerCCW, metricsFile, scale);
+	// destroy freetype2 library
+	FT_Done_FreeType(gFontLibrary);
+	gFontLibraryInitialized = G_FALSE;
+	return err;
 }
 
 GError GFontsImpExp::DoWrite(const GChar8 *FullFileName, const GElement& Element,

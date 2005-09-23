@@ -1,5 +1,5 @@
 /****************************************************************************
-** $file: amanith/2d/ghermitecurve2d.h   0.1.0.0   edited Jun 30 08:00
+** $file: amanith/2d/ghermitecurve2d.h   0.1.1.0   edited Sep 24 08:00
 **
 ** 2D Hermite curve segment definition.
 **
@@ -358,6 +358,14 @@ namespace Amanith {
 		*/
 		GError SetKey(const GUInt32 Index, const GPoint2& NewKeyValue, const GVector2& InTangent,
 					  const GVector2& OutTangent);
+		/*!
+			Recalculate all tangents, using a smoothing schema (Catmull-Rom).
+
+			\param SmoothEnds if G_TRUE, set first and last key tangents to the same value (useful for a looped
+			curve).
+			\note this method do nothing if there aren't at least 2 keys.
+		*/
+		void RecalcSmoothTangents(const GBool SmoothEnds = G_TRUE);
 		/*!
 			Set curve domain.
 

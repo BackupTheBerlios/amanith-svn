@@ -1,5 +1,5 @@
 /****************************************************************************
-** $file: amanith/1d/ghermitecurve1d.h   0.1.0.0   edited Jun 30 08:00
+** $file: amanith/1d/ghermitecurve1d.h   0.1.1.0   edited Sep 24 08:00
 **
 ** 1D Hermite curve segment definition.
 **
@@ -236,14 +236,14 @@ namespace Amanith {
 			return (GUInt32)gKeys.size();
 		}
 		/*!
-		Given a domain value, it returns the span index that includes it.
+			Given a domain value, it returns the span index that includes it.
 
-		\param Param the domain parameter
-		\param KeyIndex the lower key index of the interval where Param is included. Param is contained
-		in the interval [KeyIndex, KeyIndex+1)
-		\return G_TRUE if the domain value is inside the current domain, G_FALSE otherwise.
-		\note if Param is equal to DomainEnd(), then the index KeyIndex+1 is not valid. So you must
-		check this case before calling ParamToKeyIndex.
+			\param Param the domain parameter
+			\param KeyIndex the lower key index of the interval where Param is included. Param is contained
+			in the interval [KeyIndex, KeyIndex+1)
+			\return G_TRUE if the domain value is inside the current domain, G_FALSE otherwise.
+			\note if Param is equal to DomainEnd(), then the index KeyIndex+1 is not valid. So you must
+			check this case before calling ParamToKeyIndex.
 		*/
 		GBool ParamToKeyIndex(const GReal Param, GUInt32& KeyIndex) const;
 		//! Get Index-th key point; Index must be valid, else a point with infinitive component is returned.
@@ -295,16 +295,14 @@ namespace Amanith {
 			\return G_NO_ERROR if the operation succeeds, an error code otherwise.
 		*/
 		GError SetKey(const GUInt32 Index, const GReal NewKeyValue, const GReal InTangent, const GReal OutTangent);
-		/*
-			Add a key to the curve.
+		/*!
+			Recalculate all tangents, using a smoothing schema (Catmull-Rom).
 
-			\param NewKey the key to add.
-			\param InsertedIndex the index (into the internal keys array) where the key has been inserted.
-			\param AlreadyExists a G_TRUE value means that the added key has overridden an already existing key, because
-			they occupied the same domain position.
-		
-		GError AddKey(const GHermiteKey1D& NewKey, GUInt32& InsertedIndex, GBool& AlreadyExists);*/
-
+			\param SmoothEnds if G_TRUE, set first and last key tangents to the same value (useful for a looped
+			curve).
+			\note this method do nothing if there aren't at least 2 keys.
+		*/
+		void RecalcSmoothTangents(const GBool SmoothEnds = G_TRUE);
 		/*!
 			Set curve domain.
 

@@ -83,7 +83,7 @@
 				AdditionalDependencies="$(AMANITHDIR)/lib/libzlib.lib $(AMANITHDIR)/lib/libfreetype2.lib $(AMANITHDIR)/lib/amanith.lib"
 				OutputFile="$(AMANITHDIR)/plugins/fontimpexp.dll"
 				LinkIncremental="1"
-				GenerateDebugInformation="TRUE"
+				GenerateDebugInformation="FALSE"
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"

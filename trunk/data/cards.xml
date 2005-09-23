@@ -1,0 +1,452 @@
+<?xml version="1.0"?> 
+<root>
+
+
+	<animation>
+		<position>
+			<key time="0" value="2.5, 2.0"/>
+			<key time="0.4" value="-0.4, 0.5"/>
+			<key time="1" value="0.6, -2.5"/>
+		</position>
+		<rotation>
+			<key time="0" value="0"/>
+			<key time="1" value="12"/>
+		</rotation>
+		<scale>
+			<key time="0" value="1.3, 1.3"/>
+			<key time="0.33" value="0.4, 0.4"/>
+			<key time="0.67" value="0.6, 0.6"/>
+			<key time="1" value="0.3, 0.3"/>
+		</scale>
+	</animation>
+
+	<animation>
+		<position>
+			<key time="0" value="-2.5, -2.0"/>
+			<key time="0.4" value="0.4, 0.5"/>
+			<key time="1" value="-0.6, 3.5"/>
+		</position>
+		<rotation>
+			<key time="0" value="0"/>
+			<key time="1" value="8"/>
+		</rotation>
+		<scale>
+			<key time="0" value="1.5, 1.5"/>
+			<key time="0.5" value="1.0, 1.0"/>
+			<key time="1" value="0.2, 0.2"/>
+		</scale>
+	</animation>
+
+	<animation>
+		<position>
+			<key time="0" value="-3.0, 3.0"/>
+			<key time="0.5" value="0.7, 0"/>
+			<key time="1" value="0.0, -2.0"/>
+		</position>
+		<rotation>
+			<key time="0" value="0"/>
+			<key time="1" value="16"/>
+		</rotation>
+		<scale>
+			<key time="0" value="2.0, 2.0"/>
+			<key time="0.5" value="1.0, 1.0"/>
+			<key time="1" value="0.3, 0.3"/>
+		</scale>
+	</animation>
+
+	<animation>
+		<position>
+			<key time="0" value="3.0, 3.0"/>
+			<key time="0.5" value="-0.7, 0"/>
+			<key time="1" value="0.0, -2.0"/>
+		</position>
+		<rotation>
+			<key time="0" value="0"/>
+			<key time="1" value="-10"/>
+		</rotation>
+		<scale>
+			<key time="0" value="2.0, 2.0"/>
+			<key time="0.65" value="1.0, 1.0"/>
+			<key time="1" value="0.3, 0.3"/>
+		</scale>
+	</animation>
+
+	<animation>
+		<position>
+			<key time="0" value="-2.0, -2.0"/>
+			<key time="0.5" value="0.5, -0.5"/>
+			<key time="1" value="1.0, 2.0"/>
+		</position>
+		<rotation>
+			<key time="0" value="0"/>
+			<key time="1" value="8"/>
+		</rotation>
+		<scale>
+			<key time="0" value="0.7, 0.7"/>
+			<key time="0.5" value="1.0, 1.0"/>
+			<key time="1" value="0.2, 0.2"/>
+		</scale>
+	</animation>
+
+	<animation>
+		<position>
+			<key time="0" value="2.0, -2.0"/>
+			<key time="0.33" value="-0.5, -1.0"/>
+			<key time="0.67" value="0.0, 0.7"/>
+			<key time="1" value="2.0, 0.0"/>
+		</position>
+		<rotation>
+			<key time="0" value="0"/>
+			<key time="1" value="-12"/>
+		</rotation>
+		<scale>
+			<key time="0" value="0.8, 0.8"/>
+			<key time="0.3" value="0.5, 0.5"/>
+			<key time="1" value="0.07, 0.07"/>
+		</scale>
+	</animation>
+	
+	<animation>
+		<position>
+			<key time="0" value="-0.3, 4.0"/>
+			<key time="1" value="0.3, -4.0"/>
+		</position>
+		<rotation>
+			<key time="0" value="0"/>
+			<key time="1" value="4"/>
+		</rotation>
+		<scale>
+			<key time="0" value="3.5, 3.5"/>
+			<key time="1" value="2.0, 2.0"/>
+		</scale>
+	</animation>	
+
+<!-- HEARTS -->
+	<card name="cuori_asso" rootglyph="30">
+		<glyph id="30" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="1.0, 1.0, 1.0" isopaque="true" opacity="0.5"/>
+		<glyph id="29" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="08" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.8, 0.1, 0.1" isopaque="true" opacity="0.5"/>
+	</card>
+
+	<card name="cuori_due" rootglyph="30">
+		<glyph id="30" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="1.0, 1.0, 1.0" isopaque="true" opacity="0.5"/>
+		<glyph id="29" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="09" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.8, 0.1, 0.1" isopaque="true" opacity="0.5"/>
+	</card>
+
+	<card name="cuori_tre" rootglyph="30">
+		<glyph id="30" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="1.0, 1.0, 1.0" isopaque="true" opacity="0.5"/>
+		<glyph id="29" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="10" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.8, 0.1, 0.1" isopaque="true" opacity="0.5"/>
+	</card>
+
+	<card name="cuori_quattro" rootglyph="30">
+		<glyph id="30" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="1.0, 1.0, 1.0" isopaque="true" opacity="0.5"/>
+		<glyph id="29" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="11" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.8, 0.1, 0.1" isopaque="true" opacity="0.5"/>
+	</card>
+	
+	<card name="cuori_cinque" rootglyph="30">
+		<glyph id="30" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="1.0, 1.0, 1.0" isopaque="true" opacity="0.5"/>
+		<glyph id="29" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="12" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.8, 0.1, 0.1" isopaque="true" opacity="0.5"/>
+	</card>
+
+	<card name="cuori_sei" rootglyph="30">
+		<glyph id="30" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="1.0, 1.0, 1.0" isopaque="true" opacity="0.5"/>
+		<glyph id="29" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="13" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.8, 0.1, 0.1" isopaque="true" opacity="0.5"/>
+	</card>
+
+	<card name="cuori_sette" rootglyph="30">
+		<glyph id="30" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="1.0, 1.0, 1.0" isopaque="true" opacity="0.5"/>
+		<glyph id="29" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="14" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.8, 0.1, 0.1" isopaque="true" opacity="0.5"/>
+	</card>
+	
+	<card name="cuori_jack" rootglyph="30">
+		<glyph id="30" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="1.0, 1.0, 1.0" isopaque="true" opacity="0.5"/>
+		<glyph id="29" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="57" pivot="0.550, 0.600" pos="-0.001, 0" rot="0" scl="1, 1" color="1.0, 0.8, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="58" pivot="0.550, 0.600" pos="-0.001, 0" rot="0" scl="1, 1" color="0.9, 0.5, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="59" pivot="0.550, 0.600" pos="-0.001, 0" rot="0" scl="1, 1" color="0.1, 0.35, 0.8" isopaque="true" opacity="0.5"/>
+		<glyph id="60" pivot="0.550, 0.600" pos="-0.001, 0" rot="0" scl="1, 1" color="0.85, 0.05, 0.1" isopaque="true" opacity="0.5"/>
+		<glyph id="42" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="38" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.85, 0.05, 0.1" isopaque="true" opacity="0.5"/>
+		<glyph id="63" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.85, 0.05, 0.1" isopaque="true" opacity="0.5"/>
+		<glyph id="67" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.85, 0.05, 0.1" isopaque="true" opacity="0.5"/>
+	</card>
+
+	<card name="cuori_donna" rootglyph="30">
+		<glyph id="30" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="1.0, 1.0, 1.0" isopaque="true" opacity="0.5"/>
+		<glyph id="29" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="52" pivot="0.550, 0.600" pos="0, 0.002" rot="0" scl="1, 1" color="1.0, 0.8, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="53" pivot="0.550, 0.600" pos="-0.001, 0.002" rot="0" scl="1, 1" color="0.85, 0.05, 0.1" isopaque="true" opacity="0.5"/>
+		<glyph id="54" pivot="0.550, 0.600" pos="0, 0.002" rot="0" scl="1, 1" color="0.9, 0.5, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="55" pivot="0.550, 0.600" pos="-0.001, 0.002" rot="0" scl="1, 1" color="0.1, 0.35, 0.8" isopaque="true" opacity="0.5"/>
+		<glyph id="41" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="39" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.85, 0.05, 0.1" isopaque="true" opacity="0.5"/>
+		<glyph id="63" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.85, 0.05, 0.1" isopaque="true" opacity="0.5"/>
+		<glyph id="67" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.85, 0.05, 0.1" isopaque="true" opacity="0.5"/>
+	</card>
+
+	<card name="cuori_kappa" rootglyph="30">
+		<glyph id="30" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="1.0, 1.0, 1.0" isopaque="true" opacity="0.5"/>
+		<glyph id="29" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="46" pivot="0.550, 0.600" pos="-0.001, -0.001" rot="0" scl="1, 1" color="1.0, 0.8, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="47" pivot="0.550, 0.600" pos="-0.001, -0.001" rot="0" scl="1, 1" color="0.85, 0.05, 0.1" isopaque="true" opacity="0.5"/>
+		<glyph id="49" pivot="0.550, 0.600" pos="-0.001, -0.001" rot="0" scl="1, 1" color="0.9, 0.5, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="50" pivot="0.550, 0.600" pos="-0.001, -0.001" rot="0" scl="1, 1" color="0.1, 0.35, 0.8" isopaque="true" opacity="0.5"/>
+		<glyph id="43" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="40" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.85, 0.05, 0.1" isopaque="true" opacity="0.5"/>
+		<glyph id="63" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.85, 0.05, 0.1" isopaque="true" opacity="0.5"/>
+		<glyph id="67" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.85, 0.05, 0.1" isopaque="true" opacity="0.5"/>
+	</card>
+
+<!-- SPADES -->
+	<card name="picche_asso" rootglyph="30">
+		<glyph id="30" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="1.0, 1.0, 1.0" isopaque="true" opacity="0.5"/>
+		<glyph id="29" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="15" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+	</card>
+
+	<card name="picche_due" rootglyph="30">
+		<glyph id="30" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="1.0, 1.0, 1.0" isopaque="true" opacity="0.5"/>
+		<glyph id="29" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="16" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+	</card>
+
+	<card name="picche_tre" rootglyph="30">
+		<glyph id="30" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="1.0, 1.0, 1.0" isopaque="true" opacity="0.5"/>
+		<glyph id="29" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="17" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+	</card>
+
+	<card name="picche_quattro" rootglyph="30">
+		<glyph id="30" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="1.0, 1.0, 1.0" isopaque="true" opacity="0.5"/>
+		<glyph id="29" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="18" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+	</card>
+	
+	<card name="picche_cinque" rootglyph="30">
+		<glyph id="30" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="1.0, 1.0, 1.0" isopaque="true" opacity="0.5"/>
+		<glyph id="29" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="19" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+	</card>
+
+	<card name="picche_sei" rootglyph="30">
+		<glyph id="30" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="1.0, 1.0, 1.0" isopaque="true" opacity="0.5"/>
+		<glyph id="29" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="20" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+	</card>
+
+	<card name="picche_sette" rootglyph="30">
+		<glyph id="30" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="1.0, 1.0, 1.0" isopaque="true" opacity="0.5"/>
+		<glyph id="29" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="21" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+	</card>
+	
+	<card name="picche_jack" rootglyph="30">
+		<glyph id="30" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="1.0, 1.0, 1.0" isopaque="true" opacity="0.5"/>
+		<glyph id="29" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="57" pivot="0.550, 0.600" pos="-0.001, 0" rot="0" scl="1, 1" color="1.0, 0.8, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="58" pivot="0.550, 0.600" pos="-0.001, 0" rot="0" scl="1, 1" color="0.9, 0.5, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="59" pivot="0.550, 0.600" pos="-0.001, 0" rot="0" scl="1, 1" color="0.85, 0.05, 0.1" isopaque="true" opacity="0.5"/>
+		<glyph id="60" pivot="0.550, 0.600" pos="-0.001, 0" rot="0" scl="1, 1" color="0.1, 0.35, 0.8" isopaque="true" opacity="0.5"/>
+		<glyph id="42" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="38" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="64" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="68" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+	</card>
+
+	<card name="picche_donna" rootglyph="30">
+		<glyph id="30" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="1.0, 1.0, 1.0" isopaque="true" opacity="0.5"/>
+		<glyph id="29" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="52" pivot="0.550, 0.600" pos="0, 0.002" rot="0" scl="1, 1" color="1.0, 0.8, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="53" pivot="0.550, 0.600" pos="-0.001, 0.002" rot="0" scl="1, 1" color="0.1, 0.35, 0.8" isopaque="true" opacity="0.5"/>
+		<glyph id="54" pivot="0.550, 0.600" pos="0, 0.002" rot="0" scl="1, 1" color="0.9, 0.5, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="55" pivot="0.550, 0.600" pos="-0.001, 0.002" rot="0" scl="1, 1" color="0.85, 0.05, 0.1" isopaque="true" opacity="0.5"/>
+		<glyph id="41" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="39" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="64" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="68" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+	</card>
+
+	<card name="picche_kappa" rootglyph="30">
+		<glyph id="30" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="1.0, 1.0, 1.0" isopaque="true" opacity="0.5"/>
+		<glyph id="29" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="46" pivot="0.550, 0.600" pos="-0.001, -0.001" rot="0" scl="1, 1" color="1.0, 0.8, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="47" pivot="0.550, 0.600" pos="-0.001, -0.001" rot="0" scl="1, 1" color="0.1, 0.35, 0.8" isopaque="true" opacity="0.5"/>
+		<glyph id="49" pivot="0.550, 0.600" pos="-0.001, -0.001" rot="0" scl="1, 1" color="0.9, 0.5, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="50" pivot="0.550, 0.600" pos="-0.001, -0.001" rot="0" scl="1, 1" color="0.85, 0.05, 0.1" isopaque="true" opacity="0.5"/>
+		<glyph id="43" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="40" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="64" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="68" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+	</card>
+
+<!-- DIAMONDS -->
+	<card name="quadri_asso" rootglyph="30">
+		<glyph id="30" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="1.0, 1.0, 1.0" isopaque="true" opacity="0.5"/>
+		<glyph id="29" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="01" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.8, 0.1, 0.1" isopaque="true" opacity="0.5"/>
+	</card>
+
+	<card name="quadri_due" rootglyph="30">
+		<glyph id="30" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="1.0, 1.0, 1.0" isopaque="true" opacity="0.5"/>
+		<glyph id="29" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="02" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.8, 0.1, 0.1" isopaque="true" opacity="0.5"/>
+	</card>
+
+	<card name="quadri_tre" rootglyph="30">
+		<glyph id="30" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="1.0, 1.0, 1.0" isopaque="true" opacity="0.5"/>
+		<glyph id="29" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="03" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.8, 0.1, 0.1" isopaque="true" opacity="0.5"/>
+	</card>
+
+	<card name="quadri_quattro" rootglyph="30">
+		<glyph id="30" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="1.0, 1.0, 1.0" isopaque="true" opacity="0.5"/>
+		<glyph id="29" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="04" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.8, 0.1, 0.1" isopaque="true" opacity="0.5"/>
+	</card>
+	
+	<card name="quadri_cinque" rootglyph="30">
+		<glyph id="30" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="1.0, 1.0, 1.0" isopaque="true" opacity="0.5"/>
+		<glyph id="29" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="05" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.8, 0.1, 0.1" isopaque="true" opacity="0.5"/>
+	</card>
+
+	<card name="quadri_sei" rootglyph="30">
+		<glyph id="30" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="1.0, 1.0, 1.0" isopaque="true" opacity="0.5"/>
+		<glyph id="29" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="06" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.8, 0.1, 0.1" isopaque="true" opacity="0.5"/>
+	</card>
+
+	<card name="quadri_sette" rootglyph="30">
+		<glyph id="30" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="1.0, 1.0, 1.0" isopaque="true" opacity="0.5"/>
+		<glyph id="29" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="07" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.8, 0.1, 0.1" isopaque="true" opacity="0.5"/>
+	</card>
+	
+	<card name="quadri_jack" rootglyph="30">
+		<glyph id="30" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="1.0, 1.0, 1.0" isopaque="true" opacity="0.5"/>
+		<glyph id="29" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="57" pivot="0.550, 0.600" pos="-0.001, 0" rot="0" scl="1, 1" color="1.0, 0.8, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="58" pivot="0.550, 0.600" pos="-0.001, 0" rot="0" scl="1, 1" color="0.9, 0.5, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="59" pivot="0.550, 0.600" pos="-0.001, 0" rot="0" scl="1, 1" color="0.1, 0.35, 0.8" isopaque="true" opacity="0.5"/>
+		<glyph id="60" pivot="0.550, 0.600" pos="-0.001, 0" rot="0" scl="1, 1" color="0.85, 0.05, 0.1" isopaque="true" opacity="0.5"/>
+		<glyph id="42" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="38" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.85, 0.05, 0.1" isopaque="true" opacity="0.5"/>
+		<glyph id="62" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.85, 0.05, 0.1" isopaque="true" opacity="0.5"/>
+		<glyph id="66" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.85, 0.05, 0.1" isopaque="true" opacity="0.5"/>
+	</card>
+
+	<card name="quadri_donna" rootglyph="30">
+		<glyph id="30" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="1.0, 1.0, 1.0" isopaque="true" opacity="0.5"/>
+		<glyph id="29" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="52" pivot="0.550, 0.600" pos="0, 0.002" rot="0" scl="1, 1" color="1.0, 0.8, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="53" pivot="0.550, 0.600" pos="-0.001, 0.002" rot="0" scl="1, 1" color="0.85, 0.05, 0.1" isopaque="true" opacity="0.5"/>
+		<glyph id="54" pivot="0.550, 0.600" pos="0, 0.002" rot="0" scl="1, 1" color="0.9, 0.5, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="55" pivot="0.550, 0.600" pos="-0.001, 0.002" rot="0" scl="1, 1" color="0.1, 0.35, 0.8" isopaque="true" opacity="0.5"/>
+		<glyph id="41" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="39" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.85, 0.05, 0.1" isopaque="true" opacity="0.5"/>
+		<glyph id="62" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.85, 0.05, 0.1" isopaque="true" opacity="0.5"/>
+		<glyph id="66" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.85, 0.05, 0.1" isopaque="true" opacity="0.5"/>
+	</card>
+
+	<card name="quadri_kappa" rootglyph="30">
+		<glyph id="30" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="1.0, 1.0, 1.0" isopaque="true" opacity="0.5"/>
+		<glyph id="29" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="46" pivot="0.550, 0.600" pos="-0.001, -0.001" rot="0" scl="1, 1" color="1.0, 0.8, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="47" pivot="0.550, 0.600" pos="-0.001, -0.001" rot="0" scl="1, 1" color="0.85, 0.05, 0.1" isopaque="true" opacity="0.5"/>
+		<glyph id="49" pivot="0.550, 0.600" pos="-0.001, -0.001" rot="0" scl="1, 1" color="0.9, 0.5, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="50" pivot="0.550, 0.600" pos="-0.001, -0.001" rot="0" scl="1, 1" color="0.1, 0.35, 0.8" isopaque="true" opacity="0.5"/>
+		<glyph id="43" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="40" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.85, 0.05, 0.1" isopaque="true" opacity="0.5"/>
+		<glyph id="62" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.85, 0.05, 0.1" isopaque="true" opacity="0.5"/>
+		<glyph id="66" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.85, 0.05, 0.1" isopaque="true" opacity="0.5"/>
+	</card>
+
+<!-- CLUBS -->
+	<card name="fiori_asso" rootglyph="30">
+		<glyph id="30" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="1.0, 1.0, 1.0" isopaque="true" opacity="0.5"/>
+		<glyph id="29" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="22" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+	</card>
+
+	<card name="fiori_due" rootglyph="30">
+		<glyph id="30" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="1.0, 1.0, 1.0" isopaque="true" opacity="0.5"/>
+		<glyph id="29" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="23" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+	</card>
+
+	<card name="fiori_tre" rootglyph="30">
+		<glyph id="30" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="1.0, 1.0, 1.0" isopaque="true" opacity="0.5"/>
+		<glyph id="29" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="24" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+	</card>
+
+	<card name="fiori_quattro" rootglyph="30">
+		<glyph id="30" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="1.0, 1.0, 1.0" isopaque="true" opacity="0.5"/>
+		<glyph id="29" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="25" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+	</card>
+	
+	<card name="fiori_cinque" rootglyph="30">
+		<glyph id="30" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="1.0, 1.0, 1.0" isopaque="true" opacity="0.5"/>
+		<glyph id="29" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="26" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+	</card>
+
+	<card name="fiori_sei" rootglyph="30">
+		<glyph id="30" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="1.0, 1.0, 1.0" isopaque="true" opacity="0.5"/>
+		<glyph id="29" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="27" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+	</card>
+
+	<card name="fiori_sette" rootglyph="30">
+		<glyph id="30" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="1.0, 1.0, 1.0" isopaque="true" opacity="0.5"/>
+		<glyph id="29" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="28" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+	</card>
+	
+	<card name="fiori_jack" rootglyph="30">
+		<glyph id="30" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="1.0, 1.0, 1.0" isopaque="true" opacity="0.5"/>
+		<glyph id="29" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="57" pivot="0.550, 0.600" pos="-0.001, 0" rot="0" scl="1, 1" color="1.0, 0.8, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="58" pivot="0.550, 0.600" pos="-0.001, 0" rot="0" scl="1, 1" color="0.9, 0.5, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="59" pivot="0.550, 0.600" pos="-0.001, 0" rot="0" scl="1, 1" color="0.85, 0.05, 0.1" isopaque="true" opacity="0.5"/>
+		<glyph id="60" pivot="0.550, 0.600" pos="-0.001, 0" rot="0" scl="1, 1" color="0.1, 0.35, 0.8" isopaque="true" opacity="0.5"/>
+		<glyph id="42" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="38" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="65" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="69" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+	</card>
+
+	<card name="fiori_donna" rootglyph="30">
+		<glyph id="30" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="1.0, 1.0, 1.0" isopaque="true" opacity="0.5"/>
+		<glyph id="29" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="52" pivot="0.550, 0.600" pos="0, 0.002" rot="0" scl="1, 1" color="1.0, 0.8, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="53" pivot="0.550, 0.600" pos="-0.001, 0.002" rot="0" scl="1, 1" color="0.1, 0.35, 0.8" isopaque="true" opacity="0.5"/>
+		<glyph id="54" pivot="0.550, 0.600" pos="0, 0.002" rot="0" scl="1, 1" color="0.9, 0.5, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="55" pivot="0.550, 0.600" pos="-0.001, 0.002" rot="0" scl="1, 1" color="0.85, 0.05, 0.1" isopaque="true" opacity="0.5"/>
+		<glyph id="41" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="39" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="65" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="69" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+	</card>
+
+	<card name="fiori_kappa" rootglyph="30">
+		<glyph id="30" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="1.0, 1.0, 1.0" isopaque="true" opacity="0.5"/>
+		<glyph id="29" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="46" pivot="0.550, 0.600" pos="-0.001, -0.001" rot="0" scl="1, 1" color="1.0, 0.8, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="47" pivot="0.550, 0.600" pos="-0.001, -0.001" rot="0" scl="1, 1" color="0.1, 0.35, 0.8" isopaque="true" opacity="0.5"/>
+		<glyph id="49" pivot="0.550, 0.600" pos="-0.001, -0.001" rot="0" scl="1, 1" color="0.9, 0.5, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="50" pivot="0.550, 0.600" pos="-0.001, -0.001" rot="0" scl="1, 1" color="0.85, 0.05, 0.1" isopaque="true" opacity="0.5"/>
+		<glyph id="43" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="40" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="65" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+		<glyph id="69" pivot="0.550, 0.600" pos="0, 0" rot="0" scl="1, 1" color="0.0, 0.0, 0.0" isopaque="true" opacity="0.5"/>
+	</card>
+
+</root>

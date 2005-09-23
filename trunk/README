@@ -2,12 +2,12 @@ AMANITH FRAMEWORK README
 ************************
 Crossplatform, Opensource, Ansi C++, Framework aimed to handle 2d and 3d Vector Graphic.
 
- =--------------------------=
- | Version: 1.0 Final       |
- | Released: 03 August 2005 |
- | Licence: QPL             |
- | Url: www.amanith.org     |
- =--------------------------=
+ =-----------------------------=
+ | Version: 0.1.1              |
+ | Released: 24 September 2005 |
+ | Licence: QPL                |
+ | Url: www.amanith.org        |
+ =-----------------------------=
 
 
 Content of the package
@@ -25,6 +25,8 @@ Content of the package
  |-----> doc
  |-----> examples
  |       |-----> opengl
+ |       |       |-----> animcolor
+ |       |       |-----> animshape2d
  |       |       |-----> bezier2d
  |       |       |-----> bspline2d
  |       |       |-----> delaunay2d
@@ -74,6 +76,8 @@ Content of the package
  |       |
  |       |-----> examples
  |       |       |-----> opengl
+ |       |       |       |-----> animcolor
+ |       |       |       |-----> animshape2d
  |       |       |       |-----> bezier2d
  |       |       |       |-----> bspline2d
  |       |       |       |-----> delaunay2d

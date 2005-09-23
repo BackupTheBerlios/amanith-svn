@@ -1,5 +1,5 @@
 /****************************************************************************
-** $file: amanith/src/support/gutilities.cpp   0.1.0.0   edited Jun 30 08:00
+** $file: amanith/src/support/gutilities.cpp   0.1.1.0   edited Sep 24 08:00
 **
 ** Global general purpose utilities.
 **
@@ -708,7 +708,7 @@ GString StrUtils::ToHex(const GUInt32 Number, const GUInt32 Width) {
 	For example, if you split the string "a,,b,c" on commas, Split() returns the three-item list "a", "b", "c" if
 	Empties is G_FALSE (the default), and the four-item list "a", "", "b", "c" if Empties is G_TRUE. 
 */
-GStringList StrUtils::Split(const GString& Value, const GString Separator, GBool Empties) {
+GStringList StrUtils::Split(const GString& Value, const GString& Separator, GBool Empties) {
 
 	GStringList strList;
 	GString nullStr;
@@ -719,10 +719,11 @@ GStringList StrUtils::Split(const GString& Value, const GString Separator, GBool
 	pos1 = (GInt32)Value.find(Separator, pos0);
 
 	while (pos1 >= 0) {
-		GString s = Value.substr(pos0, pos1);
+		//GString s = Value.substr(pos0, pos1);
+		GString s = Value.substr(pos0, pos1 - pos0);
 		if ((s.length() > 0) || Empties)
 			strList.push_back(s);
-		pos0 += pos1 + dlen;
+		pos0 = pos1 + dlen;
 		pos1 = (GInt32)Value.find(Separator, pos0);
 	}
 	GString s = Value.substr(pos0);

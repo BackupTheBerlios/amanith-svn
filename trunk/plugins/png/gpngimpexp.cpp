@@ -1,5 +1,5 @@
 /****************************************************************************
-** $file: amanith/plugins/png/gpngimpext.cpp   0.1.0.0   edited Jun 30 08:00
+** $file: amanith/plugins/png/gpngimpext.cpp   0.1.1.0   edited Sep 24 08:00
 **
 ** 2D Pixelmap PNG import/export plugin implementation.
 **
@@ -523,6 +523,9 @@ GError GPngImpExp::RawPngSave(const GChar8 *FileName, const GInt32 Width, const 
 	/* that's it */
 	return G_NO_ERROR;
 #else
+	// just to avoid warnings
+	if (FileName && Width && Height && PixelFormat && Buffer && NumPaletteEntries && PaletteBuffer && Interlaced)
+		return G_MISSED_FEATURE;
 	return G_MISSED_FEATURE;
 #endif
 }

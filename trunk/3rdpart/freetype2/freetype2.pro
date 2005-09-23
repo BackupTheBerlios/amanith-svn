@@ -81,3 +81,7 @@ win32: {
         LIBS += $$AMANITH_DIR/lib/libzlib.a
     }
 }
+
+linux-g++-64 {
+    QMAKE_CFLAGS += -fPIC 
+}

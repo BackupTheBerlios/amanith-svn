@@ -82,7 +82,7 @@
 				AdditionalDependencies="opengl32.lib glu32.lib $(AMANITHDIR)/lib/amanith.lib"
 				OutputFile="./lowlevel_stuff.exe"
 				LinkIncremental="1"
-				GenerateDebugInformation="TRUE"
+				GenerateDebugInformation="FALSE"
 				SubSystem="1"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
