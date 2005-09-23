@@ -129,7 +129,7 @@ QGLWidgetTest::QGLWidgetTest(QWidget * parent) : QGLWidget(parent) {
 	gLogicTick = 0.5;
 	gAnimCards.resize(gMaxCards);
 	// resize the window
-	QWidget *d = QApplication::desktop();
+	QWidget *d = (QWidget *)QApplication::desktop();
 	GInt32 winSize = GMath::Min(d->width(), d->height());
 	this->resize(winSize-64, winSize-64);
 }
