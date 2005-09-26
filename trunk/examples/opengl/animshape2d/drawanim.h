@@ -40,12 +40,12 @@ using namespace Amanith;
 class GTesselatedGlyph {
 
 private:
-	GDynArray<GPoint2> gPoints;
+	GDynArray< GPoint<GDouble, 2> > gPoints;
 	GLuint gDisplayList;
 
 public:
 	GTesselatedGlyph(const GFontChar2D* FontChar, const GReal Deviation);
-	inline const GDynArray<GPoint2>& Points() const {
+	inline const GDynArray< GPoint<GDouble, 2> >& Points() const {
 		return gPoints;
 	}
 	inline GLuint DisplayList() const {

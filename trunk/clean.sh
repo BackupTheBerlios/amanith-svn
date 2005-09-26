@@ -9,6 +9,8 @@ rm $AMANITHDIR/3rdpart/zlib/Makefile
 rm $AMANITHDIR/build/Makefile
 rm $AMANITHDIR/examples/Makefile
 rm $AMANITHDIR/examples/opengl/Makefile
+rm $AMANITHDIR/examples/opengl/animcolor/Makefile
+rm $AMANITHDIR/examples/opengl/animshape2d/Makefile
 rm $AMANITHDIR/examples/opengl/bezier2d/Makefile
 rm $AMANITHDIR/examples/opengl/bspline2d/Makefile
 rm $AMANITHDIR/examples/opengl/delaunay2d/Makefile
@@ -34,6 +36,8 @@ rm $AMANITHDIR/tools/uuid_gen/Makefile
 rm $AMANITHDIR/lib/*
 rm $AMANITHDIR/plugins/lib*
 
+rm $AMANITHDIR/examples/opengl/animcolor/drawanim
+rm $AMANITHDIR/examples/opengl/animshape2d/drawanim
 rm $AMANITHDIR/examples/opengl/bezier2d/drawbezier
 rm $AMANITHDIR/examples/opengl/bspline2d/drawbspline
 rm $AMANITHDIR/examples/opengl/delaunay2d/delaunay2d
@@ -49,3 +53,5 @@ rm $AMANITHDIR/examples/others/lowlevel_stuff/lowlevel
 rm $AMANITHDIR/examples/viewimage/viewimage
 rm $AMANITHDIR/tools/plugwizard/plugwizard
 rm $AMANITHDIR/tools/uuid_gen/uuid_gen
+
+make distclean

@@ -81,15 +81,9 @@ void GTesselatedGlyph::GenDisplayList() {
 	GUInt32 i, j = (GUInt32)gPoints.size();
 	glBegin(GL_TRIANGLES);
 	for (i = 0; i < j; i+=3) {
-#ifdef DOUBLE_REAL_TYPE
 		glVertex2d(gPoints[i + 0][G_X], gPoints[i + 0][G_Y]);
 		glVertex2d(gPoints[i + 1][G_X], gPoints[i + 1][G_Y]);
 		glVertex2d(gPoints[i + 2][G_X], gPoints[i + 2][G_Y]);
-#else
-		glVertex2f(gPoints[i + 0][G_X], gPoints[i + 0][G_Y]);
-		glVertex2f(gPoints[i + 1][G_X], gPoints[i + 1][G_Y]);
-		glVertex2f(gPoints[i + 2][G_X], gPoints[i + 2][G_Y]);
-#endif
 	}
 	glEnd();
 	glEndList();
@@ -168,96 +162,96 @@ void QGLWidgetTest::LoadBackGraoundAndLogo(const GString& FileName) {
 	tmpKeys.clear();
 	p = (GHermiteProperty1D *)gBackGroundAnimUV->Property("transform")->Property("position")->Property("x");
 	p->SetOORAfter(G_LOOP_OOR);
-	tmpKeys.push_back(GKeyValue(0.00, (GReal)-2));
-	tmpKeys.push_back(GKeyValue(0.33, (GReal)2));
-	tmpKeys.push_back(GKeyValue(0.67, (GReal)0));
-	tmpKeys.push_back(GKeyValue(1.00, (GReal)-2));
+	tmpKeys.push_back(GKeyValue((GTimeValue)0.00, (GReal)-2));
+	tmpKeys.push_back(GKeyValue((GTimeValue)0.33, (GReal)2));
+	tmpKeys.push_back(GKeyValue((GTimeValue)0.67, (GReal)0));
+	tmpKeys.push_back(GKeyValue((GTimeValue)1.00, (GReal)-2));
 	p->SetKeys(tmpKeys);
 	// y-position
 	tmpKeys.clear();
 	p = (GHermiteProperty1D *)gBackGroundAnimUV->Property("transform")->Property("position")->Property("y");
 	p->SetOORAfter(G_LOOP_OOR);
-	tmpKeys.push_back(GKeyValue(0.00, (GReal)1));
-	tmpKeys.push_back(GKeyValue(0.33, (GReal)2));
-	tmpKeys.push_back(GKeyValue(0.67, (GReal)-2));
-	tmpKeys.push_back(GKeyValue(1.00, (GReal)1));
+	tmpKeys.push_back(GKeyValue((GTimeValue)0.00, (GReal)1));
+	tmpKeys.push_back(GKeyValue((GTimeValue)0.33, (GReal)2));
+	tmpKeys.push_back(GKeyValue((GTimeValue)0.67, (GReal)-2));
+	tmpKeys.push_back(GKeyValue((GTimeValue)1.00, (GReal)1));
 	p->SetKeys(tmpKeys);
 	// rotation
 	tmpKeys.clear();
 	p = (GHermiteProperty1D *)gBackGroundAnimUV->Property("transform")->Property("rotation");
 	p->SetOORAfter(G_LOOP_OOR);
-	tmpKeys.push_back(GKeyValue(0.00, (GReal)0));
-	tmpKeys.push_back(GKeyValue(0.25, (GReal)1.57 * 2));
-	tmpKeys.push_back(GKeyValue(0.50, (GReal)3.14 * 2));
-	tmpKeys.push_back(GKeyValue(0.75, (GReal)4.71 * 2));
-	tmpKeys.push_back(GKeyValue(1.00, (GReal)6.28 * 2));
+	tmpKeys.push_back(GKeyValue((GTimeValue)0.00, (GReal)0));
+	tmpKeys.push_back(GKeyValue((GTimeValue)0.25, (GReal)1.57 * 2));
+	tmpKeys.push_back(GKeyValue((GTimeValue)0.50, (GReal)3.14 * 2));
+	tmpKeys.push_back(GKeyValue((GTimeValue)0.75, (GReal)4.71 * 2));
+	tmpKeys.push_back(GKeyValue((GTimeValue)1.00, (GReal)6.28 * 2));
 	p->SetKeys(tmpKeys);
 	// x-scale
 	tmpKeys.clear();
 	p = (GHermiteProperty1D *)gBackGroundAnimUV->Property("transform")->Property("scale")->Property("x");
 	p->SetOORAfter(G_LOOP_OOR);
-	tmpKeys.push_back(GKeyValue(0.00, (GReal)1));
-	tmpKeys.push_back(GKeyValue(0.33, (GReal)3));
-	tmpKeys.push_back(GKeyValue(0.67, (GReal)0.9));
-	tmpKeys.push_back(GKeyValue(1.00, (GReal)1));
+	tmpKeys.push_back(GKeyValue((GTimeValue)0.00, (GReal)1));
+	tmpKeys.push_back(GKeyValue((GTimeValue)0.33, (GReal)3));
+	tmpKeys.push_back(GKeyValue((GTimeValue)0.67, (GReal)0.9));
+	tmpKeys.push_back(GKeyValue((GTimeValue)1.00, (GReal)1));
 	p->SetKeys(tmpKeys);
 	// y-scale
 	tmpKeys.clear();
 	p = (GHermiteProperty1D *)gBackGroundAnimUV->Property("transform")->Property("scale")->Property("y");
 	p->SetOORAfter(G_LOOP_OOR);
-	tmpKeys.push_back(GKeyValue(0.00, (GReal)1));
-	tmpKeys.push_back(GKeyValue(0.33, (GReal)3));
-	tmpKeys.push_back(GKeyValue(0.67, (GReal)0.9));
-	tmpKeys.push_back(GKeyValue(1.00, (GReal)1));
+	tmpKeys.push_back(GKeyValue((GTimeValue)0.00, (GReal)1));
+	tmpKeys.push_back(GKeyValue((GTimeValue)0.33, (GReal)3));
+	tmpKeys.push_back(GKeyValue((GTimeValue)0.67, (GReal)0.9));
+	tmpKeys.push_back(GKeyValue((GTimeValue)1.00, (GReal)1));
 	p->SetKeys(tmpKeys);
 
 	// red color
 	tmpKeys.clear();
 	p = (GHermiteProperty1D *)gBackGroundAnimColor->Property("x");
 	p->SetOORAfter(G_LOOP_OOR);
-	tmpKeys.push_back(GKeyValue(0.00, (GReal)0.7));
-	tmpKeys.push_back(GKeyValue(0.50, (GReal)0.0));
-	tmpKeys.push_back(GKeyValue(0.75, (GReal)0.0));
-	tmpKeys.push_back(GKeyValue(1.00, (GReal)0.7));
+	tmpKeys.push_back(GKeyValue((GTimeValue)0.00, (GReal)0.7));
+	tmpKeys.push_back(GKeyValue((GTimeValue)0.50, (GReal)0.0));
+	tmpKeys.push_back(GKeyValue((GTimeValue)0.75, (GReal)0.0));
+	tmpKeys.push_back(GKeyValue((GTimeValue)1.00, (GReal)0.7));
 	p->SetKeys(tmpKeys);
 	// green color
 	tmpKeys.clear();
 	p = (GHermiteProperty1D *)gBackGroundAnimColor->Property("y");
 	p->SetOORAfter(G_LOOP_OOR);
-	tmpKeys.push_back(GKeyValue(0.00, (GReal)0.0));
-	tmpKeys.push_back(GKeyValue(0.50, (GReal)0.1));
-	tmpKeys.push_back(GKeyValue(0.75, (GReal)0.7));
-	tmpKeys.push_back(GKeyValue(1.00, (GReal)0.0));
+	tmpKeys.push_back(GKeyValue((GTimeValue)0.00, (GReal)0.0));
+	tmpKeys.push_back(GKeyValue((GTimeValue)0.50, (GReal)0.1));
+	tmpKeys.push_back(GKeyValue((GTimeValue)0.75, (GReal)0.7));
+	tmpKeys.push_back(GKeyValue((GTimeValue)1.00, (GReal)0.0));
 	p->SetKeys(tmpKeys);
 	// blue color
 	tmpKeys.clear();
 	p = (GHermiteProperty1D *)gBackGroundAnimColor->Property("z");
 	p->SetOORAfter(G_LOOP_OOR);
-	tmpKeys.push_back(GKeyValue(0.00, (GReal)0.5));
-	tmpKeys.push_back(GKeyValue(0.50, (GReal)0.6));
-	tmpKeys.push_back(GKeyValue(0.75, (GReal)0.3));
-	tmpKeys.push_back(GKeyValue(1.00, (GReal)0.5));
+	tmpKeys.push_back(GKeyValue((GTimeValue)0.00, (GReal)0.5));
+	tmpKeys.push_back(GKeyValue((GTimeValue)0.50, (GReal)0.6));
+	tmpKeys.push_back(GKeyValue((GTimeValue)0.75, (GReal)0.3));
+	tmpKeys.push_back(GKeyValue((GTimeValue)1.00, (GReal)0.5));
 	p->SetKeys(tmpKeys);
 
 	// now set up logo
 	gAnimLogo = (GAnimTRSNode2D *)gKernel->CreateNew(G_ANIMTRSNODE2D_CLASSID);	
-	gAnimLogo->SetPivotPosition(GPoint2(0.550, 0.540), G_FALSE);
+	gAnimLogo->SetPivotPosition(GPoint2((GReal)0.550, (GReal)0.540), G_FALSE);
 
-	gAnimLogo->Property("transform")->Property("position")->Property("x")->SetDefaultValue(GKeyValue(0.6));
-	gAnimLogo->Property("transform")->Property("position")->Property("y")->SetDefaultValue(GKeyValue(-1.23));
+	gAnimLogo->Property("transform")->Property("position")->Property("x")->SetDefaultValue(GKeyValue((GReal)0.6));
+	gAnimLogo->Property("transform")->Property("position")->Property("y")->SetDefaultValue(GKeyValue((GReal)-1.23));
 
 	// x-scale
 	tmpKeys.clear();
-	gAnimLogo->Property("transform")->Property("scale")->Property("y")->SetDefaultValue(GKeyValue(1.5));
+	gAnimLogo->Property("transform")->Property("scale")->Property("y")->SetDefaultValue(GKeyValue((GReal)1.5));
 	p = (GHermiteProperty1D *)gAnimLogo->Property("transform")->Property("scale")->Property("x");
 	p->SetOORAfter(G_LOOP_OOR);
-	tmpKeys.push_back(GKeyValue(0.00, (GReal)1.5));
-	tmpKeys.push_back(GKeyValue(0.5, (GReal)-1.5));
-	tmpKeys.push_back(GKeyValue(1.00, (GReal)1.5));
+	tmpKeys.push_back(GKeyValue((GTimeValue)0.00, (GReal)1.5));
+	tmpKeys.push_back(GKeyValue((GTimeValue)0.50, (GReal)-1.5));
+	tmpKeys.push_back(GKeyValue((GTimeValue)1.00, (GReal)1.5));
 	p->SetKeys(tmpKeys);
 
 	gBackGroundTime = 0;
-	gBackGroundTimeStep = 0.001;
+	gBackGroundTimeStep = (GReal)0.001;
 }
 
 //------------------------------------------------------------
@@ -441,7 +435,7 @@ void QGLWidgetTest::paintGL() {
 
 	// draw logo
 	uvMatrix = gAnimLogo->Matrix(gBackGroundTime, G_WORLD_SPACE, validInterval);
-	DrawLogo(GPoint3(0.6, 0.6, 0.6), (uvMatrix * gAnimLogo->PivotMatrix()));
+	DrawLogo(GPoint3((GReal)0.6, (GReal)0.6, (GReal)0.6), (uvMatrix * gAnimLogo->PivotMatrix()));
 	if (!gBlockAnim)
 		gBackGroundTime += gBackGroundTimeStep;
 	glFlush();
