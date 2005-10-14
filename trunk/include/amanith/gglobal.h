@@ -67,8 +67,8 @@
 namespace Amanith {
 
 	// G_VERSION is (major << 24) + (minor << 16) + (patch << 8) + build
-	#define G_AMANITH_VERSION 0x00010000
-	#define G_VERSION_STR "0.1.0.0"
+	#define G_AMANITH_VERSION 0x00010100
+	#define G_VERSION_STR "0.1.1.0"
 
 	//! English language option
 	#define G_LANG_EN     0

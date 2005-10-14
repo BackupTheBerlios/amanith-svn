@@ -158,6 +158,9 @@
 					RelativePath="..\..\src\2d\gcurve2d.cpp">
 				</File>
 				<File
+					RelativePath="..\..\src\2d\gellipsecurve2d.cpp">
+				</File>
+				<File
 					RelativePath="..\..\src\2d\gfont2d.cpp">
 				</File>
 				<File
@@ -296,6 +299,9 @@
 				</File>
 				<File
 					RelativePath="..\..\include\amanith\2d\gcurve2d.h">
+				</File>
+				<File
+					RelativePath="..\..\include\amanith\2d\gellipsecurve2d.h">
 				</File>
 				<File
 					RelativePath="..\..\include\amanith\2d\gfont2d.h">

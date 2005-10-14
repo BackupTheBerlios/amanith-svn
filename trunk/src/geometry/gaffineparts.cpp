@@ -321,4 +321,3 @@ GQuaternion GAffineParts::Snuggle(GQuaternion& q, GVector3& k) {
 }
 
 };	// end namespace Amanith
-

@@ -1,5 +1,5 @@
 /****************************************************************************
-** $file: amanith/src/2d/gbezcurve2d.cpp   0.1.1.0   edited Sep 24 08:00
+** $file: amanith/src/2d/gbeziercurve2d.cpp   0.1.1.0   edited Sep 24 08:00
 **
 ** 2D Bezier curve segment implementation.
 **
@@ -890,11 +890,7 @@ GError GBezierCurve2D::Flatten3(GDynArray<GPoint2>& Contour, const GReal MaxDevi
 	}
 
 	// MaxDeviation is a squared chordal distance, we must report to this value to a linear chordal distance
-	GReal flatness = GMath::Abs(MaxDeviation);
-	if (flatness < 1)
-		flatness = GMath::Sqrt(flatness);
-	else
-		flatness = GMath::Sqr(flatness);
+	GReal flatness = GMath::Sqrt(GMath::Abs(MaxDeviation));
 
 	GReal cx = (p2[G_X] - p1[G_X]);
 	GReal cy = (p2[G_Y] - p1[G_Y]);			

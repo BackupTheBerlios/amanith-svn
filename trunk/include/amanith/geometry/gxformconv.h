@@ -226,7 +226,7 @@ namespace Amanith {
 		#undef EulParOdd
 	}
 
-	//! Build a 2D rotation matrix, specifying the rotation amount (in radians).
+	//! Build a 2D rotation matrix, specifying the ccw rotation amount (in radians).
 	template <typename DATA_TYPE, GUInt32 ROWS, GUInt32 COLS>
 	void RotationToMatrix(GMatrix<DATA_TYPE, ROWS, COLS>& Result, const GReal RadAngle) {
 

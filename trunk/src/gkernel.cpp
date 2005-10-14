@@ -48,6 +48,7 @@
 #include "amanith/2d/gmulticurve2d.h"
 #include "amanith/2d/gpolylinecurve2d.h"
 #include "amanith/2d/ghermitecurve2d.h"
+#include "amanith/2d/gellipsecurve2d.h"
 #include "amanith/2d/ganimtrsnode2d.h"
 #include "amanith/gimpexp.h"
 #include "amanith/support/gutilities.h"
@@ -199,6 +200,7 @@ void GKernel::RegisterProxies() {
 	RegisterElementProxy(G_MULTICURVE2D_PROXY);
 	RegisterElementProxy(G_POLYLINECURVE2D_PROXY);
 	RegisterElementProxy(G_HERMITECURVE2D_PROXY);
+	RegisterElementProxy(G_ELLIPSECURVE2D_PROXY);
 
 	// animation stuff
 	RegisterElementProxy(G_CONSTANTPROPERTY1D_PROXY);

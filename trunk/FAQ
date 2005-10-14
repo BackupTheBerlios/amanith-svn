@@ -10,7 +10,7 @@ AMANITH FRAMEWORK F.A.Q.
     modelling tool (that don't requires high computational precision) you are, without any doubt, on the right way.
     One of Amanith's strenght points is the highly customization capability that make possible to compile the framework
     with a wide options range (like the possibility to choose, for example, between double or float as real numbers
-    rappresentation, without change anything into code sources) and including/excluding many modules to add/subtract
+    representation, without change anything into code sources) and including/excluding many modules to add/subtract
     various features (a.e.: jpeg and png picture format support); in addition you can choose to compile all modules as
     plugins, so, thanks to the Amanith kernel-plugins system, you can load/unload them at runtime, saving a lot of ram for
     other tasks.

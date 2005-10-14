@@ -1,5 +1,5 @@
 /****************************************************************************
-** $file: amanith/2d/g2dbsplinecurve.h   0.1.1.0   edited Sep 24 08:00
+** $file: amanith/2d/gbsplinecurve2d.h   0.1.1.0   edited Sep 24 08:00
 **
 ** 2D B-Spline curve segment definition.
 **
@@ -234,7 +234,7 @@ namespace Amanith {
 		//! Constructor with owner (kernel) parameter, creates an empty B-spline.
 		GBSplineCurve2D(const GElement* Owner);
 		//! Destructor
-		virtual ~GBSplineCurve2D();
+		~GBSplineCurve2D();
 		//! Clear the curve (remove control points, free internal structures and set an empty domain).
 		void Clear();
 		//! Returns number of control points.

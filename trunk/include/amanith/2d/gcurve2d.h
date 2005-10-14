@@ -352,23 +352,28 @@ namespace Amanith {
 			Translates all curve points by the specified vector offset.
 
 			\param Translation the offset vector, added to each curve point.
+			\note default implementation builds a matrix from specified translation and then call XForm() function.
 		*/
-		void Translate(const GVector2& Translation);
+		virtual void Translate(const GVector2& Translation);
 		/*!
-			Rotate all curve points around a pivot point.
+			Rotate all curve points around a pivot point. The rotation will occur in counter-clockwise
+			direction for positive angles.
 
 			\param Pivot the pivot point (the center of rotation)
 			\param RadAmount the rotation (in radians) amount.
+			\note default implementation builds a matrix from specified pivot and angle, and then call XForm() function.
 		*/
-		void Rotate(const GPoint2& Pivot, const GReal RadAmount);
+		virtual void Rotate(const GPoint2& Pivot, const GReal RadAmount);
 		/*!
 			Scale all curve points around a pivot point.
 
 			\param Pivot the pivot point (the center of scaling)
 			\param XScaleAmount the scale factor used for X axis
 			\param YScaleAmount the scale factor used for Y axis
+			\note default implementation builds a matrix from specified pivot and factors, and then
+			call XForm() function.
 		*/
-		void Scale(const GPoint2& Pivot, const GReal XScaleAmount, const GReal YScaleAmount);
+		virtual void Scale(const GPoint2& Pivot, const GReal XScaleAmount, const GReal YScaleAmount);
 		/*!
 			Apply an affine transformation to all curve points.
 

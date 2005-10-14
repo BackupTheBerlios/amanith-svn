@@ -1,5 +1,5 @@
 /****************************************************************************
-** $file: amanith/2d/g2dbezcurve.h   0.1.1.0   edited Sep 24 08:00
+** $file: amanith/2d/gbeziercurve2d.h   0.1.1.0   edited Sep 24 08:00
 **
 ** 2D Bezier curve segment definition.
 **
@@ -242,7 +242,7 @@ namespace Amanith {
 		//! Constructor with owner (kernel) parameter, creates an empty Bezier.
 		GBezierCurve2D(const GElement* Owner);
 		//! Destructor
-		virtual ~GBezierCurve2D();
+		~GBezierCurve2D();
 		//! Clear the curve (remove control points, free internal structures and set an empty domain).
 		void Clear();
 		//! Returns number of control points.

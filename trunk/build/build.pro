@@ -35,6 +35,7 @@ SOURCES = gelement.cpp \
           2d/gbsplinecurve2d.cpp \
           2d/gpolylinecurve2d.cpp \
           2d/ghermitecurve2d.cpp \
+          2d/gellipsecurve2d.cpp \
           2d/gmesh2d.cpp \
           2d/gpath2d.cpp \
           2d/gtracer2d.cpp \

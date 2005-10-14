@@ -1551,7 +1551,7 @@ namespace Amanith {
 	// taken from Graphics Gems IV
 	template <typename DATA_TYPE>
 	void DecompPolar_Rank2(GMatrix<DATA_TYPE, 3, 3> &M, const GMatrix<DATA_TYPE, 3, 3>& MadjT,
-							GMatrix<DATA_TYPE, 3, 3>& Q) {
+						   GMatrix<DATA_TYPE, 3, 3>& Q) {
 
 		GVect<DATA_TYPE, 3> v1, v2, q0, q1;
 		DATA_TYPE w, x, y, z, c, s, d;
@@ -1619,6 +1619,17 @@ namespace Amanith {
 		HouseholderRowsReflect(Q, v2);
 	}
 
+	// just to avoid template errors
+	template <typename DATA_TYPE, GUInt32 SIZE>
+	void DecompPolar_Rank2(GMatrix<DATA_TYPE, SIZE, SIZE> &M, const GMatrix<DATA_TYPE, SIZE, SIZE>& MadjT,
+						   GMatrix<DATA_TYPE, SIZE, SIZE>& Q) {
+
+		// just to avoid warnings
+		if (M.Data() && MadjT.Data() && Q.Data()) {
+		}
+	}
+
+
 	/*!
 		Polar decomposition.
 
@@ -1684,10 +1695,12 @@ namespace Amanith {
 		}
 		exitloop:
 		// finally build Q factor and its determinant
-		Transpose(Q, w);
+		Q = w;
 		QDeterminant = det;
+
 		// now build S factor
-		S = w * Src;
+		Transpose(tw, w);
+		S = tw * Src;
 		for (i = 0; i < (GInt32)SIZE; ++i)
 			for (j = i; j < (GInt32)SIZE; j++)
 				S[i][j] = S[j][i] = ((S[i][j] + S[j][i]) / (DATA_TYPE)2);

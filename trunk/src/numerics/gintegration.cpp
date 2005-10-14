@@ -118,11 +118,13 @@ namespace Amanith {
 			// preassigned tolerance, return the estimate
 			err = GMath::Abs(delta) / (GMath::Abs(integral) + 1);
 			if ((err <= maxMachineError) || ((oldErr < err) && (k > (RICHARDSON_TABLE_SIZE / 2 + 1)))) {
-				Result = integral;
-				if (err <= maxMachineError)
-					return G_TRUE;
-				else
-					return G_FALSE;
+				if (k > 2) {
+					Result = integral;
+					if (err <= maxMachineError)
+						return G_TRUE;
+					else
+						return G_FALSE;
+				}
 			}
 			oldErr = err;
 			// store the current estimate in the k-th column
