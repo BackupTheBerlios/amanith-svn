@@ -215,7 +215,7 @@ namespace Amanith {
 			return gOffsetRotation;
 		}
 		//! Set offset rotation (in radiants).
-		inline void SetOffsetRotation(const GReal NewOffsetRotation) const {
+		inline void SetOffsetRotation(const GReal NewOffsetRotation) {
 			gOffsetRotation = NewOffsetRotation;
 			gCosOfsRot = GMath::Cos(gOffsetRotation);
 			gSinOfsRot = GMath::Sin(gOffsetRotation);
