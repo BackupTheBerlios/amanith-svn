@@ -462,6 +462,29 @@ GError GPixelMap::Reset(const GInt32 NewWidth, const GInt32 NewHeight, const GPi
 	return G_NO_ERROR;
 }
 
+// Reset the image, setting new dimensions and pixel format. All pixels will be filled in black.
+GError GPixelMap::Create(const GInt32 NewWidth, const GInt32 NewHeight, const GPixelFormat NewPixelFormat) {
+
+	if (NewWidth <= 0 || NewHeight <= 0)
+		return G_INVALID_PARAMETER;
+
+	GError err = G_NO_ERROR;
+	// in this case nothing has to be done, but clearing all pixels to black
+	if (((GInt32)gWidth == NewWidth) && ((GInt32)gHeight == NewHeight) && (gPixelFormat == NewPixelFormat)) {
+	}
+	else
+		err = Reset(NewWidth, NewHeight, NewPixelFormat);
+
+	if (err == G_NO_ERROR) {
+		// clear pixels
+		std::memset((void *)gPixels, 0, this->Size());
+		// clear palette
+		if (IsPaletted())
+			std::memset((void *)gPalette, 0, this->PaletteSize());
+	}
+	return err;
+}
+
 GError GPixelMap::BaseClone(const GElement& Source) {
 
 	const GPixelMap& k = (const GPixelMap&)Source;

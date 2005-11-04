@@ -44,7 +44,7 @@ namespace Amanith {
 	// *********************************************************************
 
 	//! Fill rules for tessellation
-	enum GFillRule {
+	enum GFillBehavior {
 		//! Odd rule
 		G_ODD_RULE = 0,
 		//! Even rule
@@ -280,7 +280,7 @@ namespace Amanith {
 			\note Please keep OddFill parameter G_TRUE. This is the only supported mode for this version.
 		*/
 		GError Tesselate(const GDynArray<GPoint2>& Points, const GDynArray<GInt32>& PointsPerContour,
-						 GDynArray< GPoint<GDouble, 2> >& Triangles, const GFillRule FillRule = G_ODD_RULE);
+						 GDynArray< GPoint<GDouble, 2> >& Triangles, const GFillBehavior FillRule = G_ODD_RULE);
 
 		/*!
 			Build a valid triangulation of given contours and holes.
@@ -326,7 +326,7 @@ namespace Amanith {
 		*/
 		GError Tesselate(const GDynArray<GPoint2>& Points, const GDynArray<GInt32>& PointsPerContour,
 						 GDynArray< GPoint<GDouble, 2> >& TriangPoints, GDynArray< GULong >& TriangIds,
-						 const GFillRule FillRule = G_ODD_RULE);
+						 const GFillBehavior FillRule = G_ODD_RULE);
 
 	};
 

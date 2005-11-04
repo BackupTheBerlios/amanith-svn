@@ -113,12 +113,12 @@ namespace Amanith {
 		}
 
 		//!	Gets the minimum point of the box.
-		inline const GPoint<DATA_TYPE, SIZE>& Min() const {
+		inline const GVectBase<DATA_TYPE, SIZE>& Min() const {
 			return gMin;
 		}
 
 		//! Gets the maximum point of the box.
-		inline const GPoint<DATA_TYPE, SIZE>& Max() const {
+		inline const GVectBase<DATA_TYPE, SIZE>& Max() const {
 			return gMax;
 		}
 

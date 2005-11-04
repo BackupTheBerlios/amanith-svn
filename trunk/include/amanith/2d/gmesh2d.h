@@ -583,7 +583,6 @@ namespace Amanith {
 			\param Org the new origin vertex (must be non NULL)
 		*/
 		void SetOrbitOrg(GMeshEdge2D<DATA_TYPE> *Edge, GMeshVertex2D<DATA_TYPE> *Org);
-
 		/*!
 			Splice a given pair of (non NULL) edges.
 			This operator affects the two edge rings around the origins of a and b,
@@ -600,9 +599,6 @@ namespace Amanith {
 	public:
 		//! Default constructor; it initialize this mesh consisting of no vertexes and no faces.
 		GMesh2D();
-		// Constructor with owner (kernel) specification; it initialize this mesh consisting of no vertexes and no faces.
-		//GMesh2D(const GElement* Owner);
-
 		/*!
 			Assignment operator.
 			
@@ -616,10 +612,19 @@ namespace Amanith {
 			}
 			return *this;
 		}
-
 		//! Clear mesh (delete all faces, vertexes and edges)
 		void Clear();
-		//! Build a mesh from a classic vertex-indices arrays
+		/*!
+			Build a mesh from a classic vertex-indices arrays.
+			Manifold mesh is specified by its points and its faces, where each face is a set of vertex indexes.
+
+			\param Points the array of all points used by faces.
+			\param FacesIndexes list of faces, each face is a set of points indexes (referring to Points array).
+			\param Deep2ManifoldCheck if G_TRUE (default value) a 2-manifold correctness check is done. In
+			particular the function checks that 2-manifold equation (V - E + F = 2) has been respected by
+			given mesh data.
+			\return G_NO_ERROR if the operation succeeds, an error code otherwise.
+		*/
 		GError BuildFromFaces(const GDynArray< GPoint<DATA_TYPE, 2> >& Points, const GDynArray<GIndexList>& FacesIndexes,
 							  const GBool Deep2ManifoldCheck = G_TRUE);
 		/*!

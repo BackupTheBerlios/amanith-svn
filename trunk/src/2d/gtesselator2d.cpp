@@ -580,7 +580,7 @@ GBool GTesselator2D::ValidateInput(const GDynArray<GPoint2>& Points, const GDynA
 
 // tessellation routine
 GError GTesselator2D::Tesselate(const GDynArray<GPoint2>& Points, const GDynArray<GInt32>& PointsPerContour,
-								GDynArray< GPoint<GDouble, 2> >& Triangles, const GFillRule FillRule) {
+								GDynArray< GPoint<GDouble, 2> >& Triangles, const GFillBehavior FillRule) {
 
 	GExtVertex* extVertex;
 	GInt32 i, j, k, w, ofs;
@@ -658,7 +658,7 @@ GError GTesselator2D::Tesselate(const GDynArray<GPoint2>& Points, const GDynArra
 
 GError GTesselator2D::Tesselate(const GDynArray<GPoint2>& Points, const GDynArray<GInt32>& PointsPerContour,
 								GDynArray< GPoint<GDouble, 2> >& TriangPoints, GDynArray< GULong >& TriangIds,
-								const GFillRule FillRule) {
+								const GFillBehavior FillRule) {
 
 	GExtVertex* extVertex;
 	GInt32 i, j, k, w, ofs;

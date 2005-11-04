@@ -247,6 +247,19 @@
 					RelativePath="..\..\src\1d\gpolylinecurve1d.cpp">
 				</File>
 			</Filter>
+			<Filter
+				Name="rendering"
+				Filter="">
+				<File
+					RelativePath="..\..\src\rendering\gdrawboard.cpp">
+				</File>
+				<File
+					RelativePath="..\..\src\rendering\gdrawstyle.cpp">
+				</File>
+				<File
+					RelativePath="..\..\src\rendering\gopenglboard.cpp">
+				</File>
+			</Filter>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -449,6 +462,19 @@
 				</File>
 				<File
 					RelativePath="..\..\include\amanith\1d\gpolylinecurve1d.h">
+				</File>
+			</Filter>
+			<Filter
+				Name="rendering"
+				Filter="">
+				<File
+					RelativePath="..\..\include\amanith\rendering\gdrawboard.h">
+				</File>
+				<File
+					RelativePath="..\..\include\amanith\rendering\gdrawstyle.h">
+				</File>
+				<File
+					RelativePath="..\..\include\amanith\rendering\gopenglboard.h">
 				</File>
 			</Filter>
 		</Filter>

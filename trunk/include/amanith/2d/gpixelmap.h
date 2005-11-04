@@ -483,7 +483,16 @@ namespace Amanith {
 		*/
 		GError ResizeCanvasMirror(const GInt32 Top, const GInt32 Bottom, const GInt32 Left, const GInt32 Right,
 								  GPixelMap& ResizedPixelMap);
+		/*!
+			Reset the image, setting new dimensions and pixel format. All pixels (and eventually the
+			new palette) will be filled in black (zeros).
 
+			\param NewWidth the new width in pixels, must be greater than 0, else G_INVALID_PARAMETER will be returned.
+			\param NewHeight the new height in pixels , must be greater than 0, else G_INVALID_PARAMETER will be returned.
+			\param NewPixelFormat the new pixel format.
+			\return G_NO_ERROR if the operation succeeds, else an error code;
+		*/
+		GError Create(const GInt32 NewWidth, const GInt32 NewHeight, const GPixelFormat NewPixelFormat);
 		/*!
 			Apply an edge-preserving smooth filter (based on Susan).
 

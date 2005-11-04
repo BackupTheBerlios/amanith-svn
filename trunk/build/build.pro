@@ -43,9 +43,12 @@ SOURCES = gelement.cpp \
           2d/gfont2d.cpp \
           2d/gtesselator2d.cpp \
           2d/ganimtrsnode2d.cpp \
+          geometry/gaffineparts.cpp \
           numerics/geigen.cpp \
           numerics/gintegration.cpp \
-          geometry/gaffineparts.cpp \
+          rendering/gdrawstyle.cpp \
+          rendering/gdrawboard.cpp \
+          rendering/gopenglboard.cpp \
           support/gblowfish.cpp \
           support/gavltree.cpp \
           support/gutilities.cpp

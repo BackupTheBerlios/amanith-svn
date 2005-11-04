@@ -82,6 +82,22 @@ namespace Amanith {
 		GBool IsOcclusionQuerySupported() const;
 		//! Return the number of texture units of the underlying OpenGL device
 		GInt32 TextureUnitsCount() const;
+		//! Return maximum acceptable filter kernel width (0 if no convolution support).
+		GUInt32 MaxConvolutionWidth() const;
+		//! Return maximum acceptable filter kernel height (0 if no convolution support).
+		GUInt32 MaxConvolutionHeight() const;
+		//! Return the maximum width or height of any texture image (without borders). 
+		GUInt32 MaxTextureSize() const;
+		//! Get number of bits per red component in color buffers.
+		GUInt32 RedBits() const;
+		//! Get number of bits per green component in color buffers.
+		GUInt32 GreenBits() const;
+		//! Get number of bits per blue component in color buffers.
+		GUInt32 BlueBits() const;
+		//! Get number of depth-buffer bitplanes.
+		GUInt32 DepthBits() const;
+		//! Get number of stencil bitplanes.
+		GUInt32 StencilBits() const;
 		//! Get the list of supported OpenGL functions over OpenGL 1.1 version
 		const GStringList& SupportedFunctions() const;
 		//! Print out the information log for a shader object or a program object

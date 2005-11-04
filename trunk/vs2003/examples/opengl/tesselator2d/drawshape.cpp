@@ -189,7 +189,7 @@ void GenerateTessellation() {
 
 	gTrianglesPts.clear();
 	gTrianglesIdx.clear();
-	tesselator.Tesselate(gContoursPoints, gContoursIndexes, gTrianglesPts, gTrianglesIdx, (GFillRule)gFillRule);
+	tesselator.Tesselate(gContoursPoints, gContoursIndexes, gTrianglesPts, gTrianglesIdx, (GFillBehavior)gFillRule);
 }
 
 void InitApp() {
