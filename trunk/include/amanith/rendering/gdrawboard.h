@@ -54,10 +54,9 @@ namespace Amanith {
 
 	// clipping operation/mode
 	enum GClipOperation {
-		G_SET_CLIP,
+		G_REPLACE_CLIP,
 		G_INTERSECTION_CLIP,
-		G_UNION_CLIP,
-		G_SUBTRACT_CLIP
+		G_UNION_CLIP
 	};
 
 
@@ -70,7 +69,7 @@ namespace Amanith {
 		GRenderingQuality gRenderingQuality;
 		GImageQuality gImageQuality;
 		GReal gOpacity;
-		GUInt32 gTargetMode;
+		GTargetMode gTargetMode;
 		GBool gClipEnabled;
 		GClipOperation gClipOperation;
 
@@ -93,15 +92,25 @@ namespace Amanith {
 		GPoint4 gProjection; // x = left; y = right; z = bottom; w = top
 
 		virtual void DoSetRenderingQuality(const GRenderingQuality Quality) = 0;
+		virtual void DoSetImageQuality(const GImageQuality Quality) = 0;
+		virtual void DoSetTargetMode(const GTargetMode Mode) = 0;
+		virtual void DoSetClipOperation(const GClipOperation Operation) = 0;
+		virtual void DoSetClipEnabled(const GBool Enabled) = 0;
+		virtual void DoPopClipMask() = 0;
+		virtual void DoSetGroupOpacity(const GReal Opacity) = 0;
 		virtual void DoGroupBegin() = 0;
 		virtual void DoGroupEnd() = 0;
 		virtual void DoFlush() = 0;
 		virtual void DoFinish() = 0;
-		virtual void DoClear(const GReal Red, const GReal Green, const GReal Blue, const GUChar8 ClipValue) = 0;
+		virtual void DoClear(const GReal Red, const GReal Green, const GReal Blue, const GBool ClearClipMasks) = 0;
 		virtual void DoSetViewport(const GUInt32 LowLeftCornerX, const GUInt32 LowLeftCornerY,
 								   const GUInt32 Width, const GUInt32 Height) = 0;
 		virtual void DoSetProjection(const GReal Left, const GReal Right, const GReal Bottom, const GReal Top) = 0;
 		// draw primitives
+
+		// here we are sure that corners are opposite and ordered
+		virtual void DoDrawRectangle(GDrawStyle& Style, const GPoint2& MinCorner, const GPoint2& MaxCorner) = 0;
+
 		virtual void DoDrawLine(GDrawStyle& Style, const GPoint2& P0, const GPoint2& P1) = 0;
 		virtual void DoDrawBezier(GDrawStyle& Style, const GPoint2& P0, const GPoint2& P1, const GPoint2& P2) = 0;
 		virtual void DoDrawBezier(GDrawStyle& Style, const GPoint2& P0, const GPoint2& P1, const GPoint2& P2, const GPoint2& P3) = 0;
@@ -140,14 +149,15 @@ namespace Amanith {
 													const GColorRampSpreadMode SpreadMode = G_PAD_COLOR_RAMP_SPREAD,
 													const GMatrix33& Matrix = G_MATRIX_IDENTITY33) = 0;
 		virtual GPatternDesc *CreatePattern(const GPixelMap *Image, const GTilingMode TilingMode = G_REPEAT_TILE,
+											const GAABox2 *LogicalWindow = NULL,
 											const GMatrix33& Matrix = G_MATRIX_IDENTITY33) = 0;
 
 		//---------------------------------------------------------------------------
 		//                             RENDERING CONTEXT
 		//---------------------------------------------------------------------------
-		// opacity
-		GReal Opacity() const;
-		void SetOpacity(const GReal Opacity);
+		// group opacity
+		GReal GroupOpacity() const;
+		void SetGroupOpacity(const GReal Opacity);
 		// rendering quality
 		GRenderingQuality RenderingQuality() const;
 		void SetRenderingQuality(const GRenderingQuality Quality);
@@ -155,14 +165,16 @@ namespace Amanith {
 		GImageQuality ImageQuality() const;
 		void SetImageQuality(const GImageQuality Quality);
 		// target mode
-		GUInt32 TargetMode() const;
-		void SetTargetMode(const GUInt32 Mode);
+		GTargetMode TargetMode() const;
+		void SetTargetMode(const GTargetMode Mode);
 		// clip operation
 		GClipOperation ClipOperation() const;
 		void SetClipOperation(const GClipOperation Operation);
 		// clip enable/disable
 		GBool ClipEnabled() const;
 		void SetClipEnabled(const GBool Enabled);
+		// pop last clip mask
+		void PopClipMask();
 		// model-view matrix
 		const GMatrix33& ModelViewMatrix() const;
 		void SetModelViewMatrix(const GMatrix33& Matrix);
@@ -255,7 +267,7 @@ namespace Amanith {
 		void DrawText(const GPoint2& StartPoint, const GString& TextLine);
 
 		// clear board
-		void Clear(const GReal Red, const GReal Green, const GReal Blue, const GUChar8 ClipValue);
+		void Clear(const GReal Red, const GReal Green, const GReal Blue, const GBool ClearClipMasks = G_TRUE);
 		/*!
 			This function ensures that all outstanding requests on the current context will complete in finite time.
 			Flush may return prior to the actual completion of all requests.

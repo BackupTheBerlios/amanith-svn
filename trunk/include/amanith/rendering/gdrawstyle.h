@@ -30,6 +30,7 @@
 #define GDRAWSTYLE_H
 
 #include "amanith/2d/gpixelmap.h"
+#include "amanith/geometry/gaabox.h"
 
 /*!
 	\file gdrawstyle.h
@@ -219,8 +220,8 @@ namespace Amanith {
 		GTilingMode gTilingMode;
 		// pattern matrix
 		GMatrix33 gMatrix;
-		// image
-		//const GPixelMap* gImage;
+		// pattern logical window
+		GAABox2 gLogicalWindow;
 
 	protected:
 		// modified flag
@@ -228,12 +229,19 @@ namespace Amanith {
 
 		void SetTilingModeModified(const GBool Modified);
 		void SetMatrixModified(const GBool Modified);
+		void SetLogicalWindowModified(const GBool Modified);
 
 	public:
 		// constructor
 		GPatternDesc();
 		// destructor
 		virtual ~GPatternDesc();
+		// get logical window
+		inline const GAABox2& LogicalWindow() const {
+			return gLogicalWindow;
+		}
+		// set logical window
+		void SetLogicalWindow(const GPoint2& LowLeft, const GPoint2& UpperRight);
 		// get tiling mode
 		inline const GTilingMode TilingMode() const {
 			return gTilingMode;
@@ -245,15 +253,12 @@ namespace Amanith {
 		}
 		// set matrix
 		void SetMatrix(const GMatrix33& Matrix);
-		/*// get image
-		inline const GPixelMap *Image() const {
-			return gImage;
-		}*/
 		// set image
 		virtual void SetImage(const GPixelMap *Image, const GImageQuality Quality) = 0;
 		// modified bit flags
 		GBool TilingModeModified() const;
 		GBool MatrixModified() const;
+		GBool LogicalWindowModified() const;
 		//GBool ImageModified() const;
 		inline GBool Modified() const {
 			return (gModified != 0);
@@ -271,6 +276,7 @@ namespace Amanith {
 	private:
 		// stroke parameters
 		GReal gStrokeWidth;
+		GReal gThickness;  // defined as stroke_width / 2
 		GReal gStrokeMiterLimit;
 		GCapStyle gStrokeStartCapStyle;
 		GCapStyle gStrokeEndCapStyle;
@@ -314,6 +320,10 @@ namespace Amanith {
 		}
 		// set stroke width
 		void SetStrokeWidth(const GReal Width);
+		// get stroke thickness (half strokewidth)
+		inline GReal StrokeThickness() const {
+			return gThickness;
+		}
 		// get stroke miter limit
 		inline GReal StrokeMiterLimit() const {
 			return gStrokeMiterLimit;

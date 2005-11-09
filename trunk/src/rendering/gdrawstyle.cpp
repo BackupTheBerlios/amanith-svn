@@ -64,19 +64,6 @@ GGradientDesc::GGradientDesc() {
 GGradientDesc::~GGradientDesc() {
 }
 
-// assignment operator
-/*GGradientDesc& GGradientDesc::operator=(const GGradientDesc& Source) {
-
-	SetType(Source.Type());
-	SetStartPoint(Source.StartPoint());
-	SetAuxPoint(Source.AuxPoint());
-	SetRadius(Source.Radius());
-	SetColorKeys(Source.ColorKeys());
-	SetSpreadMode(Source.SpreadMode());
-	SetMatrix(Source.Matrix());
-	return *this;
-}*/
-
 // set gradient type
 void GGradientDesc::SetType(const GGradientType Type) {
 
@@ -282,30 +269,33 @@ void GGradientDesc::SetMatrixModified(const GBool Modified) {
 //                            GPatternDesc
 // *********************************************************************
 
-//#define G_PATTERN_IMAGE_MODIFIED		1
-#define G_PATTERN_TILINGMODE_MODIFIED	2
-#define G_PATTERN_MATRIX_MODIFIED		4
+//#define G_PATTERN_IMAGE_MODIFIED				1
+#define G_PATTERN_TILINGMODE_MODIFIED			2
+#define G_PATTERN_MATRIX_MODIFIED				4
+#define G_PATTERN_LOGICAL_WINDOW_MODIFIED		8
 
 // constructor
 GPatternDesc::GPatternDesc() {
 
 	gModified = G_PATTERN_TILINGMODE_MODIFIED | G_PATTERN_MATRIX_MODIFIED;
 	gTilingMode = G_REPEAT_TILE;
-	//gImage = NULL;
+	gLogicalWindow.SetMinMax(GPoint2(0, 0), GPoint2(1, 1));
 	// gMatrix constructor will set identity
 }
 
 GPatternDesc::~GPatternDesc() {
 }
 
-// assignment operator
-/*GPatternDesc& GPatternDesc::operator=(const GPatternDesc& Source) {
+// set logical window
+void GPatternDesc::SetLogicalWindow(const GPoint2& LowLeft, const GPoint2& UpperRight) {
 
-	SetTilingMode(Source.TilingMode());
-	//SetImage(Source.Image());
-	SetMatrix(Source.Matrix());
-	return *this;
-}*/
+	GAABox2 tmpBox(LowLeft, UpperRight);
+
+	if (gLogicalWindow != tmpBox) {
+		gModified |= G_PATTERN_LOGICAL_WINDOW_MODIFIED;
+		gLogicalWindow = tmpBox;
+	}
+}
 
 // set tiling mode
 void GPatternDesc::SetTilingMode(const GTilingMode TilingMode) {
@@ -353,6 +343,13 @@ void GPatternDesc::SetImage(const GPixelMap *Image) {
 	}
 }*/
 
+GBool GPatternDesc::LogicalWindowModified() const {
+
+	if (gModified & G_PATTERN_LOGICAL_WINDOW_MODIFIED)
+		return G_TRUE;
+	return G_FALSE;
+}
+
 GBool GPatternDesc::TilingModeModified() const {
 
 	if (gModified & G_PATTERN_TILINGMODE_MODIFIED)
@@ -365,6 +362,14 @@ GBool GPatternDesc::MatrixModified() const {
 	if (gModified & G_PATTERN_MATRIX_MODIFIED)
 		return G_TRUE;
 	return G_FALSE;
+}
+
+void GPatternDesc::SetLogicalWindowModified(const GBool Modified) {
+
+	if (Modified)
+		gModified |= G_PATTERN_LOGICAL_WINDOW_MODIFIED;
+	else
+		gModified &= ((GUInt32)(~0) - G_PATTERN_LOGICAL_WINDOW_MODIFIED);
 }
 
 void GPatternDesc::SetTilingModeModified(const GBool Modified) {
@@ -386,6 +391,7 @@ void GPatternDesc::SetMatrixModified(const GBool Modified) {
 //#undef G_PATTERN_IMAGE_MODIFIED
 #undef G_PATTERN_TILINGMODE_MODIFIED
 #undef G_PATTERN_MATRIX_MODIFIED
+#undef G_PATTERN_LOGICAL_WINDOW_MODIFIED
 
 // *********************************************************************
 //                            GDrawStyle
@@ -477,6 +483,7 @@ void GDrawStyle::SetStrokeWidth(const GReal Width) {
 	if (w != gStrokeWidth) {
 		gModified |= G_DRAWSTYLE_STROKEWIDTH_MODIFIED;
 		gStrokeWidth = w;
+		gThickness = w * (GReal)0.5;
 	}
 }
 

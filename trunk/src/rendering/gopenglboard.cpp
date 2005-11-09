@@ -31,6 +31,7 @@
 #include "amanith/1d/gpolylinecurve1d.h"
 #include "amanith/gmultiproperty.h"
 #include "amanith/geometry/gxform.h"
+#include "amanith/geometry/gxformconv.h"
 #include <new>
 
 /*!
@@ -69,11 +70,6 @@ void GOpenGLGradientDesc::SetGLGradientQuality(const GRenderingQuality Quality) 
 			glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 			glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 			break;
-
-		/*case G_HIGH_RENDERING_QUALITY:
-			glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-			glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-			break;*/
 	}
 }
 
@@ -328,15 +324,16 @@ void GOpenGLPatternDesc::SetImage(const GPixelMap *Image, const GImageQuality Qu
 	GInt32 size = GMath::Min(tmpImage.Width(), tmpImage.Height());
 	GInt32 level = 0;
 
-	while (size > 1) {
-		
+	do {
 		glTexImage2D(GL_TEXTURE_2D, level, GL_RGBA, (GLsizei)tmpImage.Width(), (GLsizei)tmpImage.Height(),
 					 0, GL_BGRA, GL_UNSIGNED_BYTE, (GLvoid *)tmpImage.Pixels());
-		level++;
-		size /= 2;
+
 		if (size > 1)
 			tmpImage.Resize(tmpImage.Width() / 2, tmpImage.Height() / 2, G_RESIZE_CATMULLROM);
-	}
+
+		size /= 2;
+		level++;
+	} while(size >= 1);
 }
 
 // *********************************************************************
@@ -348,11 +345,18 @@ GOpenGLBoard::GOpenGLBoard(const GUInt32 LowLeftCornerX, const GUInt32 LowLeftCo
 
 	gExtManager = new(std::nothrow) GOpenglExt();
 
-	if (gExtManager->StencilBits() >= 8)
+	// verify if we can clip using stencil buffer
+	if (gExtManager->StencilBits() >= 8) {
 		gClipByStencil = G_TRUE;
+		glDisable(GL_DEPTH_TEST);
+	}
 	else
 		gClipByStencil = G_FALSE;
 	gTopStencilValue = 0;
+	// set "old" state of clipping operations
+	gFirstClipMaskReplace = G_FALSE;
+	// GLSL support
+	gShaderSupport = gExtManager->IsArbShadersSupported();
 
 	SetViewport(LowLeftCornerX, LowLeftCornerY, Width, Height);
 	SetProjection((GReal)LowLeftCornerX, (GReal)(LowLeftCornerX + Width), (GReal)LowLeftCornerY, (GReal)(LowLeftCornerY + Height)); 
@@ -362,7 +366,6 @@ GOpenGLBoard::GOpenGLBoard(const GUInt32 LowLeftCornerX, const GUInt32 LowLeftCo
 	glDisable(GL_LIGHTING);
 	glShadeModel(GL_SMOOTH);
 	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
-	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
 	glDisable(GL_TEXTURE_1D);
 	glDisable(GL_TEXTURE_2D);
@@ -497,12 +500,36 @@ GGradientDesc *GOpenGLBoard::CreateRadialGradient(const GPoint2& Center, const G
 }
 
 GPatternDesc *GOpenGLBoard::CreatePattern(const GPixelMap *Image, const GTilingMode TilingMode,
-										  const GMatrix33& Matrix) {
+										  const GAABox2 *LogicalWindow, const GMatrix33& Matrix) {
 
  	GOpenGLPatternDesc *p = new(std::nothrow) GOpenGLPatternDesc();
 	if (p) {
 		p->SetTilingMode(TilingMode);
 		p->SetMatrix(Matrix);
+		if (LogicalWindow)
+			p->SetLogicalWindow(LogicalWindow->Min(), LogicalWindow->Max());
+		else {
+			GAABox2 tmpBox;
+			GReal left, right, bottom, top;
+			GReal imageRatio = (GReal)Image->Width() / (GReal)Image->Height();
+
+			Projection(left, right, bottom, top);
+
+			GReal logWidth = GMath::Abs(left - right);
+			GReal logHeight = GMath::Abs(top - bottom);
+
+			GReal newLogWidth = logHeight * imageRatio;
+			GReal newLogHeight = logWidth / imageRatio;
+
+			if (newLogWidth > logWidth)
+				newLogWidth = logWidth;
+			else
+				newLogHeight = logHeight;
+
+			// calculate box according to current logical coordinate system and preserving image ratio
+			tmpBox.SetMinMax(GPoint2(left, bottom), GPoint2(left + newLogWidth, bottom + newLogHeight));
+			p->SetLogicalWindow(tmpBox.Min(), tmpBox.Max());
+		}
 		p->SetImage(Image, ImageQuality());
 		gPatterns.push_back(p);
 	}
@@ -529,6 +556,8 @@ void GOpenGLBoard::UpdateDeviation(const GRenderingQuality Quality) {
 			gDeviation = CalcDeviation(HIGH_QUALITY_PIXEL_DEVIATION);
 			break;
 	}
+	G_ASSERT(gDeviation > 0);
+	gFlateness = GMath::Sqrt(gDeviation);
 
 	#undef LOW_QUALITY_PIXEL_DEVIATION
 	#undef NORMAL_QUALITY_PIXEL_DEVIATION
@@ -544,10 +573,97 @@ void GOpenGLBoard::DoSetRenderingQuality(const GRenderingQuality Quality) {
 		glEnable(GL_MULTISAMPLE_ARB);
 }
 
+void GOpenGLBoard::DoSetImageQuality(const GImageQuality Quality) {
+
+	// just to avoid warning
+	if (Quality) {
+	}
+}
+
+void GOpenGLBoard::DoSetTargetMode(const GTargetMode Mode) {
+
+	// just to avoid warning
+	if (Mode) {
+	}
+}
+
+void GOpenGLBoard::DoSetClipOperation(const GClipOperation Operation) {
+
+	// just to avoid warning
+	if (Operation) {
+	}
+//	gClipMaskDrawed = G_FALSE;
+}
+
+void GOpenGLBoard::DoSetClipEnabled(const GBool Enabled) {
+
+	// just to avoid warning
+	if (Enabled) {
+	}
+}
+
+void GOpenGLBoard::DoPopClipMask() {
+
+	if (gClipMasksBoxes.size() == 0)
+		return;
+
+	// setup stencil operation
+	glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+
+	if (gClipMasksBoxes.size() == 1 && gFirstClipMaskReplace) {
+		gTopStencilValue = 0;
+		glClearStencil(0);
+		glClear(GL_STENCIL_BUFFER_BIT);
+		gClipMasksBoxes.clear();
+	}
+	else {
+		
+		GAABox2 lastClipMaskBox(gClipMasksBoxes.back());
+		gClipMasksBoxes.pop_back();
+
+		GPoint2 p0 = lastClipMaskBox.Min();
+		GPoint2 p2 = lastClipMaskBox.Max();
+		GPoint2 p1(p0[G_X], p2[G_Y]);
+		GPoint2 p3(p2[G_X], p0[G_Y]);
+
+		glStencilFunc(GL_EQUAL, (GLint)gTopStencilValue, (GLuint)(~0));
+		if (gTopStencilValue > 0) {
+			gTopStencilValue--;
+			glStencilOp(GL_KEEP, GL_DECR, GL_DECR);
+		}
+		else
+			glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+
+		// pop the mask, drawing a bounding box
+		glBegin(GL_POLYGON);
+		#ifdef DOUBLE_REAL_TYPE
+			glVertex2dv(p0.Data());
+			glVertex2dv(p1.Data());
+			glVertex2dv(p2.Data());
+			glVertex2dv(p3.Data());
+		#else
+			glVertex2fv(p0.Data());
+			glVertex2fv(p1.Data());
+			glVertex2fv(p2.Data());
+			glVertex2fv(p3.Data());
+		#endif
+		glEnd();
+	}
+}
+
+void GOpenGLBoard::DoSetGroupOpacity(const GReal Opacity) {
+
+	// just to avoid warning
+	if (Opacity) {
+	}
+}
+
 void GOpenGLBoard::DoGroupBegin() {
+	// to do : grab frame buffer and go on
 }
 
 void GOpenGLBoard::DoGroupEnd() {
+	// to do : blend grabbed framebuffer according to group opacity
 }
 
 void GOpenGLBoard::DoFlush() {
@@ -560,18 +676,103 @@ void GOpenGLBoard::DoFinish() {
 	glFinish();
 }
 
-void GOpenGLBoard::DoClear(const GReal Red, const GReal Green, const GReal Blue, const GUChar8 ClipValue) {
+void GOpenGLBoard::DoClear(const GReal Red, const GReal Green, const GReal Blue, const GBool ClearClipMasks) {
+
+	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 
 	if (gClipByStencil) {
 		glClearColor((GLclampf)Red, (GLclampf)Green, (GLclampf)Blue, 1.0f);
-		glClearStencil((GLint)ClipValue);
-		glClearDepth(1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+		glClearDepth(1.0);
+		if (ClearClipMasks) {
+			glClearStencil((GLint)0);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+			gTopStencilValue = 0;
+			gClipMasksBoxes.clear();
+		}
+		else
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	}
 	else {
 		glClearColor((GLclampf)Red, (GLclampf)Green, (GLclampf)Blue, 1.0f);
-		glClearDepth((GLfloat)ClipValue / 255.0f);
+		glClearDepth(1.0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	}
+}
+
+void GOpenGLBoard::SetGLClipEnabled(const GTargetMode Mode, const GClipOperation Operation) {
+
+	if (gClipByStencil) {
+
+		// write to the stencil using current clip operation
+		if (Mode == G_CLIP_MODE) {
+
+			glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+			glEnable(GL_STENCIL_TEST);
+
+			switch (Operation) {
+
+				case G_REPLACE_CLIP:
+					if (gTopStencilValue > 254) {
+						glClearStencil((GLint)0);
+						glClear(GL_STENCIL_BUFFER_BIT);
+						gTopStencilValue = 0;
+					}
+					gTopStencilValue++;
+					glStencilFunc(GL_ALWAYS, (GLint)gTopStencilValue, (GLuint)(~0));
+					glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
+					break;
+
+				case G_INTERSECTION_CLIP:
+
+					glStencilFunc(GL_EQUAL, (GLint)gTopStencilValue, (GLuint)(~0));
+					if (gTopStencilValue > 254)
+						glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+					else {
+						gTopStencilValue++;
+						glStencilOp(GL_KEEP, GL_INCR, GL_INCR);
+					}
+					break;
+
+				case G_UNION_CLIP:
+					if (gShaderSupport) {
+					/*
+					if (gTopStencilValue == 0) {
+						gTopStencilValue++;
+						glStencilFunc(GL_ALWAYS, (GLint)gTopStencilValue, (GLuint)(~0));
+						glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
+						
+					}
+					else {
+						glStencilFunc(GL_EQUAL, (GLint)gTopStencilValue, (GLuint)(~0));
+
+						if (gTopStencilValue > 254)
+							glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+						else
+							glStencilOp(GL_REPLACE, GL_INCR, GL_INCR);
+					}*/
+					}
+					else
+						glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+					break;
+			}
+			return;
+		}
+
+		// we are drawing in color mode
+		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+		// enable masks clipping
+		if (ClipEnabled()) {
+			glEnable(GL_STENCIL_TEST);
+			glStencilFunc(GL_LEQUAL, (GLint)gTopStencilValue, (GLuint)(~0));
+			// do not change stencil buffer
+			glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+		}
+		// clip masks not enabled
+		else
+			glDisable(GL_STENCIL_TEST);
+	}
+	// to do : zbuffer version
+	else {
 	}
 }
 
@@ -608,6 +809,25 @@ void GOpenGLBoard::SetGLMatrix(const GMatrix33& Matrix) {
 	m[2][2] = 0;
 	m[3][0] = Matrix[2][0];
 	m[3][1] = Matrix[2][1];
+
+#ifdef DOUBLE_REAL_TYPE
+	glLoadMatrixd((GLdouble *)m.Data());
+#else
+	glLoadMatrixf((GLfloat *)m.Data());
+#endif
+}
+
+void GOpenGLBoard::SetGLTextureMatrix(const GMatrix33& Matrix) {
+
+	// convert an affine 3x3 matrix to its correspondent 4x4 matrix
+	GMatrix44 m;
+
+	m[0][0] = Matrix[0][0];
+	m[0][1] = Matrix[0][1];
+	m[1][0] = Matrix[1][0];
+	m[1][1] = Matrix[1][1];
+	m[0][3] = Matrix[0][2];
+	m[1][3] = Matrix[1][2];
 
 #ifdef DOUBLE_REAL_TYPE
 	glLoadMatrixd((GLdouble *)m.Data());
@@ -657,16 +877,18 @@ void GOpenGLBoard::UpdateStyle(GDrawStyle& Style) {
 
 void GOpenGLBoard::UseStyle(const GPaintType PaintType, const GVector4& Color,
 							const GOpenGLGradientDesc *Gradient, const GOpenGLPatternDesc *Pattern,
-							const GMatrix33& ModelView, const GImageQuality ImageQuality) const {
+							const GMatrix33& ModelView, const GImageQuality ImageQuality) {
 
 	if (TargetMode() == G_CLIP_MODE) {
-		glMatrixMode(GL_TEXTURE);
+		/*glMatrixMode(GL_TEXTURE);
 		glLoadIdentity();
 		glDisable(GL_TEXTURE_1D);
 		glDisable(GL_TEXTURE_2D);
 		glDisable(GL_BLEND);
 		glDisable(GL_TEXTURE_GEN_S);
 		glDisable(GL_TEXTURE_GEN_T);
+		glMatrixMode(GL_MODELVIEW);
+		SetGLMatrix(ModelView);*/
 		return;
 	}
 
@@ -778,12 +1000,13 @@ void GOpenGLBoard::UseStyle(const GPaintType PaintType, const GVector4& Color,
 					glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT_ARB);
 					break;
 			}
-
 		}
 		// radial gradient
 		else {
 			glDisable(GL_TEXTURE_1D);
 			glDisable(GL_TEXTURE_2D);
+			glDisable(GL_TEXTURE_GEN_S);
+			glDisable(GL_TEXTURE_GEN_T);
 		}
 	}
 	// pattern paint
@@ -808,15 +1031,35 @@ void GOpenGLBoard::UseStyle(const GPaintType PaintType, const GVector4& Color,
 			// lets use texture coordinate generation in eye space which is in canvas coordinates
 			glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_EYE_LINEAR);
 			glTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_EYE_LINEAR);
-			GVector4 plane(1, 1, 0, 0);
+
+			const GAABox2& patWindow = Pattern->LogicalWindow();
+			GReal xAxisLen = patWindow.Dimension(G_X);
+			GReal yAxisLen = patWindow.Dimension(G_Y);
+
+			GVector4 planeS(1 / xAxisLen, 0, 0, 0);
+			GVector4 planeT(0, -1 / yAxisLen, 0, 0);
+
 			#ifdef DOUBLE_REAL_TYPE
-				glTexGendv(GL_S, GL_EYE_PLANE, (const GLdouble *)plane.Data());
+				glTexGendv(GL_S, GL_EYE_PLANE, (const GLdouble *)planeS.Data());
+				glTexGendv(GL_T, GL_EYE_PLANE, (const GLdouble *)planeT.Data());
 			#else
-				glTexGenfv(GL_S, GL_EYE_PLANE, (const GLfloat *)plane.Data());
+				glTexGenfv(GL_S, GL_EYE_PLANE, (const GLfloat *)planeS.Data());
+				glTexGenfv(GL_T, GL_EYE_PLANE, (const GLfloat *)planeT.Data());
 			#endif
+
+			GMatrix33 m, preTrans, postTrans;
+			GPoint2 p = -patWindow.Min();
+			p[G_X] /= xAxisLen;
+			p[G_Y] /= -yAxisLen;
+			TranslationToMatrix(preTrans, p);
+
+			TranslationToMatrix(postTrans, GPoint2(0, 1));
+
+			m = (postTrans * (Pattern->Matrix() * preTrans));
 			// load texture matrix
 			glMatrixMode(GL_TEXTURE);
-			SetGLMatrix(Pattern->Matrix());
+			SetGLTextureMatrix(m);
+
 			// enable texture 2D
 			glDisable(GL_TEXTURE_1D);
 			glEnable(GL_TEXTURE_2D);
@@ -829,8 +1072,8 @@ void GOpenGLBoard::UseStyle(const GPaintType PaintType, const GVector4& Color,
 			// set tiling mode
 			switch (Pattern->TilingMode()) {
 				case G_PAD_TILE:
-					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 					break;
 				case G_REPEAT_TILE:
 					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -848,13 +1091,13 @@ void GOpenGLBoard::UseStyle(const GPaintType PaintType, const GVector4& Color,
 	SetGLMatrix(ModelView);
 }
 
-void GOpenGLBoard::UseStrokeStyle(const GDrawStyle& Style) const {
+void GOpenGLBoard::UseStrokeStyle(const GDrawStyle& Style) {
 
 	UseStyle(Style.StrokePaintType(), Style.StrokeColor(), (const GOpenGLGradientDesc *)Style.StrokeGradient(),
 			(const GOpenGLPatternDesc *)Style.StrokePattern(), Style.ModelView(), ImageQuality());
 }
 
-void GOpenGLBoard::UseFillStyle(const GDrawStyle& Style) const {
+void GOpenGLBoard::UseFillStyle(const GDrawStyle& Style) {
 
 	UseStyle(Style.FillPaintType(), Style.FillColor(), (const GOpenGLGradientDesc *)Style.FillGradient(),
 			(const GOpenGLPatternDesc *)Style.FillPattern(), Style.ModelView(), ImageQuality());
@@ -1242,9 +1485,7 @@ void GOpenGLBoard::DrawGLCircleSlice(const GPoint2& Center, const GReal Radius, 
 									 const GPoint2& End, const GReal SpanAngle, const GBool CCW) {
 
 	 // MaxDeviation is a squared chordal distance, we must report to this value to a linear chordal distance
-	GReal flatness = GMath::Sqrt(gDeviation);
-
-	GReal dev = GMath::Clamp(flatness, G_EPSILON, Radius - (G_EPSILON * Radius)), deltaAngle;
+	GReal dev = GMath::Clamp(gFlateness, G_EPSILON, Radius - (G_EPSILON * Radius)), deltaAngle;
 	GUInt32 n = 2;
 
 	GReal n1 = SpanAngle / ((GReal)2 * GMath::Acos((GReal)1 - dev / Radius));
@@ -1562,10 +1803,9 @@ void GOpenGLBoard::DrawGLShadedSector(const GPoint2& Center, const GPoint2& Focu
 		deltaAngle = G_2PI;
 
 	// MaxDeviation is a squared chordal distance, we must report to this value to a linear chordal distance
-	GReal flatness = GMath::Sqrt(gDeviation);
 	// now calculate the number of segments to produce (number of times we have to subdivide angle) that
 	// permit to have a squared chordal distance less than gDeviation
-	GReal dev = GMath::Clamp(flatness, G_EPSILON, maxRadius - (G_EPSILON * maxRadius));
+	GReal dev = GMath::Clamp(gFlateness, G_EPSILON, maxRadius - (G_EPSILON * maxRadius));
 	GInt32 n = 1;
 	GReal n1 = deltaAngle / (2 * GMath::Acos(1 - dev / maxRadius));
 	if (n1 > 1 && n1 >= (deltaAngle * G_ONE_OVER_PI)) {
@@ -2535,8 +2775,9 @@ recycleLabel:
 			if (endDrawed) {
 				if (startDrawed) {
 					dashPatVal = OfsDashPat[0];
+					//dashPatVal = 0;
 					DrawGLJoin(*it1, v, lvOld, w, dashPatVal, Style.StrokeJoinStyle(), Style.StrokeMiterLimit(),
-								Style.StrokeStartCapStyle(), G_BUTT_CAP, Thickness);
+								Style.StrokeStartCapStyle(), Style.StrokeEndCapStyle(), Thickness);
 				}
 				else
 					DrawGLCapsLine(G_TRUE, Style.StrokeStartCapStyle(), G_TRUE, Style.StrokeEndCapStyle(), p0, *it1, Thickness);
@@ -2552,18 +2793,252 @@ recycleLabel:
 	}
 }
 
+GBool GOpenGLBoard::GeometricRadialGradient(const GDrawStyle& Style, const GBool TestFill) {
+
+	GBool res;
+
+	if (TestFill) {
+
+		if ((Style.FillPaintType() == G_GRADIENT_PAINT_TYPE) &&
+			(Style.FillGradient()) &&
+			(Style.FillGradient()->Type() == G_RADIAL_GRADIENT) &&
+			(!gShaderSupport))
+			res = G_TRUE;
+		else
+		// just until a full shader implementation is not available
+		if ((Style.FillPaintType() == G_GRADIENT_PAINT_TYPE) &&
+			(Style.FillGradient()) &&
+			(Style.FillGradient()->Type() == G_RADIAL_GRADIENT) &&
+			(gShaderSupport))
+			res = G_TRUE;
+		else
+			res = G_FALSE;
+	}
+	else {
+
+		if ((Style.StrokePaintType() == G_GRADIENT_PAINT_TYPE) &&
+			(Style.StrokeGradient()) &&
+			(Style.StrokeGradient()->Type() == G_RADIAL_GRADIENT) &&
+			(!gShaderSupport))
+			res = G_TRUE;
+		else
+		// just until a full shader implementation is not available
+		if ((Style.StrokePaintType() == G_GRADIENT_PAINT_TYPE) &&
+			(Style.StrokeGradient()) &&
+			(Style.StrokeGradient()->Type() == G_RADIAL_GRADIENT) &&
+			(gShaderSupport))
+			res = G_TRUE;
+		else
+			res = G_FALSE;
+	}
+
+	if (res)
+		// geometric radial gradient uses stencil clip
+		SetGLClipEnabled(G_CLIP_MODE, G_INTERSECTION_CLIP);
+	else
+		SetGLClipEnabled(TargetMode(), ClipOperation());
+
+	return res;
+}
+
+void GOpenGLBoard::UpdateClipMasksState() {
+
+	if (ClipOperation() == G_REPLACE_CLIP) {
+		gClipMasksBoxes.clear();
+		gFirstClipMaskReplace = G_TRUE;
+	}
+	else {
+		if (gClipMasksBoxes.empty())
+			gFirstClipMaskReplace = G_FALSE;
+	}
+}
+
 void GOpenGLBoard::DoDrawLine(GDrawStyle& Style, const GPoint2& P0, const GPoint2& P1) {
 
-	if (!Style.StrokeEnabled() || Distance(P0, P1) < G_EPSILON)
+	if (Distance(P0, P1) <= G_EPSILON)
 		return;
 
+	// update style
 	UpdateStyle(Style);
+
+	if (TargetMode() == G_CLIP_MODE) {
+
+		SetGLClipEnabled(TargetMode(), ClipOperation());
+		// draw line segment
+		if (Style.StrokeStyle() == G_SOLID_STROKE)
+			DrawGLCapsLine(G_TRUE, Style.StrokeStartCapStyle(), G_TRUE, Style.StrokeEndCapStyle(), P0, P1, Style.StrokeThickness());
+		else {
+			GDynArray<GPoint2> pts(2);
+			pts[0] = P0;
+			pts[1] = P1;
+			DrawDashedStroke(Style, pts, G_FALSE, Style.StrokeThickness());
+		}
+		// take care of replace operation
+		UpdateClipMasksState();
+		// calculate bound box of the drawn clip mask
+		GAABox2 tmpBox(GPoint2(P0[G_X] - Style.StrokeThickness(), P0[G_Y] - Style.StrokeThickness()),
+						GPoint2(P1[G_X] + Style.StrokeThickness(), P1[G_Y] + Style.StrokeThickness()));
+		gClipMasksBoxes.push_back(tmpBox);
+		return;
+	}
+
+	// set stroke style using OpenGL
 	UseStrokeStyle(Style);
 
-	GReal thickness = Style.StrokeWidth() * (GReal)0.5;
+	GBool geomRadialGradient = GeometricRadialGradient(Style, G_FALSE);
 
 	// draw line segment
-	DrawGLCapsLine(G_TRUE, Style.StrokeStartCapStyle(), G_TRUE, Style.StrokeEndCapStyle(), P0, P1, thickness);
+	if (Style.StrokeStyle() == G_SOLID_STROKE)
+		DrawGLCapsLine(G_TRUE, Style.StrokeStartCapStyle(), G_TRUE, Style.StrokeEndCapStyle(), P0, P1, Style.StrokeThickness());
+	else {
+		GDynArray<GPoint2> pts(2);
+		pts[0] = P0;
+		pts[1] = P1;
+		DrawDashedStroke(Style, pts, G_FALSE, Style.StrokeThickness());
+	}
+
+	// geometric radial gradient uses stencil clip, so we must pop off clip mask
+	if (geomRadialGradient) {
+
+		GOpenGLGradientDesc *g = (GOpenGLGradientDesc *)Style.StrokeGradient();
+
+		GAABox2 tmpBox(GPoint2(P0[G_X] - Style.StrokeThickness(), P0[G_Y] - Style.StrokeThickness()),
+						GPoint2(P1[G_X] + Style.StrokeThickness(), P1[G_Y] + Style.StrokeThickness()));
+		gClipMasksBoxes.push_back(tmpBox);
+
+		SetGLClipEnabled(TargetMode(), ClipOperation());
+		DrawShadedSector(g->StartPoint(), g->AuxPoint(), g->Radius(), tmpBox, g->ColorKeys(), g->ColorInterpolation(), g->SpreadMode());
+		PopClipMask();
+	}
+}
+
+void GOpenGLBoard::DoDrawRectangle(GDrawStyle& Style, const GPoint2& MinCorner, const GPoint2& MaxCorner) {
+
+	if (Distance(MinCorner, MaxCorner) <= G_EPSILON)
+		return;
+
+
+	GDynArray<GPoint2> pts(4);
+	/*
+		p1------p2
+		|        |
+		|        |
+		p0------p3
+	*/
+	pts[0] = MinCorner;
+	pts[1].Set(MinCorner[G_X], MaxCorner[G_Y]);
+	pts[2] = MaxCorner;
+	pts[3].Set(MaxCorner[G_X], MinCorner[G_Y]);
+
+	// update style
+	UpdateStyle(Style);
+
+	if (TargetMode() == G_CLIP_MODE) {
+
+		SetGLClipEnabled(TargetMode(), ClipOperation());
+
+		// draw fill
+		if (Style.FillEnabled()) {
+			glBegin(GL_POLYGON);
+			#ifdef DOUBLE_REAL_TYPE
+				glVertex2dv(pts[0].Data());
+				glVertex2dv(pts[1].Data());
+				glVertex2dv(pts[2].Data());
+				glVertex2dv(pts[3].Data());
+			#else
+				glVertex2fv(pts[0].Data());
+				glVertex2fv(pts[1].Data());
+				glVertex2fv(pts[2].Data());
+				glVertex2fv(pts[3].Data());
+			#endif
+			glEnd();
+		}
+		// draw stroke
+		if (Style.StrokeEnabled()) {
+			if (Style.StrokeStyle() == G_SOLID_STROKE)
+				DrawSolidStroke(Style, pts, G_TRUE, Style.StrokeThickness());
+			else
+				DrawDashedStroke(Style, pts, G_TRUE, Style.StrokeThickness());
+		}
+		// take care of replace operation
+		UpdateClipMasksState();
+		// calculate and push bounding box
+		GReal expandLength = 0;
+		if (Style.StrokeEnabled())
+			expandLength = GMath::Max(Style.StrokeThickness(), Style.StrokeThickness() * Style.StrokeMiterLimit());
+
+		GAABox2 tmpBox(GPoint2(MinCorner[G_X] - expandLength, MinCorner[G_Y] - expandLength),
+						GPoint2(MaxCorner[G_X] + expandLength, MaxCorner[G_Y] + expandLength));
+		gClipMasksBoxes.push_back(tmpBox);
+		return;
+	}
+
+	// set fill style using OpenGL
+	UseFillStyle(Style);
+
+	if (Style.FillEnabled()) {
+
+		GBool geomRadialGradient = GeometricRadialGradient(Style, G_TRUE);
+
+		// draw fill
+		glBegin(GL_POLYGON);
+		#ifdef DOUBLE_REAL_TYPE
+			glVertex2dv(pts[0].Data());
+			glVertex2dv(pts[1].Data());
+			glVertex2dv(pts[2].Data());
+			glVertex2dv(pts[3].Data());
+		#else
+			glVertex2fv(pts[0].Data());
+			glVertex2fv(pts[1].Data());
+			glVertex2fv(pts[2].Data());
+			glVertex2fv(pts[3].Data());
+		#endif
+		glEnd();
+
+		// geometric radial gradient uses stencil clip, so we must pop off clip mask
+		if (geomRadialGradient) {
+
+			GOpenGLGradientDesc *g = (GOpenGLGradientDesc *)Style.FillGradient();
+
+			GAABox2 tmpBox(GPoint2(MinCorner[G_X] - Style.StrokeThickness(), MinCorner[G_Y] - Style.StrokeThickness()),
+							GPoint2(MaxCorner[G_X] + Style.StrokeThickness(), MaxCorner[G_Y] + Style.StrokeThickness()));
+			gClipMasksBoxes.push_back(tmpBox);
+
+			SetGLClipEnabled(TargetMode(), ClipOperation());
+			DrawShadedSector(g->StartPoint(), g->AuxPoint(), g->Radius(), tmpBox, g->ColorKeys(), g->ColorInterpolation(), g->SpreadMode());
+			PopClipMask();
+		}
+	}
+
+
+	// draw stroke
+	UseStrokeStyle(Style);
+
+	if (Style.StrokeEnabled()) {
+		
+		GBool geomRadialGradient = GeometricRadialGradient(Style, G_FALSE);
+
+		// solid stroke
+		if (Style.StrokeStyle() == G_SOLID_STROKE)
+			DrawSolidStroke(Style, pts, G_TRUE, Style.StrokeThickness());
+		else
+			DrawDashedStroke(Style, pts, G_TRUE, Style.StrokeThickness());
+
+		// geometric radial gradient uses stencil clip, so we must pop off clip mask
+		if (geomRadialGradient) {
+
+			GOpenGLGradientDesc *g = (GOpenGLGradientDesc *)Style.StrokeGradient();
+
+			GAABox2 tmpBox(GPoint2(MinCorner[G_X] - Style.StrokeThickness(), MinCorner[G_Y] - Style.StrokeThickness()),
+							GPoint2(MaxCorner[G_X] + Style.StrokeThickness(), MaxCorner[G_Y] + Style.StrokeThickness()));
+			gClipMasksBoxes.push_back(tmpBox);
+
+			SetGLClipEnabled(TargetMode(), ClipOperation());
+			DrawShadedSector(g->StartPoint(), g->AuxPoint(), g->Radius(), tmpBox, g->ColorKeys(), g->ColorInterpolation(), g->SpreadMode());
+			PopClipMask();
+		}
+	}
+
 }
 
 void GOpenGLBoard::DoDrawBezier(GDrawStyle& Style, const GPoint2& P0, const GPoint2& P1, const GPoint2& P2) {
@@ -2598,6 +3073,8 @@ void GOpenGLBoard::DoDrawPolygon(GDrawStyle& Style, const GDynArray<GPoint2>& Po
 	if (Points.size() < 2)
 		return;
 
+	SetGLClipEnabled(TargetMode(), ClipOperation());
+
 	// update and use style
 	UpdateStyle(Style);
 	UseStrokeStyle(Style);
@@ -2606,22 +3083,44 @@ void GOpenGLBoard::DoDrawPolygon(GDrawStyle& Style, const GDynArray<GPoint2>& Po
 	if (Style.FillEnabled()) {
 	}
 
-	// calculate thickness
-	GReal thickness = Style.StrokeWidth() * (GReal)0.5;
-
 	// draw stroke
 	if (Style.StrokeEnabled()) {
 		// solid stroke
 		if (Style.StrokeStyle() == G_SOLID_STROKE)
-			DrawSolidStroke(Style, Points, Closed, thickness);
+			DrawSolidStroke(Style, Points, Closed, Style.StrokeThickness());
 		else {
 			if (Points.size() <= 2)
-				DrawDashedStroke(Style, Points, G_FALSE, thickness);
+				DrawDashedStroke(Style, Points, G_FALSE, Style.StrokeThickness());
 			else
-				DrawDashedStroke(Style, Points, Closed, thickness);
+				DrawDashedStroke(Style, Points, Closed, Style.StrokeThickness());
 		}
 	}
 
+	if (TargetMode() == G_CLIP_MODE) {
+
+		if (ClipOperation() == G_REPLACE_CLIP) {
+			gClipMasksBoxes.clear();
+			gFirstClipMaskReplace = G_TRUE;
+		}
+		else {
+			if (gClipMasksBoxes.empty())
+				gFirstClipMaskReplace = G_FALSE;
+		}
+
+		GReal expandLength = 0;
+		if (Style.StrokeEnabled())
+			expandLength = GMath::Max(Style.StrokeThickness(), Style.StrokeThickness() * Style.StrokeMiterLimit());
+
+		GAABox2 tmpBox(Points);
+		GPoint2 newMin = tmpBox.Min();
+		GPoint2 newMax = tmpBox.Max();
+		newMin[G_X] -= expandLength;
+		newMin[G_Y] -= expandLength;
+		newMax[G_X] += expandLength;
+		newMax[G_Y] += expandLength;
+		tmpBox.SetMinMax(newMin, newMax);
+		gClipMasksBoxes.push_back(tmpBox);
+	}
 }
 
 };	// end namespace Amanith

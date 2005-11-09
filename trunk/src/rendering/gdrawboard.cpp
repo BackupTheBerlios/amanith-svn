@@ -78,11 +78,11 @@ void GDrawBoard::Finish() {
 		DoFinish();
 }
 
-void GDrawBoard::Clear(const GReal Red, const GReal Green, const GReal Blue, const GUChar8 ClipValue) {
+void GDrawBoard::Clear(const GReal Red, const GReal Green, const GReal Blue, const GBool ClearClipMasks) {
 
 	if (!gInsideGroup)
 		DoClear(GMath::Clamp(Red, (GReal)0, (GReal)1), GMath::Clamp(Green, (GReal)0, (GReal)1),
-				GMath::Clamp(Blue, (GReal)0, (GReal)1), ClipValue);
+				GMath::Clamp(Blue, (GReal)0, (GReal)1), ClearClipMasks);
 }
 
 // group begin
@@ -103,32 +103,6 @@ void GDrawBoard::GroupEnd() {
 		gInsideGroup = G_FALSE;
 	}
 }
-
-/*// cached draw styles
-GError GDrawBoard::CacheDrawStyle(const GDrawStyle& DrawStyle, GUInt32& Index, const GBool Initialize) {
-
-	GDrawStyle *s = new(std::nothrow) GDrawStyle;
-
-	if (s) {
-		*s = DrawStyle;
-		gDrawStyles.push_back(s);
-		Index = ((GUInt32)gDrawStyles.size() - 1);
-		if (Initialize)
-			return DoInitDrawStyle(*s);
-		else
-			return G_NO_ERROR;
-	}
-	else
-		return G_MEMORY_ERROR;
-}
-
-GError GDrawBoard::SetDrawStyle(const GUInt32 CachedIndex) {
-
-	if (CachedIndex >= (GUInt32)gDrawStyles.size())
-		return G_OUT_OF_RANGE;
-
-	return DoSetDrawStyle(*(gDrawStyles[CachedIndex]));
-}*/
 
 // get active draw style
 GDrawStyle *GDrawBoard::ActiveDrawStyle() {
@@ -186,9 +160,15 @@ void GDrawBoard::SetProjection(const GReal Left, const GReal Right, const GReal 
 	if (Left == Right || Bottom == Top || gInsideGroup)
 		return;
 
-	gProjection.Set(Left, Right, Bottom, Top);
-	DoSetProjection(Left, Right, Bottom, Top);
+	if (!gInsideGroup) {
+		gProjection.Set(Left, Right, Bottom, Top);
+		DoSetProjection(Left, Right, Bottom, Top);
+	}
 }
+
+//---------------------------------------------------------------------------
+//                             RENDERING CONTEXT
+//---------------------------------------------------------------------------
 
 // rendering quality
 GRenderingQuality GDrawBoard::RenderingQuality() const {
@@ -212,20 +192,24 @@ GImageQuality GDrawBoard::ImageQuality() const {
 
 void GDrawBoard::SetImageQuality(const GImageQuality Quality) {
 
-	if (!gInsideGroup)
+	if (!gInsideGroup) {
 		gCurrentContext.gImageQuality = Quality;
+		DoSetImageQuality(Quality);
+	}
 }
 
 // target mode
-GUInt32 GDrawBoard::TargetMode() const {
+GTargetMode GDrawBoard::TargetMode() const {
 
 	return gCurrentContext.gTargetMode;
 }
 
-void GDrawBoard::SetTargetMode(const GUInt32 Mode) {
+void GDrawBoard::SetTargetMode(const GTargetMode Mode) {
 
-	if (!gInsideGroup)
+	if (!gInsideGroup) {
 		gCurrentContext.gTargetMode = Mode;
+		DoSetTargetMode(Mode);
+	}
 }
 
 // clip operation
@@ -236,8 +220,10 @@ GClipOperation GDrawBoard::ClipOperation() const {
 
 void GDrawBoard::SetClipOperation(const GClipOperation Operation) {
 
-	if (!gInsideGroup)
+	if (!gInsideGroup) {
 		gCurrentContext.gClipOperation = Operation;
+		DoSetClipOperation(Operation);
+	}
 }
 
 // clip enabled
@@ -248,20 +234,31 @@ GBool GDrawBoard::ClipEnabled() const {
 
 void GDrawBoard::SetClipEnabled(const GBool Enabled) {
 
-	if (!gInsideGroup)
+	if (!gInsideGroup) {
 		gCurrentContext.gClipEnabled = Enabled;
+		DoSetClipEnabled(Enabled);
+	}
+}
+
+// pop last clip mask
+void GDrawBoard::PopClipMask() {
+
+	if (!gInsideGroup)
+		DoPopClipMask();
 }
 
 // opacity
-GReal GDrawBoard::Opacity() const {
+GReal GDrawBoard::GroupOpacity() const {
 
 	return gCurrentContext.gOpacity;
 }
 
-void GDrawBoard::SetOpacity(const GReal Opacity) {
+void GDrawBoard::SetGroupOpacity(const GReal Opacity) {
 
-	if (!gInsideGroup)
+	if (!gInsideGroup) {
 		gCurrentContext.gOpacity = GMath::Clamp(Opacity, (GReal)0, (GReal)1);
+		DoSetGroupOpacity(gCurrentContext.gOpacity);
+	}
 }
 
 // model-view matrix
@@ -276,6 +273,7 @@ void GDrawBoard::SetModelViewMatrix(const GMatrix33& Matrix) {
 	GDrawStyle *s = ActiveDrawStyle();
 	s->SetModelView(Matrix);
 }
+//-----------------------------------------------------------
 
 // stroke start cap
 GCapStyle GDrawBoard::StrokeStartCapStyle() const {
@@ -522,52 +520,76 @@ void GDrawBoard::SetFillEnabled(const GBool Enabled) {
 void GDrawBoard::DrawLine(const GPoint2& P0, const GPoint2& P1) {
 
 	GDrawStyle *s = ActiveDrawStyle();
-	DoDrawLine(*s, P0, P1);
+
+	if (s->StrokeEnabled())
+		DoDrawLine(*s, P0, P1);
 }
 
 void GDrawBoard::DrawBezier(const GPoint2& P0, const GPoint2& P1, const GPoint2& P2) {
 
 	GDrawStyle *s = ActiveDrawStyle();
-	DoDrawBezier(*s, P0, P1, P2);
+
+	if (s->StrokeEnabled())
+		DoDrawBezier(*s, P0, P1, P2);
 }
 
 void GDrawBoard::DrawBezier(const GPoint2& P0, const GPoint2& P1, const GPoint2& P2, const GPoint2& P3) {
 
 	GDrawStyle *s = ActiveDrawStyle();
-	DoDrawBezier(*s, P0, P1, P2, P3);
+
+	if (s->StrokeEnabled())
+		DoDrawBezier(*s, P0, P1, P2, P3);
 }
 
 void GDrawBoard::DrawEllipseArc(const GPoint2& Center, const GReal XSemiAxisLength, const GReal YSemiAxisLength,
 								const GReal OffsetRotation, const GReal StartAngle, const GReal EndAngle, const GBool CCW) {
 
 	GDrawStyle *s = ActiveDrawStyle();
-	DoDrawEllipseArc(*s, Center, XSemiAxisLength, YSemiAxisLength, OffsetRotation, StartAngle, EndAngle, CCW);
+
+	if (s->StrokeEnabled())
+		DoDrawEllipseArc(*s, Center, XSemiAxisLength, YSemiAxisLength, OffsetRotation, StartAngle, EndAngle, CCW);
 }
 
 void GDrawBoard::DrawEllipseArc(const GPoint2& P0, const GPoint2& P1, const GReal XSemiAxisLength, const GReal YSemiAxisLength,
 								const GReal OffsetRotation, const GBool LargeArc, const GBool CCW) {
 
 	GDrawStyle *s = ActiveDrawStyle();
-	DoDrawEllipseArc(*s, P0, P1, XSemiAxisLength, YSemiAxisLength, OffsetRotation, LargeArc, CCW);
+
+	if (s->StrokeEnabled())
+		DoDrawEllipseArc(*s, P0, P1, XSemiAxisLength, YSemiAxisLength, OffsetRotation, LargeArc, CCW);
 }
 
 void GDrawBoard::DrawPolygon(const GDynArray<GPoint2>& Points, const GBool Closed) {
 
 	GDrawStyle *s = ActiveDrawStyle();
-	DoDrawPolygon(*s, Points, Closed);
+
+	if (s->StrokeEnabled() || s->FillEnabled())
+		DoDrawPolygon(*s, Points, Closed);
 }
 
 // High level drawing functions
 void GDrawBoard::DrawRectangle(const GPoint2& Center, const GReal Width, const GReal Height) {
 
-	if (Center[0] && Width && Height) {
-	}
+	GReal halfW = Width * (GReal)0.5;
+	GReal halfH = Height * (GReal)0.5;
+
+	GPoint2 p0(Center[G_X] - halfW, Center[G_Y] - halfH);
+	GPoint2 p1(Center[G_X] + halfW, Center[G_Y] + halfH);
+
+	GAABox2 box(p0, p1);
+	GDrawStyle *s = ActiveDrawStyle();
+
+	if (s->StrokeEnabled() || s->FillEnabled())
+		DoDrawRectangle(*s, box.Min(), box.Max());
 }
 
 void GDrawBoard::DrawRectangle(const GPoint2& P0, const GPoint2& P1) {
 
-	if (P0[0] && P1[0]) {
-	}
+	GAABox2 box(P0, P1);
+	GDrawStyle *s = ActiveDrawStyle();
+
+	if (s->StrokeEnabled() || s->FillEnabled())
+		DoDrawRectangle(*s, box.Min(), box.Max());
 }
 
 void GDrawBoard::DrawRoundRectangle(const GPoint2& Center, const GReal Width, const GReal Height,

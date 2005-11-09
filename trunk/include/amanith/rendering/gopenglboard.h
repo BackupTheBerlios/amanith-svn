@@ -106,8 +106,12 @@ namespace Amanith {
 		GDynArray<GOpenGLGradientDesc *> gGradients;
 		GDynArray<GOpenGLPatternDesc *> gPatterns;
 		GBool gClipByStencil;
+		GBool gShaderSupport;
 		GUChar8 gTopStencilValue;
+		GBool gFirstClipMaskReplace;
+		GList<GAABox2> gClipMasksBoxes;
 		GReal gDeviation;
+		GReal gFlateness; // defined as sqrt(gDeviation)
 
 	private:
 		// calculate (squared) deviation given a (squared) pixel deviation
@@ -123,6 +127,10 @@ namespace Amanith {
 		static void SetGLColor(const GVectBase<GReal, 4>& Color);
 		static void SetGLColor(const GVectBase<GReal, 3>& Color);
 		static void SetGLMatrix(const GMatrix33& Matrix);
+		static void SetGLTextureMatrix(const GMatrix33& Matrix);
+		
+		void SetGLClipEnabled(const GTargetMode Mode, const GClipOperation Operation);
+
 		void DrawGLCircleSlice(const GPoint2& Center, const GReal Radius, const GPoint2& Start,
 							 const GPoint2& End, const GReal SpanAngle, const GBool CCW);
 
@@ -167,29 +175,40 @@ namespace Amanith {
 							  const GDynArray<GKeyValue>& ColorKeys, const GColorRampInterpolation Interpolation,
 							  const GColorRampSpreadMode SpreadMode) const;
 
+		void UpdateClipMasksState();
+		GBool GeometricRadialGradient(const GDrawStyle& Style, const GBool TestFill);
+
 		//
 		void UpdateStyle(GDrawStyle& Style);
 		void UseStyle(const GPaintType PaintType, const GVector4& Color,
 					  const GOpenGLGradientDesc *Gradient, const GOpenGLPatternDesc *Pattern,
-					  const GMatrix33& ModelView, const GImageQuality ImageQuality) const;
-		void UseStrokeStyle(const GDrawStyle& Style) const;
-		void UseFillStyle(const GDrawStyle& Style) const;
+					  const GMatrix33& ModelView, const GImageQuality ImageQuality);
+		void UseStrokeStyle(const GDrawStyle& Style);
+		void UseFillStyle(const GDrawStyle& Style);
 		void UpdateDeviation(const GRenderingQuality Quality);
 
 		// implemented from GDrawBoard
 		void DoSetRenderingQuality(const GRenderingQuality Quality);
+		void DoSetImageQuality(const GImageQuality Quality);
+		void DoSetTargetMode(const GTargetMode Mode);
+		void DoSetClipOperation(const GClipOperation Operation);
+		void DoSetClipEnabled(const GBool Enabled);
+		void DoPopClipMask();
+		void DoSetGroupOpacity(const GReal Opacity);
 		void DoGroupBegin();
 		void DoGroupEnd();
 		void DoFlush();
 		void DoFinish();
-		void DoClear(const GReal Red, const GReal Green, const GReal Blue, const GUChar8 ClipValue);
+		void DoClear(const GReal Red, const GReal Green, const GReal Blue, const GBool ClearClipMasks);
 		void DoSetViewport(const GUInt32 LowLeftCornerX, const GUInt32 LowLeftCornerY,
 						   const GUInt32 Width, const GUInt32 Height);
 		void DoSetProjection(const GReal Left, const GReal Right, const GReal Bottom, const GReal Top);
 
 
-
 		// draw primitives
+
+		// here we are sure that corners are opposite and ordered
+		void DoDrawRectangle(GDrawStyle& Style, const GPoint2& MinCorner, const GPoint2& MaxCorner);
 		void DoDrawLine(GDrawStyle& Style, const GPoint2& P0, const GPoint2& P1);
 		void DoDrawBezier(GDrawStyle& Style, const GPoint2& P0, const GPoint2& P1, const GPoint2& P2);
 		void DoDrawBezier(GDrawStyle& Style, const GPoint2& P0, const GPoint2& P1, const GPoint2& P2, const GPoint2& P3);
@@ -227,7 +246,9 @@ namespace Amanith {
 											const GMatrix33& Matrix = G_MATRIX_IDENTITY33);
 
 		GPatternDesc *CreatePattern(const GPixelMap *Image, const GTilingMode TilingMode = G_REPEAT_TILE,
+									const GAABox2 *LogicalWindow = NULL,
 									const GMatrix33& Matrix = G_MATRIX_IDENTITY33);
+
 	};
 
 };	// end namespace Amanith
