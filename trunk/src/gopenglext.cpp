@@ -61,6 +61,18 @@ GOpenglExt::GOpenglExt() {
 		G_DEBUG("GLEW has not been loaded successfully!");
 }
 
+GUInt32 GOpenglExt::PowerOfTwo(const GUInt32 Value) {
+
+	if (Value >= (GUInt32)(1 << 31))
+		return (GUInt32)(1 << 31);
+
+	GUInt32 v = 1;
+	while (v < Value)
+		v <<= 1;
+
+	return v;
+}
+
 const GStringList& GOpenglExt::SupportedFunctions() const {
 
 	return gSupportedFunctions;
@@ -302,6 +314,16 @@ GBool GOpenglExt::IsCubemapSupported() const {
 }
 
 /*!
+	\return G_TRUE if GL_ARB_texture_cube_map extension is supported, G_FALSE otherwise.
+*/
+GBool GOpenglExt::IsRectTextureSupported() {
+
+	if (glewGetExtension("GL_EXT_texture_rectangle") || glewGetExtension("GL_ARB_texture_rectangle"))
+		return G_TRUE;
+	return G_FALSE;
+}
+
+/*!
 	\return G_TRUE if both GL_ARB_vertex_program and GL_ARB_fragment_program extensions are supported, G_FALSE otherwise.
 */
 GBool GOpenglExt::IsArbProgramsSupported() const {
@@ -387,6 +409,13 @@ GUInt32 GOpenglExt::BlueBits() const {
 
 	GLint num = 0;
 	glGetIntegerv(GL_BLUE_BITS, &num);
+	return (GUInt32)num;
+}
+
+GUInt32 GOpenglExt::AlphaBits() const {
+
+	GLint num = 0;
+	glGetIntegerv(GL_ALPHA_BITS, &num);
 	return (GUInt32)num;
 }
 

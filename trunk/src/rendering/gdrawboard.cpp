@@ -90,8 +90,31 @@ void GDrawBoard::GroupBegin() {
 
 	if (!gInsideGroup) {
 		gInsideGroup = G_TRUE;
-		gGroupDrawStyle = gCurrentContext.gDrawStyle;
-		DoGroupBegin();
+		//gProjection; // x = left; y = right; z = bottom; w = top
+		GPoint2 p0(gProjection[G_X], gProjection[G_Z]);
+		GPoint2 p1(gProjection[G_Y], gProjection[G_W]);
+		DoGroupBegin(GAABox2(p0, p1));
+	}
+}
+
+void GDrawBoard::GroupBegin(const GAABox2& LogicBox) {
+
+	if (!gInsideGroup) {
+		gInsideGroup = G_TRUE;
+
+		GInterval<GReal> xInterval0(LogicBox.Min()[G_X], LogicBox.Max()[G_X]);
+		GInterval<GReal> yInterval0(LogicBox.Min()[G_Y], LogicBox.Max()[G_Y]);
+
+		// gProjection; // x = left; y = right; z = bottom; w = top
+		GInterval<GReal> xInterval1(gProjection[G_X], gProjection[G_Y]);
+		GInterval<GReal> yInterval1(gProjection[G_Z], gProjection[G_W]);
+
+		xInterval0 &= xInterval1;
+		yInterval0 &= yInterval1;
+
+		GPoint2 p0(xInterval0.Start(), yInterval0.Start());
+		GPoint2 p1(xInterval0.End(), yInterval0.End());
+		DoGroupBegin(GAABox2(p0, p1));
 	}
 }
 
@@ -107,18 +130,12 @@ void GDrawBoard::GroupEnd() {
 // get active draw style
 GDrawStyle *GDrawBoard::ActiveDrawStyle() {
 
-	if (gInsideGroup)
-		return &gGroupDrawStyle;
-	else
-		return &gCurrentContext.gDrawStyle;
+	return &gCurrentContext.gDrawStyle;
 }
 
 const GDrawStyle *GDrawBoard::ActiveDrawStyle() const {
 
-	if (gInsideGroup)
-		return &gGroupDrawStyle;
-	else
-		return &gCurrentContext.gDrawStyle;
+	return &gCurrentContext.gDrawStyle;
 }
 
 // physical viewport
@@ -164,6 +181,32 @@ void GDrawBoard::SetProjection(const GReal Left, const GReal Right, const GReal 
 		gProjection.Set(Left, Right, Bottom, Top);
 		DoSetProjection(Left, Right, Bottom, Top);
 	}
+}
+
+// coordinates conversion from logical to physical
+GPoint<GInt32, 2> GDrawBoard::LogicalToPhysical(const GPoint2& LogicalPoint) {
+
+	// GPoint<GUInt32, 4> gViewport;  // (x, y) = low-left corner; z = width; w = height
+	// GPoint4 gProjection; // x = left; y = right; z = bottom; w = top
+
+	GReal rx = (LogicalPoint[G_X] - gProjection[G_X]) / (gProjection[G_Y] - gProjection[G_X]);
+	GInt32 x = (GInt32)((GReal)gViewport[G_X] + (GReal)gViewport[G_Z] * rx);
+	GReal ry = (LogicalPoint[G_Y] - gProjection[G_Z]) / (gProjection[G_W] - gProjection[G_Z]);
+	GInt32 y = (GInt32)((GReal)gViewport[G_Y] + (GReal)gViewport[G_W] * ry);
+	return (GPoint<GInt32, 2>(x, y));
+}
+
+// coordinates conversion from physical to logical
+GPoint2 GDrawBoard::PhysicalToLogical(const GPoint<GInt32, 2>& PhysicalPoint) {
+
+	// GPoint<GUInt32, 4> gViewport;  // (x, y) = low-left corner; z = width; w = height
+	// GPoint4 gProjection; // x = left; y = right; z = bottom; w = top
+
+	GReal rx = (GReal)((PhysicalPoint[G_X] - (GInt32)gViewport[G_X]) / (GReal)gViewport[G_Z]);
+	GReal x = gProjection[G_X] + rx * (gProjection[G_Y] - gProjection[G_X]);
+	GReal ry = (GReal)((PhysicalPoint[G_Y] - (GInt32)gViewport[G_Y]) / (GReal)gViewport[G_W]);
+	GReal y = gProjection[G_Z] + ry * (gProjection[G_W] - gProjection[G_Z]);
+	return GPoint2(x, y);
 }
 
 //---------------------------------------------------------------------------

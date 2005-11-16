@@ -80,6 +80,7 @@ namespace Amanith {
 
 	private:
 		GLuint gPatternTexture;
+		GUInt32 gMaxTextureSize;
 
 	protected:
 		static void SetGLImageQuality(const GImageQuality Quality);
@@ -97,6 +98,18 @@ namespace Amanith {
 		}
 	};
 
+	struct GLGrabbedRect {
+		
+		GInt32 X, Y;
+		GUInt32 Width, Height;
+		GUInt32 TexWidth, TexHeight;
+		GLenum Target; // GL_TEXTURE_2D or GL_TEXTURE_RECTANGLE_EXT
+		GLenum Format;
+		GLuint TexName;
+		GBool IsEmpty;
+		//GBool IsOpaque;
+	};
+
 	// *********************************************************************
 	//                             GOpenGLBoard
 	// *********************************************************************
@@ -107,17 +120,41 @@ namespace Amanith {
 		GDynArray<GOpenGLPatternDesc *> gPatterns;
 		GBool gClipByStencil;
 		GBool gShaderSupport;
-		GUChar8 gTopStencilValue;
+		GBool gGroupOpacitySupport;
+
+		GLint gTopStencilValue;
+		GLint gMaxTopStencilValue;
+		GLuint gStencilMask;
+		GLuint gStencilDualMask;
+
+
 		GBool gFirstClipMaskReplace;
 		GList<GAABox2> gClipMasksBoxes;
 		GReal gDeviation;
 		GReal gFlateness; // defined as sqrt(gDeviation)
+		GLGrabbedRect gGLGroupRect;
 
 	private:
 		// calculate (squared) deviation given a (squared) pixel deviation
 		GReal CalcDeviation(const GReal PixelDeviation);
 		// calculate (squared) pixel deviation given a (squared) deviation
 		GReal CalcPixelDeviation(const GReal Deviation);
+
+		void PushGLWindowMode();
+		void PopGLWindowMode();
+
+		void GrabFrameBuffer(const GPoint<GInt32, 2>& LowLeft, const GUInt32 Width, const GUInt32 Height,
+							 GLGrabbedRect& Shot);
+		void ReplaceFrameBuffer(const GLGrabbedRect& Shot);
+		// stencil management
+		void StencilPush();
+		void StencilPop();
+		void StencilReplace();
+		void StencilEnableTop();
+		//void StencilEnableTopAndPush();
+
+		// double pass technique for group opacity
+		void GroupFirstPass();
 
 	protected:
 		void DeleteGradients();
@@ -126,10 +163,10 @@ namespace Amanith {
 		// OpenGL low level drawings
 		static void SetGLColor(const GVectBase<GReal, 4>& Color);
 		static void SetGLColor(const GVectBase<GReal, 3>& Color);
-		static void SetGLMatrix(const GMatrix33& Matrix);
+		static void SetGLModelViewMatrix(const GMatrix33& Matrix);
 		static void SetGLTextureMatrix(const GMatrix33& Matrix);
 		
-		void SetGLClipEnabled(const GTargetMode Mode, const GClipOperation Operation);
+		GBool SetGLClipEnabled(const GTargetMode Mode, const GClipOperation Operation);
 
 		void DrawGLCircleSlice(const GPoint2& Center, const GReal Radius, const GPoint2& Start,
 							 const GPoint2& End, const GReal SpanAngle, const GBool CCW);
@@ -168,23 +205,29 @@ namespace Amanith {
 								const GReal Time0, const GReal Time1,
 								const GPoint2& P0, const GPoint2& P1, const GBool WholeDisk,
 								const GDynArray<GKeyValue>& ColorKeys, const GColorRampInterpolation Interpolation,
-								const GColorRampSpreadMode SpreadMode) const;
+								const GColorRampSpreadMode SpreadMode,
+								const GReal MultAlpha) const;
 		// draw a radial-shaded disk sector, specifying an axes-aligned bounding box that must entirely filled
 		void DrawShadedSector(const GPoint2& Center, const GPoint2& Focus, const GReal Radius,
 							  const GAABox2& BoundingBox,
 							  const GDynArray<GKeyValue>& ColorKeys, const GColorRampInterpolation Interpolation,
-							  const GColorRampSpreadMode SpreadMode) const;
+							  const GColorRampSpreadMode SpreadMode,
+							  const GReal MultAlpha) const;
 
 		void UpdateClipMasksState();
-		GBool GeometricRadialGradient(const GDrawStyle& Style, const GBool TestFill);
+		void ClipReplaceOverflowFix();
+
+		//GBool GeometricRadialGradient(const GDrawStyle& Style, const GBool TestFill);
+		void PushDepthMask();
+		void DrawAndPopDepthMask(const GAABox2& Box, const GDrawStyle& Style, const GBool DrawFill);
 
 		//
 		void UpdateStyle(GDrawStyle& Style);
-		void UseStyle(const GPaintType PaintType, const GVector4& Color,
+		GBool UseStyle(const GPaintType PaintType, const GVector4& Color,
 					  const GOpenGLGradientDesc *Gradient, const GOpenGLPatternDesc *Pattern,
-					  const GMatrix33& ModelView, const GImageQuality ImageQuality);
-		void UseStrokeStyle(const GDrawStyle& Style);
-		void UseFillStyle(const GDrawStyle& Style);
+					  const GMatrix33& ModelView, const GBool UseFill);
+		GBool UseStrokeStyle(const GDrawStyle& Style);
+		GBool UseFillStyle(const GDrawStyle& Style);
 		void UpdateDeviation(const GRenderingQuality Quality);
 
 		// implemented from GDrawBoard
@@ -195,7 +238,7 @@ namespace Amanith {
 		void DoSetClipEnabled(const GBool Enabled);
 		void DoPopClipMask();
 		void DoSetGroupOpacity(const GReal Opacity);
-		void DoGroupBegin();
+		void DoGroupBegin(const GAABox2& LogicBox);
 		void DoGroupEnd();
 		void DoFlush();
 		void DoFinish();
@@ -220,6 +263,7 @@ namespace Amanith {
 		void DoDrawPolygon(GDrawStyle& Style, const GDynArray<GPoint2>& Points, const GBool Closed);
 
 	public:
+		void DumpBuffers(const GChar8 *fNameZ, const GChar8 *fNameS);
 		GOpenGLBoard(const GUInt32 LowLeftCornerX, const GUInt32 LowLeftCornerY, const GUInt32 Width, const GUInt32 Height);
 		~GOpenGLBoard();
 

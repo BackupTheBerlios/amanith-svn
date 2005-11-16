@@ -55,8 +55,7 @@ namespace Amanith {
 	// clipping operation/mode
 	enum GClipOperation {
 		G_REPLACE_CLIP,
-		G_INTERSECTION_CLIP,
-		G_UNION_CLIP
+		G_INTERSECTION_CLIP
 	};
 
 
@@ -85,7 +84,6 @@ namespace Amanith {
 	private:
 		GBool gInsideGroup;
 		GRenderingContext gCurrentContext;
-		GDrawStyle gGroupDrawStyle;
 
 	protected:
 		GPoint<GUInt32, 4> gViewport;  // (x, y) = low-left corner; z = width; w = height
@@ -98,7 +96,7 @@ namespace Amanith {
 		virtual void DoSetClipEnabled(const GBool Enabled) = 0;
 		virtual void DoPopClipMask() = 0;
 		virtual void DoSetGroupOpacity(const GReal Opacity) = 0;
-		virtual void DoGroupBegin() = 0;
+		virtual void DoGroupBegin(const GAABox2& LogicBox) = 0;
 		virtual void DoGroupEnd() = 0;
 		virtual void DoFlush() = 0;
 		virtual void DoFinish() = 0;
@@ -276,6 +274,7 @@ namespace Amanith {
 		void Finish();
 		// group begin/end
 		void GroupBegin();
+		void GroupBegin(const GAABox2& LogicBox);
 		void GroupEnd();
 		// physical viewport
 		void Viewport(GUInt32& LowLeftCornerX, GUInt32& LowLeftCornerY, GUInt32& Width, GUInt32& Height);
@@ -283,6 +282,14 @@ namespace Amanith {
 		// logical viewport (it defines projection matrix)
 		void Projection(GReal& Left, GReal& Right, GReal& Bottom, GReal& Top);
 		void SetProjection(const GReal Left, const GReal Right, const GReal Bottom, const GReal Top);
+		// coordinates conversion from logical to physical
+		GPoint<GInt32, 2> LogicalToPhysical(const GPoint2& LogicalPoint);
+		// coordinates conversion from physical to logical
+		GPoint2 PhysicalToLogical(const GPoint<GInt32, 2>& PhysicalPoint);
+		// return G_TRUE if current rendering operations are inside a GroupBegin() / GroupEnd() constructor
+		inline GBool InsideGroup() const {
+			return gInsideGroup;
+		}
 	};
 
 };	// end namespace Amanith

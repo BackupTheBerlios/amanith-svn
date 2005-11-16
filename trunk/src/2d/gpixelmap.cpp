@@ -986,7 +986,7 @@ GError GPixelMap::Resize(const GUInt32 NewWidth, const GUInt32 NewHeight, const 
 }
 
 GError GPixelMap::Resize(const GUInt32 NewWidth, const GUInt32 NewHeight, GPixelMap& ResizedPixelMap,
-						 const GResizeOp ResizeOp) {
+						 const GResizeOp ResizeOp) const {
 
 	GError err = G_NO_ERROR;
 	GInt32 numNewPixels = NewWidth * NewHeight;

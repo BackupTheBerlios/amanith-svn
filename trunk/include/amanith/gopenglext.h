@@ -74,6 +74,8 @@ namespace Amanith {
 		GBool IsMultitextureSupported() const;
 		//! Check if underlying OpenGL device supports cubemaps
 		GBool IsCubemapSupported() const;
+		//! Check if underlying OpenGL device supports rectangle textures
+		GBool IsRectTextureSupported();
 		//! Check if underlying OpenGL device supports ARB shaders
 		GBool IsArbShadersSupported() const;
 		//! Check if underlying OpenGL device supports ARB programs
@@ -94,6 +96,8 @@ namespace Amanith {
 		GUInt32 GreenBits() const;
 		//! Get number of bits per blue component in color buffers.
 		GUInt32 BlueBits() const;
+		//! Get number of bits per alpha component in color buffers.
+		GUInt32 AlphaBits() const;
 		//! Get number of depth-buffer bitplanes.
 		GUInt32 DepthBits() const;
 		//! Get number of stencil bitplanes.
@@ -104,6 +108,8 @@ namespace Amanith {
 		void PrintInfoLog(GLhandleARB obj);
 		//! Print OpenGL error message, if one.
 		GBool PrintOglError(const GString& FileName, const GInt32 Line);
+		//! Give the power of two value greater (or equal) to a specified value
+		static GUInt32 PowerOfTwo(const GUInt32 Value);
 	};
 };
 

@@ -407,7 +407,7 @@ namespace Amanith {
 			a paletted image, a G_INVALID_OPERATION error code is returned.
 		*/
 		GError Resize(const GUInt32 NewWidth, const GUInt32 NewHeight, GPixelMap& ResizedPixelMap,
-					  const GResizeOp ResizeOp = G_RESIZE_QUADRATIC);
+					  const GResizeOp ResizeOp = G_RESIZE_QUADRATIC) const;
 
 		/*!
 			Resize (enlarge or reduce) the bitmap canvas.
