@@ -51,7 +51,7 @@ QGLWidgetTest::QGLWidgetTest(QWidget * parent) : QGLWidget(QGLFormat(StencilBuff
  if (dataPath.length() > 0)
   dataPath += "data/";
 
- GString s = dataPath + "stars2.png";
+ GString s = dataPath + "stars.png";
  GError err = gImage->Load(StrUtils::ToAscii(s), "expandpalette=true");
 	if (err != G_NO_ERROR)
 		abort();
