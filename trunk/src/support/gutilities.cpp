@@ -564,10 +564,17 @@ GString StrUtils::ToString(const GInt32 Value, const GChar8 *Format) {
 
 	GChar8 buffer[16];
 
+#if defined(G_OS_WIN) && _MSC_VER >= 1400
+	if (!Format)
+		std::sprintf_s(buffer, 16, "%d", Value);
+	else
+		std::sprintf_s(buffer, 16, Format, Value);
+#else
 	if (!Format)
 		std::sprintf(buffer, "%d", Value);
 	else
 		std::sprintf(buffer, Format, Value);
+#endif
 	return GString(buffer);
 }
 // convert an integer into string format
@@ -575,10 +582,17 @@ GString StrUtils::ToString(const GUInt32 Value, const GChar8 *Format) {
 
 	GChar8 buffer[16];
 
+#if defined(G_OS_WIN) && _MSC_VER >= 1400
+	if (!Format)
+		std::sprintf_s(buffer, 16, "%d", Value);
+	else
+		std::sprintf_s(buffer, 16, Format, Value);
+#else
 	if (!Format)
 		std::sprintf(buffer, "%d", Value);
 	else
 		std::sprintf(buffer, Format, Value);
+#endif
 	return GString(buffer);
 }
 // convert an integer into string format
@@ -586,10 +600,17 @@ GString StrUtils::ToString(const GInt16 Value, const GChar8 *Format) {
 
 	GChar8 buffer[16];
 
+#if defined(G_OS_WIN) && _MSC_VER >= 1400
+	if (!Format)
+		std::sprintf_s(buffer, 16, "%d", Value);
+	else
+		std::sprintf_s(buffer, 16, Format, Value);
+#else
 	if (!Format)
 		std::sprintf(buffer, "%d", Value);
 	else
 		std::sprintf(buffer, Format, Value);
+#endif
 	return GString(buffer);
 }
 // convert an integer into string format
@@ -597,10 +618,17 @@ GString StrUtils::ToString(const GUInt16 Value, const GChar8 *Format) {
 
 	GChar8 buffer[16];
 
+#if defined(G_OS_WIN) && _MSC_VER >= 1400
+	if (!Format)
+		std::sprintf_s(buffer, 16, "%d", Value);
+	else
+		std::sprintf_s(buffer, 16, Format, Value);
+#else
 	if (!Format)
 		std::sprintf(buffer, "%d", Value);
 	else
 		std::sprintf(buffer, Format, Value);
+#endif
 	return GString(buffer);
 }
 // convert an integer into string format
@@ -608,10 +636,17 @@ GString StrUtils::ToString(const GInt8 Value, const GChar8 *Format) {
 
 	GChar8 buffer[16];
 	
+#if defined(G_OS_WIN) && _MSC_VER >= 1400
+	if (!Format)
+		std::sprintf_s(buffer, 16, "%d", Value);
+	else
+		std::sprintf_s(buffer, 16, Format, Value);
+#else
 	if (!Format)
 		std::sprintf(buffer, "%d", Value);
 	else
 		std::sprintf(buffer, Format, Value);
+#endif
 	return GString(buffer);
 }
 // convert an integer into string format
@@ -619,30 +654,53 @@ GString StrUtils::ToString(const GUInt8 Value, const GChar8 *Format) {
 
 	GChar8 buffer[16];
 
+#if defined(G_OS_WIN) && _MSC_VER >= 1400
+	if (!Format)
+		std::sprintf_s(buffer, 16, "%d", Value);
+	else
+		std::sprintf_s(buffer, 16, Format, Value);
+#else
 	if (!Format)
 		std::sprintf(buffer, "%d", Value);
 	else
 		std::sprintf(buffer, Format, Value);
+#endif
 	return GString(buffer);
 }
 // convert a float into string format
 GString StrUtils::ToString(const GFloat Value, const GChar8 *Format) {
 
 	GChar8 buffer[16];
+
+#if defined(G_OS_WIN) && _MSC_VER >= 1400
+	if (!Format)
+		std::sprintf_s(buffer, 16, "%f", Value);
+	else
+		std::sprintf_s(buffer, 16, Format, Value);
+#else
 	if (!Format)
 		std::sprintf(buffer, "%f", Value);
 	else
 		std::sprintf(buffer, Format, Value);
+#endif
 	return GString(buffer);
 }
 // convert a double into string format
 GString StrUtils::ToString(const GDouble Value, const GChar8 *Format) {
 
 	GChar8 buffer[64];
+
+#if defined(G_OS_WIN) && _MSC_VER >= 1400
+	if (!Format)
+		std::sprintf_s(buffer, 64, "%f", Value);
+	else
+		std::sprintf_s(buffer, 64, Format, Value);
+#else
 	if (!Format)
 		std::sprintf(buffer, "%f", Value);
 	else
 		std::sprintf(buffer, Format, Value);
+#endif
 	return GString(buffer);
 }
 // converts the contents of a string as a C-style, null-terminated string
@@ -690,7 +748,11 @@ GString StrUtils::ToHex(const GUInt32 Number, const GUInt32 Width) {
 	GString s;
 	GUInt32 i, j;
 
+#if defined(G_OS_WIN) && _MSC_VER >= 1400
+	std::sprintf_s(buffer, 16, "%X", Number);
+#else
 	std::sprintf(buffer, "%X", Number);
+#endif
 
 	s = buffer;
 	j = (GUInt32)s.length();
@@ -1150,9 +1212,17 @@ GError FileUtils::ReadFile(const GChar8 *FileName, GDynArray<GChar8>& Buffer) {
 	if (!FileName || std::strlen(FileName) <= 0)
 		return G_INVALID_PARAMETER;
 	// open the file
+#if defined(G_OS_WIN) && _MSC_VER >= 1400
+	std::FILE *file = NULL;
+	errno_t openErr = std::fopen_s(&file, FileName, "rb");
+	if (!file || openErr)
+		return G_PERMISSION_DENIED;
+#else
 	std::FILE *file = std::fopen(FileName, "rb");
 	if (!file)
 		return G_PERMISSION_DENIED;
+#endif
+
 	// calculate file size
 	GInt32 seek = std::fseek(file, 0, SEEK_END);
 	if (seek != 0) {
@@ -1193,17 +1263,25 @@ GError FileUtils::WriteFile(const GChar8 *FileName, const GDynArray<GChar8>& Buf
 
 	if (!FileName || std::strlen(FileName) <= 0)
 		return G_INVALID_PARAMETER;
-	std::FILE *file = std::fopen(FileName, "rb");
+
 	// file already exists and we can't overwrite it
-	if (file && !OverWrite) {
-		std::fclose(file);
+	if (FileExists(FileName) && !OverWrite)
 		return G_FILE_ALREADY_EXISTS;
-	}
-	std::fclose(file);
+
+#if defined(G_OS_WIN) && _MSC_VER >= 1400
 	// now open file for write operations
-	file = std::fopen(FileName, "wb");
+	std::FILE *file = NULL;
+	errno_t openErr = std::fopen_s(&file, FileName, "wb");
+	if (!file || openErr)
+		return G_PERMISSION_DENIED;
+#else
+	// now open file for write operations
+	std::FILE *file = std::fopen(FileName, "wb");
+	if (!file)
+		return G_PERMISSION_DENIED;
+#endif
 	// extract buffer data pointer
-	fileSize = (GInt32) Buffer.size();
+	fileSize = (GInt32)Buffer.size();
 	GDynArray<GChar8>::const_iterator it = Buffer.begin();
 	const void *data = (const void *)(&(*it));
 	writtenBytes = (GInt32)std::fwrite(data, 1, fileSize, file);
