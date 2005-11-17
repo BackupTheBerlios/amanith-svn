@@ -46,7 +46,7 @@ namespace Amanith {
 	void TranslationToMatrix(GMatrix<DATA_TYPE, ROWS, COLS>& Result,
 							const GVectBase<DATA_TYPE, TRANS_SIZE>& Translation) {
 
-		G_ASSERT((ROWS > TRANS_SIZE - 1) && (COLS > TRANS_SIZE));
+		G_ASSERT((ROWS >= TRANS_SIZE) && (COLS >= TRANS_SIZE));
 		Identity(Result);
 		for (GUInt32 i = 0; i < TRANS_SIZE; ++i)
 			Result[i][COLS - 1] = Translation[i];

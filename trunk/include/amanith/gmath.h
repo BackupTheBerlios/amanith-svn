@@ -639,7 +639,11 @@ namespace Amanith {
 			\note Value must be nonnegative for correct results
 		*/
 		inline GDouble BesselJ0(const GDouble Value) {
-			return ::_j0(Value);
+			#if defined(G_OS_WIN) && _MSC_VER >= 1400
+				return ::_j0(Value);
+			#else
+				return ::j0(Value);
+			#endif
 		}
 		/*!
 			Return Bessel function of the first kind, order 0 (float version, provided for convenience)
@@ -647,7 +651,11 @@ namespace Amanith {
 			\note Value must be nonnegative for correct results
 		*/
 		inline GFloat BesselJ0(const GFloat Value) {
-			return (GFloat)::_j0((GDouble)Value);
+			#if defined(G_OS_WIN) && _MSC_VER >= 1400
+				return (GFloat)::_j0((GDouble)Value);
+			#else
+				return (GFloat)::j0((GDouble)Value);
+			#endif
 		}
 		/*!
 			Return Bessel function of the first kind, order 1 (double version)
@@ -655,7 +663,11 @@ namespace Amanith {
 			\note Value must be nonnegative for correct results
 		*/
 		inline GDouble BesselJ1(const GDouble Value) {
-			return ::_j1(Value);
+			#if defined(G_OS_WIN) && _MSC_VER >= 1400
+				return ::_j1(Value);
+			#else
+				return ::j1(Value);
+			#endif
 		}
 		/*!
 			Return Bessel function of the first kind, order 1 (float version, provided for convenience)
@@ -663,7 +675,11 @@ namespace Amanith {
 			\note Value must be nonnegative for correct results
 		*/
 		inline GFloat BesselJ1(const GFloat Value) {
-			return (GFloat)::_j1((GDouble)Value);
+			#if defined(G_OS_WIN) && _MSC_VER >= 1400
+				return (GFloat)::_j1((GDouble)Value);
+			#else
+				return (GFloat)::j1((GDouble)Value);
+			#endif
 		}
 		/*!
 			Return Bessel function of the first kind, specifying order (double version)
@@ -671,7 +687,11 @@ namespace Amanith {
 			\note Value must be nonnegative for correct results
 		*/
 		inline GDouble BesselJN(const GInt32 Order, const GDouble Value) {
-			return ::_jn(Order, Value);
+			#if defined(G_OS_WIN) && _MSC_VER >= 1400
+				return ::_jn(Order, Value);
+			#else
+				return ::jn(Order, Value);
+			#endif
 		}
 		/*!
 			Return Bessel function of the first kind, specifying order (float version, provided for convenience)
@@ -679,7 +699,11 @@ namespace Amanith {
 			\note Value must be nonnegative for correct results
 		*/
 		inline GFloat BesselJN(const GInt32 Order, const GFloat Value) {
-			return (GFloat)::_jn(Order, (GDouble)Value);
+			#if defined(G_OS_WIN) && _MSC_VER >= 1400
+				return (GFloat)::_jn(Order, (GDouble)Value);
+			#else
+				return (GFloat)::jn(Order, (GDouble)Value);
+			#endif
 		}
 
 		/*!
@@ -688,7 +712,11 @@ namespace Amanith {
 			\note Value must be nonnegative for correct results
 		*/
 		inline GDouble BesselY0(const GDouble Value) {
-			return ::_y0(Value);
+			#if defined(G_OS_WIN) && _MSC_VER >= 1400
+				return ::_y0(Value);
+			#else
+				return ::y0(Value);
+			#endif
 		}
 		/*!
 			Return Bessel function of the second kind, order 0 (float version, provided for convenience)
@@ -696,7 +724,11 @@ namespace Amanith {
 			\note Value must be nonnegative for correct results
 		*/
 		inline GFloat BesselY0(const GFloat Value) {
-			return (GFloat)::_y0((GDouble)Value);
+			#if defined(G_OS_WIN) && _MSC_VER >= 1400
+				return (GFloat)::_y0((GDouble)Value);
+			#else
+				return (GFloat)::y0((GDouble)Value);
+			#endif
 		}
 		/*!
 			Return Bessel function of the second kind, order 1 (double version)
@@ -704,7 +736,11 @@ namespace Amanith {
 			\note Value must be nonnegative for correct results
 		*/
 		inline GDouble BesselY1(const GDouble Value) {
-			return ::_y1(Value);
+			#if defined(G_OS_WIN) && _MSC_VER >= 1400
+				return ::_y1(Value);
+			#else
+				return ::y1(Value);
+			#endif
 		}
 		/*!
 			Return Bessel function of the second kind, order 1 (float version, provided for convenience)
@@ -712,7 +748,11 @@ namespace Amanith {
 			\note Value must be nonnegative for correct results
 		*/
 		inline GFloat BesselY1(const GFloat Value) {
-			return (GFloat)::_y1((GDouble)Value);
+			#if defined(G_OS_WIN) && _MSC_VER >= 1400
+				return (GFloat)::_y1((GDouble)Value);
+			#else
+				return (GFloat)::y1((GDouble)Value);
+			#endif
 		}
 		/*!
 			Return Bessel function of the second kind, specifying order (double version)
@@ -720,7 +760,11 @@ namespace Amanith {
 			\note Value must be nonnegative for correct results
 		*/
 		inline GDouble BesselYN(const GInt32 Order, const GDouble Value) {
-			return ::_yn(Order, Value);
+			#if defined(G_OS_WIN) && _MSC_VER >= 1400
+				return ::_yn(Order, Value);
+			#else
+				return ::yn(Order, Value);
+			#endif
 		}
 		/*!
 			Return Bessel function of the second kind, specifying order (float version, provided for convenience)
@@ -728,7 +772,11 @@ namespace Amanith {
 			\note Value must be nonnegative for correct results
 		*/
 		inline GFloat BesselYN(const GInt32 Order, const GFloat Value) {
-			return (GFloat)::_yn(Order, (GDouble)Value);
+			#if defined(G_OS_WIN) && _MSC_VER >= 1400
+				return (GFloat)::_yn(Order, (GDouble)Value);
+			#else
+				return (GFloat)::yn(Order, (GDouble)Value);
+			#endif
 		}
 
 

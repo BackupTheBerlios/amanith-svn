@@ -1273,12 +1273,7 @@ GBool GOpenGLBoard::UseStyle(const GPaintType PaintType, const GVector4& Color,
 						colf[G_X] = colf[G_Y] = colf[G_Z] = (GLfloat)1;
 						colf[G_W] = (GLfloat)Color[G_W];
 
-						//glTexEnvfv(GL_TEXTURE_ENV, GL_TEXTURE_ENV_COLOR, colf.Data());
-						//glEnable(GL_TEXTURE_2D);
-
 						glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_ALPHA, GL_PRIMARY_COLOR);
-						//glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE1_ALPHA, GL_CONSTANT_ARB);
-						//glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_ALPHA, GL_MODULATE);
 						glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_ALPHA, GL_REPLACE);
 					}
 					// we have only color keys opacity
@@ -1293,10 +1288,6 @@ GBool GOpenGLBoard::UseStyle(const GPaintType PaintType, const GVector4& Color,
 					colf[G_X] = colf[G_Y] = colf[G_Z] = (GLfloat)1;
 					colf[G_W] = (GLfloat)Color[G_W];
 
-					//glTexEnvfv(GL_TEXTURE_ENV, GL_TEXTURE_ENV_COLOR, colf.Data());
-
-					//glEnable(GL_TEXTURE_2D);
-					//glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_ALPHA, GL_CONSTANT);
 					glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_ALPHA, GL_PRIMARY_COLOR);
 					glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_ALPHA, GL_REPLACE);
 				}
@@ -1316,7 +1307,6 @@ GBool GOpenGLBoard::UseStyle(const GPaintType PaintType, const GVector4& Color,
 
 		// suppose we have both color and texture transparency
 		if (col[G_W] < (GReal)1) {
-
 			glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_ALPHA, GL_PRIMARY_COLOR);
 			glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE1_ALPHA, GL_TEXTURE);
 			glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_ALPHA, GL_MODULATE);
@@ -1342,29 +1332,60 @@ GBool GOpenGLBoard::UseStyle(const GPaintType PaintType, const GVector4& Color,
 		GReal xAxisLen = patWindow.Dimension(G_X);
 		GReal yAxisLen = patWindow.Dimension(G_Y);
 
-		GVector4 planeS(1 / xAxisLen, 0, 0, 0);
-		GVector4 planeT(0, -1 / yAxisLen, 0, 0);
-
-		#ifdef DOUBLE_REAL_TYPE
-			glTexGendv(GL_S, GL_EYE_PLANE, (const GLdouble *)planeS.Data());
-			glTexGendv(GL_T, GL_EYE_PLANE, (const GLdouble *)planeT.Data());
-		#else
-			glTexGenfv(GL_S, GL_EYE_PLANE, (const GLfloat *)planeS.Data());
-			glTexGenfv(GL_T, GL_EYE_PLANE, (const GLfloat *)planeT.Data());
-		#endif
-
-		GMatrix33 m, preTrans, postTrans;
+/*		GMatrix33 m, preTrans, postTrans;
 		GPoint2 p = -patWindow.Min();
 		p[G_X] /= xAxisLen;
 		p[G_Y] /= -yAxisLen;
-		TranslationToMatrix(preTrans, p);
+
+		GVector4 planeS(1 / xAxisLen, 0, 0, p[G_X]);
+		GVector4 planeT(0, -1 / yAxisLen, 0, p[G_Y]);
+
+	#ifdef DOUBLE_REAL_TYPE
+		glTexGendv(GL_S, GL_EYE_PLANE, (const GLdouble *)planeS.Data());
+		glTexGendv(GL_T, GL_EYE_PLANE, (const GLdouble *)planeT.Data());
+	#else
+		glTexGenfv(GL_S, GL_EYE_PLANE, (const GLfloat *)planeS.Data());
+		glTexGenfv(GL_T, GL_EYE_PLANE, (const GLfloat *)planeT.Data());
+	#endif
+*/
+
+		GMatrix33 m, invPatMatrix(Pattern->Matrix()), postTrans, scale;
+		GMatrix22 n, b;
+		GReal det;
+
+		GVector4 planeS(1, 0, 0, -patWindow.Min()[G_X]);
+		GVector4 planeT(0, 1, 0, -patWindow.Min()[G_Y]);
+
+	#ifdef DOUBLE_REAL_TYPE
+		glTexGendv(GL_S, GL_EYE_PLANE, (const GLdouble *)planeS.Data());
+		glTexGendv(GL_T, GL_EYE_PLANE, (const GLdouble *)planeT.Data());
+	#else
+		glTexGenfv(GL_S, GL_EYE_PLANE, (const GLfloat *)planeS.Data());
+		glTexGenfv(GL_T, GL_EYE_PLANE, (const GLfloat *)planeT.Data());
+	#endif
+
+		n[0][0] = invPatMatrix[0][0];
+		n[0][1] = invPatMatrix[0][1];
+		n[1][0] = invPatMatrix[1][0];
+		n[1][1] = invPatMatrix[1][1];
+		InvertFull_GJ(b, n, det);
+		invPatMatrix[0][0] = b[0][0];
+		invPatMatrix[0][1] = b[0][1];
+		invPatMatrix[1][0] = b[1][0];
+		invPatMatrix[1][1] = b[1][1];
+		invPatMatrix[0][2] = -invPatMatrix[0][2];
+		invPatMatrix[1][2] = -invPatMatrix[1][2];
 
 		TranslationToMatrix(postTrans, GPoint2(0, 1));
+		ScaleToMatrix(scale, GVector2(1 / xAxisLen, -1 / yAxisLen));
+		m = (postTrans * (scale * invPatMatrix));
 
-		m = (postTrans * (Pattern->Matrix() * preTrans));
 		// load texture matrix
 		glMatrixMode(GL_TEXTURE);
 		SetGLTextureMatrix(m);
+
+		GPoint2 pp(20 + planeS[G_W], 18 + planeT[G_W]), qq;
+		qq = m * pp;
 
 		// enable texture 2D
 		glDisable(GL_TEXTURE_1D);
@@ -2331,10 +2352,15 @@ void GOpenGLBoard::DrawGLShadedSector(const GPoint2& Center, const GPoint2& Focu
 			tSum = 0;
 
 			// skip all keys <= Time0
+			//! \todo optimize skip, summing whole intervals
 			while (tSum <= Time0) {
 				tOld = t;
 				k++;
-				t = ColorKeys[k % j].TimePosition();
+				if (k >= j) {
+					tOld = 0;
+					k = 1;
+				}
+				t = ColorKeys[k].TimePosition();
 				tSum += (t - tOld);
 			}
 
@@ -2397,6 +2423,7 @@ void GOpenGLBoard::DrawGLShadedSector(const GPoint2& Center, const GPoint2& Focu
 			tSum = 0;
 
 			// skip all keys <= Time0
+			//! \todo optimize skip, summing whole intervals
 			while (tSum <= Time0) {
 
 				tOld = t;
@@ -2472,12 +2499,13 @@ void GOpenGLBoard::DrawGLShadedSector(const GPoint2& Center, const GPoint2& Focu
 			break;
 	}
 
+	// modulate color keys with specified "global" alpha
 	if (MultAlpha < 1) {
-		j = (GInt32)tmpKeys.size();
-		for (i = 0; i < j; ++i) {
-			GVector4 v = tmpKeys[i].Vect4Value();
+		GDynArray<GKeyValue>::iterator it = tmpKeys.begin();
+		for (; it != tmpKeys.end(); ++it) {
+			GVector4 v = it->Vect4Value();
 			v[G_W] *= MultAlpha;
-			tmpKeys[i].SetValue(v);
+			it->SetValue(v);
 		}
 	}
 	
@@ -2689,7 +2717,6 @@ void GOpenGLBoard::DrawGLShadedSector(const GPoint2& Center, const GPoint2& Focu
 
 		glEnd();
 	}
-
 }
 
 GInt32 GOpenGLBoard::SignBoxDisk(const GAABox2& Box, const GPoint2& Center, const GReal Radius) {
@@ -2722,12 +2749,19 @@ void GOpenGLBoard::DrawShadedSector(const GPoint2& Center, const GPoint2& Focus,
 									const GAABox2& BoundingBox,
 									const GDynArray<GKeyValue>& ColorKeys, const GColorRampInterpolation Interpolation,
 									const GColorRampSpreadMode SpreadMode,
-									const GReal MultAlpha) const {
+									const GReal MultAlpha, const GMatrix33& GradientMatrix) const {
 
 
-	GPoint2 realFocus(Focus);
-	if (Distance(Focus, Center) >= Radius)
-		realFocus = Center;
+	GPoint2 transfFocus = GradientMatrix * Focus;
+	GPoint2 transfCenter = GradientMatrix * Center;
+	GPoint2 tmpRadiusPoint(Center[G_X] + Radius, Center[G_Y]);
+	GPoint2 transfRadiusPoint = GradientMatrix * tmpRadiusPoint;
+	GReal transfRadius = Distance(transfCenter, transfRadiusPoint);
+
+
+	GPoint2 realFocus(transfFocus);
+	if (Distance(transfFocus, transfCenter) >= transfRadius)
+		realFocus = transfCenter;
 
 	GPoint2 p0 = BoundingBox.Min();
 	GPoint2 p2 = BoundingBox.Max();
@@ -2737,7 +2771,7 @@ void GOpenGLBoard::DrawShadedSector(const GPoint2& Center, const GPoint2& Focus,
 	GPoint2 pMax, pMin;
 	GVector2 v;
 	GReal dMax, tMax, tMin;
-	GSphere2 sph(Center, Radius);
+	GSphere2 sph(transfCenter, transfRadius);
 	GBool intFound;
 	GUInt32 intFlags;
 	GReal intParams[2];
@@ -2802,19 +2836,19 @@ void GOpenGLBoard::DrawShadedSector(const GPoint2& Center, const GPoint2& Focus,
 		GReal tTail = 0;
 		GReal tHead = tMax;
 
-		GVector2 dirFC = Center - realFocus;
+		GVector2 dirFC = transfCenter - realFocus;
 		GReal lenFC = dirFC.Length();
 
 	#ifdef _DEBUG
-		GInt32 signHead = SignBoxDisk(BoundingBox, realFocus + tHead * dirFC, tHead * Radius);
-		GInt32 signTail = SignBoxDisk(BoundingBox, realFocus + tTail * dirFC, tTail * Radius);
-		G_ASSERT((signHead * signTail) < 0);
+		GInt32 signHead = SignBoxDisk(BoundingBox, realFocus + tHead * dirFC, tHead * transfRadius);
+		GInt32 signTail = SignBoxDisk(BoundingBox, realFocus + tTail * dirFC, tTail * transfRadius);
+		G_ASSERT((signHead * signTail) <= 0);
 	#endif
 
 		// now use a bisection iterative method to find a good bound for tMin
 		do {
 			GReal tPivot = (tTail + tHead) * (GReal)0.5;
-			GInt32 signPivot = SignBoxDisk(BoundingBox, realFocus + tPivot * dirFC, tPivot * Radius);
+			GInt32 signPivot = SignBoxDisk(BoundingBox, realFocus + tPivot * dirFC, tPivot * transfRadius);
 
 			if (signPivot == 0) {
 				tTail = tPivot;
@@ -2898,7 +2932,7 @@ void GOpenGLBoard::DrawShadedSector(const GPoint2& Center, const GPoint2& Focus,
 	}
 
 	// draw the shaded sector
-	DrawGLShadedSector(Center, realFocus, Radius, tMin, tMax, pMin, pMax, wholeDisk, ColorKeys,
+	DrawGLShadedSector(transfCenter, realFocus, transfRadius, tMin, tMax, pMin, pMax, wholeDisk, ColorKeys,
 					Interpolation, SpreadMode, MultAlpha);
 }
 
@@ -3364,10 +3398,12 @@ void GOpenGLBoard::DrawAndPopDepthMask(const GAABox2& Box, const GDrawStyle& Sty
 	if (drawRadGrad) {
 		if (DrawFill)
 			DrawShadedSector(g->StartPoint(), g->AuxPoint(), g->Radius(), Box, g->ColorKeys(),
-							 g->ColorInterpolation(), g->SpreadMode(), Style.FillColor()[G_W]);
+							 g->ColorInterpolation(), g->SpreadMode(), Style.FillColor()[G_W],
+							 g->Matrix());
 		else
 			DrawShadedSector(g->StartPoint(), g->AuxPoint(), g->Radius(), Box, g->ColorKeys(),
-							 g->ColorInterpolation(), g->SpreadMode(), Style.StrokeColor()[G_W]);
+							 g->ColorInterpolation(), g->SpreadMode(), Style.StrokeColor()[G_W],
+							 g->Matrix());
 	}
 	else {
 		// draw into color buffer

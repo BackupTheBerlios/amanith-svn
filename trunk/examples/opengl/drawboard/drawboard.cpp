@@ -44,19 +44,8 @@ QGLWidgetTest::QGLWidgetTest(QWidget * parent) : QGLWidget(QGLFormat(StencilBuff
   qWarning("Could not get alpha channel; results will be suboptimal");*/
 
  gKernel = new GKernel();
- gImage = (GPixelMap *)gKernel->CreateNew(G_PIXELMAP_CLASSID);
 
- // build path for data (textures)
- GString dataPath = SysUtils::AmanithPath();
- if (dataPath.length() > 0)
-  dataPath += "data/";
-
- GString s = dataPath + "stars.png";
- GError err = gImage->Load(StrUtils::ToAscii(s), "expandpalette=true");
-	if (err != G_NO_ERROR)
-		abort();
-
-	this->setGeometry(50, 50, 1006, 768);
+ this->setGeometry(50, 50, 800, 600);
 }
 //------------------------------------------------------------
 
@@ -83,25 +72,51 @@ void QGLWidgetTest::timerEvent(QTimerEvent *e) {
 //----- initializeGL -----------------------------------------
 void QGLWidgetTest::initializeGL() {
 
+	gImage = (GPixelMap *)gKernel->CreateNew(G_PIXELMAP_CLASSID);
+
+	// build path for data (textures)
+	GString dataPath = SysUtils::AmanithPath();
+	if (dataPath.length() > 0)
+		dataPath += "data/";
+
+	GString s = dataPath + "spiral.png";
+	GError err = gImage->Load(StrUtils::ToAscii(s), "expandpalette=true");
+	if (err != G_NO_ERROR)
+		abort();
+		
+	
 	gDrawBoard = new GOpenGLBoard(0, 0, geometry().width(), geometry().height());
 	gDrawBoard->SetRenderingQuality(G_HIGH_RENDERING_QUALITY);
 	gDrawBoard->SetImageQuality(G_HIGH_IMAGE_QUALITY);
-/*
+
 	gPattern = gDrawBoard->CreatePattern(gImage, G_REPEAT_TILE);
-	gPattern->SetLogicalWindow(GPoint2(100, 100), GPoint2(200, 200));
-*/
+	gPattern->SetLogicalWindow(GPoint2(-64, -64), GPoint2(64, 64));
 
-
-	
-	//startTimer(timer_interval);
-}
-//------------------------------------------------------------
-
-//----- paintGL ----------------------------------------------
-void QGLWidgetTest::paintGL() {
-	
 	GDynArray<GKeyValue> colKeys;
+	
+	// linear gradient
+	colKeys.clear();
+	colKeys.push_back(GKeyValue(0.00, GVector4(0.4, 0.0, 0.5, 1.0)));
+	colKeys.push_back(GKeyValue(0.25, GVector4(0.9, 0.5, 0.1, 1.0)));
+	colKeys.push_back(GKeyValue(0.50, GVector4(0.8, 0.8, 0.0, 1.0)));
+	colKeys.push_back(GKeyValue(0.75, GVector4(0.0, 0.3, 0.5, 1.0)));
+	colKeys.push_back(GKeyValue(1.00, GVector4(0.4, 0.0, 0.5, 1.0)));
+	gLinGrad1 = gDrawBoard->CreateLinearGradient(GPoint2(80, 48), GPoint2(160, 128), colKeys, G_HERMITE_COLOR_INTERPOLATION, G_PAD_COLOR_RAMP_SPREAD);
+	gRadGrad1 = gDrawBoard->CreateRadialGradient(GPoint2(90, 58), GPoint2(150, 118), 110, colKeys, G_HERMITE_COLOR_INTERPOLATION, G_PAD_COLOR_RAMP_SPREAD);
+	gRadGrad3 = gDrawBoard->CreateRadialGradient(GPoint2(-160, -140), GPoint2(-200, -200), 100, colKeys, G_HERMITE_COLOR_INTERPOLATION, G_PAD_COLOR_RAMP_SPREAD);
+	
+	colKeys.clear();
+	colKeys.push_back(GKeyValue(0.00, GVector4(0.4, 0.0, 0.5, 1.00)));
+	colKeys.push_back(GKeyValue(0.25, GVector4(0.9, 0.5, 0.1, 0.25)));
+	colKeys.push_back(GKeyValue(0.50, GVector4(0.8, 0.8, 0.0, 0.50)));
+	colKeys.push_back(GKeyValue(0.75, GVector4(0.0, 0.3, 0.5, 0.75)));
+	colKeys.push_back(GKeyValue(1.00, GVector4(0.4, 0.0, 0.5, 1.00)));
+	gLinGrad2 = gDrawBoard->CreateLinearGradient(GPoint2(80, 48), GPoint2(160, 128), colKeys, G_HERMITE_COLOR_INTERPOLATION, G_PAD_COLOR_RAMP_SPREAD);
+	gRadGrad2 = gDrawBoard->CreateRadialGradient(GPoint2(90, 58), GPoint2(150, 118), 110, colKeys, G_HERMITE_COLOR_INTERPOLATION, G_PAD_COLOR_RAMP_SPREAD);
+	gRadGrad4 = gDrawBoard->CreateRadialGradient(GPoint2(-160, -140), GPoint2(-200, -200), 100, colKeys, G_HERMITE_COLOR_INTERPOLATION, G_PAD_COLOR_RAMP_SPREAD);
+	
 
+	/*
 	// caps
 	gDrawBoard->SetStrokeStartCapStyle(G_ROUND_CAP);
 	gDrawBoard->SetStrokeEndCapStyle(G_ROUND_CAP);
@@ -112,148 +127,89 @@ void QGLWidgetTest::paintGL() {
 	// dashes
 	gDrawBoard->SetStrokeDashPhase(0);
 	GDynArray<GReal> pat;
-	pat.push_back(1);
-	pat.push_back(25);
+	pat.push_back(5);
+	pat.push_back(20);
 	pat.push_back(30);
-	pat.push_back(25);
+	pat.push_back(20);
 	gDrawBoard->SetStrokeDashPattern(pat);
+	*/
+	
+}
+//------------------------------------------------------------
+
+//----- paintGL ----------------------------------------------
+void QGLWidgetTest::paintGL() {
 	
 	gDrawBoard->Clear(1.0, 1.0, 1.0, G_TRUE);
 
 	gDrawBoard->SetTargetMode(G_COLOR_MODE);
-	//gPattern->SetMatrix(G_MATRIX_IDENTITY33);
+	
+	gDrawBoard->SetStrokeEnabled(G_FALSE);
+	
+	GMatrix33 m;
+	
+//----- FILL LINEAR GRADIENT TEST SUITE ---------------------------------
+	
+	gDrawBoard->SetFillEnabled(G_TRUE);
+	gDrawBoard->SetFillPaintType(G_PATTERN_PAINT_TYPE);
 	
 	gDrawBoard->SetStrokeEnabled(G_TRUE);
-	gDrawBoard->SetFillEnabled(G_TRUE);
-	gDrawBoard->SetStrokeWidth(8);
-	gDrawBoard->SetStrokeStyle(G_SOLID_STROKE);
-	gDrawBoard->SetStrokePaintType(G_COLOR_PAINT_TYPE);
-	gDrawBoard->SetStrokeColor(GVector4(0.0, 0.0, 0.0, 1.0));
-	gDrawBoard->SetFillColor(GVector4(0.9, 0.9, 0.9, 1.0));
-	gDrawBoard->SetFillPaintType(G_COLOR_PAINT_TYPE);
-	gDrawBoard->SetFillGradient(gRadGrad);
-	gDrawBoard->DrawRectangle(GPoint2(15, 399), GPoint2(490, 753));
-	gDrawBoard->DrawRectangle(GPoint2(15, 15), GPoint2(490, 369));
-	gDrawBoard->DrawRectangle(GPoint2(520, 399), GPoint2(989, 753));
-	gDrawBoard->DrawRectangle(GPoint2(520, 15), GPoint2(989, 369));
+	gDrawBoard->SetStrokeWidth(4);
+	gDrawBoard->SetStrokeColor(GVector4(0.0, 0.0, 0.0, 1.000));
 	
-	
-	gDrawBoard->SetFillPaintType(G_COLOR_PAINT_TYPE);
-	gDrawBoard->SetStrokeColor(GVector4(0.0, 0.0, 0.0, 1.0));
-	gDrawBoard->SetFillColor(GVector4(0.7, 0.0, 0.0, 1.0));
-	gDrawBoard->DrawRectangle(GPoint2(30, 591), GPoint2(130, 738));
-	gDrawBoard->SetStrokeColor(GVector4(0.0, 0.0, 0.0, 0.5));
-	gDrawBoard->SetFillColor(GVector4(0.7, 0.0, 0.0, 0.5));
-	gDrawBoard->DrawRectangle(GPoint2(30, 414), GPoint2(130, 576));
-	
-	
-	colKeys.clear();
-	colKeys.push_back(GKeyValue(0.00, GVector4(0.0, 0.0, 0.7, 1.0)));
-	colKeys.push_back(GKeyValue(1.00, GVector4(0.7, 0.0, 0.0, 1.0)));
-	gLinGrad = gDrawBoard->CreateLinearGradient(GPoint2(145, 591), GPoint2(245, 738), colKeys, G_HERMITE_COLOR_INTERPOLATION, G_PAD_COLOR_RAMP_SPREAD);
-	gDrawBoard->SetFillPaintType(G_GRADIENT_PAINT_TYPE);
-	gDrawBoard->SetStrokeColor(GVector4(0.0, 0.0, 0.0, 1.0));
-	gDrawBoard->SetFillColor(GVector4(0.0, 0.0, 0.0, 1.0));
-	gDrawBoard->SetFillGradient(gLinGrad);
-	gDrawBoard->DrawRectangle(GPoint2(145, 591), GPoint2(245, 738));
-	gLinGrad = gDrawBoard->CreateLinearGradient(GPoint2(145, 414), GPoint2(245, 576), colKeys, G_HERMITE_COLOR_INTERPOLATION, G_PAD_COLOR_RAMP_SPREAD);
-	gDrawBoard->SetStrokeColor(GVector4(0.0, 0.0, 0.0, 0.5));
-	gDrawBoard->SetFillColor(GVector4(0.0, 0.0, 0.0, 0.5));
-	gDrawBoard->SetFillGradient(gLinGrad);
-	gDrawBoard->DrawRectangle(GPoint2(145, 414), GPoint2(245, 576));
-	
-	
-	colKeys.clear();
-	colKeys.push_back(GKeyValue(0.00, GVector4(0.4, 0.0, 0.3, 1.0)));
-	colKeys.push_back(GKeyValue(0.50, GVector4(0.2, 0.5, 0.4, 1.0)));
-	colKeys.push_back(GKeyValue(1.00, GVector4(0.7, 0.8, 0.0, 1.0)));
-	gRadGrad = gDrawBoard->CreateRadialGradient(GPoint2(310, 664), GPoint2(300, 630), 50, colKeys, G_HERMITE_COLOR_INTERPOLATION, G_REFLECT_COLOR_RAMP_SPREAD);
-	gDrawBoard->SetFillPaintType(G_GRADIENT_PAINT_TYPE);
-	gDrawBoard->SetStrokeColor(GVector4(0.0, 0.0, 0.0, 1.0));
-	gDrawBoard->SetFillColor(GVector4(0.0, 0.0, 0.0, 1.0));
-	gDrawBoard->SetFillGradient(gRadGrad);
-	gDrawBoard->DrawRectangle(GPoint2(260, 591), GPoint2(360, 738));
-	gRadGrad = gDrawBoard->CreateRadialGradient(GPoint2(310, 495), GPoint2(300, 465), 50, colKeys, G_HERMITE_COLOR_INTERPOLATION, G_REFLECT_COLOR_RAMP_SPREAD);
-	gDrawBoard->SetStrokeColor(GVector4(0.0, 0.0, 0.0, 0.5));
-	gDrawBoard->SetFillColor(GVector4(0.0, 0.0, 0.0, 0.5));
-	gDrawBoard->SetFillGradient(gRadGrad);
-	gDrawBoard->DrawRectangle(GPoint2(260, 414), GPoint2(360, 576));
-	
-	
-	gPattern = gDrawBoard->CreatePattern(gImage, G_REPEAT_TILE);
-	gDrawBoard->SetFillPaintType(G_PATTERN_PAINT_TYPE);
-	gDrawBoard->SetStrokeColor(GVector4(0.0, 0.0, 0.0, 1.0));
-	gDrawBoard->SetFillColor(GVector4(0.0, 0.0, 0.0, 1.0));
-	gPattern->SetLogicalWindow(GPoint2(100, 100), GPoint2(200, 200));
+	// --------------------------------------------------------------
+	gDrawBoard->SetFillColor(GVector4(0.0, 0.0, 0.0, 1.000));
+	gPattern->SetTilingMode(G_PAD_TILE);
+	TranslationToMatrix(m, GVector2(+140,+106));
+	gPattern->SetMatrix(m);
 	gDrawBoard->SetFillPattern(gPattern);
-	gDrawBoard->DrawRectangle(GPoint2(375, 591), GPoint2(475, 738));
-	gDrawBoard->SetStrokeColor(GVector4(0.0, 0.0, 0.0, 0.5));
-	gDrawBoard->SetFillColor(GVector4(0.0, 0.0, 0.0, 0.5));
-	gDrawBoard->DrawRectangle(GPoint2(375, 414), GPoint2(475, 576));
-
+	gDrawBoard->DrawRectangle(GPoint2(20, 18), GPoint2(260, 194));
+	gPattern->SetTilingMode(G_REPEAT_TILE);
+	TranslationToMatrix(m, GVector2(+400,+106));
+	gPattern->SetMatrix(m);
+	gDrawBoard->SetFillPattern(gPattern);
+	gDrawBoard->DrawRectangle(GPoint2(280, 18), GPoint2(520, 194));
+	gPattern->SetTilingMode(G_REFLECT_TILE);
+	TranslationToMatrix(m, GVector2(+660,+106));
+	gPattern->SetMatrix(m);
+	gDrawBoard->SetFillPattern(gPattern);
+	gDrawBoard->DrawRectangle(GPoint2(540, 18), GPoint2(780, 194));
 	
-	gDrawBoard->SetFillEnabled(G_FALSE);
-	gDrawBoard->SetStrokeStyle(G_SOLID_STROKE);
-	gDrawBoard->SetStrokeColor(GVector4(0.0, 0.0, 0.0, 1.0));
-	gDrawBoard->SetStrokeJoinStyle(G_MITER_JOIN);
-	gDrawBoard->DrawRectangle(GPoint2(30, 207), GPoint2(130, 354));
-	gDrawBoard->SetStrokeJoinStyle(G_BEVEL_JOIN);
-	gDrawBoard->DrawRectangle(GPoint2(145, 207), GPoint2(245, 354));
-	gDrawBoard->SetStrokeJoinStyle(G_ROUND_JOIN);
-	gDrawBoard->DrawRectangle(GPoint2(260, 207), GPoint2(360, 354));
+	gDrawBoard->SetFillColor(GVector4(0.0, 0.0, 0.0, 0.666));
+	gPattern->SetTilingMode(G_PAD_TILE);
+	TranslationToMatrix(m, GVector2(+140,+300));
+	gPattern->SetMatrix(m);
+	gDrawBoard->SetFillPattern(gPattern);
+	gDrawBoard->DrawRectangle(GPoint2(20, 212), GPoint2(260, 388));
+	gPattern->SetTilingMode(G_REPEAT_TILE);
+	TranslationToMatrix(m, GVector2(+400,+300));
+	gPattern->SetMatrix(m);
+	gDrawBoard->SetFillPattern(gPattern);
+	gDrawBoard->DrawRectangle(GPoint2(280, 212), GPoint2(520, 388));
+	gPattern->SetTilingMode(G_REFLECT_TILE);
+	TranslationToMatrix(m, GVector2(+660,+300));
+	gPattern->SetMatrix(m);
+	gDrawBoard->SetFillPattern(gPattern);
+	gDrawBoard->DrawRectangle(GPoint2(540, 212), GPoint2(780, 388));
 	
-	gDrawBoard->DrawRectangle(GPoint2(375, 207), GPoint2(475, 354));
+	gDrawBoard->SetFillColor(GVector4(0.0, 0.0, 0.0, 0.333));
+	gPattern->SetTilingMode(G_PAD_TILE);
+	TranslationToMatrix(m, GVector2(+140,+494));
+	gPattern->SetMatrix(m);
+	gDrawBoard->SetFillPattern(gPattern);
+	gDrawBoard->DrawRectangle(GPoint2(20, 406), GPoint2(260, 582));
+	gPattern->SetTilingMode(G_REPEAT_TILE);
+	TranslationToMatrix(m, GVector2(+400,+494));
+	gPattern->SetMatrix(m);
+	gDrawBoard->SetFillPattern(gPattern);
+	gDrawBoard->DrawRectangle(GPoint2(280, 406), GPoint2(520, 582));
+	gPattern->SetTilingMode(G_REFLECT_TILE);
+	TranslationToMatrix(m, GVector2(+660,+494));
+	gPattern->SetMatrix(m);
+	gDrawBoard->SetFillPattern(gPattern);
+	gDrawBoard->DrawRectangle(GPoint2(540, 406), GPoint2(780, 582));
 	
-	
-	gDrawBoard->SetStrokeStyle(G_DASHED_STROKE);
-	
-	
-	gDrawBoard->SetStrokeJoinStyle(G_MITER_JOIN);
-	gDrawBoard->SetStrokeStartCapStyle(G_SQUARE_CAP);
-	gDrawBoard->SetStrokeEndCapStyle(G_SQUARE_CAP);
-	gDrawBoard->DrawRectangle(GPoint2(30, 30), GPoint2(130, 192));
-	/*gDrawBoard->SetStrokeJoinStyle(G_BEVEL_JOIN);
-	gDrawBoard->SetStrokeStartCapStyle(G_BUTT_CAP);
-	gDrawBoard->SetStrokeEndCapStyle(G_BUTT_CAP);
-	gDrawBoard->DrawRectangle(GPoint2(145, 30), GPoint2(245, 192));
-	gDrawBoard->SetStrokeJoinStyle(G_ROUND_JOIN);
-	//gDrawBoard->SetStrokeStartCapStyle(G_ROUND_CAP);
-	//gDrawBoard->SetStrokeEndCapStyle(G_ROUND_CAP);
-	gDrawBoard->DrawRectangle(GPoint2(260, 30), GPoint2(360, 192));
-	
-	gDrawBoard->DrawRectangle(GPoint2(375, 30), GPoint2(475, 192));
-	
-*/
-
-/*
-	// group 1
-	gDrawBoard->SetStrokeColor(GVector4(0.2509, 0.6411, 0.1882, 0.6));
-	//gDrawBoard->SetStrokePaintType(G_PATTERN_PAINT_TYPE);
-	gDrawBoard->SetStrokeWidth(50);
-
-	gDrawBoard->SetGroupOpacity(0.5);
-	gDrawBoard->GroupBegin(GAABox2(GPoint2(200, 180), GPoint2(700, 510)));
-		gDrawBoard->SetStrokePaintType(G_GRADIENT_PAINT_TYPE);
-		gDrawBoard->DrawLine(GPoint2(300, 234), GPoint2(601, 434));
-		gDrawBoard->SetStrokePaintType(G_GRADIENT_PAINT_TYPE);
-		gDrawBoard->DrawLine(GPoint2(300, 434), GPoint2(601, 234));
-	gDrawBoard->GroupEnd();
-
-	//gDrawBoard->DumpBuffers("buf_Z.raw", "buf_S.raw");
-
-	// group 2
-	gDrawBoard->SetStrokeColor(GVector4(0.9411, 0.2509, 0.1882, 1.0));
-	gDrawBoard->SetStrokePaintType(G_COLOR_PAINT_TYPE);
-
-	gDrawBoard->SetStrokeWidth(30);
-
-	gDrawBoard->SetGroupOpacity(0.5);
-	gDrawBoard->GroupBegin(GAABox2(GPoint2(200, 180), GPoint2(700, 510)));
-		gDrawBoard->DrawLine(GPoint2(360, 300), GPoint2(530, 380));
-		gDrawBoard->DrawLine(GPoint2(250, 240), GPoint2(500, 300));
-		gDrawBoard->DrawLine(GPoint2(450, 200), GPoint2(450, 380));
-	gDrawBoard->GroupEnd();
-*/
+	// --------------------------------------------------------------
 	gDrawBoard->Flush();
 }
 //------------------------------------------------------------
@@ -302,6 +258,7 @@ void QGLWidgetTest::keyPressEvent(QKeyEvent *e) {
 		case Qt::Key_Left:
 			break;
 		case Qt::Key_M:
+		
 			break;
 		case Qt::Key_N:
 			break;

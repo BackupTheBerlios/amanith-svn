@@ -212,7 +212,7 @@ namespace Amanith {
 							  const GAABox2& BoundingBox,
 							  const GDynArray<GKeyValue>& ColorKeys, const GColorRampInterpolation Interpolation,
 							  const GColorRampSpreadMode SpreadMode,
-							  const GReal MultAlpha) const;
+							  const GReal MultAlpha, const GMatrix33& GradientMatrix) const;
 
 		void UpdateClipMasksState();
 		void ClipReplaceOverflowFix();

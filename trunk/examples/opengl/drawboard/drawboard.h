@@ -38,8 +38,8 @@ private:
 	GKernel *gKernel;
 	GOpenGLBoard *gDrawBoard;
 	GPixelMap *gImage;
-	GGradientDesc *gLinGrad;
-	GGradientDesc *gRadGrad;
+	GGradientDesc *gLinGrad1, *gLinGrad2, *gLinGrad3;
+	GGradientDesc *gRadGrad1, *gRadGrad2, *gRadGrad3, *gRadGrad4;
 	GPatternDesc *gPattern;
 
 //	GLfloat	gX, gY, gZ;						// Depth Into The Screen
