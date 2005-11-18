@@ -46,13 +46,35 @@ GKernel *gKernel = NULL;
 GOpenglExt *gExtManager = NULL;	// extensions manager
 GOpenGLBoard *gDrawBoard = NULL;
 GPixelMap *gImage = NULL;
-GGradientDesc *gLinGrad1 = NULL, *gLinGrad2 = NULL, *gLinGrad3 = NULL;
+GGradientDesc *gLinGrad1 = NULL, *gLinGrad2 = NULL;
 GGradientDesc *gRadGrad1 = NULL, *gRadGrad2 = NULL, *gRadGrad3 = NULL, *gRadGrad4 = NULL;
 GPatternDesc *gPattern = NULL;
+GPatternDesc *gBackGround = NULL;
+GString gDataPath;
+
+// 0 = color
+// 1 = linear gradient
+// 2 = radial gradient (in)
+// 3 = radial gradient (out)
+// 4 = pattern
+// 5 = stroking
+GUInt32 gTestSuite = 0;
+GUInt32 gTestIndex = 0;
+GBool gDrawBackGround = G_TRUE;
+GReal gRandAngle = 0;
+GReal gRandScale = 1;
+GRenderingQuality gRenderingQuality = G_HIGH_RENDERING_QUALITY;
 
 bool arbMultisampleSupported = false;
 int arbMultisampleFormat = 0;
 bool activateFSAA = true;
+
+#include "test_color.h"
+#include "test_lineargradient.h"
+#include "test_radialgradientin.h"
+#include "test_radialgradientout.h"
+#include "test_pattern.h"
+#include "test_stroking.h"
 
 // InitMultisample: Used To Query The Multisample Frequencies
 bool InitMultisample(HINSTANCE hInstance, HWND hWnd, PIXELFORMATDESCRIPTOR pfd)
@@ -83,7 +105,7 @@ bool InitMultisample(HINSTANCE hInstance, HWND hWnd, PIXELFORMATDESCRIPTOR pfd)
 			WGL_STENCIL_BITS_ARB, 8,
 			WGL_DOUBLE_BUFFER_ARB, GL_TRUE,
 			WGL_SAMPLE_BUFFERS_ARB, GL_TRUE,
-			WGL_SAMPLES_ARB, 6,
+			WGL_SAMPLES_ARB, 4,
 			0, 0
 	};
 	// First We Check To See If We Can Get A Pixel Format For 6 Samples
@@ -136,25 +158,20 @@ int InitGL(GLvoid) {
 	gImage = (GPixelMap *)gKernel->CreateNew(G_PIXELMAP_CLASSID);
 
 	// build path for data (textures)
-	GString dataPath = SysUtils::AmanithPath();
-	if (dataPath.length() > 0)
-		dataPath += "data/";
+	gDataPath = SysUtils::AmanithPath();
+	if (gDataPath.length() > 0)
+		gDataPath += "data/";
 
-	GString s = dataPath + "spiral.png";
-	GError err = gImage->Load(StrUtils::ToAscii(s), "expandpalette=true");
-	if (err != G_NO_ERROR)
-		abort();
+	// initialize random system
+	GMath::SeedRandom();
 
+	gDrawBoard->SetRenderingQuality(gRenderingQuality);
 
-	gDrawBoard->SetRenderingQuality(G_HIGH_RENDERING_QUALITY);
-	gDrawBoard->SetImageQuality(G_HIGH_IMAGE_QUALITY);
-
-	gPattern = gDrawBoard->CreatePattern(gImage, G_REPEAT_TILE);
-	gPattern->SetLogicalWindow(GPoint2(-64, -64), GPoint2(64, 64));
-
+	GString s;
+	GError err;
 	GDynArray<GKeyValue> colKeys;
 
-	// linear gradient
+	// color gradients
 	colKeys.clear();
 	colKeys.push_back(GKeyValue(0.00, GVector4(0.4, 0.0, 0.5, 1.0)));
 	colKeys.push_back(GKeyValue(0.25, GVector4(0.9, 0.5, 0.1, 1.0)));
@@ -162,8 +179,16 @@ int InitGL(GLvoid) {
 	colKeys.push_back(GKeyValue(0.75, GVector4(0.0, 0.3, 0.5, 1.0)));
 	colKeys.push_back(GKeyValue(1.00, GVector4(0.4, 0.0, 0.5, 1.0)));
 	gLinGrad1 = gDrawBoard->CreateLinearGradient(GPoint2(80, 48), GPoint2(160, 128), colKeys, G_HERMITE_COLOR_INTERPOLATION, G_PAD_COLOR_RAMP_SPREAD);
+
+	colKeys.clear();
+	colKeys.push_back(GKeyValue(0.00, GVector4(0.171, 0.680, 0.800, 1.0)));
+	colKeys.push_back(GKeyValue(0.30, GVector4(0.540, 0.138, 0.757, 1.0)));
+	colKeys.push_back(GKeyValue(0.60, GVector4(1.000, 0.500, 0.000, 1.0)));
+	colKeys.push_back(GKeyValue(0.70, GVector4(0.980, 0.950, 0.000, 1.0)));
+	colKeys.push_back(GKeyValue(1.00, GVector4(0.171, 0.680, 0.800, 1.0)));
+
 	gRadGrad1 = gDrawBoard->CreateRadialGradient(GPoint2(90, 58), GPoint2(150, 118), 110, colKeys, G_HERMITE_COLOR_INTERPOLATION, G_PAD_COLOR_RAMP_SPREAD);
-	gRadGrad3 = gDrawBoard->CreateRadialGradient(GPoint2(-160, -140), GPoint2(-200, -200), 100, colKeys, G_HERMITE_COLOR_INTERPOLATION, G_PAD_COLOR_RAMP_SPREAD);
+	gRadGrad3 = gDrawBoard->CreateRadialGradient(GPoint2(-90, -70), GPoint2(-130, -130), 100, colKeys, G_HERMITE_COLOR_INTERPOLATION, G_PAD_COLOR_RAMP_SPREAD);
 
 	colKeys.clear();
 	colKeys.push_back(GKeyValue(0.00, GVector4(0.4, 0.0, 0.5, 1.00)));
@@ -172,8 +197,45 @@ int InitGL(GLvoid) {
 	colKeys.push_back(GKeyValue(0.75, GVector4(0.0, 0.3, 0.5, 0.75)));
 	colKeys.push_back(GKeyValue(1.00, GVector4(0.4, 0.0, 0.5, 1.00)));
 	gLinGrad2 = gDrawBoard->CreateLinearGradient(GPoint2(80, 48), GPoint2(160, 128), colKeys, G_HERMITE_COLOR_INTERPOLATION, G_PAD_COLOR_RAMP_SPREAD);
+
+	colKeys.clear();
+	colKeys.push_back(GKeyValue(0.00, GVector4(0.171, 0.680, 0.800, 1.0)));
+	colKeys.push_back(GKeyValue(0.30, GVector4(0.540, 0.138, 0.757, 0.7)));
+	colKeys.push_back(GKeyValue(0.60, GVector4(1.000, 0.500, 0.000, 1.0)));
+	colKeys.push_back(GKeyValue(0.70, GVector4(0.980, 0.950, 0.000, 0.5)));
+	colKeys.push_back(GKeyValue(1.00, GVector4(0.171, 0.680, 0.800, 1.0)));
 	gRadGrad2 = gDrawBoard->CreateRadialGradient(GPoint2(90, 58), GPoint2(150, 118), 110, colKeys, G_HERMITE_COLOR_INTERPOLATION, G_PAD_COLOR_RAMP_SPREAD);
-	gRadGrad4 = gDrawBoard->CreateRadialGradient(GPoint2(-160, -140), GPoint2(-200, -200), 100, colKeys, G_HERMITE_COLOR_INTERPOLATION, G_PAD_COLOR_RAMP_SPREAD);
+	gRadGrad4 = gDrawBoard->CreateRadialGradient(GPoint2(-90, -70), GPoint2(-130, -130), 100, colKeys, G_HERMITE_COLOR_INTERPOLATION, G_PAD_COLOR_RAMP_SPREAD);
+
+	// background
+	s = gDataPath + "background.png";
+	err = gImage->Load(StrUtils::ToAscii(s), "expandpalette=true");
+	if (err == G_NO_ERROR) {
+		gBackGround = gDrawBoard->CreatePattern(gImage, G_LOW_IMAGE_QUALITY, G_REPEAT_TILE);
+		gBackGround->SetLogicalWindow(GPoint2(0, 0), GPoint2(16, 16));
+	}
+	else
+		gBackGround = NULL;
+
+	// pattern
+	s = gDataPath + "spiral.png";
+	err = gImage->Load(StrUtils::ToAscii(s), "expandpalette=true");
+	if (err == G_NO_ERROR) {
+		gPattern = gDrawBoard->CreatePattern(gImage, G_HIGH_IMAGE_QUALITY, G_REPEAT_TILE);
+		gPattern->SetLogicalWindow(GPoint2(-64, -64), GPoint2(64, 64));
+	}
+	else
+		gPattern = NULL;
+
+
+	// dashes
+	gDrawBoard->SetStrokeDashPhase(0);
+	GDynArray<GReal> pat;
+	pat.push_back(10);
+	pat.push_back(35);
+	pat.push_back(30);
+	pat.push_back(35);
+	gDrawBoard->SetStrokeDashPattern(pat);
 
 	return TRUE;
 }
@@ -181,74 +243,48 @@ int InitGL(GLvoid) {
 int DrawGLScene(GLvoid)	{
 
 	gDrawBoard->Clear(1.0, 1.0, 1.0, G_TRUE);
-	gDrawBoard->SetTargetMode(G_COLOR_MODE);
 
-	GMatrix33 m;
+	if (gDrawBackGround) {
 
-	//----- FILL LINEAR GRADIENT TEST SUITE ---------------------------------
+		gDrawBoard->SetStrokeEnabled(G_FALSE);
+		gDrawBoard->SetFillEnabled(G_TRUE);
+		gDrawBoard->SetFillPattern(gBackGround);
+		gDrawBoard->SetFillColor(GVector4(0, 0, 0, 1));
+		gDrawBoard->SetFillPaintType(G_PATTERN_PAINT_TYPE);
+		gDrawBoard->DrawRectangle(GPoint2(0, 0), GPoint2(800, 600));
+	}
 
-	gDrawBoard->SetFillEnabled(G_TRUE);
-	gDrawBoard->SetFillPaintType(G_PATTERN_PAINT_TYPE);
+	switch (gTestSuite) {
 
-	gDrawBoard->SetStrokeEnabled(G_TRUE);
-	gDrawBoard->SetStrokeWidth(4);
-	gDrawBoard->SetStrokeColor(GVector4(0.0, 0.0, 0.0, 1.000));
+		case 0:
+			TestColor(gTestIndex);
+			break;
 
-	// --------------------------------------------------------------
-	gDrawBoard->SetFillColor(GVector4(0.0, 0.0, 0.0, 1.000));
-	gPattern->SetTilingMode(G_PAD_TILE);
-	TranslationToMatrix(m, GVector2(+140,+106));
-	gPattern->SetMatrix(m);
-	gDrawBoard->SetFillPattern(gPattern);
-	gDrawBoard->DrawRectangle(GPoint2(20, 18), GPoint2(260, 194));
-	gPattern->SetTilingMode(G_REPEAT_TILE);
-	TranslationToMatrix(m, GVector2(+400,+106));
-	gPattern->SetMatrix(m);
-	gDrawBoard->SetFillPattern(gPattern);
-	gDrawBoard->DrawRectangle(GPoint2(280, 18), GPoint2(520, 194));
-	gPattern->SetTilingMode(G_REFLECT_TILE);
-	TranslationToMatrix(m, GVector2(+660,+106));
-	gPattern->SetMatrix(m);
-	gDrawBoard->SetFillPattern(gPattern);
-	gDrawBoard->DrawRectangle(GPoint2(540, 18), GPoint2(780, 194));
+		case 1:
+			TestLinearGradient(gTestIndex, gRandAngle, gRandScale);
+			break;
 
-	gDrawBoard->SetFillColor(GVector4(0.0, 0.0, 0.0, 0.666));
-	gPattern->SetTilingMode(G_PAD_TILE);
-	TranslationToMatrix(m, GVector2(+140,+300));
-	gPattern->SetMatrix(m);
-	gDrawBoard->SetFillPattern(gPattern);
-	gDrawBoard->DrawRectangle(GPoint2(20, 212), GPoint2(260, 388));
-	gPattern->SetTilingMode(G_REPEAT_TILE);
-	TranslationToMatrix(m, GVector2(+400,+300));
-	gPattern->SetMatrix(m);
-	gDrawBoard->SetFillPattern(gPattern);
-	gDrawBoard->DrawRectangle(GPoint2(280, 212), GPoint2(520, 388));
-	gPattern->SetTilingMode(G_REFLECT_TILE);
-	TranslationToMatrix(m, GVector2(+660,+300));
-	gPattern->SetMatrix(m);
-	gDrawBoard->SetFillPattern(gPattern);
-	gDrawBoard->DrawRectangle(GPoint2(540, 212), GPoint2(780, 388));
+		case 2:
+			TestRadialGradientIn(gTestIndex, gRandAngle, gRandScale);
+			break;
 
-	gDrawBoard->SetFillColor(GVector4(0.0, 0.0, 0.0, 0.333));
-	gPattern->SetTilingMode(G_PAD_TILE);
-	TranslationToMatrix(m, GVector2(+140,+494));
-	gPattern->SetMatrix(m);
-	gDrawBoard->SetFillPattern(gPattern);
-	gDrawBoard->DrawRectangle(GPoint2(20, 406), GPoint2(260, 582));
-	gPattern->SetTilingMode(G_REPEAT_TILE);
-	TranslationToMatrix(m, GVector2(+400,+494));
-	gPattern->SetMatrix(m);
-	gDrawBoard->SetFillPattern(gPattern);
-	gDrawBoard->DrawRectangle(GPoint2(280, 406), GPoint2(520, 582));
-	gPattern->SetTilingMode(G_REFLECT_TILE);
-	TranslationToMatrix(m, GVector2(+660,+494));
-	gPattern->SetMatrix(m);
-	gDrawBoard->SetFillPattern(gPattern);
-	gDrawBoard->DrawRectangle(GPoint2(540, 406), GPoint2(780, 582));
+		case 3:
+			TestRadialGradientOut(gTestIndex, gRandAngle, gRandScale);
+			break;
 
-	// --------------------------------------------------------------
+		case 4:
+			TestPattern(gTestIndex, gRandAngle, gRandScale);
+			break;
+
+		case 5:
+			TestStroke(gTestIndex);
+			break;
+
+		default:
+			TestColor(gTestIndex);
+	}
+
 	gDrawBoard->Flush();
-
 	return TRUE;
 }
 
@@ -492,7 +528,7 @@ int WINAPI WinMain(	HINSTANCE	hInstance,			// Instance
 	fullscreen = FALSE;							// Windowed Mode
 
 	// Create Our OpenGL Window
-	if (!CreateGLWindow("Color animation example - Press F1 for help", 1006, 768, 16, fullscreen))
+	if (!CreateGLWindow("Color animation example - Press F1 for help", 800, 600, 16, fullscreen))
 		return 0;									// Quit If Window Was Not Created
 
 	// init application
@@ -519,6 +555,85 @@ int WINAPI WinMain(	HINSTANCE	hInstance,			// Instance
 				done = TRUE;							// ESC or DrawGLScene Signalled A Quit
 			else									// Not Time To Quit, Update Screen
 				SwapBuffers(hDC);					// Swap Buffers (Double Buffering)
+
+			if (keys[VK_F1]) {						// Is F1 Being Pressed?
+				keys[VK_F1] = FALSE;
+				s = "1..6: Toggle draw test\n";
+				s += "B: Toggle background\n";
+				s += "R: Switch rendering quality (low/normal/high)\n";
+				s += "Space: Change matrix (valid for gradient and pattern tests)\n";
+				MessageBox(NULL, StrUtils::ToAscii(s), "Command keys", MB_OK | MB_ICONINFORMATION);
+			}
+			// 1 key
+			if (keys[49]) {
+				keys[49] = FALSE;
+				gTestSuite = 0;
+			}
+			// 2 key
+			if (keys[50]) {
+				keys[50] = FALSE;
+				gTestSuite = 1;
+			}
+			// 3 key
+			if (keys[51]) {
+				keys[51] = FALSE;
+				gTestSuite = 2;
+			}
+			// 4 key
+			if (keys[52]) {
+				keys[52] = FALSE;
+				gTestSuite = 3;
+			}
+			// 5 key
+			if (keys[53]) {
+				keys[53] = FALSE;
+				gTestSuite = 4;
+			}
+			// 6 key
+			if (keys[54]) {
+				keys[54] = FALSE;
+				gTestSuite = 5;
+			}
+			// B key
+			if (keys[66]) {
+				keys[66] = FALSE;
+				if (gDrawBackGround)
+					gDrawBackGround = G_FALSE;
+				else
+					gDrawBackGround = G_TRUE;
+			}
+			// R key
+			if (keys[82]) {
+				keys[82] = FALSE;
+				if (gRenderingQuality == G_LOW_RENDERING_QUALITY)
+					gRenderingQuality = G_NORMAL_RENDERING_QUALITY;
+				else
+					if (gRenderingQuality == G_NORMAL_RENDERING_QUALITY)
+						gRenderingQuality = G_HIGH_RENDERING_QUALITY;
+					else
+						gRenderingQuality = G_LOW_RENDERING_QUALITY;
+				gDrawBoard->SetRenderingQuality(gRenderingQuality);
+			}
+			// PageUp
+			if (keys[VK_PRIOR]) {
+				keys[VK_PRIOR] = FALSE;
+				gTestIndex++;
+			}
+			// PageDown
+			if (keys[VK_NEXT]) {
+				keys[VK_NEXT] = FALSE;
+				if (gTestIndex > 0)
+					gTestIndex--;
+			}
+			// Space
+			if (keys[VK_SPACE]) {
+				keys[VK_SPACE] = FALSE;
+				gRandAngle = GMath::RangeRandom((GReal)0, (GReal)G_2PI);
+				if (gTestSuite == 4)
+					gRandScale = GMath::RangeRandom((GReal)0.1, (GReal)1.5);
+				else
+					gRandScale = GMath::RangeRandom((GReal)0.33, (GReal)3.0);
+			}
 		}
 	}
 	// Shutdown

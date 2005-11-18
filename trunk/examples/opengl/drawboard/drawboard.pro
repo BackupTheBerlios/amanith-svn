@@ -7,7 +7,13 @@ LANGUAGE = C++
 CONFIG += qt warn_on opengl
 
 SOURCES = main.cpp \
-          drawboard.cpp
+          drawboard.cpp \
+          test_color.cpp \
+          test_lineargradient.cpp \
+          test_radialgradientin.cpp \
+          test_radialgradientout.cpp \
+          test_pattern.cpp \
+          test_stroking.cpp
 
 win32: RC_FILE = example.rc
 

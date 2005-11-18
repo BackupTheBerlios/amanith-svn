@@ -66,7 +66,6 @@ namespace Amanith {
 	public:
 		GDrawStyle gDrawStyle;
 		GRenderingQuality gRenderingQuality;
-		GImageQuality gImageQuality;
 		GReal gOpacity;
 		GTargetMode gTargetMode;
 		GBool gClipEnabled;
@@ -90,7 +89,6 @@ namespace Amanith {
 		GPoint4 gProjection; // x = left; y = right; z = bottom; w = top
 
 		virtual void DoSetRenderingQuality(const GRenderingQuality Quality) = 0;
-		virtual void DoSetImageQuality(const GImageQuality Quality) = 0;
 		virtual void DoSetTargetMode(const GTargetMode Mode) = 0;
 		virtual void DoSetClipOperation(const GClipOperation Operation) = 0;
 		virtual void DoSetClipEnabled(const GBool Enabled) = 0;
@@ -146,7 +144,8 @@ namespace Amanith {
 													const GColorRampInterpolation Interpolation = G_HERMITE_COLOR_INTERPOLATION,
 													const GColorRampSpreadMode SpreadMode = G_PAD_COLOR_RAMP_SPREAD,
 													const GMatrix33& Matrix = G_MATRIX_IDENTITY33) = 0;
-		virtual GPatternDesc *CreatePattern(const GPixelMap *Image, const GTilingMode TilingMode = G_REPEAT_TILE,
+		virtual GPatternDesc *CreatePattern(const GPixelMap *Image, const GImageQuality Quality,
+											const GTilingMode TilingMode = G_REPEAT_TILE,
 											const GAABox2 *LogicalWindow = NULL,
 											const GMatrix33& Matrix = G_MATRIX_IDENTITY33) = 0;
 
@@ -159,9 +158,6 @@ namespace Amanith {
 		// rendering quality
 		GRenderingQuality RenderingQuality() const;
 		void SetRenderingQuality(const GRenderingQuality Quality);
-		// image quality
-		GImageQuality ImageQuality() const;
-		void SetImageQuality(const GImageQuality Quality);
 		// target mode
 		GTargetMode TargetMode() const;
 		void SetTargetMode(const GTargetMode Mode);

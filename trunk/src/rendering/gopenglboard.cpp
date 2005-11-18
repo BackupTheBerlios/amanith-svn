@@ -381,7 +381,7 @@ void GOpenGLBoard::DumpBuffers(const GChar8 *fNameZ, const GChar8 *fNameS) {
 	Viewport(x, y, w, h);
 
 	GLubyte *buf;
-	std::FILE *f;
+	std::FILE *f = NULL;
 
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 8);
 
@@ -396,11 +396,23 @@ void GOpenGLBoard::DumpBuffers(const GChar8 *fNameZ, const GChar8 *fNameS) {
 
 	std::memset(buf, 0, w*h);
 	glReadPixels(0, 0, w, h, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, buf);
-	f = std::fopen(fNameS, "wb");
-	std::fwrite(buf, 1, w*h, f);
-	std::fflush(f);
-	std::fclose(f);
 
+	// open the file
+#if defined(G_OS_WIN) && _MSC_VER >= 1400
+	errno_t openErr = fopen_s(&f, fNameS, "wb");
+	if (f && !openErr) {
+		std::fwrite(buf, 1, w*h, f);
+		std::fflush(f);
+		std::fclose(f);
+	}
+#else
+	f = std::fopen(fNameS, "wb");
+	if (f) {
+		std::fwrite(buf, 1, w*h, f);
+		std::fflush(f);
+		std::fclose(f);
+	}
+#endif
 	delete [] buf;
 }
 
@@ -433,7 +445,6 @@ GOpenGLBoard::GOpenGLBoard(const GUInt32 LowLeftCornerX, const GUInt32 LowLeftCo
 	SetViewport(LowLeftCornerX, LowLeftCornerY, Width, Height);
 	SetProjection((GReal)LowLeftCornerX, (GReal)(LowLeftCornerX + Width), (GReal)LowLeftCornerY, (GReal)(LowLeftCornerY + Height)); 
 	SetRenderingQuality(G_NORMAL_RENDERING_QUALITY);
-	SetImageQuality(G_NORMAL_IMAGE_QUALITY);
 
 	glDisable(GL_LIGHTING);
 	glShadeModel(GL_SMOOTH);
@@ -642,7 +653,8 @@ GGradientDesc *GOpenGLBoard::CreateRadialGradient(const GPoint2& Center, const G
 	return g;
 }
 
-GPatternDesc *GOpenGLBoard::CreatePattern(const GPixelMap *Image, const GTilingMode TilingMode,
+GPatternDesc *GOpenGLBoard::CreatePattern(const GPixelMap *Image, const GImageQuality Quality,
+										  const GTilingMode TilingMode,
 										  const GAABox2 *LogicalWindow, const GMatrix33& Matrix) {
 
  	GOpenGLPatternDesc *p = new(std::nothrow) GOpenGLPatternDesc();
@@ -674,7 +686,7 @@ GPatternDesc *GOpenGLBoard::CreatePattern(const GPixelMap *Image, const GTilingM
 			p->SetLogicalWindow(tmpBox.Min(), tmpBox.Max());
 		}
 		p->gMaxTextureSize = gExtManager->MaxTextureSize();
-		p->SetImage(Image, ImageQuality());
+		p->SetImage(Image, Quality);
 		gPatterns.push_back(p);
 	}
 	return p;
@@ -715,13 +727,6 @@ void GOpenGLBoard::DoSetRenderingQuality(const GRenderingQuality Quality) {
 		glDisable(GL_MULTISAMPLE_ARB);
 	else
 		glEnable(GL_MULTISAMPLE_ARB);
-}
-
-void GOpenGLBoard::DoSetImageQuality(const GImageQuality Quality) {
-
-	// just to avoid warning
-	if (Quality) {
-	}
 }
 
 void GOpenGLBoard::DoSetTargetMode(const GTargetMode Mode) {
@@ -1332,29 +1337,15 @@ GBool GOpenGLBoard::UseStyle(const GPaintType PaintType, const GVector4& Color,
 		GReal xAxisLen = patWindow.Dimension(G_X);
 		GReal yAxisLen = patWindow.Dimension(G_Y);
 
-/*		GMatrix33 m, preTrans, postTrans;
-		GPoint2 p = -patWindow.Min();
-		p[G_X] /= xAxisLen;
-		p[G_Y] /= -yAxisLen;
 
-		GVector4 planeS(1 / xAxisLen, 0, 0, p[G_X]);
-		GVector4 planeT(0, -1 / yAxisLen, 0, p[G_Y]);
-
-	#ifdef DOUBLE_REAL_TYPE
-		glTexGendv(GL_S, GL_EYE_PLANE, (const GLdouble *)planeS.Data());
-		glTexGendv(GL_T, GL_EYE_PLANE, (const GLdouble *)planeT.Data());
-	#else
-		glTexGenfv(GL_S, GL_EYE_PLANE, (const GLfloat *)planeS.Data());
-		glTexGenfv(GL_T, GL_EYE_PLANE, (const GLfloat *)planeT.Data());
-	#endif
-*/
-
-		GMatrix33 m, invPatMatrix(Pattern->Matrix()), postTrans, scale;
+		GMatrix33 m, invPatMatrix(Pattern->Matrix()), postTrans, postTrans2, scale, preTrans, m2;
 		GMatrix22 n, b;
 		GReal det;
 
-		GVector4 planeS(1, 0, 0, -patWindow.Min()[G_X]);
-		GVector4 planeT(0, 1, 0, -patWindow.Min()[G_Y]);
+		//GVector4 planeS(1, 0, 0, -patWindow.Min()[G_X]);
+		//GVector4 planeT(0, 1, 0, -patWindow.Min()[G_Y]);
+		GVector4 planeS(1, 0, 0, 0);
+		GVector4 planeT(0, 1, 0, 0);
 
 	#ifdef DOUBLE_REAL_TYPE
 		glTexGendv(GL_S, GL_EYE_PLANE, (const GLdouble *)planeS.Data());
@@ -1363,6 +1354,8 @@ GBool GOpenGLBoard::UseStyle(const GPaintType PaintType, const GVector4& Color,
 		glTexGenfv(GL_S, GL_EYE_PLANE, (const GLfloat *)planeS.Data());
 		glTexGenfv(GL_T, GL_EYE_PLANE, (const GLfloat *)planeT.Data());
 	#endif
+
+		TranslationToMatrix(preTrans, GPoint2(-invPatMatrix[0][2], -invPatMatrix[1][2]));
 
 		n[0][0] = invPatMatrix[0][0];
 		n[0][1] = invPatMatrix[0][1];
@@ -1373,19 +1366,19 @@ GBool GOpenGLBoard::UseStyle(const GPaintType PaintType, const GVector4& Color,
 		invPatMatrix[0][1] = b[0][1];
 		invPatMatrix[1][0] = b[1][0];
 		invPatMatrix[1][1] = b[1][1];
-		invPatMatrix[0][2] = -invPatMatrix[0][2];
-		invPatMatrix[1][2] = -invPatMatrix[1][2];
+		invPatMatrix[0][2] = 0;
+		invPatMatrix[1][2] = 0;
 
+		TranslationToMatrix(postTrans2, -patWindow.Min());
 		TranslationToMatrix(postTrans, GPoint2(0, 1));
 		ScaleToMatrix(scale, GVector2(1 / xAxisLen, -1 / yAxisLen));
-		m = (postTrans * (scale * invPatMatrix));
+
+		m2 = invPatMatrix * preTrans;
+		m = (postTrans * (scale * (postTrans2 * m2)));
 
 		// load texture matrix
 		glMatrixMode(GL_TEXTURE);
 		SetGLTextureMatrix(m);
-
-		GPoint2 pp(20 + planeS[G_W], 18 + planeT[G_W]), qq;
-		qq = m * pp;
 
 		// enable texture 2D
 		glDisable(GL_TEXTURE_1D);
@@ -2271,13 +2264,21 @@ void GOpenGLBoard::DrawGLShadedSector(const GPoint2& Center, const GPoint2& Focu
 	// now calculate the number of segments to produce (number of times we have to subdivide angle) that
 	// permit to have a squared chordal distance less than gDeviation
 	GReal dev = GMath::Clamp(gFlateness, G_EPSILON, maxRadius - (G_EPSILON * maxRadius));
+
+	if (RenderingQuality() == G_NORMAL_RENDERING_QUALITY)
+		dev *= 1.5;
+	else
+	if (RenderingQuality() == G_LOW_RENDERING_QUALITY)
+		dev *= 2.5;
+
 	GInt32 n = 1;
 	GReal n1 = deltaAngle / (2 * GMath::Acos(1 - dev / maxRadius));
 	if (n1 > 1 && n1 >= (deltaAngle * G_ONE_OVER_PI)) {
 		if (n1 > n)
 			n = (GUInt32)GMath::Ceil(n1);
 	}
-	G_ASSERT(n >= 1);
+	if (n <= 1)
+		n = 2;
 
 
 	// calculate a new array of color keys, taking care of spread mode and color interpolation

@@ -38,15 +38,26 @@ private:
 	GKernel *gKernel;
 	GOpenGLBoard *gDrawBoard;
 	GPixelMap *gImage;
-	GGradientDesc *gLinGrad1, *gLinGrad2, *gLinGrad3;
+	GGradientDesc *gLinGrad1, *gLinGrad2;
 	GGradientDesc *gRadGrad1, *gRadGrad2, *gRadGrad3, *gRadGrad4;
 	GPatternDesc *gPattern;
+	GPatternDesc *gBackGround;
+	GString gDataPath;
+
+	// 0 = color
+	// 1 = linear gradient
+	// 2 = radial gradient (in)
+	// 3 = radial gradient (out)
+	// 4 = pattern
+	// 5 = stroking
+	GUInt32 gTestSuite;
+	GUInt32 gTestIndex;
+	GBool gDrawBackGround;
+	GReal gRandAngle;
+	GReal gRandScale;
+	GRenderingQuality gRenderingQuality;
 
 //	GLfloat	gX, gY, gZ;						// Depth Into The Screen
-//	void setLightAndTransform();					// Set initial light and transform
-//	void setDefaultGlobalStates();					// Set initial states
-//	void BuildFlatContour(const GBezierCurve2D* Curve);
-//	void Draw(const GBezierCurve2D* Curve);
 
 protected:
 	void initializeGL();					// implementation for QGLWidget.initializeGL()
@@ -54,12 +65,19 @@ protected:
 	void resizeGL(int width, int height);	// implementation for QGLWidget.resizeGL()
 	void keyPressEvent(QKeyEvent *e);		// keyboard event handler
 
+	void TestColor(const GUInt32 TestIndex);
+	void TestLinearGradient(const GUInt32 TestIndex, const GReal RotAngle, const GReal Scale);
+	void TestRadialGradientIn(const GUInt32 TestIndex, const GReal RotAngle, const GReal Scale);
+	void TestRadialGradientOut(const GUInt32 TestIndex, const GReal RotAngle, const GReal Scale);
+	void TestPattern(const GUInt32 TestIndex, const GReal RotAngle, const GReal Scale);
+	void TestStroke(const GUInt32 TestIndex);
+
 public:
 	// constructor
 	QGLWidgetTest(QWidget *parent = 0);
 	// destructor
 	~QGLWidgetTest();
-	void timerEvent(QTimerEvent* e);
+	//void timerEvent(QTimerEvent* e);
 };
 
 #endif

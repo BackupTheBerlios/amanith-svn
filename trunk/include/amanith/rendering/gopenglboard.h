@@ -289,7 +289,8 @@ namespace Amanith {
 											const GColorRampSpreadMode SpreadMode = G_PAD_COLOR_RAMP_SPREAD,
 											const GMatrix33& Matrix = G_MATRIX_IDENTITY33);
 
-		GPatternDesc *CreatePattern(const GPixelMap *Image, const GTilingMode TilingMode = G_REPEAT_TILE,
+		GPatternDesc *CreatePattern(const GPixelMap *Image, const GImageQuality Quality,
+									const GTilingMode TilingMode = G_REPEAT_TILE,
 									const GAABox2 *LogicalWindow = NULL,
 									const GMatrix33& Matrix = G_MATRIX_IDENTITY33);
 

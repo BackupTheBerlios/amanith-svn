@@ -397,10 +397,22 @@ GBool SysUtils::SystemInfo(GSystemInfo& SysInfo) {
 
 GString SysUtils::AmanithPath() {
 
+#if defined(G_OS_WIN) && _MSC_VER >= 1400
+	GChar8 *c = NULL;
+	size_t bufSize;
+	errno_t envErr = _dupenv_s(&c, &bufSize, "AMANITHDIR");
+	if (!c || envErr)
+		return GString("");
+#else
 	GChar8 *c = getenv("AMANITHDIR");
 	if (!c)
 		return GString("");
-	GString s = c;
+#endif
+
+	GString s = GString(c);
+#if defined(G_OS_WIN) && _MSC_VER >= 1400
+	std::free(c);
+#endif
 	// fix path for current OS and insure a final path delimiter ('/' or '\' depending on OS)
 	return StrUtils::OSFixPath(s, G_TRUE);
 }
@@ -566,9 +578,9 @@ GString StrUtils::ToString(const GInt32 Value, const GChar8 *Format) {
 
 #if defined(G_OS_WIN) && _MSC_VER >= 1400
 	if (!Format)
-		std::sprintf_s(buffer, 16, "%d", Value);
+		sprintf_s(buffer, 16, "%d", Value);
 	else
-		std::sprintf_s(buffer, 16, Format, Value);
+		sprintf_s(buffer, 16, Format, Value);
 #else
 	if (!Format)
 		std::sprintf(buffer, "%d", Value);
@@ -584,9 +596,9 @@ GString StrUtils::ToString(const GUInt32 Value, const GChar8 *Format) {
 
 #if defined(G_OS_WIN) && _MSC_VER >= 1400
 	if (!Format)
-		std::sprintf_s(buffer, 16, "%d", Value);
+		sprintf_s(buffer, 16, "%d", Value);
 	else
-		std::sprintf_s(buffer, 16, Format, Value);
+		sprintf_s(buffer, 16, Format, Value);
 #else
 	if (!Format)
 		std::sprintf(buffer, "%d", Value);
@@ -602,9 +614,9 @@ GString StrUtils::ToString(const GInt16 Value, const GChar8 *Format) {
 
 #if defined(G_OS_WIN) && _MSC_VER >= 1400
 	if (!Format)
-		std::sprintf_s(buffer, 16, "%d", Value);
+		sprintf_s(buffer, 16, "%d", Value);
 	else
-		std::sprintf_s(buffer, 16, Format, Value);
+		sprintf_s(buffer, 16, Format, Value);
 #else
 	if (!Format)
 		std::sprintf(buffer, "%d", Value);
@@ -620,9 +632,9 @@ GString StrUtils::ToString(const GUInt16 Value, const GChar8 *Format) {
 
 #if defined(G_OS_WIN) && _MSC_VER >= 1400
 	if (!Format)
-		std::sprintf_s(buffer, 16, "%d", Value);
+		sprintf_s(buffer, 16, "%d", Value);
 	else
-		std::sprintf_s(buffer, 16, Format, Value);
+		sprintf_s(buffer, 16, Format, Value);
 #else
 	if (!Format)
 		std::sprintf(buffer, "%d", Value);
@@ -638,9 +650,9 @@ GString StrUtils::ToString(const GInt8 Value, const GChar8 *Format) {
 	
 #if defined(G_OS_WIN) && _MSC_VER >= 1400
 	if (!Format)
-		std::sprintf_s(buffer, 16, "%d", Value);
+		sprintf_s(buffer, 16, "%d", Value);
 	else
-		std::sprintf_s(buffer, 16, Format, Value);
+		sprintf_s(buffer, 16, Format, Value);
 #else
 	if (!Format)
 		std::sprintf(buffer, "%d", Value);
@@ -656,9 +668,9 @@ GString StrUtils::ToString(const GUInt8 Value, const GChar8 *Format) {
 
 #if defined(G_OS_WIN) && _MSC_VER >= 1400
 	if (!Format)
-		std::sprintf_s(buffer, 16, "%d", Value);
+		sprintf_s(buffer, 16, "%d", Value);
 	else
-		std::sprintf_s(buffer, 16, Format, Value);
+		sprintf_s(buffer, 16, Format, Value);
 #else
 	if (!Format)
 		std::sprintf(buffer, "%d", Value);
@@ -674,9 +686,9 @@ GString StrUtils::ToString(const GFloat Value, const GChar8 *Format) {
 
 #if defined(G_OS_WIN) && _MSC_VER >= 1400
 	if (!Format)
-		std::sprintf_s(buffer, 16, "%f", Value);
+		sprintf_s(buffer, 16, "%f", Value);
 	else
-		std::sprintf_s(buffer, 16, Format, Value);
+		sprintf_s(buffer, 16, Format, Value);
 #else
 	if (!Format)
 		std::sprintf(buffer, "%f", Value);
@@ -692,9 +704,9 @@ GString StrUtils::ToString(const GDouble Value, const GChar8 *Format) {
 
 #if defined(G_OS_WIN) && _MSC_VER >= 1400
 	if (!Format)
-		std::sprintf_s(buffer, 64, "%f", Value);
+		sprintf_s(buffer, 64, "%f", Value);
 	else
-		std::sprintf_s(buffer, 64, Format, Value);
+		sprintf_s(buffer, 64, Format, Value);
 #else
 	if (!Format)
 		std::sprintf(buffer, "%f", Value);
@@ -749,7 +761,7 @@ GString StrUtils::ToHex(const GUInt32 Number, const GUInt32 Width) {
 	GUInt32 i, j;
 
 #if defined(G_OS_WIN) && _MSC_VER >= 1400
-	std::sprintf_s(buffer, 16, "%X", Number);
+	sprintf_s(buffer, 16, "%X", Number);
 #else
 	std::sprintf(buffer, "%X", Number);
 #endif
@@ -992,9 +1004,15 @@ GBool FileUtils::FileExists(const GChar8 *FullFileName) {
 	if (!FullFileName || std::strlen(FullFileName) <= 0)
 		return G_FALSE;
 	// check existence mode
+#if defined(G_OS_WIN) && _MSC_VER >= 1400
+	if (_access(FullFileName, 0) == 0)
+		return G_TRUE;
+	return G_FALSE;
+#else
 	if (::access(FullFileName, 0) == 0)
 		return G_TRUE;
 	return G_FALSE;
+#endif
 }
 
 /*!
@@ -1214,7 +1232,7 @@ GError FileUtils::ReadFile(const GChar8 *FileName, GDynArray<GChar8>& Buffer) {
 	// open the file
 #if defined(G_OS_WIN) && _MSC_VER >= 1400
 	std::FILE *file = NULL;
-	errno_t openErr = std::fopen_s(&file, FileName, "rb");
+	errno_t openErr = fopen_s(&file, FileName, "rb");
 	if (!file || openErr)
 		return G_PERMISSION_DENIED;
 #else
@@ -1271,7 +1289,7 @@ GError FileUtils::WriteFile(const GChar8 *FileName, const GDynArray<GChar8>& Buf
 #if defined(G_OS_WIN) && _MSC_VER >= 1400
 	// now open file for write operations
 	std::FILE *file = NULL;
-	errno_t openErr = std::fopen_s(&file, FileName, "wb");
+	errno_t openErr = fopen_s(&file, FileName, "wb");
 	if (!file || openErr)
 		return G_PERMISSION_DENIED;
 #else

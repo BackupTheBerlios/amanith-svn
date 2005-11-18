@@ -28,24 +28,34 @@
 
 // QT4 support
 #ifdef USE_QT4
- #include <QTimerEvent>
- #include <QKeyEvent>
+	#include <QTimerEvent>
+	#include <QKeyEvent>
 #endif
 
-static int timer_interval = 0;   // timer interval (milliseconds)
+//static int timer_interval = 0;   // timer interval (milliseconds)
 
 // constructor
-QGLWidgetTest::QGLWidgetTest(QWidget * parent) : QGLWidget(QGLFormat(StencilBuffer), parent, 0) {
+QGLWidgetTest::QGLWidgetTest(QWidget * parent) : QGLWidget(QGLFormat(QGL::StencilBuffer), parent) {
 
- /*if (!format().stencil())
-  qWarning("Could not get stencil buffer; results will be suboptimal");
+	gKernel = new GKernel();
+	gImage = (GPixelMap *)gKernel->CreateNew(G_PIXELMAP_CLASSID);
 
- if (!format().alpha())
-  qWarning("Could not get alpha channel; results will be suboptimal");*/
+	// build path for data (textures)
+	gDataPath = SysUtils::AmanithPath();
+	if (gDataPath.length() > 0)
+		gDataPath += "data/";
 
- gKernel = new GKernel();
-
- this->setGeometry(50, 50, 800, 600);
+	// initialize random system
+	GMath::SeedRandom();
+	// start with color test suite
+	gTestSuite = 0;
+	gTestIndex = 0;
+	// start with not using random matrix
+	gRandAngle = 0;
+	gRandScale = 1;
+	gRenderingQuality = G_HIGH_RENDERING_QUALITY;
+	// set an 800x600 window
+	this->setGeometry(50, 50, 800, 600);
 }
 //------------------------------------------------------------
 
@@ -58,43 +68,17 @@ QGLWidgetTest::~QGLWidgetTest() {
 		delete gDrawBoard;
 }
 
-//------------------------------------------------------------
-
-void QGLWidgetTest::timerEvent(QTimerEvent *e) {
-
-	if (!e)
-		return;
-	updateGL();
-}
-
-//static GLfloat feedBuffer[2000];
-
 //----- initializeGL -----------------------------------------
 void QGLWidgetTest::initializeGL() {
 
-	gImage = (GPixelMap *)gKernel->CreateNew(G_PIXELMAP_CLASSID);
-
-	// build path for data (textures)
-	GString dataPath = SysUtils::AmanithPath();
-	if (dataPath.length() > 0)
-		dataPath += "data/";
-
-	GString s = dataPath + "spiral.png";
-	GError err = gImage->Load(StrUtils::ToAscii(s), "expandpalette=true");
-	if (err != G_NO_ERROR)
-		abort();
-		
-	
 	gDrawBoard = new GOpenGLBoard(0, 0, geometry().width(), geometry().height());
-	gDrawBoard->SetRenderingQuality(G_HIGH_RENDERING_QUALITY);
-	gDrawBoard->SetImageQuality(G_HIGH_IMAGE_QUALITY);
+	gDrawBoard->SetRenderingQuality(gRenderingQuality);
 
-	gPattern = gDrawBoard->CreatePattern(gImage, G_REPEAT_TILE);
-	gPattern->SetLogicalWindow(GPoint2(-64, -64), GPoint2(64, 64));
-
+	GString s;
+	GError err;
 	GDynArray<GKeyValue> colKeys;
-	
-	// linear gradient
+
+	// color gradients
 	colKeys.clear();
 	colKeys.push_back(GKeyValue(0.00, GVector4(0.4, 0.0, 0.5, 1.0)));
 	colKeys.push_back(GKeyValue(0.25, GVector4(0.9, 0.5, 0.1, 1.0)));
@@ -102,9 +86,17 @@ void QGLWidgetTest::initializeGL() {
 	colKeys.push_back(GKeyValue(0.75, GVector4(0.0, 0.3, 0.5, 1.0)));
 	colKeys.push_back(GKeyValue(1.00, GVector4(0.4, 0.0, 0.5, 1.0)));
 	gLinGrad1 = gDrawBoard->CreateLinearGradient(GPoint2(80, 48), GPoint2(160, 128), colKeys, G_HERMITE_COLOR_INTERPOLATION, G_PAD_COLOR_RAMP_SPREAD);
-	gRadGrad1 = gDrawBoard->CreateRadialGradient(GPoint2(90, 58), GPoint2(150, 118), 110, colKeys, G_HERMITE_COLOR_INTERPOLATION, G_PAD_COLOR_RAMP_SPREAD);
-	gRadGrad3 = gDrawBoard->CreateRadialGradient(GPoint2(-160, -140), GPoint2(-200, -200), 100, colKeys, G_HERMITE_COLOR_INTERPOLATION, G_PAD_COLOR_RAMP_SPREAD);
 	
+	colKeys.clear();
+	colKeys.push_back(GKeyValue(0.00, GVector4(0.171, 0.680, 0.800, 1.0)));
+	colKeys.push_back(GKeyValue(0.30, GVector4(0.540, 0.138, 0.757, 1.0)));
+	colKeys.push_back(GKeyValue(0.60, GVector4(1.000, 0.500, 0.000, 1.0)));
+	colKeys.push_back(GKeyValue(0.70, GVector4(0.980, 0.950, 0.000, 1.0)));
+	colKeys.push_back(GKeyValue(1.00, GVector4(0.171, 0.680, 0.800, 1.0)));
+
+	gRadGrad1 = gDrawBoard->CreateRadialGradient(GPoint2(90, 58), GPoint2(150, 118), 110, colKeys, G_HERMITE_COLOR_INTERPOLATION, G_PAD_COLOR_RAMP_SPREAD);
+	gRadGrad3 = gDrawBoard->CreateRadialGradient(GPoint2(-90, -70), GPoint2(-130, -130), 100, colKeys, G_HERMITE_COLOR_INTERPOLATION, G_PAD_COLOR_RAMP_SPREAD);
+
 	colKeys.clear();
 	colKeys.push_back(GKeyValue(0.00, GVector4(0.4, 0.0, 0.5, 1.00)));
 	colKeys.push_back(GKeyValue(0.25, GVector4(0.9, 0.5, 0.1, 0.25)));
@@ -112,104 +104,93 @@ void QGLWidgetTest::initializeGL() {
 	colKeys.push_back(GKeyValue(0.75, GVector4(0.0, 0.3, 0.5, 0.75)));
 	colKeys.push_back(GKeyValue(1.00, GVector4(0.4, 0.0, 0.5, 1.00)));
 	gLinGrad2 = gDrawBoard->CreateLinearGradient(GPoint2(80, 48), GPoint2(160, 128), colKeys, G_HERMITE_COLOR_INTERPOLATION, G_PAD_COLOR_RAMP_SPREAD);
-	gRadGrad2 = gDrawBoard->CreateRadialGradient(GPoint2(90, 58), GPoint2(150, 118), 110, colKeys, G_HERMITE_COLOR_INTERPOLATION, G_PAD_COLOR_RAMP_SPREAD);
-	gRadGrad4 = gDrawBoard->CreateRadialGradient(GPoint2(-160, -140), GPoint2(-200, -200), 100, colKeys, G_HERMITE_COLOR_INTERPOLATION, G_PAD_COLOR_RAMP_SPREAD);
 	
+	colKeys.clear();
+	colKeys.push_back(GKeyValue(0.00, GVector4(0.171, 0.680, 0.800, 1.0)));
+	colKeys.push_back(GKeyValue(0.30, GVector4(0.540, 0.138, 0.757, 0.7)));
+	colKeys.push_back(GKeyValue(0.60, GVector4(1.000, 0.500, 0.000, 1.0)));
+	colKeys.push_back(GKeyValue(0.70, GVector4(0.980, 0.950, 0.000, 0.5)));
+	colKeys.push_back(GKeyValue(1.00, GVector4(0.171, 0.680, 0.800, 1.0)));
+	gRadGrad2 = gDrawBoard->CreateRadialGradient(GPoint2(90, 58), GPoint2(150, 118), 110, colKeys, G_HERMITE_COLOR_INTERPOLATION, G_PAD_COLOR_RAMP_SPREAD);
+	gRadGrad4 = gDrawBoard->CreateRadialGradient(GPoint2(-90, -70), GPoint2(-130, -130), 100, colKeys, G_HERMITE_COLOR_INTERPOLATION, G_PAD_COLOR_RAMP_SPREAD);
 
-	/*
-	// caps
-	gDrawBoard->SetStrokeStartCapStyle(G_ROUND_CAP);
-	gDrawBoard->SetStrokeEndCapStyle(G_ROUND_CAP);
-	// joins
-	gDrawBoard->SetStrokeJoinStyle(G_MITER_JOIN);
-	gDrawBoard->SetStrokeEnabled(G_TRUE);
-	gDrawBoard->SetFillEnabled(G_TRUE);
+	// background
+	s = gDataPath + "background.png";
+	err = gImage->Load(StrUtils::ToAscii(s), "expandpalette=true");
+	if (err == G_NO_ERROR) {
+		gBackGround = gDrawBoard->CreatePattern(gImage, G_LOW_IMAGE_QUALITY, G_REPEAT_TILE);
+		gBackGround->SetLogicalWindow(GPoint2(0, 0), GPoint2(16, 16));
+	}
+	else
+		gBackGround = NULL;
+
+	// pattern
+	s = gDataPath + "spiral.png";
+	err = gImage->Load(StrUtils::ToAscii(s), "expandpalette=true");
+	if (err == G_NO_ERROR) {
+		gPattern = gDrawBoard->CreatePattern(gImage, G_HIGH_IMAGE_QUALITY, G_REPEAT_TILE);
+		gPattern->SetLogicalWindow(GPoint2(-64, -64), GPoint2(64, 64));
+	}
+	else
+		gPattern = NULL;
+
+
 	// dashes
 	gDrawBoard->SetStrokeDashPhase(0);
 	GDynArray<GReal> pat;
-	pat.push_back(5);
-	pat.push_back(20);
+	pat.push_back(10);
+	pat.push_back(35);
 	pat.push_back(30);
-	pat.push_back(20);
+	pat.push_back(35);
 	gDrawBoard->SetStrokeDashPattern(pat);
-	*/
-	
 }
 //------------------------------------------------------------
 
 //----- paintGL ----------------------------------------------
 void QGLWidgetTest::paintGL() {
-	
+
 	gDrawBoard->Clear(1.0, 1.0, 1.0, G_TRUE);
 
-	gDrawBoard->SetTargetMode(G_COLOR_MODE);
-	
-	gDrawBoard->SetStrokeEnabled(G_FALSE);
-	
-	GMatrix33 m;
-	
-//----- FILL LINEAR GRADIENT TEST SUITE ---------------------------------
-	
-	gDrawBoard->SetFillEnabled(G_TRUE);
-	gDrawBoard->SetFillPaintType(G_PATTERN_PAINT_TYPE);
-	
-	gDrawBoard->SetStrokeEnabled(G_TRUE);
-	gDrawBoard->SetStrokeWidth(4);
-	gDrawBoard->SetStrokeColor(GVector4(0.0, 0.0, 0.0, 1.000));
-	
-	// --------------------------------------------------------------
-	gDrawBoard->SetFillColor(GVector4(0.0, 0.0, 0.0, 1.000));
-	gPattern->SetTilingMode(G_PAD_TILE);
-	TranslationToMatrix(m, GVector2(+140,+106));
-	gPattern->SetMatrix(m);
-	gDrawBoard->SetFillPattern(gPattern);
-	gDrawBoard->DrawRectangle(GPoint2(20, 18), GPoint2(260, 194));
-	gPattern->SetTilingMode(G_REPEAT_TILE);
-	TranslationToMatrix(m, GVector2(+400,+106));
-	gPattern->SetMatrix(m);
-	gDrawBoard->SetFillPattern(gPattern);
-	gDrawBoard->DrawRectangle(GPoint2(280, 18), GPoint2(520, 194));
-	gPattern->SetTilingMode(G_REFLECT_TILE);
-	TranslationToMatrix(m, GVector2(+660,+106));
-	gPattern->SetMatrix(m);
-	gDrawBoard->SetFillPattern(gPattern);
-	gDrawBoard->DrawRectangle(GPoint2(540, 18), GPoint2(780, 194));
-	
-	gDrawBoard->SetFillColor(GVector4(0.0, 0.0, 0.0, 0.666));
-	gPattern->SetTilingMode(G_PAD_TILE);
-	TranslationToMatrix(m, GVector2(+140,+300));
-	gPattern->SetMatrix(m);
-	gDrawBoard->SetFillPattern(gPattern);
-	gDrawBoard->DrawRectangle(GPoint2(20, 212), GPoint2(260, 388));
-	gPattern->SetTilingMode(G_REPEAT_TILE);
-	TranslationToMatrix(m, GVector2(+400,+300));
-	gPattern->SetMatrix(m);
-	gDrawBoard->SetFillPattern(gPattern);
-	gDrawBoard->DrawRectangle(GPoint2(280, 212), GPoint2(520, 388));
-	gPattern->SetTilingMode(G_REFLECT_TILE);
-	TranslationToMatrix(m, GVector2(+660,+300));
-	gPattern->SetMatrix(m);
-	gDrawBoard->SetFillPattern(gPattern);
-	gDrawBoard->DrawRectangle(GPoint2(540, 212), GPoint2(780, 388));
-	
-	gDrawBoard->SetFillColor(GVector4(0.0, 0.0, 0.0, 0.333));
-	gPattern->SetTilingMode(G_PAD_TILE);
-	TranslationToMatrix(m, GVector2(+140,+494));
-	gPattern->SetMatrix(m);
-	gDrawBoard->SetFillPattern(gPattern);
-	gDrawBoard->DrawRectangle(GPoint2(20, 406), GPoint2(260, 582));
-	gPattern->SetTilingMode(G_REPEAT_TILE);
-	TranslationToMatrix(m, GVector2(+400,+494));
-	gPattern->SetMatrix(m);
-	gDrawBoard->SetFillPattern(gPattern);
-	gDrawBoard->DrawRectangle(GPoint2(280, 406), GPoint2(520, 582));
-	gPattern->SetTilingMode(G_REFLECT_TILE);
-	TranslationToMatrix(m, GVector2(+660,+494));
-	gPattern->SetMatrix(m);
-	gDrawBoard->SetFillPattern(gPattern);
-	gDrawBoard->DrawRectangle(GPoint2(540, 406), GPoint2(780, 582));
-	
-	// --------------------------------------------------------------
+	if (gDrawBackGround) {
+
+		gDrawBoard->SetStrokeEnabled(G_FALSE);
+		gDrawBoard->SetFillEnabled(G_TRUE);
+		gDrawBoard->SetFillPattern(gBackGround);
+		gDrawBoard->SetFillColor(GVector4(0, 0, 0, 1));
+		gDrawBoard->SetFillPaintType(G_PATTERN_PAINT_TYPE);
+		gDrawBoard->DrawRectangle(GPoint2(0, 0), GPoint2(800, 600));
+	}
+
+	switch (gTestSuite) {
+
+		case 0:
+			TestColor(gTestIndex);
+			break;
+
+		case 1:
+			TestLinearGradient(gTestIndex, gRandAngle, gRandScale);
+			break;
+
+		case 2:
+			TestRadialGradientIn(gTestIndex, gRandAngle, gRandScale);
+			break;
+
+		case 3:
+			TestRadialGradientOut(gTestIndex, gRandAngle, gRandScale);
+			break;
+
+		case 4:
+			TestPattern(gTestIndex, gRandAngle, gRandScale);
+			break;
+
+		case 5:
+			TestStroke(gTestIndex);
+			break;
+
+	default:
+		TestColor(gTestIndex);
+	}
+
 	gDrawBoard->Flush();
 }
 //------------------------------------------------------------
@@ -231,38 +212,75 @@ void QGLWidgetTest::keyPressEvent(QKeyEvent *e) {
 
 	switch(e->key()) {
 		case Qt::Key_F1:
-			/*
-			s = "";
-			s += "";
-			s += "";
-			s += "";
-			s += "";
+			s = "1..6: Toggle draw test\n";
+			s += "B: Toggle background\n";
+			s += "R: Switch rendering quality (low/normal/high)\n";
+			s += "Space: Change matrix (valid for gradient and pattern tests)\n";
 			QMessageBox::information(this, "Command keys", s);
-			*/
 			break;
+
+		case Qt::Key_1:
+			gTestSuite = 0;
+			updateGL();
+			break;
+		case Qt::Key_2:
+			gTestSuite = 1;
+			updateGL();
+			break;
+		case Qt::Key_3:
+			gTestSuite = 2;
+			updateGL();
+			break;
+		case Qt::Key_4:
+			gTestSuite = 3;
+			updateGL();
+			break;
+		case Qt::Key_5:
+			gTestSuite = 4;
+			updateGL();
+			break;
+		case Qt::Key_6:
+			gTestSuite = 5;
+			updateGL();
+			break;
+
+		case Qt::Key_B:
+			if (gDrawBackGround)
+				gDrawBackGround = G_FALSE;
+			else
+				gDrawBackGround = G_TRUE;
+			updateGL();
+			break;
+		case Qt::Key_R:
+			if (gRenderingQuality == G_LOW_RENDERING_QUALITY)
+				gRenderingQuality = G_NORMAL_RENDERING_QUALITY;
+			else
+			if (gRenderingQuality == G_NORMAL_RENDERING_QUALITY)
+				gRenderingQuality = G_HIGH_RENDERING_QUALITY;
+			else
+				gRenderingQuality = G_LOW_RENDERING_QUALITY;
+			gDrawBoard->SetRenderingQuality(gRenderingQuality);
+			updateGL();
+			break;
+
 		case Qt::Key_PageUp:
-			//resize(1186, 911);
+			gTestIndex++;
+			updateGL();
 			break;
 		case Qt::Key_PageDown:
+			if (gTestIndex > 0) {
+				gTestIndex--;
+				updateGL();
+			}
 			break;
-		case Qt::Key_A:
-			break;
-		case Qt::Key_Z:
-			break;
-		case Qt::Key_Up:
-			break;
-		case Qt::Key_Down:
-			break;
-		case Qt::Key_Right:
-			break;
-		case Qt::Key_Left:
-			break;
-		case Qt::Key_M:
-		
-			break;
-		case Qt::Key_N:
-			break;
+
 		case Qt::Key_Space:
+			gRandAngle = GMath::RangeRandom((GReal)0, (GReal)G_2PI);
+			if (gTestSuite == 4)
+				gRandScale = GMath::RangeRandom((GReal)0.1, (GReal)1.5);
+			else
+				gRandScale = GMath::RangeRandom((GReal)0.33, (GReal)3.0);
+			updateGL();
 			break;
 	}
 }

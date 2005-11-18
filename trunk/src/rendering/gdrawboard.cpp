@@ -43,7 +43,6 @@ GRenderingContext::GRenderingContext() {
 
 	gOpacity = 1;
 	gRenderingQuality = G_NORMAL_RENDERING_QUALITY;
-	gImageQuality = G_NORMAL_IMAGE_QUALITY;
 	gTargetMode = G_COLOR_MODE;
 	// clip parameters
 	gClipEnabled = G_TRUE;
@@ -224,20 +223,6 @@ void GDrawBoard::SetRenderingQuality(const GRenderingQuality Quality) {
 	if (!gInsideGroup) {
 		gCurrentContext.gRenderingQuality = Quality;
 		DoSetRenderingQuality(Quality);
-	}
-}
-
-// image quality
-GImageQuality GDrawBoard::ImageQuality() const {
-
-	return gCurrentContext.gImageQuality;
-}
-
-void GDrawBoard::SetImageQuality(const GImageQuality Quality) {
-
-	if (!gInsideGroup) {
-		gCurrentContext.gImageQuality = Quality;
-		DoSetImageQuality(Quality);
 	}
 }
 

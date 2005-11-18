@@ -86,8 +86,15 @@ GDouble SweepLineDistance(GMeshEdge2D<GDouble> *Edge, GMeshVertex2D<GDouble>* Ev
 //                          Debug stuff
 // *********************************************************************
 void DebugOpenFile(std::FILE **File, const GChar8 *FileName) {
+
 	if (DebugActivated && *File == NULL) {
+	#if defined(G_OS_WIN) && _MSC_VER >= 1400
+		errno_t openErr = fopen_s(File, FileName, "wt");
+		if (openErr)
+			*File = NULL;
+	#else
 		*File = std::fopen(FileName, "wt");
+	#endif
 	}
 }
 
