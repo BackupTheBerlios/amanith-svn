@@ -213,6 +213,7 @@ void QGLWidgetTest::keyPressEvent(QKeyEvent *e) {
 	switch(e->key()) {
 		case Qt::Key_F1:
 			s = "1..6: Toggle draw test\n";
+			s += "PageUp/PageDown: Switch transparency modes\n";
 			s += "B: Toggle background\n";
 			s += "R: Switch rendering quality (low/normal/high)\n";
 			s += "Space: Change matrix (valid for gradient and pattern tests)\n";

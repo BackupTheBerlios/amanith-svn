@@ -559,6 +559,7 @@ int WINAPI WinMain(	HINSTANCE	hInstance,			// Instance
 			if (keys[VK_F1]) {						// Is F1 Being Pressed?
 				keys[VK_F1] = FALSE;
 				s = "1..6: Toggle draw test\n";
+				s += "PageUp/PageDown: Switch transparency modes\n";
 				s += "B: Toggle background\n";
 				s += "R: Switch rendering quality (low/normal/high)\n";
 				s += "Space: Change matrix (valid for gradient and pattern tests)\n";
