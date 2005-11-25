@@ -38,7 +38,7 @@ void QGLWidgetTest::TestStroke(const GUInt32 TestIndex) {
 	
 	if (idx == 0) {
 		// OPAQUE
-		gDrawBoard->SetStrokeColor(GVector4(0.65, 0.65, 0.65, 1.0));
+		gDrawBoard->SetStrokeColor(GVector4((GReal)0.65, (GReal)0.65, (GReal)0.65, (GReal)1.0));
 		// --------------------------------------------------------------
 		
 		gDrawBoard->SetStrokeStyle(G_SOLID_STROKE);
@@ -55,7 +55,7 @@ void QGLWidgetTest::TestStroke(const GUInt32 TestIndex) {
 		gDrawBoard->DrawRectangle(GPoint2(230, 228), GPoint2(570, 372));
 		gDrawBoard->DrawRectangle(GPoint2(260, 258), GPoint2(540, 342));
 		
-		gDrawBoard->SetStrokeColor(GVector4(0.0, 0.0, 0.0, 0.5));
+		gDrawBoard->SetStrokeColor(GVector4((GReal)0.0, (GReal)0.0, (GReal)0.0, (GReal)0.5));
 		
 		gDrawBoard->SetStrokeStyle(G_DASHED_STROKE);
 		

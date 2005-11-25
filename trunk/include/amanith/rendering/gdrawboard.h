@@ -144,6 +144,10 @@ namespace Amanith {
 													const GColorRampInterpolation Interpolation = G_HERMITE_COLOR_INTERPOLATION,
 													const GColorRampSpreadMode SpreadMode = G_PAD_COLOR_RAMP_SPREAD,
 													const GMatrix33& Matrix = G_MATRIX_IDENTITY33) = 0;
+		virtual GGradientDesc *CreateConicalGradient(const GPoint2& Center, const GPoint2& Target,
+													 const GDynArray<GKeyValue>& ColorKeys,
+													 const GColorRampInterpolation Interpolation = G_HERMITE_COLOR_INTERPOLATION,
+													 const GMatrix33& Matrix = G_MATRIX_IDENTITY33) = 0;
 		virtual GPatternDesc *CreatePattern(const GPixelMap *Image, const GImageQuality Quality,
 											const GTilingMode TilingMode = G_REPEAT_TILE,
 											const GAABox2 *LogicalWindow = NULL,
@@ -279,7 +283,8 @@ namespace Amanith {
 		void Projection(GReal& Left, GReal& Right, GReal& Bottom, GReal& Top);
 		void SetProjection(const GReal Left, const GReal Right, const GReal Bottom, const GReal Top);
 		// coordinates conversion from logical to physical
-		GPoint<GInt32, 2> LogicalToPhysical(const GPoint2& LogicalPoint);
+		GPoint<GInt32, 2> LogicalToPhysicalInt(const GPoint2& LogicalPoint);
+		GPoint2 LogicalToPhysicalReal(const GPoint2& LogicalPoint);
 		// coordinates conversion from physical to logical
 		GPoint2 PhysicalToLogical(const GPoint<GInt32, 2>& PhysicalPoint);
 		// return G_TRUE if current rendering operations are inside a GroupBegin() / GroupEnd() constructor

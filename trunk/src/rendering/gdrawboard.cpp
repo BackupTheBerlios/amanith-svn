@@ -183,7 +183,7 @@ void GDrawBoard::SetProjection(const GReal Left, const GReal Right, const GReal 
 }
 
 // coordinates conversion from logical to physical
-GPoint<GInt32, 2> GDrawBoard::LogicalToPhysical(const GPoint2& LogicalPoint) {
+GPoint<GInt32, 2> GDrawBoard::LogicalToPhysicalInt(const GPoint2& LogicalPoint) {
 
 	// GPoint<GUInt32, 4> gViewport;  // (x, y) = low-left corner; z = width; w = height
 	// GPoint4 gProjection; // x = left; y = right; z = bottom; w = top
@@ -193,6 +193,19 @@ GPoint<GInt32, 2> GDrawBoard::LogicalToPhysical(const GPoint2& LogicalPoint) {
 	GReal ry = (LogicalPoint[G_Y] - gProjection[G_Z]) / (gProjection[G_W] - gProjection[G_Z]);
 	GInt32 y = (GInt32)((GReal)gViewport[G_Y] + (GReal)gViewport[G_W] * ry);
 	return (GPoint<GInt32, 2>(x, y));
+}
+
+// coordinates conversion from logical to physical
+GPoint2 GDrawBoard::LogicalToPhysicalReal(const GPoint2& LogicalPoint) {
+
+	// GPoint<GUInt32, 4> gViewport;  // (x, y) = low-left corner; z = width; w = height
+	// GPoint4 gProjection; // x = left; y = right; z = bottom; w = top
+
+	GReal rx = (LogicalPoint[G_X] - gProjection[G_X]) / (gProjection[G_Y] - gProjection[G_X]);
+	GReal x = ((GReal)gViewport[G_X] + (GReal)gViewport[G_Z] * rx);
+	GReal ry = (LogicalPoint[G_Y] - gProjection[G_Z]) / (gProjection[G_W] - gProjection[G_Z]);
+	GReal y = ((GReal)gViewport[G_Y] + (GReal)gViewport[G_W] * ry);
+	return (GPoint2(x, y));
 }
 
 // coordinates conversion from physical to logical
@@ -207,6 +220,7 @@ GPoint2 GDrawBoard::PhysicalToLogical(const GPoint<GInt32, 2>& PhysicalPoint) {
 	GReal y = gProjection[G_Z] + ry * (gProjection[G_W] - gProjection[G_Z]);
 	return GPoint2(x, y);
 }
+
 
 //---------------------------------------------------------------------------
 //                             RENDERING CONTEXT

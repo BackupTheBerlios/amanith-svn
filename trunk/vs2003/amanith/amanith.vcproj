@@ -259,6 +259,27 @@
 				<File
 					RelativePath="..\..\src\rendering\gopenglboard.cpp">
 				</File>
+				<File
+					RelativePath="..\..\src\rendering\gopenglconicalgrad.cpp">
+				</File>
+				<File
+					RelativePath="..\..\src\rendering\gopenglgeometries.cpp">
+				</File>
+				<File
+					RelativePath="..\..\src\rendering\gopenglgroups.cpp">
+				</File>
+				<File
+					RelativePath="..\..\src\rendering\gopenglmasks.cpp">
+				</File>
+				<File
+					RelativePath="..\..\src\rendering\gopenglradialgrad.cpp">
+				</File>
+				<File
+					RelativePath="..\..\src\rendering\gopenglstroke.cpp">
+				</File>
+				<File
+					RelativePath="..\..\src\rendering\gopenglstyles.cpp">
+				</File>
 			</Filter>
 		</Filter>
 		<Filter

@@ -40,6 +40,7 @@ private:
 	GPixelMap *gImage;
 	GGradientDesc *gLinGrad1, *gLinGrad2;
 	GGradientDesc *gRadGrad1, *gRadGrad2, *gRadGrad3, *gRadGrad4;
+	GGradientDesc *gConGrad1, *gConGrad2, *gConGrad3, *gConGrad4;
 	GPatternDesc *gPattern;
 	GPatternDesc *gBackGround;
 	GString gDataPath;
@@ -56,6 +57,7 @@ private:
 	GReal gRandAngle;
 	GReal gRandScale;
 	GRenderingQuality gRenderingQuality;
+	GBool gUseShaders;
 
 //	GLfloat	gX, gY, gZ;						// Depth Into The Screen
 
@@ -69,8 +71,13 @@ protected:
 	void TestLinearGradient(const GUInt32 TestIndex, const GReal RotAngle, const GReal Scale);
 	void TestRadialGradientIn(const GUInt32 TestIndex, const GReal RotAngle, const GReal Scale);
 	void TestRadialGradientOut(const GUInt32 TestIndex, const GReal RotAngle, const GReal Scale);
+	void TestConicalGradientIn(const GUInt32 TestIndex, const GReal RotAngle, const GReal Scale);
+	void TestConicalGradientOut(const GUInt32 TestIndex, const GReal RotAngle, const GReal Scale);
 	void TestPattern(const GUInt32 TestIndex, const GReal RotAngle, const GReal Scale);
 	void TestStroke(const GUInt32 TestIndex);
+	void TestMasks(const GUInt32 TestIndex);
+
+	void TestDebug();
 
 public:
 	// constructor

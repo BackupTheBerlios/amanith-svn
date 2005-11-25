@@ -49,6 +49,13 @@ SOURCES = gelement.cpp \
           rendering/gdrawstyle.cpp \
           rendering/gdrawboard.cpp \
           rendering/gopenglboard.cpp \
+          rendering/gopenglstyles.cpp \
+          rendering/gopenglmasks.cpp \
+          rendering/gopenglgroups.cpp \
+          rendering/gopenglradialgrad.cpp \
+          rendering/gopenglconicalgrad.cpp \
+          rendering/gopenglstroke.cpp \
+          rendering/gopenglgeometries.cpp \
           support/gblowfish.cpp \
           support/gavltree.cpp \
           support/gutilities.cpp

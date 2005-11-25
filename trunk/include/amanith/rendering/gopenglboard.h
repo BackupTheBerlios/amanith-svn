@@ -53,10 +53,17 @@ namespace Amanith {
 		GLuint gGradientTexture;
 		// G_TRUE if specified color keys contain alpha values (so GL_BLEND must be enabled).
 		GBool gAlphaKeys;
+		GDynArray<GVector4> gInTangents;
+		GDynArray<GVector4> gOutTangents;
+
+		void GenerateTexture1D(const GInt32 Size, GPixelMap& Bitmap);
 
 	protected:
 		static void SetGLGradientQuality(const GRenderingQuality Quality);
-		void UpdateOpenGLTexture(const GRenderingQuality Quality, const GUInt32 MaxTextureSize);
+		void UpdateOpenGLTextureLinRad(const GRenderingQuality Quality, const GUInt32 MaxTextureSize);
+		void UpdateOpenGLTextureCon(const GRenderingQuality Quality, const GUInt32 MaxTextureSize,
+									const GInt32 Atan2LookupTableSize, const GFloat *gAtan2LookupTable);
+		void UpdateHermiteTangents();
 
 	public:
 		// default constructor
@@ -107,7 +114,6 @@ namespace Amanith {
 		GLenum Format;
 		GLuint TexName;
 		GBool IsEmpty;
-		//GBool IsOpaque;
 	};
 
 	// *********************************************************************
@@ -119,7 +125,7 @@ namespace Amanith {
 		GDynArray<GOpenGLGradientDesc *> gGradients;
 		GDynArray<GOpenGLPatternDesc *> gPatterns;
 		GBool gClipByStencil;
-		GBool gShaderSupport;
+		GBool gFragmentProgramsSupport;
 		GBool gGroupOpacitySupport;
 
 		GLint gTopStencilValue;
@@ -127,18 +133,27 @@ namespace Amanith {
 		GLuint gStencilMask;
 		GLuint gStencilDualMask;
 
-
 		GBool gFirstClipMaskReplace;
 		GList<GAABox2> gClipMasksBoxes;
 		GReal gDeviation;
 		GReal gFlateness; // defined as sqrt(gDeviation)
 		GLGrabbedRect gGLGroupRect;
 
+		// radial gradient fragment program
+		GLuint gRadGradGLProgram;
+		// conical gradient fragment program
+		GLuint gConGradGLProgram;
+		// atan2 lookup table
+		GInt32 gAtan2LookupTableSize;
+		GFloat *gAtan2LookupTable;
+
 	private:
 		// calculate (squared) deviation given a (squared) pixel deviation
 		GReal CalcDeviation(const GReal PixelDeviation);
 		// calculate (squared) pixel deviation given a (squared) deviation
 		GReal CalcPixelDeviation(const GReal Deviation);
+		// generate atant2 lookup table
+		void GenerateAtan2LookupTable();
 
 		void PushGLWindowMode();
 		void PopGLWindowMode();
@@ -151,7 +166,6 @@ namespace Amanith {
 		void StencilPop();
 		void StencilReplace();
 		void StencilEnableTop();
-		//void StencilEnableTopAndPush();
 
 		// double pass technique for group opacity
 		void GroupFirstPass();
@@ -201,27 +215,43 @@ namespace Amanith {
 		// return the sign of the (signed) distance between a given circle and an axes-aligne box
 		static GInt32 SignBoxDisk(const GAABox2& Box, const GPoint2& Center, const GReal Radius);
 		// draw a radial-shaded disk sector
-		void DrawGLShadedSector(const GPoint2& Center, const GPoint2& Focus, const GReal Radius,
+		void DrawGLRadialSector(const GPoint2& Center, const GPoint2& Focus, const GReal Radius,
 								const GReal Time0, const GReal Time1,
 								const GPoint2& P0, const GPoint2& P1, const GBool WholeDisk,
 								const GDynArray<GKeyValue>& ColorKeys, const GColorRampInterpolation Interpolation,
 								const GColorRampSpreadMode SpreadMode,
 								const GReal MultAlpha) const;
 		// draw a radial-shaded disk sector, specifying an axes-aligned bounding box that must entirely filled
-		void DrawShadedSector(const GPoint2& Center, const GPoint2& Focus, const GReal Radius,
+		void DrawRadialSector(const GPoint2& Center, const GPoint2& Focus, const GReal Radius,
 							  const GAABox2& BoundingBox,
 							  const GDynArray<GKeyValue>& ColorKeys, const GColorRampInterpolation Interpolation,
 							  const GColorRampSpreadMode SpreadMode,
 							  const GReal MultAlpha, const GMatrix33& GradientMatrix) const;
 
+		GPoint2 DrawGLConicalSlice(const GPoint2& P0, const GPoint2& Center, const GReal Radius,
+								   const GVector4 Col0, const GVector4 Col1,
+								   const GVector4 Tan0, const GVector4 Tan1,
+								   const GReal SpanAngle, const GReal Flatness, const GColorRampInterpolation Interpolation) const;
+
+		// draw a conical-shaded disk sector
+		void DrawGLConicalSector(const GPoint2& Center, const GVector2& DirCenterTarget, const GReal Radius,
+								const GPoint2& P0, const GPoint2& P1, const GBool WholeDisk,
+								const GDynArray<GKeyValue>& ColorKeys,
+								const GDynArray<GVector4>& InTangents, const GDynArray<GVector4>& OutTangents,
+								const GColorRampInterpolation Interpolation, const GReal MultAlpha) const;
+		// draw a conical-shaded disk sector, specifying an axes-aligned bounding box that must entirely filled
+		void DrawConicalSector(const GPoint2& Center, const GPoint2& Target, const GAABox2& BoundingBox,
+								const GDynArray<GKeyValue>& ColorKeys,
+								const GDynArray<GVector4>& InTangents, const GDynArray<GVector4>& OutTangents,
+								const GColorRampInterpolation Interpolation,
+								const GReal MultAlpha, const GMatrix33& GradientMatrix) const;
+
 		void UpdateClipMasksState();
 		void ClipReplaceOverflowFix();
 
-		//GBool GeometricRadialGradient(const GDrawStyle& Style, const GBool TestFill);
 		void PushDepthMask();
 		void DrawAndPopDepthMask(const GAABox2& Box, const GDrawStyle& Style, const GBool DrawFill);
 
-		//
 		void UpdateStyle(GDrawStyle& Style);
 		GBool UseStyle(const GPaintType PaintType, const GVector4& Color,
 					  const GOpenGLGradientDesc *Gradient, const GOpenGLPatternDesc *Pattern,
@@ -276,19 +306,23 @@ namespace Amanith {
 		GUInt32 MaxImageHeight() const;
 		GUInt32 MaxImageBytes() const;
 
+		void DisableShaders(const GBool Disable);
+
 		// paint resources
 		GGradientDesc *CreateLinearGradient(const GPoint2& StartPoint, const GPoint2& EndPoint,
 											const GDynArray<GKeyValue>& ColorKeys,
 											const GColorRampInterpolation Interpolation = G_HERMITE_COLOR_INTERPOLATION,
 											const GColorRampSpreadMode SpreadMode = G_PAD_COLOR_RAMP_SPREAD,
 											const GMatrix33& Matrix = G_MATRIX_IDENTITY33);
-
 		GGradientDesc *CreateRadialGradient(const GPoint2& Center, const GPoint2& Focus, const GReal Radius,
 											const GDynArray<GKeyValue>& ColorKeys,
 											const GColorRampInterpolation Interpolation = G_HERMITE_COLOR_INTERPOLATION,
 											const GColorRampSpreadMode SpreadMode = G_PAD_COLOR_RAMP_SPREAD,
 											const GMatrix33& Matrix = G_MATRIX_IDENTITY33);
-
+		GGradientDesc *CreateConicalGradient(const GPoint2& Center, const GPoint2& Target,
+											 const GDynArray<GKeyValue>& ColorKeys,
+											 const GColorRampInterpolation Interpolation = G_HERMITE_COLOR_INTERPOLATION,
+											 const GMatrix33& Matrix = G_MATRIX_IDENTITY33);
 		GPatternDesc *CreatePattern(const GPixelMap *Image, const GImageQuality Quality,
 									const GTilingMode TilingMode = G_REPEAT_TILE,
 									const GAABox2 *LogicalWindow = NULL,

@@ -12,8 +12,11 @@ SOURCES = main.cpp \
           test_lineargradient.cpp \
           test_radialgradientin.cpp \
           test_radialgradientout.cpp \
+          test_conicalgradientin.cpp \
+          test_conicalgradientout.cpp \
           test_pattern.cpp \
-          test_stroking.cpp
+          test_stroking.cpp \
+          test_masks.cpp
 
 win32: RC_FILE = example.rc
 

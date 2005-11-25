@@ -66,7 +66,7 @@ GEllipseCurve2D::GEllipseCurve2D(const GElement* Owner) : GCurve2D(Owner) {
 	gCosOfsRot = 1;
 	gSinOfsRot = 0;
 	gStartAngle = 0;
-	gEndAngle = G_2PI;
+	gEndAngle = (GReal)G_2PI;
 	gCCW = G_TRUE;
 }
 
@@ -115,12 +115,12 @@ GBool GEllipseCurve2D::IsLargeArc(const GReal StartAngle, const GReal EndAngle, 
 		if (StartAngle < EndAngle)
 			l = EndAngle - StartAngle;
 		else
-			l = G_2PI - StartAngle + EndAngle;
+			l = (GReal)G_2PI - StartAngle + EndAngle;
 	}
 	// cw
 	else {
 		if (StartAngle < EndAngle)
-			l = G_2PI - EndAngle + StartAngle;
+			l = (GReal)G_2PI - EndAngle + StartAngle;
 		else
 			l = StartAngle - EndAngle;
 	}
@@ -135,12 +135,12 @@ GReal GEllipseCurve2D::FixAngle(const GReal Angle) {
 	GReal n;
 
 	if (Angle < 0) {
-		n = GMath::Ceil(-Angle / G_2PI);
-		return (Angle + n * G_2PI);
+		n = GMath::Ceil(-Angle / (GReal)G_2PI);
+		return (Angle + n * (GReal)G_2PI);
 	}
-	if (Angle > G_2PI) {
-		n = GMath::Floor(Angle / G_2PI);
-		return (Angle - n * G_2PI);
+	if (Angle > (GReal)G_2PI) {
+		n = GMath::Floor(Angle / (GReal)G_2PI);
+		return (Angle - n * (GReal)G_2PI);
 	}
 	else
 		return Angle;
@@ -351,8 +351,8 @@ GBool GEllipseCurve2D::InsideAngleDomain(const GReal Angle, GReal& Ratio) const 
 			else {
 				ang = ang - gStartAngle;
 				if (ang < 0)
-					ang += G_2PI;
-				Ratio = ang / (G_2PI - gStartAngle + gEndAngle);
+					ang += (GReal)G_2PI;
+				Ratio = ang / ((GReal)G_2PI - gStartAngle + gEndAngle);
 				return G_TRUE;
 			}
 		}
@@ -365,8 +365,8 @@ GBool GEllipseCurve2D::InsideAngleDomain(const GReal Angle, GReal& Ratio) const 
 			else {
 				ang = gStartAngle - ang;
 				if (ang < 0)
-					ang += G_2PI;
-				Ratio = ang / (G_2PI - gEndAngle + gStartAngle);
+					ang += (GReal)G_2PI;
+				Ratio = ang / ((GReal)G_2PI - gEndAngle + gStartAngle);
 				return G_TRUE;
 			}
 		}
@@ -456,18 +456,18 @@ GReal GEllipseCurve2D::MapAngle(const GReal u) const {
 		if (gStartAngle < gEndAngle)
 			return GMath::Lerp(r, gStartAngle, gEndAngle);
 		else {
-			GReal res = gStartAngle + r * (G_2PI - gStartAngle + gEndAngle);
-			if (res > G_2PI)
-				res -= G_2PI;
+			GReal res = gStartAngle + r * ((GReal)G_2PI - gStartAngle + gEndAngle);
+			if (res > (GReal)G_2PI)
+				res -= (GReal)G_2PI;
 			return res;
 		}
 	}
 	// cw
 	else {
 		if (gStartAngle < gEndAngle) {
-			GReal res = gStartAngle - r * (G_2PI - gEndAngle + gStartAngle);
+			GReal res = gStartAngle - r * ((GReal)G_2PI - gEndAngle + gStartAngle);
 			if (res < 0)
-				res += G_2PI;
+				res += (GReal)G_2PI;
 			return res;
 		}
 		else
@@ -505,12 +505,12 @@ GVector2 GEllipseCurve2D::Derivative(const GDerivativeOrder Order, const GReal u
 			if (gStartAngle < gEndAngle)
 				l = (gEndAngle - gStartAngle) / l;
 			else
-				l = (G_2PI - gStartAngle + gEndAngle) / l;
+				l = ((GReal)G_2PI - gStartAngle + gEndAngle) / l;
 		}
 		// cw
 		else {
 			if (gStartAngle < gEndAngle)
-				l = -(G_2PI - gEndAngle + gStartAngle) / l;
+				l = -((GReal)G_2PI - gEndAngle + gStartAngle) / l;
 			else
 				l = -(gStartAngle - gEndAngle) / l;
 		}
@@ -525,14 +525,14 @@ GVector2 GEllipseCurve2D::Derivative(const GDerivativeOrder Order, const GReal u
 				l *= l;
 			}
 			else {
-				l = (G_2PI - gStartAngle + gEndAngle) / l;
+				l = ((GReal)G_2PI - gStartAngle + gEndAngle) / l;
 				l *= l;
 			}
 		}
 		// cw
 		else {
 			if (gStartAngle < gEndAngle) {
-				l = -(G_2PI - gEndAngle + gStartAngle) / l;
+				l = -((GReal)G_2PI - gEndAngle + gStartAngle) / l;
 				l *= l;
 			}
 			else {
@@ -617,19 +617,19 @@ GError GEllipseCurve2D::Flatten(GDynArray<GPoint2>& Contour, const GReal MaxDevi
 		if (gStartAngle < gEndAngle)
 			beta = gEndAngle - gStartAngle;
 		else
-			beta = G_2PI - gStartAngle + gEndAngle;
+			beta = (GReal)G_2PI - gStartAngle + gEndAngle;
 	}
 	// cw
 	else {
 		if (gStartAngle < gEndAngle)
-			beta = G_2PI - gEndAngle + gStartAngle;
+			beta = (GReal)G_2PI - gEndAngle + gStartAngle;
 		else
 			beta = gStartAngle - gEndAngle;
 	}
 
 	GUInt32 n = 1;
 	GReal n1 = beta / (2 * GMath::Acos(1 - dev / r));
-	if (n1 > 1 && n1 >= (beta * G_ONE_OVER_PI)) {
+	if (n1 > 1 && n1 >= (beta * (GReal)G_ONE_OVER_PI)) {
 		if (n1 > n)
 			n = (GUInt32)GMath::Ceil(n1);
 	}
@@ -777,44 +777,44 @@ void GEllipseCurve2D::XForm(const GMatrix23& Matrix) {
 	}
 	if (LargeArc()) {
 		step1 = (angMax - angMin) / (GReal)3;
-		step2 = (G_2PI - angMax + angMin) / (GReal)2;
+		step2 = ((GReal)G_2PI - angMax + angMin) / (GReal)2;
 		p2 = Matrix * EvaluateByAngle(angMin + step1);
 		p3 = Matrix * EvaluateByAngle(angMin + 2 * step1);
 		p4 = Matrix * EvaluateByAngle(angMax + step2);
 	}
 	else {
 		step1 = (angMax - angMin) / (GReal)2;
-		step2 = (G_2PI - angMax + angMin) / (GReal)3;
+		step2 = ((GReal)G_2PI - angMax + angMin) / (GReal)3;
 		p2 = Matrix * EvaluateByAngle(angMin + step1);
 		p3 = Matrix * EvaluateByAngle(angMin + step2);
 		p4 = Matrix * EvaluateByAngle(angMax + 2 * step2);
 	}
 	// build system matrix
 	M[0][0] = p0[G_X] * p0[G_X];
-	M[0][1] = 2.0 * (p0[G_X] * p0[G_Y]);
+	M[0][1] = (GReal)2 * (p0[G_X] * p0[G_Y]);
 	M[0][2] = p0[G_Y] * p0[G_Y];
-	M[0][3] = 2.0 * p0[G_X];
-	M[0][4] = 2.0 * p0[G_Y];
+	M[0][3] = (GReal)2 * p0[G_X];
+	M[0][4] = (GReal)2 * p0[G_Y];
 	M[1][0] = p1[G_X] * p1[G_X];
-	M[1][1] = 2.0 * (p1[G_X] * p1[G_Y]);
+	M[1][1] = (GReal)2 * (p1[G_X] * p1[G_Y]);
 	M[1][2] = p1[G_Y] * p1[G_Y];
-	M[1][3] = 2.0 * p1[G_X];
-	M[1][4] = 2.0 * p1[G_Y];
+	M[1][3] = (GReal)2 * p1[G_X];
+	M[1][4] = (GReal)2 * p1[G_Y];
 	M[2][0] = p2[G_X] * p2[G_X];
-	M[2][1] = 2.0 * (p2[G_X] * p2[G_Y]);
+	M[2][1] = (GReal)2 * (p2[G_X] * p2[G_Y]);
 	M[2][2] = p2[G_Y] * p2[G_Y];
-	M[2][3] = 2.0 * p2[G_X];
-	M[2][4] = 2.0 * p2[G_Y];
+	M[2][3] = (GReal)2 * p2[G_X];
+	M[2][4] = (GReal)2 * p2[G_Y];
 	M[3][0] = p3[G_X] * p3[G_X];
-	M[3][1] = 2.0 * (p3[G_X] * p3[G_Y]);
+	M[3][1] = (GReal)2 * (p3[G_X] * p3[G_Y]);
 	M[3][2] = p3[G_Y] * p3[G_Y];
-	M[3][3] = 2.0 * p3[G_X];
-	M[3][4] = 2.0 * p3[G_Y];
+	M[3][3] = (GReal)2 * p3[G_X];
+	M[3][4] = (GReal)2 * p3[G_Y];
 	M[4][0] = p4[G_X] * p4[G_X];
-	M[4][1] = 2.0 * (p4[G_X] * p4[G_Y]);
+	M[4][1] = (GReal)2 * (p4[G_X] * p4[G_Y]);
 	M[4][2] = p4[G_Y] * p4[G_Y];
-	M[4][3] = 2.0 * p4[G_X];
-	M[4][4] = 2.0 * p4[G_Y];
+	M[4][3] = (GReal)2 * p4[G_X];
+	M[4][4] = (GReal)2 * p4[G_Y];
 	// build rhs vector
 	rhs.Fill(-1);
 	// invert system matrix
@@ -834,8 +834,8 @@ void GEllipseCurve2D::XForm(const GMatrix23& Matrix) {
 		// diagonalize Grahm matrix using spectral decomposition
 		GEigen eigenSolver(grahm, G_TRUE, eValue1, eValue2, eValue3, eVector1, eVector2, eVector3, G_FALSE);
 		// calculate new semi axes lengths
-		GReal newXSemiLen = GMath::Sqrt(1.0 / GMath::Abs(eValue1[G_X]));
-		GReal newYSemiLen = GMath::Sqrt(1.0 / GMath::Abs(eValue2[G_X]));
+		GReal newXSemiLen = GMath::Sqrt((GReal)1 / GMath::Abs(eValue1[G_X]));
+		GReal newYSemiLen = GMath::Sqrt((GReal)1 / GMath::Abs(eValue2[G_X]));
 		// calculate offset rotation (relative to x-axis)
 		ofsRot = GMath::Atan2(eVector1[G_Y], eVector1[G_X]);
 		// port transformed end points to new ellipse coordinate system (so the new ellipse is centered
@@ -902,14 +902,14 @@ void GEllipseCurve2D::XForm(const GMatrix33& Matrix, const GBool DoProjection) {
 		}
 		if (LargeArc()) {
 			step1 = (angMax - angMin) / (GReal)3;
-			step2 = (G_2PI - angMax + angMin) / (GReal)2;
+			step2 = ((GReal)G_2PI - angMax + angMin) / (GReal)2;
 			p2 = Matrix * EvaluateByAngle(angMin + step1);
 			p3 = Matrix * EvaluateByAngle(angMin + 2 * step1);
 			p4 = Matrix * EvaluateByAngle(angMax + step2);
 		}
 		else {
 			step1 = (angMax - angMin) / (GReal)2;
-			step2 = (G_2PI - angMax + angMin) / (GReal)3;
+			step2 = ((GReal)G_2PI - angMax + angMin) / (GReal)3;
 			p2 = Matrix * EvaluateByAngle(angMin + step1);
 			p3 = Matrix * EvaluateByAngle(angMin + step2);
 			p4 = Matrix * EvaluateByAngle(angMax + 2 * step2);
@@ -939,7 +939,7 @@ void GEllipseCurve2D::XForm(const GMatrix33& Matrix, const GBool DoProjection) {
 		}
 		if (LargeArc()) {
 			step1 = (angMax - angMin) / (GReal)3;
-			step2 = (G_2PI - angMax + angMin) / (GReal)2;
+			step2 = ((GReal)G_2PI - angMax + angMin) / (GReal)2;
 			p2 = EvaluateByAngle(angMin + step1);
 			PRJ_TRANSFORM(p2, p2);
 			p3 = EvaluateByAngle(angMin + 2 * step1);
@@ -949,7 +949,7 @@ void GEllipseCurve2D::XForm(const GMatrix33& Matrix, const GBool DoProjection) {
 		}
 		else {
 			step1 = (angMax - angMin) / (GReal)2;
-			step2 = (G_2PI - angMax + angMin) / (GReal)3;
+			step2 = ((GReal)G_2PI - angMax + angMin) / (GReal)3;
 			p2 = EvaluateByAngle(angMin + step1);
 			PRJ_TRANSFORM(p2, p2);
 			p3 = EvaluateByAngle(angMin + step2);
@@ -961,30 +961,30 @@ void GEllipseCurve2D::XForm(const GMatrix33& Matrix, const GBool DoProjection) {
 
 	// build system matrix
 	M[0][0] = p0[G_X] * p0[G_X];
-	M[0][1] = 2.0 * (p0[G_X] * p0[G_Y]);
+	M[0][1] = (GReal)2 * (p0[G_X] * p0[G_Y]);
 	M[0][2] = p0[G_Y] * p0[G_Y];
-	M[0][3] = 2.0 * p0[G_X];
-	M[0][4] = 2.0 * p0[G_Y];
+	M[0][3] = (GReal)2 * p0[G_X];
+	M[0][4] = (GReal)2 * p0[G_Y];
 	M[1][0] = p1[G_X] * p1[G_X];
-	M[1][1] = 2.0 * (p1[G_X] * p1[G_Y]);
+	M[1][1] = (GReal)2 * (p1[G_X] * p1[G_Y]);
 	M[1][2] = p1[G_Y] * p1[G_Y];
-	M[1][3] = 2.0 * p1[G_X];
-	M[1][4] = 2.0 * p1[G_Y];
+	M[1][3] = (GReal)2 * p1[G_X];
+	M[1][4] = (GReal)2 * p1[G_Y];
 	M[2][0] = p2[G_X] * p2[G_X];
-	M[2][1] = 2.0 * (p2[G_X] * p2[G_Y]);
+	M[2][1] = (GReal)2 * (p2[G_X] * p2[G_Y]);
 	M[2][2] = p2[G_Y] * p2[G_Y];
-	M[2][3] = 2.0 * p2[G_X];
-	M[2][4] = 2.0 * p2[G_Y];
+	M[2][3] = (GReal)2 * p2[G_X];
+	M[2][4] = (GReal)2 * p2[G_Y];
 	M[3][0] = p3[G_X] * p3[G_X];
-	M[3][1] = 2.0 * (p3[G_X] * p3[G_Y]);
+	M[3][1] = (GReal)2 * (p3[G_X] * p3[G_Y]);
 	M[3][2] = p3[G_Y] * p3[G_Y];
-	M[3][3] = 2.0 * p3[G_X];
-	M[3][4] = 2.0 * p3[G_Y];
+	M[3][3] = (GReal)2 * p3[G_X];
+	M[3][4] = (GReal)2 * p3[G_Y];
 	M[4][0] = p4[G_X] * p4[G_X];
-	M[4][1] = 2.0 * (p4[G_X] * p4[G_Y]);
+	M[4][1] = (GReal)2 * (p4[G_X] * p4[G_Y]);
 	M[4][2] = p4[G_Y] * p4[G_Y];
-	M[4][3] = 2.0 * p4[G_X];
-	M[4][4] = 2.0 * p4[G_Y];
+	M[4][3] = (GReal)2 * p4[G_X];
+	M[4][4] = (GReal)2 * p4[G_Y];
 	// build rhs vector
 	rhs.Fill(-1);
 	// invert system matrix
@@ -1004,8 +1004,8 @@ void GEllipseCurve2D::XForm(const GMatrix33& Matrix, const GBool DoProjection) {
 		// diagonalize Grahm matrix using spectral decomposition
 		GEigen eigenSolver(grahm, G_TRUE, eValue1, eValue2, eValue3, eVector1, eVector2, eVector3, G_FALSE);
 		// calculate new semi axes lengths
-		GReal newXSemiLen = GMath::Sqrt(1.0 / GMath::Abs(eValue1[G_X]));
-		GReal newYSemiLen = GMath::Sqrt(1.0 / GMath::Abs(eValue2[G_X]));
+		GReal newXSemiLen = GMath::Sqrt((GReal)1 / GMath::Abs(eValue1[G_X]));
+		GReal newYSemiLen = GMath::Sqrt((GReal)1 / GMath::Abs(eValue2[G_X]));
 		// calculate offset rotation (relative to x-axis)
 		ofsRot = GMath::Atan2(eVector1[G_Y], eVector1[G_X]);
 		// port transformed end points to new ellipse coordinate system (so the new ellipse is centered

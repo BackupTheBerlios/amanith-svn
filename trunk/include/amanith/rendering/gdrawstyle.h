@@ -77,6 +77,7 @@ namespace Amanith {
 	enum GGradientType {
 		G_LINEAR_GRADIENT,
 		G_RADIAL_GRADIENT,
+		G_CONICAL_GRADIENT
 	};
 
 	// ramp spread mode
@@ -461,6 +462,7 @@ namespace Amanith {
 		inline GBool StrokeOffsettedDashPatternEmpty() const {
 			return gStrokeOffsettedDashPatternEmpty;
 		}
+		// get total length of dash pattern (equivalent to the sum of all entries)
 		inline GReal StrokeDashPatternSum() const {
 			return gStrokeDashPatternSum;
 		}

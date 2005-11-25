@@ -60,7 +60,8 @@ namespace Amanith {
 		#define G_EXP1 2.71828182845904523536
 		//! 1/PI constant
 		#define G_ONE_OVER_PI 0.31830988618379067154
-
+		//! 1/2PI constant
+		#define G_ONE_OVER_2PI 0.159154943091895335768
 
 		//! Absolute function (float specific version)
 		inline GFloat Abs(const GFloat Value) {

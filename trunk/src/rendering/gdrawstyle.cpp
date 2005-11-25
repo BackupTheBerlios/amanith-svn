@@ -604,12 +604,10 @@ void GDrawStyle::UpdateOffsettedDashPattern() {
 		gStrokeOffsettedDashPattern.push_back(-phase);
 
 	for (k = 0; k < j - 1; k++) {
-		//GReal val = gStrokeDashPattern[i % j];
 		gStrokeOffsettedDashPattern.push_back(gStrokeDashPattern[i % j]);
 		i++;
 	}
 
-	//GReal val = gStrokeDashPattern[i % j] + phase;
 	gStrokeOffsettedDashPattern.push_back(gStrokeDashPattern[i % j] + phase);
 }
 

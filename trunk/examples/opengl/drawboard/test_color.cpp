@@ -34,49 +34,49 @@ void QGLWidgetTest::TestColor(const GUInt32 TestIndex) {
 	gDrawBoard->SetStrokeJoinStyle(G_MITER_JOIN);
 	gDrawBoard->SetStrokeEnabled(G_TRUE);
 	gDrawBoard->SetStrokeWidth(4);
-	gDrawBoard->SetStrokeColor(GVector4(0.0, 0.0, 0.0, 1.000));
+	gDrawBoard->SetStrokeColor(GVector4((GReal)0.0, (GReal)0.0, (GReal)0.0, (GReal)1.000));
 	gDrawBoard->SetFillEnabled(G_TRUE);
 	gDrawBoard->SetFillPaintType(G_COLOR_PAINT_TYPE);
 
 	if (idx == 0) {
 		// --------------------------------------------------------------
-		gDrawBoard->SetFillColor(GVector4(1.0, 0.0, 0.0, 1.000));
+		gDrawBoard->SetFillColor(GVector4((GReal)1.0, (GReal)0.0, (GReal)0.0, (GReal)1.000));
 		gDrawBoard->DrawRectangle(GPoint2(20, 18), GPoint2(260, 194));
-		gDrawBoard->SetFillColor(GVector4(0.0, 1.0, 1.0, 1.000));
+		gDrawBoard->SetFillColor(GVector4((GReal)0.0, (GReal)1.0, (GReal)1.0, (GReal)1.000));
 		gDrawBoard->DrawRectangle(GPoint2(80, 78), GPoint2(200, 134));
-		gDrawBoard->SetFillColor(GVector4(1.0, 0.0, 0.0, 0.666));
+		gDrawBoard->SetFillColor(GVector4((GReal)1.0, (GReal)0.0, (GReal)0.0, (GReal)0.666));
 		gDrawBoard->DrawRectangle(GPoint2(280, 18), GPoint2(520, 194));
-		gDrawBoard->SetFillColor(GVector4(0.0, 1.0, 1.0, 0.666));
+		gDrawBoard->SetFillColor(GVector4((GReal)0.0, (GReal)1.0, (GReal)1.0, (GReal)0.666));
 		gDrawBoard->DrawRectangle(GPoint2(340, 78), GPoint2(460, 134));
-		gDrawBoard->SetFillColor(GVector4(1.0, 0.0, 0.0, 0.333));
+		gDrawBoard->SetFillColor(GVector4((GReal)1.0, (GReal)0.0, (GReal)0.0, (GReal)0.333));
 		gDrawBoard->DrawRectangle(GPoint2(540, 18), GPoint2(780, 194));
-		gDrawBoard->SetFillColor(GVector4(0.0, 1.0, 1.0, 0.333));
+		gDrawBoard->SetFillColor(GVector4((GReal)0.0, (GReal)1.0, (GReal)1.0, (GReal)0.333));
 		gDrawBoard->DrawRectangle(GPoint2(600, 78), GPoint2(720, 134));
 		// --------------------------------------------------------------
-		gDrawBoard->SetFillColor(GVector4(0.0, 1.0, 0.0, 1.000));
+		gDrawBoard->SetFillColor(GVector4((GReal)0.0, (GReal)1.0, (GReal)0.0, (GReal)1.000));
 		gDrawBoard->DrawRectangle(GPoint2(20, 212), GPoint2(260, 388));
-		gDrawBoard->SetFillColor(GVector4(1.0, 0.0, 1.0, 1.000));
+		gDrawBoard->SetFillColor(GVector4((GReal)1.0, (GReal)0.0, (GReal)1.0, (GReal)1.000));
 		gDrawBoard->DrawRectangle(GPoint2(80, 272), GPoint2(200, 328));
-		gDrawBoard->SetFillColor(GVector4(0.0, 1.0, 0.0, 0.666));
+		gDrawBoard->SetFillColor(GVector4((GReal)0.0, (GReal)1.0, (GReal)0.0, (GReal)0.666));
 		gDrawBoard->DrawRectangle(GPoint2(280, 212), GPoint2(520, 388));
-		gDrawBoard->SetFillColor(GVector4(1.0, 0.0, 1.0, 0.666));
+		gDrawBoard->SetFillColor(GVector4((GReal)1.0, (GReal)0.0, (GReal)1.0, (GReal)0.666));
 		gDrawBoard->DrawRectangle(GPoint2(340, 272), GPoint2(460, 328));
-		gDrawBoard->SetFillColor(GVector4(0.0, 1.0, 0.0, 0.333));
+		gDrawBoard->SetFillColor(GVector4((GReal)0.0, (GReal)1.0, (GReal)0.0, (GReal)0.333));
 		gDrawBoard->DrawRectangle(GPoint2(540, 212), GPoint2(780, 388));
-		gDrawBoard->SetFillColor(GVector4(1.0, 0.0, 1.0, 0.333));
+		gDrawBoard->SetFillColor(GVector4((GReal)1.0, (GReal)0.0, (GReal)1.0, (GReal)0.333));
 		gDrawBoard->DrawRectangle(GPoint2(600, 272), GPoint2(720, 328));
 		// --------------------------------------------------------------
-		gDrawBoard->SetFillColor(GVector4(0.0, 0.0, 1.0, 1.000));
+		gDrawBoard->SetFillColor(GVector4((GReal)0.0, (GReal)0.0, (GReal)1.0, (GReal)1.000));
 		gDrawBoard->DrawRectangle(GPoint2(20, 406), GPoint2(260, 582));
-		gDrawBoard->SetFillColor(GVector4(1.0, 1.0, 0.0, 1.000));
+		gDrawBoard->SetFillColor(GVector4((GReal)1.0, (GReal)1.0, (GReal)0.0, (GReal)1.000));
 		gDrawBoard->DrawRectangle(GPoint2(80, 466), GPoint2(200, 522));
-		gDrawBoard->SetFillColor(GVector4(0.0, 0.0, 1.0, 0.666));
+		gDrawBoard->SetFillColor(GVector4((GReal)0.0, (GReal)0.0, (GReal)1.0, (GReal)0.666));
 		gDrawBoard->DrawRectangle(GPoint2(280, 406), GPoint2(520, 582));
-		gDrawBoard->SetFillColor(GVector4(1.0, 1.0, 0.0, 0.666));
+		gDrawBoard->SetFillColor(GVector4((GReal)1.0, (GReal)1.0, (GReal)0.0, (GReal)0.666));
 		gDrawBoard->DrawRectangle(GPoint2(340, 466), GPoint2(460, 522));
-		gDrawBoard->SetFillColor(GVector4(0.0, 0.0, 1.0, 0.333));
+		gDrawBoard->SetFillColor(GVector4((GReal)0.0, (GReal)0.0, (GReal)1.0, (GReal)0.333));
 		gDrawBoard->DrawRectangle(GPoint2(540, 406), GPoint2(780, 582));
-		gDrawBoard->SetFillColor(GVector4(1.0, 1.0, 0.0, 0.333));
+		gDrawBoard->SetFillColor(GVector4((GReal)1.0, (GReal)1.0, (GReal)0.0, (GReal)0.333));
 		gDrawBoard->DrawRectangle(GPoint2(600, 466), GPoint2(720, 522));
 	}
 }

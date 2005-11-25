@@ -287,6 +287,13 @@ inline bool PolyLineKeyLE(const Amanith::GPolyLineKey2D& k1, const Amanith::GPol
 	return G_FALSE;
 }
 
+inline bool PolyLineKeyL(const Amanith::GPolyLineKey2D& k1, const Amanith::GPolyLineKey2D& k2) {
+
+	if (k1.Parameter < k2.Parameter)
+		return G_TRUE;
+	return G_FALSE;
+}
+
 // sort keys
 void GPolyLineCurve2D::SortKeys() {
 
@@ -313,7 +320,7 @@ GBool GPolyLineCurve2D::ParamToKeyIndex(const GReal Param, GUInt32& KeyIndex) co
 	GPolyLineKey2D tmpKey;
 
 	tmpKey.Parameter = Param;
-	result = std::lower_bound(gKeys.begin(), gKeys.end(), tmpKey, PolyLineKeyLE);
+	result = std::lower_bound(gKeys.begin(), gKeys.end(), tmpKey, PolyLineKeyL);
 
 	if (result == gKeys.end())
 		return G_FALSE;
