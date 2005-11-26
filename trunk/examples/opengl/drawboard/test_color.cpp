@@ -37,6 +37,7 @@ void QGLWidgetTest::TestColor(const GUInt32 TestIndex) {
 	gDrawBoard->SetStrokeColor(GVector4((GReal)0.0, (GReal)0.0, (GReal)0.0, (GReal)1.000));
 	gDrawBoard->SetFillEnabled(G_TRUE);
 	gDrawBoard->SetFillPaintType(G_COLOR_PAINT_TYPE);
+	gDrawBoard->SetStrokePaintType(G_COLOR_PAINT_TYPE);
 
 	if (idx == 0) {
 		// --------------------------------------------------------------
