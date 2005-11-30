@@ -168,7 +168,7 @@ void QGLWidgetTest::FlattenContours() {
 	}
 
 	GTesselator2D tesselator;
-	tesselator.Tesselate(gVertices, gIndex, gTriangles, G_ODD_RULE);
+	tesselator.Tesselate(gVertices, gIndex, gTriangles, G_ODD_EVEN_RULE);
 }
 
 //----- paintGL ----------------------------------------------

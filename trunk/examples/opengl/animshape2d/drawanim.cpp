@@ -68,7 +68,7 @@ GTesselatedGlyph::GTesselatedGlyph(const GFontChar2D* FontChar, const GReal Devi
 	}
 	// triangulate contours
 	GTesselator2D tesselator;
-	tesselator.Tesselate(tmpPts, tmpIndex, gPoints, G_ODD_RULE);
+	tesselator.Tesselate(tmpPts, tmpIndex, gPoints, G_ODD_EVEN_RULE);
 }
 
 //------------------------------------------------------------

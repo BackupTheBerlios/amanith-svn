@@ -30,6 +30,7 @@
 #define GOPENGLBOARD_H
 
 #include "amanith/rendering/gdrawboard.h"
+#include "amanith/2d/gtesselator2d.h"
 #include "amanith/gopenglext.h"
 
 /*!
@@ -146,6 +147,8 @@ namespace Amanith {
 		// atan2 lookup table
 		GInt32 gAtan2LookupTableSize;
 		GFloat *gAtan2LookupTable;
+		// tesselator used to triangulate fill region
+		GTesselator2D gTesselator;
 
 	private:
 		// calculate (squared) deviation given a (squared) pixel deviation
@@ -185,16 +188,17 @@ namespace Amanith {
 		void DrawGLCircleSlice(const GPoint2& Center, const GReal Radius, const GPoint2& Start,
 							 const GPoint2& End, const GReal SpanAngle, const GBool CCW);
 
-		void DrawGLJoinLine(const GJoinStyle JoinStyle, const GReal MiterLimit,
+		void DrawGLJoinLine(const GJoinStyle JoinStyle, const GReal MiterLimitMulThickness,
 							const GPoint2& Previous, const GPoint2& P0, const GPoint2& P1,
 							const GReal Thickness);
-		void DrawGLJoinLineCap(const GJoinStyle JoinStyle, const GReal MiterLimit,
+
+		void DrawGLJoinLineCap(const GJoinStyle JoinStyle, const GReal MiterLimitMulThickness,
 								const GPoint2& Previous, const GPoint2& P0, const GPoint2& P1,
 								const GReal Thickness, const GCapStyle EndCapStyle);
 
 		void DrawGLJoin(const GPoint2& JoinCenter, const GVector2& InDirection, const GReal InDistance,
 						const GVector2& OutDirection, const GReal OutDistance, const GJoinStyle JoinStyle,
-						const GReal MiterLimit, const GCapStyle StartCapStyle, const GCapStyle EndCapStyle,
+						const GReal MiterLimitMulThickness, const GCapStyle StartCapStyle, const GCapStyle EndCapStyle,
 						const GReal Thickness);
 
 		void DrawGLCapsLine(const GBool DoStartCap, const GCapStyle StartCapStyle,
@@ -202,8 +206,9 @@ namespace Amanith {
 							const GPoint2& P0, const GPoint2& P1, const GReal Thickness);
 
 		// draw solid (non-dashed) stroke
-		void DrawSolidStroke(const GDrawStyle& Style, const GDynArray<GPoint2>& Points, const GBool Closed,
-							 const GReal Thickness);
+		void DrawSolidStroke(const GCapStyle StartCapStyle, const GCapStyle EndCapStyle,
+							 const GJoinStyle JoinStyle, const GReal MiterLimitMulThickness,
+							 const GDynArray<GPoint2>& Points, const GBool Closed, const GReal Thickness);
 		// draw dashed stroke
 		void DrawDashedStroke(const GDrawStyle& Style, const GDynArray<GPoint2>& Points, const GBool Closed,
 							  const GReal Thickness);
@@ -279,9 +284,14 @@ namespace Amanith {
 
 
 		// draw primitives
+		void DrawGLPolygon(const GDrawStyle& Style, const GBool ClosedFill, const GBool ClosedStroke,
+							const GJoinStyle FlattenJoinStyle, const GDynArray<GPoint2>& Points, const GBool Convex);
 
 		// here we are sure that corners are opposite and ordered
 		void DoDrawRectangle(GDrawStyle& Style, const GPoint2& MinCorner, const GPoint2& MaxCorner);
+		// here we are sure that corners are opposite and ordered and arc dimensions are > 0
+		void DoDrawRoundRectangle(GDrawStyle& Style, const GPoint2& MinCorner, const GPoint2& MaxCorner,
+								  const GReal ArcWidth, const GReal ArcHeight);
 		void DoDrawLine(GDrawStyle& Style, const GPoint2& P0, const GPoint2& P1);
 		void DoDrawBezier(GDrawStyle& Style, const GPoint2& P0, const GPoint2& P1, const GPoint2& P2);
 		void DoDrawBezier(GDrawStyle& Style, const GPoint2& P0, const GPoint2& P1, const GPoint2& P2, const GPoint2& P3);
@@ -290,7 +300,14 @@ namespace Amanith {
 							  const GReal StartAngle, const GReal EndAngle, const GBool CCW);
 		void DoDrawEllipseArc(GDrawStyle& Style, const GPoint2& P0, const GPoint2& P1, const GReal XSemiAxisLength, const GReal YSemiAxisLength,
 							  const GReal OffsetRotation, const GBool LargeArc, const GBool CCW);
+		// here we are sure that semi-axes lengths are greater than 0
+		void DoDrawEllipse(GDrawStyle& Style, const GPoint2& Center, const GReal XSemiAxisLength, const GReal YSemiAxisLength);
+		// here we are sure that Radius is greater than 0
+		void DoDrawCircle(GDrawStyle& Style, const GPoint2& Center, const GReal Radius);
+		// here we are sure that Points has at least 2 entries
 		void DoDrawPolygon(GDrawStyle& Style, const GDynArray<GPoint2>& Points, const GBool Closed);
+		// here we are sure that Curve has a number of points greater than 1
+		void DoDrawPath(GDrawStyle& Style, const GCurve2D& Curve);
 
 	public:
 		void DumpBuffers(const GChar8 *fNameZ, const GChar8 *fNameS);

@@ -570,6 +570,18 @@ GError GPath2D::Segment(const GUInt32 Index, GCurve2D& Curve) const {
 	return Curve.CopyFrom(*gSegments[Index]);
 }
 
+const GCurve2D* GPath2D::Segment(const GUInt32 Index) const {
+
+	GUInt32 i = (GUInt32)gSegments.size();
+
+	// empty path
+	if (i == 0 || Index >= i)
+		return NULL;
+
+	// copy Index-thm segment into output curve
+	return gSegments[Index];
+}
+
 GError GPath2D::SetSegment(const GUInt32 Index, const GCurve2D& Curve) {
 
 	GUInt32 i = (GUInt32)gSegments.size();

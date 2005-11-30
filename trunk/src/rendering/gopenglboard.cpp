@@ -218,14 +218,16 @@ GOpenGLBoard::GOpenGLBoard(const GUInt32 LowLeftCornerX, const GUInt32 LowLeftCo
 		glGenProgramsARB(1, &gRadGradGLProgram);
 		glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, gRadGradGLProgram);
 		glProgramStringARB(GL_FRAGMENT_PROGRAM_ARB, GL_PROGRAM_FORMAT_ASCII_ARB,
-							std::strlen(RadialProgram), (const GLbyte *)RadialProgram);
+							(GLsizei)std::strlen(RadialProgram), (const GLbyte *)RadialProgram);
 		// check for errors
 		if (GL_INVALID_OPERATION == glGetError()) {
 			// find the error position
 			GLint errPos;
 			glGetIntegerv(GL_PROGRAM_ERROR_POSITION_ARB, &errPos);
 			const GLubyte *errString = glGetString(GL_PROGRAM_ERROR_STRING_ARB);
-			G_DEBUG((const GChar8 *)errString);
+			if (errString) {
+				G_DEBUG((const GChar8 *)errString);
+			}
 		}
 		// generate atan2 lookup table
 		GenerateAtan2LookupTable();
@@ -233,14 +235,16 @@ GOpenGLBoard::GOpenGLBoard(const GUInt32 LowLeftCornerX, const GUInt32 LowLeftCo
 		glGenProgramsARB(1, &gConGradGLProgram);
 		glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, gConGradGLProgram);
 		glProgramStringARB(GL_FRAGMENT_PROGRAM_ARB, GL_PROGRAM_FORMAT_ASCII_ARB,
-							std::strlen(ConicalProgram), (const GLbyte *)ConicalProgram);
+							(GLsizei)std::strlen(ConicalProgram), (const GLbyte *)ConicalProgram);
 		// check for errors
 		if (GL_INVALID_OPERATION == glGetError()) {
 			// find the error position
 			GLint errPos;
 			glGetIntegerv(GL_PROGRAM_ERROR_POSITION_ARB, &errPos);
 			const GLubyte *errString = glGetString(GL_PROGRAM_ERROR_STRING_ARB);
-			G_DEBUG((const GChar8 *)errString);
+			if (errString) {
+				G_DEBUG((const GChar8 *)errString);
+			}
 		}
 	}
 

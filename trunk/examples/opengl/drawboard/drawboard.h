@@ -38,7 +38,7 @@ private:
 	GKernel *gKernel;
 	GOpenGLBoard *gDrawBoard;
 	GPixelMap *gImage;
-	GGradientDesc *gLinGrad1, *gLinGrad2;
+	GGradientDesc *gLinGrad1, *gLinGrad2, *gLinGrad3;
 	GGradientDesc *gRadGrad1, *gRadGrad2, *gRadGrad3, *gRadGrad4;
 	GGradientDesc *gConGrad1, *gConGrad2, *gConGrad3, *gConGrad4;
 	GPatternDesc *gPattern;
@@ -60,6 +60,7 @@ private:
 	GBool gUseShaders;
 
 //	GLfloat	gX, gY, gZ;						// Depth Into The Screen
+	GPath2D *gPath;
 
 protected:
 	void initializeGL();					// implementation for QGLWidget.initializeGL()

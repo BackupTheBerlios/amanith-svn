@@ -571,7 +571,7 @@ void GDrawBoard::DrawBezier(const GPoint2& P0, const GPoint2& P1, const GPoint2&
 
 	GDrawStyle *s = ActiveDrawStyle();
 
-	if (s->StrokeEnabled())
+	if (s->StrokeEnabled() || s->FillEnabled())
 		DoDrawBezier(*s, P0, P1, P2);
 }
 
@@ -579,7 +579,7 @@ void GDrawBoard::DrawBezier(const GPoint2& P0, const GPoint2& P1, const GPoint2&
 
 	GDrawStyle *s = ActiveDrawStyle();
 
-	if (s->StrokeEnabled())
+	if (s->StrokeEnabled() || s->FillEnabled())
 		DoDrawBezier(*s, P0, P1, P2, P3);
 }
 
@@ -588,7 +588,7 @@ void GDrawBoard::DrawEllipseArc(const GPoint2& Center, const GReal XSemiAxisLeng
 
 	GDrawStyle *s = ActiveDrawStyle();
 
-	if (s->StrokeEnabled())
+	if (s->StrokeEnabled() || s->FillEnabled())
 		DoDrawEllipseArc(*s, Center, XSemiAxisLength, YSemiAxisLength, OffsetRotation, StartAngle, EndAngle, CCW);
 }
 
@@ -597,7 +597,7 @@ void GDrawBoard::DrawEllipseArc(const GPoint2& P0, const GPoint2& P1, const GRea
 
 	GDrawStyle *s = ActiveDrawStyle();
 
-	if (s->StrokeEnabled())
+	if (s->StrokeEnabled() || s->FillEnabled())
 		DoDrawEllipseArc(*s, P0, P1, XSemiAxisLength, YSemiAxisLength, OffsetRotation, LargeArc, CCW);
 }
 
@@ -637,38 +637,68 @@ void GDrawBoard::DrawRectangle(const GPoint2& P0, const GPoint2& P1) {
 void GDrawBoard::DrawRoundRectangle(const GPoint2& Center, const GReal Width, const GReal Height,
 									const GReal ArcWidth, const GReal ArcHeight) {
 
-	if (Center[0] && Width && Height && ArcWidth && ArcHeight) {
+	GReal halfW = Width * (GReal)0.5;
+	GReal halfH = Height * (GReal)0.5;
+
+	GPoint2 p0(Center[G_X] - halfW, Center[G_Y] - halfH);
+	GPoint2 p1(Center[G_X] + halfW, Center[G_Y] + halfH);
+
+	GAABox2 box(p0, p1);
+	GDrawStyle *s = ActiveDrawStyle();
+
+	if ((s->StrokeEnabled() || s->FillEnabled()) && ArcWidth > 0 && ArcHeight > 0) {
+		// arc dimensions cannot be larger than box half-dimensions
+		if (ArcWidth >= halfW)
+			halfW *= (GReal)0.999;
+		if (ArcHeight >= halfH)
+			halfH *= (GReal)0.999;
+		DoDrawRoundRectangle(*s, box.Min(), box.Max(), halfW, halfH);
 	}
 }
 
 void GDrawBoard::DrawRoundRectangle(const GPoint2& P0, const GPoint2& P1, const GReal ArcWidth, const GReal ArcHeight) {
 
-	if (P0[0] && P1[0] && ArcWidth && ArcHeight) {
+	GDrawStyle *s = ActiveDrawStyle();
+	GAABox2 box(P0, P1);
+
+	if ((s->StrokeEnabled() || s->FillEnabled()) && ArcWidth > 0 && ArcHeight > 0) {
+		// arc dimensions cannot be larger than box half-dimensions
+		GReal aw = ArcWidth;
+		GReal ah = ArcHeight;
+		GReal halfW = box.HalfDimension(G_X);
+		GReal halfH = box.HalfDimension(G_Y);
+
+		if (aw >= halfW)
+			aw = halfW * (GReal)0.999;
+		if (ah >= halfH)
+			ah = halfH * (GReal)0.999;
+
+		DoDrawRoundRectangle(*s, box.Min(), box.Max(), aw, ah);
 	}
 }
 
 void GDrawBoard::DrawEllipse(const GPoint2& Center, const GReal XSemiAxisLength, const GReal YSemiAxisLength) {
 
-	if (Center[0] && XSemiAxisLength && YSemiAxisLength) {
-	}
+	GDrawStyle *s = ActiveDrawStyle();
+
+	if ((s->StrokeEnabled() || s->FillEnabled()) && XSemiAxisLength > 0 && YSemiAxisLength > 0)
+		DoDrawEllipse(*s, Center, XSemiAxisLength, YSemiAxisLength);
 }
 
 void GDrawBoard::DrawCircle(const GPoint2& Center, const GReal Radius) {
 
-	if (Center[0] && Radius) {
-	}
+	GDrawStyle *s = ActiveDrawStyle();
+
+	if ((s->StrokeEnabled() || s->FillEnabled()) && Radius > 0)
+		DoDrawCircle(*s, Center, Radius);
 }
 
 void GDrawBoard::DrawPath(const GCurve2D& Curve) {
 
-	if (Curve.StartPoint()[0]) {
-	}
-}
+	GDrawStyle *s = ActiveDrawStyle();
 
-void GDrawBoard::DrawText(const GPoint2& StartPoint, const GString& TextLine) {
-
-	if (StartPoint[0] && TextLine.length()) {
-	}
+	if ((s->StrokeEnabled() || s->FillEnabled()) && Curve.PointsCount() > 1)
+		DoDrawPath(*s, Curve);
 }
 
 };  // end namespace Amanith

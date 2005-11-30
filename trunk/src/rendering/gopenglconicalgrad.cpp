@@ -161,7 +161,7 @@ void GOpenGLBoard::DrawGLConicalSector(const GPoint2& Center, const GVector2& Di
 									   const GColorRampInterpolation Interpolation, const GReal MultAlpha) const {
 
 	G_ASSERT(Radius > G_EPSILON);
-	GReal spanAngle;
+	GReal spanAngle = 0;
 
 	// now calculate the number of segments to produce (number of times we have to subdivide angle) that
 	// permit to have a squared chordal distance less than gDeviation

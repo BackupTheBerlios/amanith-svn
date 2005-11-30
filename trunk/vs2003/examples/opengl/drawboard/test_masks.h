@@ -22,10 +22,7 @@
 ** not clear to you.
 **********************************************************************/
 
-#include "drawboard.h"
-#include "amanith/geometry/gxformconv.h"
-
-void QGLWidgetTest::TestMasks(const GUInt32 TestIndex) {
+void TestMasks(const GUInt32 TestIndex) {
 
 	GUInt32 idx = TestIndex % 2;//(TestIndex % 4);
 	GMatrix33 m;
@@ -452,5 +449,4 @@ void QGLWidgetTest::TestMasks(const GUInt32 TestIndex) {
 		gDrawBoard->GroupEnd();
 
 	}
-
 }

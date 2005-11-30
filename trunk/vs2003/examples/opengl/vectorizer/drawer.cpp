@@ -85,7 +85,7 @@ void FlattenContours() {
 		k0 = k1;
 	}
 	GTesselator2D tesselator;
-	tesselator.Tesselate(gVertices, gIndex, gTriangles, G_ODD_RULE);
+	tesselator.Tesselate(gVertices, gIndex, gTriangles, G_ODD_EVEN_RULE);
 }
 
 void InitApp() {

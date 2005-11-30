@@ -420,6 +420,14 @@ namespace Amanith {
 		*/
 		GError Segment(const GUInt32 Index, GCurve2D& Curve) const;
 		/*!
+			Get a pointer to a curve segment maintained by this path. Note that this pointer is
+			constant, so you can use only constant methods of the returned segment.
+
+			\param Index the index of segment we wanna get the copy of. It must be valid, else a NULL pointer
+			will be returned.
+		*/
+		const GCurve2D* Segment(const GUInt32 Index) const;
+		/*!
 			Replace/set a curve segment (already existing inside path) with a new one specified.
 
 			\param Index Index the index of segment we wanna replace/set. It must be valid.

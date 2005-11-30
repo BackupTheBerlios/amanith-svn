@@ -648,7 +648,7 @@ GError GTesselator2D::Tesselate(const GDynArray<GPoint2>& Points, const GDynArra
 		if (FillRule == G_ANY_RULE)
 			TessellateMonotoneRegion(ar, Triangles, desc);
 		else {
-			if (FillRule == G_ODD_RULE) {
+			if (FillRule == G_ODD_EVEN_RULE) {
 				if ((ar->CrossingNumber & 1) != 0)
 					TessellateMonotoneRegion(ar, Triangles, desc);
 			}
@@ -660,6 +660,99 @@ GError GTesselator2D::Tesselate(const GDynArray<GPoint2>& Points, const GDynArra
 	}
 	// free memory used for tessellation
 	FreeTessellation(desc);
+	return G_NO_ERROR;
+}
+
+// tessellation routine with bounding box calculus
+GError GTesselator2D::Tesselate(const GDynArray<GPoint2>& Points, const GDynArray<GInt32>& PointsPerContour,
+								GDynArray< GPoint<GDouble, 2> >& Triangles, GAABox2& BoundingBox, const GFillBehavior FillRule) {
+
+	GExtVertex* extVertex;
+	GInt32 i, j, k, w, ofs;
+	GBool revisitEvent;
+	GActiveRegion *ar;
+	GPoint<GDouble, 2> pMin, pMax, p;
+
+	// test input for consistency
+	if (ValidateInput(Points, PointsPerContour) == G_FALSE)
+		return G_INVALID_PARAMETER;
+
+	// create a tessellation descriptor
+	GTessDescriptor desc;
+
+	// insert all contours
+	ofs = 0;
+	j = (GInt32)PointsPerContour.size();
+	for (i = 0; i < j; i++) {
+		// k = number of points of i-th contour
+		k = PointsPerContour[i];
+		if (k == 0)
+			continue;
+		BeginContour((GDouble)Points[ofs][G_X], (GDouble)Points[ofs][G_Y], desc);
+		ofs++;
+		for (w = 1; w < k; w++) {
+			AddContourPoint((GDouble)Points[ofs][G_X], (GDouble)Points[ofs][G_Y], desc);
+			ofs++;
+		}
+		EndContour(desc);
+	}
+	EndTesselletionData(desc);
+
+	if (desc.PriorityTree.size() > 0) {
+		pMin = desc.PriorityTree.front()->MeshVertex->Position();
+		pMax = desc.PriorityTree.back()->MeshVertex->Position();
+	}
+
+	// main loop
+	extVertex = desc.PriorityTree.front();
+	while (!desc.PriorityTree.empty()) {
+		// sweep event
+		revisitEvent = SweepEvent(extVertex, desc);
+
+		// bounding box calculation
+		p = extVertex->MeshVertex->Position();
+		if (p[G_Y] < pMin[G_Y])
+			pMin[G_Y] = p[G_Y];
+		if (p[G_Y] > pMax[G_Y])
+			pMax[G_Y] = p[G_Y];
+
+		// next event
+		desc.PriorityTree.pop_front();
+		if (!desc.PriorityTree.empty())
+			extVertex = desc.PriorityTree.front();
+	}
+
+	// at the end of process, dictionary must be empty
+	G_ASSERT(desc.DictionaryTree.NodesCount() == 0);
+
+	// keep track of last closed region
+	if (desc.LastRegion)
+		desc.LastRegionEdge = desc.LastRegion->MeshUpperEdge->Sym();
+	// remove all backface regions
+	k = PurgeRegions(desc.ActiveRegions, G_TRUE, desc);
+	// triangulate all monotone regions
+	j = (GInt32)desc.ActiveRegions.size();
+	for (i = 0; i < j; i++) {
+		ar = desc.ActiveRegions[i];
+		if (!ar->Valid)
+			continue;
+		// use specified fill rule
+		if (FillRule == G_ANY_RULE)
+			TessellateMonotoneRegion(ar, Triangles, desc);
+		else {
+			if (FillRule == G_ODD_EVEN_RULE) {
+				if ((ar->CrossingNumber & 1) != 0)
+					TessellateMonotoneRegion(ar, Triangles, desc);
+			}
+			else {
+				if ((ar->CrossingNumber & 1) == 0)
+					TessellateMonotoneRegion(ar, Triangles, desc);
+			}
+		}
+	}
+	// free memory used for tessellation
+	FreeTessellation(desc);
+	BoundingBox.SetMinMax(GPoint2((GReal)pMin[G_X], (GReal)pMin[G_Y]), GPoint2((GReal)pMax[G_X], (GReal)pMax[G_Y]));
 	return G_NO_ERROR;
 }
 
@@ -747,7 +840,7 @@ GError GTesselator2D::Tesselate(const GDynArray<GPoint2>& Points, const GDynArra
 		if (FillRule == G_ANY_RULE)
 			TessellateMonotoneRegion(ar, TriangIds, desc);
 		else {
-			if (FillRule == G_ODD_RULE) {
+			if (FillRule == G_ODD_EVEN_RULE) {
 				if ((ar->CrossingNumber & 1) != 0)
 					TessellateMonotoneRegion(ar, TriangIds, desc);
 			}
@@ -759,6 +852,119 @@ GError GTesselator2D::Tesselate(const GDynArray<GPoint2>& Points, const GDynArra
 	}
 	// free memory used for tessellation
 	FreeTessellation(desc);
+	return G_NO_ERROR;
+}
+
+GError GTesselator2D::Tesselate(const GDynArray<GPoint2>& Points, const GDynArray<GInt32>& PointsPerContour,
+								GDynArray< GPoint<GDouble, 2> >& TriangPoints, GDynArray< GULong >& TriangIds,
+								GAABox2& BoundingBox, const GFillBehavior FillRule) {
+
+	GExtVertex* extVertex;
+	GInt32 i, j, k, w, ofs;
+	GBool revisitEvent;
+	GActiveRegion *ar;
+	GPoint<GDouble, 2> pMin, pMax, p;
+
+	// test input for consistency
+	if (ValidateInput(Points, PointsPerContour) == G_FALSE)
+		return G_INVALID_PARAMETER;
+
+	// create a tessellation descriptor
+	GTessDescriptor desc;
+
+	// insert all contours
+	ofs = 0;
+	j = (GInt32)PointsPerContour.size();
+	for (i = 0; i < j; i++) {
+		// k = number of points of i-th contour
+		k = PointsPerContour[i];
+		if (k == 0)
+			continue;
+		BeginContour((GDouble)Points[ofs][G_X], (GDouble)Points[ofs][G_Y], desc);
+		ofs++;
+		for (w = 1; w < k; w++) {
+			AddContourPoint((GDouble)Points[ofs][G_X], (GDouble)Points[ofs][G_Y], desc);
+			ofs++;
+		}
+		EndContour(desc);
+	}
+	EndTesselletionData(desc);
+
+	if (desc.PriorityTree.size() > 0) {
+		pMin = desc.PriorityTree.front()->MeshVertex->Position();
+		pMax = desc.PriorityTree.back()->MeshVertex->Position();
+	}
+
+#ifdef TESSELATOR_DEBUG_ACTIVATED
+	DebugOpenFile(&debugFile, "debug.txt");
+#endif
+
+	// main loop
+	extVertex = desc.PriorityTree.front();
+	while (!desc.PriorityTree.empty()) {
+		// sweep event
+		revisitEvent = SweepEvent(extVertex, desc);
+
+		// dump dictionary
+#ifdef TESSELATOR_DEBUG_ACTIVATED
+		DebugDumpDictionary(debugFile, desc.DictionaryTree, extVertex->MeshVertex);
+		DebugDumpOrgRing(debugFile, extVertex->MeshVertex);
+#endif
+
+		// bounding box calculation
+		p = extVertex->MeshVertex->Position();
+		if (p[G_Y] < pMin[G_Y])
+			pMin[G_Y] = p[G_Y];
+		if (p[G_Y] > pMax[G_Y])
+			pMax[G_Y] = p[G_Y];
+
+		// assign vertex ID
+		extVertex->MeshVertex->SetCustomData((void *)desc.VertexID);
+		TriangPoints.push_back(extVertex->MeshVertex->Position());
+		desc.VertexID++;
+		// next event
+		desc.PriorityTree.pop_front();
+		if (!desc.PriorityTree.empty())
+			extVertex = desc.PriorityTree.front();
+	}
+
+#ifdef TESSELATOR_DEBUG_ACTIVATED
+	DebugCloseFile(&debugFile);
+#endif
+
+	// at the end of process, dictionary must be empty
+	if (desc.DictionaryTree.NodesCount() != 0) {
+		G_ASSERT(desc.DictionaryTree.NodesCount() == 0);
+	}
+
+	// keep track of last closed region
+	if (desc.LastRegion)
+		desc.LastRegionEdge = desc.LastRegion->MeshUpperEdge->Sym();
+	// remove all backface regions
+	k = PurgeRegions(desc.ActiveRegions, G_TRUE, desc);
+	// triangulate all monotone regions
+	j = (GInt32)desc.ActiveRegions.size();
+	for (i = 0; i < j; i++) {
+		ar = desc.ActiveRegions[i];
+		if (!ar->Valid)
+			continue;
+		// use specified fill rule
+		if (FillRule == G_ANY_RULE)
+			TessellateMonotoneRegion(ar, TriangIds, desc);
+		else {
+			if (FillRule == G_ODD_EVEN_RULE) {
+				if ((ar->CrossingNumber & 1) != 0)
+					TessellateMonotoneRegion(ar, TriangIds, desc);
+			}
+			else {
+				if ((ar->CrossingNumber & 1) == 0)
+					TessellateMonotoneRegion(ar, TriangIds, desc);
+			}
+		}
+	}
+	// free memory used for tessellation
+	FreeTessellation(desc);
+	BoundingBox.SetMinMax(GPoint2((GReal)pMin[G_X], (GReal)pMin[G_Y]), GPoint2((GReal)pMax[G_X], (GReal)pMax[G_Y]));
 	return G_NO_ERROR;
 }
 

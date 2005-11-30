@@ -210,7 +210,7 @@ void InitApp() {
 	gAnim = G_TRUE;
 	gAng1 = gAng2 = gAng3 = 0;
 
-	gFillRule = G_ODD_RULE;
+	gFillRule = G_ODD_EVEN_RULE;
 	gFillMode = 1;
 	gStepAng1 = 0.004f;
 	gStepAng2 = -0.002f;

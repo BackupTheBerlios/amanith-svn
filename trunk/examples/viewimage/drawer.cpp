@@ -38,12 +38,11 @@
 #ifdef USE_QT4
 	#include <QPixmap>
 	#include <QResizeEvent>
-	#include <Q3PopupMenu>
 #endif
 
 // constructor
 #ifdef USE_QT4
-QPixmapViewer::QPixmapViewer(QWidget *parent, const char *name, Qt::WFlags wFlags) : Q3ScrollView(parent, name, wFlags) {
+QPixmapViewer::QPixmapViewer(QWidget *parent, const char *name, Qt::WFlags wFlags) : QScrollArea(parent, name, wFlags) {
 #else
 QPixmapViewer::QPixmapViewer(QWidget *parent, const char *name, Qt::WFlags wFlags) : QScrollView(parent, name, wFlags) {
 #endif
@@ -87,7 +86,7 @@ void QPixmapViewer::drawContents(QPainter *p, int clipx, int clipy, int clipw, i
 //----------------------------------------------------------------------
 
 #ifdef USE_QT4
-ImageViewer::ImageViewer(QWidget *parent, const char *name, Qt::WFlags wFlags): Q3MainWindow(parent, name, wFlags) {
+ImageViewer::ImageViewer(QWidget *parent, const char *name, Qt::WFlags wFlags): QMainWindow(parent, name, wFlags) {
 #else
 ImageViewer::ImageViewer(QWidget *parent, const char *name, Qt::WFlags wFlags): QMainWindow(parent, name, wFlags) {
 #endif
@@ -132,7 +131,7 @@ ImageViewer::ImageViewer(QWidget *parent, const char *name, Qt::WFlags wFlags): 
 	menubar->setSeparator(QMenuBar::InWindowsStyle);
 
 #ifdef USE_QT4
-	file = new Q3PopupMenu(menubar);
+	file = new QMenu(menubar);
 #else
 	file = new QPopupMenu(menubar);
 #endif
@@ -143,7 +142,7 @@ ImageViewer::ImageViewer(QWidget *parent, const char *name, Qt::WFlags wFlags): 
 	file->insertItem("E&xit", this, SLOT(close()), Qt::CTRL + Qt::Key_Q);
 
 #ifdef USE_QT4
-	edit =  new Q3PopupMenu(menubar);
+	edit =  new QMenu(menubar);
 #else
 	edit =  new QPopupMenu(menubar);
 #endif
@@ -189,7 +188,7 @@ void ImageViewer::OpenFile() {
 
 	GString filter = "Images (" + gLoadFilter + ")";
 #ifdef USE_QT4
-	QString newfilename = Q3FileDialog::getOpenFileName(StrUtils::ToAscii(gDataPath), StrUtils::ToAscii(filter), this);
+	QString newfilename = QFileDialog::getOpenFileName(this, "Choose image", StrUtils::ToAscii(gDataPath), StrUtils::ToAscii(filter));
 #else
 	QString newfilename = QFileDialog::getOpenFileName(StrUtils::ToAscii(gDataPath), StrUtils::ToAscii(filter), this);
 #endif
@@ -444,7 +443,7 @@ void ImageViewer::SaveFile() {
 
 		GString filter = "Images (" + gSaveFilter + ")";
 #ifdef USE_QT4
-		QString newfilename = Q3FileDialog::getSaveFileName(StrUtils::ToAscii(gDataPath), StrUtils::ToAscii(filter), this);
+		QString newfilename = QFileDialog::getSaveFileName(this, "Save image", StrUtils::ToAscii(gDataPath), StrUtils::ToAscii(filter));
 #else
 		QString newfilename = QFileDialog::getSaveFileName(StrUtils::ToAscii(gDataPath), StrUtils::ToAscii(filter), this);
 #endif

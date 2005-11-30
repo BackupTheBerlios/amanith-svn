@@ -38,6 +38,7 @@ HINSTANCE	hInstance;		// Holds The Instance Of The Application
 bool keys[256];			// Array Used For The Keyboard Routine
 bool active = TRUE;		// Window Active Flag Set To TRUE By Default
 bool fullscreen = TRUE;	// Fullscreen Flag Set To Fullscreen Mode By Default
+bool doDraw = TRUE;
 
 LRESULT	CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);	// Declaration For WndProc
 
@@ -46,8 +47,9 @@ GKernel *gKernel = NULL;
 GOpenglExt *gExtManager = NULL;	// extensions manager
 GOpenGLBoard *gDrawBoard = NULL;
 GPixelMap *gImage = NULL;
-GGradientDesc *gLinGrad1 = NULL, *gLinGrad2 = NULL;
+GGradientDesc *gLinGrad1 = NULL, *gLinGrad2 = NULL, *gLinGrad3 = NULL;
 GGradientDesc *gRadGrad1 = NULL, *gRadGrad2 = NULL, *gRadGrad3 = NULL, *gRadGrad4 = NULL;
+GGradientDesc *gConGrad1 = NULL, *gConGrad2 = NULL, *gConGrad3 = NULL, *gConGrad4 = NULL;
 GPatternDesc *gPattern = NULL;
 GPatternDesc *gBackGround = NULL;
 GString gDataPath;
@@ -56,14 +58,18 @@ GString gDataPath;
 // 1 = linear gradient
 // 2 = radial gradient (in)
 // 3 = radial gradient (out)
-// 4 = pattern
-// 5 = stroking
+// 4 = conical gradient (in)
+// 5 = conical gradient (out)
+// 6 = pattern
+// 7 = stroking
+// 8 = masks
 GUInt32 gTestSuite = 0;
 GUInt32 gTestIndex = 0;
 GBool gDrawBackGround = G_TRUE;
 GReal gRandAngle = 0;
 GReal gRandScale = 1;
 GRenderingQuality gRenderingQuality = G_HIGH_RENDERING_QUALITY;
+GBool gUseShaders = G_TRUE;
 
 bool arbMultisampleSupported = false;
 int arbMultisampleFormat = 0;
@@ -73,8 +79,11 @@ bool activateFSAA = true;
 #include "test_lineargradient.h"
 #include "test_radialgradientin.h"
 #include "test_radialgradientout.h"
+#include "test_conicalgradientin.h"
+#include "test_conicalgradientout.h"
 #include "test_pattern.h"
 #include "test_stroking.h"
+#include "test_masks.h"
 
 // InitMultisample: Used To Query The Multisample Frequencies
 bool InitMultisample(HINSTANCE hInstance, HWND hWnd, PIXELFORMATDESCRIPTOR pfd)
@@ -173,39 +182,57 @@ int InitGL(GLvoid) {
 
 	// color gradients
 	colKeys.clear();
-	colKeys.push_back(GKeyValue(0.00, GVector4(0.4, 0.0, 0.5, 1.0)));
-	colKeys.push_back(GKeyValue(0.25, GVector4(0.9, 0.5, 0.1, 1.0)));
-	colKeys.push_back(GKeyValue(0.50, GVector4(0.8, 0.8, 0.0, 1.0)));
-	colKeys.push_back(GKeyValue(0.75, GVector4(0.0, 0.3, 0.5, 1.0)));
-	colKeys.push_back(GKeyValue(1.00, GVector4(0.4, 0.0, 0.5, 1.0)));
+	colKeys.push_back(GKeyValue((GReal)0.00, GVector4((GReal)0.4, (GReal)0.0, (GReal)0.5, (GReal)1.0)));
+	colKeys.push_back(GKeyValue((GReal)0.25, GVector4((GReal)0.9, (GReal)0.5, (GReal)0.1, (GReal)1.0)));
+	colKeys.push_back(GKeyValue((GReal)0.50, GVector4((GReal)0.8, (GReal)0.8, (GReal)0.0, (GReal)1.0)));
+	colKeys.push_back(GKeyValue((GReal)0.75, GVector4((GReal)0.0, (GReal)0.3, (GReal)0.5, (GReal)1.0)));
+	colKeys.push_back(GKeyValue((GReal)1.00, GVector4((GReal)0.4, (GReal)0.0, (GReal)0.5, (GReal)1.0)));
 	gLinGrad1 = gDrawBoard->CreateLinearGradient(GPoint2(80, 48), GPoint2(160, 128), colKeys, G_HERMITE_COLOR_INTERPOLATION, G_PAD_COLOR_RAMP_SPREAD);
 
 	colKeys.clear();
-	colKeys.push_back(GKeyValue(0.00, GVector4(0.171, 0.680, 0.800, 1.0)));
-	colKeys.push_back(GKeyValue(0.30, GVector4(0.540, 0.138, 0.757, 1.0)));
-	colKeys.push_back(GKeyValue(0.60, GVector4(1.000, 0.500, 0.000, 1.0)));
-	colKeys.push_back(GKeyValue(0.70, GVector4(0.980, 0.950, 0.000, 1.0)));
-	colKeys.push_back(GKeyValue(1.00, GVector4(0.171, 0.680, 0.800, 1.0)));
+	colKeys.push_back(GKeyValue((GReal)0.00, GVector4((GReal)0.171, (GReal)0.680, (GReal)0.800, (GReal)1.0)));
+	colKeys.push_back(GKeyValue((GReal)0.30, GVector4((GReal)0.540, (GReal)0.138, (GReal)0.757, (GReal)1.0)));
+	colKeys.push_back(GKeyValue((GReal)0.60, GVector4((GReal)1.000, (GReal)0.500, (GReal)0.000, (GReal)1.0)));
+	colKeys.push_back(GKeyValue((GReal)0.70, GVector4((GReal)0.980, (GReal)0.950, (GReal)0.000, (GReal)1.0)));
+	colKeys.push_back(GKeyValue((GReal)1.00, GVector4((GReal)0.171, (GReal)0.680, (GReal)0.800, (GReal)1.0)));
 
 	gRadGrad1 = gDrawBoard->CreateRadialGradient(GPoint2(90, 58), GPoint2(150, 118), 110, colKeys, G_HERMITE_COLOR_INTERPOLATION, G_PAD_COLOR_RAMP_SPREAD);
 	gRadGrad3 = gDrawBoard->CreateRadialGradient(GPoint2(-90, -70), GPoint2(-130, -130), 100, colKeys, G_HERMITE_COLOR_INTERPOLATION, G_PAD_COLOR_RAMP_SPREAD);
+	gConGrad1 = gDrawBoard->CreateConicalGradient(GPoint2(120, 88), GPoint2(180, 88), colKeys, G_HERMITE_COLOR_INTERPOLATION);
+	gConGrad3 = gDrawBoard->CreateConicalGradient(GPoint2(0, 0), GPoint2(20, 0), colKeys, G_HERMITE_COLOR_INTERPOLATION);
 
 	colKeys.clear();
-	colKeys.push_back(GKeyValue(0.00, GVector4(0.4, 0.0, 0.5, 1.00)));
-	colKeys.push_back(GKeyValue(0.25, GVector4(0.9, 0.5, 0.1, 0.25)));
-	colKeys.push_back(GKeyValue(0.50, GVector4(0.8, 0.8, 0.0, 0.50)));
-	colKeys.push_back(GKeyValue(0.75, GVector4(0.0, 0.3, 0.5, 0.75)));
-	colKeys.push_back(GKeyValue(1.00, GVector4(0.4, 0.0, 0.5, 1.00)));
+	colKeys.push_back(GKeyValue((GReal)0.00, GVector4((GReal)0.4, (GReal)0.0, (GReal)0.5, (GReal)1.00)));
+	colKeys.push_back(GKeyValue((GReal)0.25, GVector4((GReal)0.9, (GReal)0.5, (GReal)0.1, (GReal)0.25)));
+	colKeys.push_back(GKeyValue((GReal)0.50, GVector4((GReal)0.8, (GReal)0.8, (GReal)0.0, (GReal)0.50)));
+	colKeys.push_back(GKeyValue((GReal)0.75, GVector4((GReal)0.0, (GReal)0.3, (GReal)0.5, (GReal)0.75)));
+	colKeys.push_back(GKeyValue((GReal)1.00, GVector4((GReal)0.4, (GReal)0.0, (GReal)0.5, (GReal)1.00)));
 	gLinGrad2 = gDrawBoard->CreateLinearGradient(GPoint2(80, 48), GPoint2(160, 128), colKeys, G_HERMITE_COLOR_INTERPOLATION, G_PAD_COLOR_RAMP_SPREAD);
 
 	colKeys.clear();
-	colKeys.push_back(GKeyValue(0.00, GVector4(0.171, 0.680, 0.800, 1.0)));
-	colKeys.push_back(GKeyValue(0.30, GVector4(0.540, 0.138, 0.757, 0.7)));
-	colKeys.push_back(GKeyValue(0.60, GVector4(1.000, 0.500, 0.000, 1.0)));
-	colKeys.push_back(GKeyValue(0.70, GVector4(0.980, 0.950, 0.000, 0.5)));
-	colKeys.push_back(GKeyValue(1.00, GVector4(0.171, 0.680, 0.800, 1.0)));
+	colKeys.push_back(GKeyValue((GReal)0.00, GVector4((GReal)0.171, (GReal)0.680, (GReal)0.800, (GReal)1.0)));
+	colKeys.push_back(GKeyValue((GReal)0.30, GVector4((GReal)0.540, (GReal)0.138, (GReal)0.757, (GReal)0.7)));
+	colKeys.push_back(GKeyValue((GReal)0.60, GVector4((GReal)1.000, (GReal)0.500, (GReal)0.000, (GReal)1.0)));
+	colKeys.push_back(GKeyValue((GReal)0.70, GVector4((GReal)0.980, (GReal)0.950, (GReal)0.000, (GReal)0.5)));
+	colKeys.push_back(GKeyValue((GReal)1.00, GVector4((GReal)0.171, (GReal)0.680, (GReal)0.800, (GReal)1.0)));
 	gRadGrad2 = gDrawBoard->CreateRadialGradient(GPoint2(90, 58), GPoint2(150, 118), 110, colKeys, G_HERMITE_COLOR_INTERPOLATION, G_PAD_COLOR_RAMP_SPREAD);
 	gRadGrad4 = gDrawBoard->CreateRadialGradient(GPoint2(-90, -70), GPoint2(-130, -130), 100, colKeys, G_HERMITE_COLOR_INTERPOLATION, G_PAD_COLOR_RAMP_SPREAD);
+	gConGrad2 = gDrawBoard->CreateConicalGradient(GPoint2(120, 88), GPoint2(180, 88), colKeys, G_HERMITE_COLOR_INTERPOLATION);
+	gConGrad4 = gDrawBoard->CreateConicalGradient(GPoint2(0, 0), GPoint2(20, 0), colKeys, G_HERMITE_COLOR_INTERPOLATION);
+
+
+	colKeys.clear();
+	colKeys.push_back(GKeyValue((GReal)0.00, GVector4((GReal)0.0, (GReal)0.0, (GReal)0.0, (GReal)1.0)));
+	colKeys.push_back(GKeyValue((GReal)1.00, GVector4((GReal)0.0, (GReal)0.0, (GReal)0.0, (GReal)0.0)));
+	gLinGrad3 = gDrawBoard->CreateLinearGradient(GPoint2(560, 20), GPoint2(760, 20), colKeys, G_HERMITE_COLOR_INTERPOLATION, G_PAD_COLOR_RAMP_SPREAD);
+
+	// conical gradient
+	colKeys.clear();
+	colKeys.push_back(GKeyValue((GReal)0.00, GVector4((GReal)0.171, (GReal)0.680, (GReal)0.800, (GReal)1.0)));
+	colKeys.push_back(GKeyValue((GReal)0.30, GVector4((GReal)0.540, (GReal)0.138, (GReal)0.757, (GReal)1.0)));
+	colKeys.push_back(GKeyValue((GReal)0.60, GVector4((GReal)1.000, (GReal)0.500, (GReal)0.000, (GReal)1.0)));
+	colKeys.push_back(GKeyValue((GReal)0.70, GVector4((GReal)0.980, (GReal)0.950, (GReal)0.000, (GReal)1.0)));
+	colKeys.push_back(GKeyValue((GReal)1.00, GVector4((GReal)0.171, (GReal)0.680, (GReal)0.800, (GReal)1.0)));
 
 	// background
 	s = gDataPath + "background.png";
@@ -259,27 +286,30 @@ int DrawGLScene(GLvoid)	{
 		case 0:
 			TestColor(gTestIndex);
 			break;
-
 		case 1:
 			TestLinearGradient(gTestIndex, gRandAngle, gRandScale);
 			break;
-
 		case 2:
 			TestRadialGradientIn(gTestIndex, gRandAngle, gRandScale);
 			break;
-
 		case 3:
 			TestRadialGradientOut(gTestIndex, gRandAngle, gRandScale);
 			break;
-
 		case 4:
+			TestConicalGradientIn(gTestIndex, gRandAngle, gRandScale);
+			break;
+		case 5:
+			TestConicalGradientOut(gTestIndex, gRandAngle, gRandScale);
+			break;
+		case 6:
 			TestPattern(gTestIndex, gRandAngle, gRandScale);
 			break;
-
-		case 5:
+		case 7:
 			TestStroke(gTestIndex);
 			break;
-
+		case 8:
+			TestMasks(gTestIndex);
+			break;
 		default:
 			TestColor(gTestIndex);
 	}
@@ -294,6 +324,7 @@ GLvoid ReSizeGLScene(GLsizei width, GLsizei height) {
 
 	gDrawBoard->Viewport(x, y, w, h);
 	gDrawBoard->SetViewport(x, y, width, height);
+	doDraw = TRUE;
 }
 
 GLvoid KillGLWindow(GLvoid)	{
@@ -470,10 +501,14 @@ LRESULT CALLBACK WndProc(	HWND	hWnd,			// Handle For This Window
 	{
 		case WM_ACTIVATE:							// Watch For Window Activate Message
 		{
-			if (!HIWORD(wParam))
+			if (!HIWORD(wParam)) {
 				active = TRUE;						// Program Is Active
-			else
-				active = FALSE;						// Program Is No Longer Active
+				doDraw = TRUE;
+			}
+			else {
+				//active = FALSE;						// Program Is No Longer Active
+				doDraw = TRUE;
+			}
 			return 0;								// Return To The Message Loop
 		}
 
@@ -511,6 +546,10 @@ LRESULT CALLBACK WndProc(	HWND	hWnd,			// Handle For This Window
 			ReSizeGLScene(LOWORD(lParam), HIWORD(lParam));  // LoWord=Width, HiWord=Height
 			return 0;								// Jump Back
 		}
+		case WM_ERASEBKGND:
+		{
+			doDraw = TRUE;
+		}
 	}
 	// Pass All Unhandled Messages To DefWindowProc
 	return DefWindowProc(hWnd,uMsg,wParam,lParam);
@@ -533,6 +572,7 @@ int WINAPI WinMain(	HINSTANCE	hInstance,			// Instance
 
 	// init application
 	InitApp();
+	doDraw = TRUE;
 
 	while(!done)									// Loop That Runs While done=FALSE
 	{
@@ -550,18 +590,29 @@ int WINAPI WinMain(	HINSTANCE	hInstance,			// Instance
 		}
 		else										// If There Are No Messages
 		{
+			if (keys[VK_ESCAPE])
+				done = TRUE;
+			else
+			if (active) {
+				if (doDraw) {
+					doDraw = FALSE;
+					DrawGLScene();
+					SwapBuffers(hDC);
+				}
+			}
 			// Draw The Scene.  Watch For ESC Key And Quit Messages From DrawGLScene()
-			if ((active && !DrawGLScene()) || keys[VK_ESCAPE])	// Active?  Was There A Quit Received?
+			/*if ((active && !DrawGLScene()) || keys[VK_ESCAPE])	// Active?  Was There A Quit Received?
 				done = TRUE;							// ESC or DrawGLScene Signalled A Quit
 			else									// Not Time To Quit, Update Screen
-				SwapBuffers(hDC);					// Swap Buffers (Double Buffering)
+				SwapBuffers(hDC);					// Swap Buffers (Double Buffering)*/
 
 			if (keys[VK_F1]) {						// Is F1 Being Pressed?
 				keys[VK_F1] = FALSE;
-				s = "1..6: Toggle draw test\n";
+				s = "1..9: Toggle draw test\n";
 				s += "PageUp/PageDown: Switch transparency modes\n";
 				s += "B: Toggle background\n";
 				s += "R: Switch rendering quality (low/normal/high)\n";
+				s += "S: Enable/Disable shaders (for gradients) if supported\n";
 				s += "Space: Change matrix (valid for gradient and pattern tests)\n";
 				MessageBox(NULL, StrUtils::ToAscii(s), "Command keys", MB_OK | MB_ICONINFORMATION);
 			}
@@ -569,31 +620,55 @@ int WINAPI WinMain(	HINSTANCE	hInstance,			// Instance
 			if (keys[49]) {
 				keys[49] = FALSE;
 				gTestSuite = 0;
+				doDraw = TRUE;
 			}
 			// 2 key
 			if (keys[50]) {
 				keys[50] = FALSE;
 				gTestSuite = 1;
+				doDraw = TRUE;
 			}
 			// 3 key
 			if (keys[51]) {
 				keys[51] = FALSE;
 				gTestSuite = 2;
+				doDraw = TRUE;
 			}
 			// 4 key
 			if (keys[52]) {
 				keys[52] = FALSE;
 				gTestSuite = 3;
+				doDraw = TRUE;
 			}
 			// 5 key
 			if (keys[53]) {
 				keys[53] = FALSE;
 				gTestSuite = 4;
+				doDraw = TRUE;
 			}
 			// 6 key
 			if (keys[54]) {
 				keys[54] = FALSE;
 				gTestSuite = 5;
+				doDraw = TRUE;
+			}
+			// 7 key
+			if (keys[55]) {
+				keys[55] = FALSE;
+				gTestSuite = 6;
+				doDraw = TRUE;
+			}
+			// 8 key
+			if (keys[56]) {
+				keys[56] = FALSE;
+				gTestSuite = 7;
+				doDraw = TRUE;
+			}
+			// 9 key
+			if (keys[57]) {
+				keys[57] = FALSE;
+				gTestSuite = 8;
+				doDraw = TRUE;
 			}
 			// B key
 			if (keys[66]) {
@@ -602,6 +677,7 @@ int WINAPI WinMain(	HINSTANCE	hInstance,			// Instance
 					gDrawBackGround = G_FALSE;
 				else
 					gDrawBackGround = G_TRUE;
+				doDraw = TRUE;
 			}
 			// R key
 			if (keys[82]) {
@@ -614,17 +690,33 @@ int WINAPI WinMain(	HINSTANCE	hInstance,			// Instance
 					else
 						gRenderingQuality = G_LOW_RENDERING_QUALITY;
 				gDrawBoard->SetRenderingQuality(gRenderingQuality);
+				doDraw = TRUE;
+			}
+			// S key
+			if (keys[83]) {
+				keys[83] = FALSE;
+				if (gUseShaders) {
+					gUseShaders = G_FALSE;
+					gDrawBoard->DisableShaders(G_TRUE);
+				}
+				else {
+					gUseShaders = G_TRUE;
+					gDrawBoard->DisableShaders(G_FALSE);
+				}
+				doDraw = TRUE;
 			}
 			// PageUp
 			if (keys[VK_PRIOR]) {
 				keys[VK_PRIOR] = FALSE;
 				gTestIndex++;
+				doDraw = TRUE;
 			}
 			// PageDown
 			if (keys[VK_NEXT]) {
 				keys[VK_NEXT] = FALSE;
 				if (gTestIndex > 0)
 					gTestIndex--;
+				doDraw = TRUE;
 			}
 			// Space
 			if (keys[VK_SPACE]) {
@@ -634,6 +726,7 @@ int WINAPI WinMain(	HINSTANCE	hInstance,			// Instance
 					gRandScale = GMath::RangeRandom((GReal)0.1, (GReal)1.5);
 				else
 					gRandScale = GMath::RangeRandom((GReal)0.33, (GReal)3.0);
+				doDraw = TRUE;
 			}
 		}
 	}

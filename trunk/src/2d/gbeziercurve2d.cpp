@@ -865,7 +865,8 @@ void GBezierCurve2D::ParabolicApproxBezierPointsNoInflPts(const GReal Flatness, 
 		GReal t = GMath::Sqrt((GReal)4 / (GReal)3 * dNorm * Flatness / d);
 		if (t >= (GReal)1 - (GReal)G_EPSILON)
 			break;
-		bez.Cut(t, &bez2, (GBezierCurve2D *)NULL);
+		//bez.Cut(t, &bez2, (GBezierCurve2D *)NULL);
+		bez.DoCut(t, &bez2, (GCurve2D *)NULL);
 		Contour.push_back(bez2.gPoints[0]);
 		bez.gPoints = bez2.gPoints;
 		bez.SetDomain(0, 1);
@@ -909,7 +910,7 @@ GError GBezierCurve2D::Flatten3(GDynArray<GPoint2>& Contour, const GReal MaxDevi
 		return G_NO_ERROR;
 	}
 
-	GBezierCurve2D bez1, bez2;
+	GBezierCurve2D bez1, bez2, bez3;
 
 	tmpBez.ExciseInflectionPoint(ip1, flatness, ip1Minus, ip1Plus);
 	tmpBez.ExciseInflectionPoint(ip2, flatness, ip2Minus, ip2Plus);
@@ -935,7 +936,10 @@ GError GBezierCurve2D::Flatten3(GDynArray<GPoint2>& Contour, const GReal MaxDevi
 			else
 			if (ip1Plus < 1) {
 				if (ip2Minus < 1) {
-					tmpBez.Cut(ip1Plus, ip2Minus, &bez2);
+					//tmpBez.Cut(ip1Plus, ip2Minus, &bez2);
+					DoCut(ip2Minus, (GCurve2D *)NULL, &bez3);
+					DoCut(ip1Plus, &bez2, (GCurve2D *)NULL);
+
 					bez2.ParabolicApproxBezierPointsNoInflPts(flatness, Contour);
 
 					Contour.push_back(tmpBez.Evaluate(ip2Minus));
@@ -966,7 +970,10 @@ GError GBezierCurve2D::Flatten3(GDynArray<GPoint2>& Contour, const GReal MaxDevi
 		else
 		if (ip1Plus < 1) {
 			if (ip2Minus < 1) {
-				tmpBez.Cut(ip1Plus, ip2Minus, &bez2);
+				//tmpBez.Cut(ip1Plus, ip2Minus, &bez2);
+				DoCut(ip1Plus, (GCurve2D *)NULL, &bez3);
+				DoCut(ip2Minus, &bez2, (GCurve2D *)NULL);
+
 				bez2.ParabolicApproxBezierPointsNoInflPts(flatness, Contour);
 
 				Contour.push_back(tmpBez.Evaluate(ip2Minus));

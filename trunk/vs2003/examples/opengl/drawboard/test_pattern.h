@@ -34,17 +34,18 @@ void TestPattern(const GUInt32 TestIndex, const GReal RotAngle, const GReal Scal
 	ofsTransf = (rot * scl);
 
 	gDrawBoard->SetTargetMode(G_COLOR_MODE);
+	gDrawBoard->SetStrokePaintType(G_COLOR_PAINT_TYPE);
 	gDrawBoard->SetStrokeStyle(G_SOLID_STROKE);
 	gDrawBoard->SetStrokeJoinStyle(G_MITER_JOIN);
 	gDrawBoard->SetStrokeEnabled(G_TRUE);
 	gDrawBoard->SetStrokeWidth(4);
-	gDrawBoard->SetStrokeColor(GVector4(0.0, 0.0, 0.0, 1.000));
+	gDrawBoard->SetStrokeColor(GVector4((GReal)0.0, (GReal)0.0, (GReal)0.0, (GReal)1.000));
 	gDrawBoard->SetFillEnabled(G_TRUE);
 	gDrawBoard->SetFillPaintType(G_PATTERN_PAINT_TYPE);
-	
+
 	if (idx == 0) {
 		// --------------------------------------------------------------
-		gDrawBoard->SetFillColor(GVector4(0.0, 0.0, 0.0, 1.000));
+		gDrawBoard->SetFillColor(GVector4((GReal)0.0, (GReal)0.0, (GReal)0.0, (GReal)1.000));
 		gPattern->SetTilingMode(G_PAD_TILE);
 		TranslationToMatrix(m, GVector2(+140,+106));
 		gPattern->SetMatrix(m * ofsTransf);
@@ -60,8 +61,8 @@ void TestPattern(const GUInt32 TestIndex, const GReal RotAngle, const GReal Scal
 		gPattern->SetMatrix(m * ofsTransf);
 		gDrawBoard->SetFillPattern(gPattern);
 		gDrawBoard->DrawRectangle(GPoint2(540, 18), GPoint2(780, 194));
-		
-		gDrawBoard->SetFillColor(GVector4(0.0, 0.0, 0.0, 0.666));
+
+		gDrawBoard->SetFillColor(GVector4((GReal)0.0, (GReal)0.0, (GReal)0.0, (GReal)0.666));
 		gPattern->SetTilingMode(G_PAD_TILE);
 		TranslationToMatrix(m, GVector2(+140,+300));
 		gPattern->SetMatrix(m * ofsTransf);
@@ -77,8 +78,8 @@ void TestPattern(const GUInt32 TestIndex, const GReal RotAngle, const GReal Scal
 		gPattern->SetMatrix(m * ofsTransf);
 		gDrawBoard->SetFillPattern(gPattern);
 		gDrawBoard->DrawRectangle(GPoint2(540, 212), GPoint2(780, 388));
-		
-		gDrawBoard->SetFillColor(GVector4(0.0, 0.0, 0.0, 0.333));
+
+		gDrawBoard->SetFillColor(GVector4((GReal)0.0, (GReal)0.0, (GReal)0.0, (GReal)0.333));
 		gPattern->SetTilingMode(G_PAD_TILE);
 		TranslationToMatrix(m, GVector2(+140,+494));
 		gPattern->SetMatrix(m * ofsTransf);

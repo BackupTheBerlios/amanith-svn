@@ -36,11 +36,15 @@
 
 // QT4 support
 #ifdef USE_QT4
-	#include <q3scrollview.h>
-	#include <q3filedialog.h>
-	#include <q3mainwindow.h>
+	//#include <q3scrollview.h>
+	#include <QScrollArea>
+	//#include <q3filedialog.h>
+	#include <QFileDialog>
+	//#include <q3mainwindow.h>
+	#include <QMainWindow>
 	#include <QResizeEvent>
-	#include <Q3PopupMenu>
+	//#include <Q3PopupMenu>
+	#include <QMenu>
 #else
 	#include <qscrollview.h>
 	#include <qfiledialog.h>
@@ -49,7 +53,7 @@
 
 using namespace Amanith;
 
-class QPixmapViewer : public Q3ScrollView {
+class QPixmapViewer : public QScrollArea {
 
 protected:
 	void drawContents(QPainter *p, int clipx, int clipy, int clipw, int cliph);
@@ -64,7 +68,7 @@ public:
 };
 
 // QT4 support
-class ImageViewer : public Q3MainWindow {
+class ImageViewer : public QMainWindow {
 
 	Q_OBJECT
 
@@ -91,11 +95,9 @@ private:
 
 	QPixmapViewer *gPixmapViewer;
 
-
-	QMenuBar   *menubar;
-
-	Q3PopupMenu  *file;
-	Q3PopupMenu  *edit;
+	QMenuBar *menubar;
+	QMenu *file;
+	QMenu *edit;
 
 private slots:
 

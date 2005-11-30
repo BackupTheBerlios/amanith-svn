@@ -695,7 +695,7 @@ void QGLWidgetTest::drawCubeWithProgShader() {
 	if(!gExtManager->IsArbShadersSupported()) {
 		if(msgShown == false) {
 			msgShown = true;
-			QMessageBox::information(this, "Attention", "Programing shaders are not supported.");
+			QMessageBox::information(this, "Attention", "ARB shaders are not supported.");
 		}
 		vis = 1;
 		return;

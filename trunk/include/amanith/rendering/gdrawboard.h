@@ -106,6 +106,9 @@ namespace Amanith {
 
 		// here we are sure that corners are opposite and ordered
 		virtual void DoDrawRectangle(GDrawStyle& Style, const GPoint2& MinCorner, const GPoint2& MaxCorner) = 0;
+		// here we are sure that corners are opposite and ordered and arc dimensions are > 0
+		virtual void DoDrawRoundRectangle(GDrawStyle& Style, const GPoint2& MinCorner, const GPoint2& MaxCorner,
+										const GReal ArcWidth, const GReal ArcHeight) = 0;
 
 		virtual void DoDrawLine(GDrawStyle& Style, const GPoint2& P0, const GPoint2& P1) = 0;
 		virtual void DoDrawBezier(GDrawStyle& Style, const GPoint2& P0, const GPoint2& P1, const GPoint2& P2) = 0;
@@ -115,7 +118,16 @@ namespace Amanith {
 									const GReal StartAngle, const GReal EndAngle, const GBool CCW) = 0;
 		virtual void DoDrawEllipseArc(GDrawStyle& Style, const GPoint2& P0, const GPoint2& P1, const GReal XSemiAxisLength, const GReal YSemiAxisLength,
 									const GReal OffsetRotation, const GBool LargeArc, const GBool CCW) = 0;
+
+		// here we are sure that semi-axes lengths are greater than 0
+		virtual void DoDrawEllipse(GDrawStyle& Style, const GPoint2& Center,
+									const GReal XSemiAxisLength, const GReal YSemiAxisLength) = 0;
+		// here we are sure that Radius is greater than 0
+		virtual void DoDrawCircle(GDrawStyle& Style, const GPoint2& Center, const GReal Radius) = 0;
+		// here we are sure that Points has at least 2 entries
 		virtual void DoDrawPolygon(GDrawStyle& Style, const GDynArray<GPoint2>& Points, const GBool Closed) = 0;
+		// here we are sure that Curve has a number of points greater than 1
+		virtual void DoDrawPath(GDrawStyle& Style, const GCurve2D& Curve) = 0;
 
 		// get active draw style
 		GDrawStyle *ActiveDrawStyle();
@@ -262,7 +274,6 @@ namespace Amanith {
 		void DrawEllipse(const GPoint2& Center, const GReal XSemiAxisLength, const GReal YSemiAxisLength);
 		void DrawCircle(const GPoint2& Center, const GReal Radius);
 		void DrawPath(const GCurve2D& Curve);
-		void DrawText(const GPoint2& StartPoint, const GString& TextLine);
 
 		// clear board
 		void Clear(const GReal Red, const GReal Green, const GReal Blue, const GBool ClearClipMasks = G_TRUE);

@@ -36,6 +36,7 @@ void TestLinearGradient(const GUInt32 TestIndex, const GReal RotAngle, const GRe
 	ofsTransf = (postTrans * (rot * (scl * preTrans)));
 
 	gDrawBoard->SetTargetMode(G_COLOR_MODE);
+	gDrawBoard->SetStrokePaintType(G_COLOR_PAINT_TYPE);
 	gDrawBoard->SetStrokeStyle(G_SOLID_STROKE);
 	gDrawBoard->SetStrokeJoinStyle(G_MITER_JOIN);
 	gDrawBoard->SetStrokeEnabled(G_TRUE);

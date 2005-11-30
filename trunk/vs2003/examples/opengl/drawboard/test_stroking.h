@@ -33,12 +33,12 @@ void TestStroke(const GUInt32 TestIndex) {
 	gDrawBoard->SetStrokePaintType(G_COLOR_PAINT_TYPE);
 	gDrawBoard->SetStrokeStyle(G_SOLID_STROKE);
 	gDrawBoard->SetStrokeWidth(20);
-	
+
 	if (idx == 0) {
 		// OPAQUE
-		gDrawBoard->SetStrokeColor(GVector4(0.65, 0.65, 0.65, 1.0));
+		gDrawBoard->SetStrokeColor(GVector4((GReal)0.65, (GReal)0.65, (GReal)0.65, (GReal)1.0));
 		// --------------------------------------------------------------
-		
+
 		gDrawBoard->SetStrokeStyle(G_SOLID_STROKE);
 		gDrawBoard->SetStrokeJoinStyle(G_BEVEL_JOIN);
 		gDrawBoard->DrawRectangle(GPoint2(20, 18), GPoint2(780, 582));
@@ -52,11 +52,11 @@ void TestStroke(const GUInt32 TestIndex) {
 		gDrawBoard->DrawRectangle(GPoint2(200, 198), GPoint2(600, 402));
 		gDrawBoard->DrawRectangle(GPoint2(230, 228), GPoint2(570, 372));
 		gDrawBoard->DrawRectangle(GPoint2(260, 258), GPoint2(540, 342));
-		
-		gDrawBoard->SetStrokeColor(GVector4(0.0, 0.0, 0.0, 0.5));
-		
+
+		gDrawBoard->SetStrokeColor(GVector4((GReal)0.0, (GReal)0.0, (GReal)0.0, (GReal)0.5));
+
 		gDrawBoard->SetStrokeStyle(G_DASHED_STROKE);
-		
+
 		gDrawBoard->SetStrokeJoinStyle(G_BEVEL_JOIN);
 		gDrawBoard->SetStrokeStartCapStyle(G_SQUARE_CAP);
 		gDrawBoard->SetStrokeEndCapStyle(G_SQUARE_CAP);
@@ -67,7 +67,7 @@ void TestStroke(const GUInt32 TestIndex) {
 		gDrawBoard->SetStrokeStartCapStyle(G_ROUND_CAP);
 		gDrawBoard->SetStrokeEndCapStyle(G_ROUND_CAP);
 		gDrawBoard->DrawRectangle(GPoint2(80, 78), GPoint2(720, 522));
-		
+
 		gDrawBoard->SetStrokeJoinStyle(G_MITER_JOIN);
 		gDrawBoard->SetStrokeStartCapStyle(G_SQUARE_CAP);
 		gDrawBoard->SetStrokeEndCapStyle(G_SQUARE_CAP);

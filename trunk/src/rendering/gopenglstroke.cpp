@@ -153,7 +153,7 @@ void GOpenGLBoard::DrawGLCapsLine(const GBool DoStartCap, const GCapStyle StartC
 	glEnd();
 }
 
-void GOpenGLBoard::DrawGLJoinLine(const GJoinStyle JoinStyle, const GReal MiterLimit,
+void GOpenGLBoard::DrawGLJoinLine(const GJoinStyle JoinStyle, const GReal MiterLimitMulThickness,
 								  const GPoint2& Previous, const GPoint2& P0, const GPoint2& P1,
 								  const GReal Thickness) {
 
@@ -213,8 +213,8 @@ void GOpenGLBoard::DrawGLJoinLine(const GJoinStyle JoinStyle, const GReal MiterL
 			GVector2 intDir = intPoint - P0;
 			GReal intDirLen = intDir.Normalize();
 
-			if (intDirLen > MiterLimit * Thickness)
-				intPoint = P0 + (MiterLimit * Thickness) * intDir;
+			if (intDirLen > MiterLimitMulThickness)
+				intPoint = P0 + MiterLimitMulThickness * intDir;
 
 			#ifdef DOUBLE_REAL_TYPE
 				glVertex2dv(j0.Data());
@@ -254,7 +254,7 @@ void GOpenGLBoard::DrawGLJoinLine(const GJoinStyle JoinStyle, const GReal MiterL
 	glEnd();
 }
 
-void GOpenGLBoard::DrawGLJoinLineCap(const GJoinStyle JoinStyle, const GReal MiterLimit,
+void GOpenGLBoard::DrawGLJoinLineCap(const GJoinStyle JoinStyle, const GReal MiterLimitMulThickness,
 									 const GPoint2& Previous, const GPoint2& P0, const GPoint2& P1,
 									 const GReal Thickness, const GCapStyle EndCapStyle) {
 
@@ -315,8 +315,8 @@ void GOpenGLBoard::DrawGLJoinLineCap(const GJoinStyle JoinStyle, const GReal Mit
 			GVector2 intDir = intPoint - P0;
 			GReal intDirLen = intDir.Normalize();
 
-			if (intDirLen > MiterLimit * Thickness)
-				intPoint = P0 + (MiterLimit * Thickness) * intDir;
+			if (intDirLen > MiterLimitMulThickness)
+				intPoint = P0 + MiterLimitMulThickness * intDir;
 
 			#ifdef DOUBLE_REAL_TYPE
 				glVertex2dv(j0.Data());
@@ -432,7 +432,7 @@ void GOpenGLBoard::DrawGLCircleSlice(const GPoint2& Center, const GReal Radius, 
 
 void GOpenGLBoard::DrawGLJoin(const GPoint2& JoinCenter, const GVector2& InDirection, const GReal InDistance,
 							  const GVector2& OutDirection, const GReal OutDistance, const GJoinStyle JoinStyle,
-							  const GReal MiterLimit, const GCapStyle StartCapStyle, const GCapStyle EndCapStyle,
+							  const GReal MiterLimitMulThickness, const GCapStyle StartCapStyle, const GCapStyle EndCapStyle,
 							  const GReal Thickness) {
 
 	if (InDistance < G_EPSILON && OutDistance < G_EPSILON)
@@ -545,8 +545,8 @@ void GOpenGLBoard::DrawGLJoin(const GPoint2& JoinCenter, const GVector2& InDirec
 		jc = JoinCenter + intDir;
 		GReal intDirLen = intDir.Normalize();
 
-		if (intDirLen > MiterLimit * Thickness)
-			jc = JoinCenter + (MiterLimit * Thickness) * intDir;
+		if (intDirLen > MiterLimitMulThickness)
+			jc = JoinCenter + MiterLimitMulThickness * intDir;
 
 		#ifdef DOUBLE_REAL_TYPE
 			glVertex2dv(j0.Data());
@@ -635,8 +635,9 @@ void GOpenGLBoard::DrawGLJoin(const GPoint2& JoinCenter, const GVector2& InDirec
 	glEnd();
 }
 
-void GOpenGLBoard::DrawSolidStroke(const GDrawStyle& Style, const GDynArray<GPoint2>& Points, const GBool Closed,
-								   const GReal Thickness) {
+void GOpenGLBoard::DrawSolidStroke(const GCapStyle StartCapStyle, const GCapStyle EndCapStyle,
+								   const GJoinStyle JoinStyle, const GReal MiterLimitMulThickness,
+								   const GDynArray<GPoint2>& Points, const GBool Closed, const GReal Thickness) {
 
 
 	GDynArray<GPoint2>::const_iterator it0 = Points.begin(), it1, it2;
@@ -648,42 +649,42 @@ void GOpenGLBoard::DrawSolidStroke(const GDrawStyle& Style, const GDynArray<GPoi
 
 	// a single line contour (2 points)
 	if (it2 == Points.end())
-		DrawGLCapsLine(G_TRUE, Style.StrokeStartCapStyle(), G_TRUE, Style.StrokeEndCapStyle(), *it0, *it1, Thickness);
+		DrawGLCapsLine(G_TRUE, StartCapStyle, G_TRUE, EndCapStyle, *it0, *it1, Thickness);
 	else {
 		GReal dist = Distance(Points.front(), Points.back());
 
 		if (Points.size() == 3 && (dist < G_EPSILON))
-			DrawGLCapsLine(G_TRUE, Style.StrokeStartCapStyle(), G_TRUE, Style.StrokeEndCapStyle(), *it0, *it1, Thickness);
+			DrawGLCapsLine(G_TRUE, StartCapStyle, G_TRUE, EndCapStyle, *it0, *it1, Thickness);
 		// contour made at least by 3 (different) points
 		else {
 			if (!Closed) {
 				// draw start cap and line segment
-				DrawGLCapsLine(G_TRUE, Style.StrokeStartCapStyle(), G_FALSE, Style.StrokeEndCapStyle(), *it0, *it1, Thickness);
+				DrawGLCapsLine(G_TRUE, StartCapStyle, G_FALSE, EndCapStyle, *it0, *it1, Thickness);
 
 				GDynArray<GPoint2>::const_iterator itEnd = Points.end();
 				itEnd--;
 				// draw intermediate join-line couples
 				while (it2 != itEnd)	{
-					DrawGLJoinLine(Style.StrokeJoinStyle(), Style.StrokeMiterLimit(), *it0, *it1, *it2, Thickness);
+					DrawGLJoinLine(JoinStyle, MiterLimitMulThickness, *it0, *it1, *it2, Thickness);
 					it0 = it1;
 					it1 = it2;
 					it2++;
 				}
 				// draw last join-line-endcap
-				DrawGLJoinLineCap(Style.StrokeJoinStyle(), Style.StrokeMiterLimit(), *it0, *it1, *it2, Thickness, Style.StrokeEndCapStyle());
+				DrawGLJoinLineCap(JoinStyle, MiterLimitMulThickness, *it0, *it1, *it2, Thickness, EndCapStyle);
 			}
 			else {
 				if (dist > G_EPSILON)
-					DrawGLJoinLine(Style.StrokeJoinStyle(), Style.StrokeMiterLimit(), Points.back(), *it0, *it1, Thickness);
+					DrawGLJoinLine(JoinStyle, MiterLimitMulThickness, Points.back(), *it0, *it1, Thickness);
 				else {
 					GDynArray<GPoint2>::const_iterator it4 = Points.end();
 					it4 -= 2;
-					DrawGLJoinLine(Style.StrokeJoinStyle(), Style.StrokeMiterLimit(), *it4, *it0, *it1, Thickness);
+					DrawGLJoinLine(JoinStyle, MiterLimitMulThickness, *it4, *it0, *it1, Thickness);
 				}
 
 				// draw other segments
 				while (it2 != Points.end())	{
-					DrawGLJoinLine(Style.StrokeJoinStyle(), Style.StrokeMiterLimit(), *it0, *it1, *it2, Thickness);
+					DrawGLJoinLine(JoinStyle, MiterLimitMulThickness, *it0, *it1, *it2, Thickness);
 					it0 = it1;
 					it1 = it2;
 					it2++;
@@ -692,7 +693,7 @@ void GOpenGLBoard::DrawSolidStroke(const GDrawStyle& Style, const GDynArray<GPoi
 				if (dist > G_EPSILON) {
 					// line segment and join back to the start
 					it2 = Points.begin();
-					DrawGLJoinLine(Style.StrokeJoinStyle(), Style.StrokeMiterLimit(), *it0, *it1, *it2, Thickness);
+					DrawGLJoinLine(JoinStyle, MiterLimitMulThickness, *it0, *it1, *it2, Thickness);
 				}
 			}
 		}
@@ -755,7 +756,7 @@ void GOpenGLBoard::DrawDashedStroke(const GDrawStyle& Style, const GDynArray<GPo
 						do {
 							w = (*it2) - (*it1);
 							lw = w.Normalize();
-							DrawGLJoin(*it1, v, tmpLen, w, 0, Style.StrokeJoinStyle(), Style.StrokeMiterLimit(),
+							DrawGLJoin(*it1, v, tmpLen, w, 0, Style.StrokeJoinStyle(), Style.StrokeMiterLimitMulThickness(),
 										tmpStyle, G_BUTT_CAP, Thickness);
 							if (tmpLen != 0)
 								tmpStyle = G_BUTT_CAP;
@@ -771,19 +772,19 @@ void GOpenGLBoard::DrawDashedStroke(const GDrawStyle& Style, const GDynArray<GPo
 
 						// draw remained piece of last segment (so we can take care of end cap style)
 						if (it2 != Points.end()) {
-							DrawGLJoin(*it0, oldDir, 0, v, -lvOld, Style.StrokeJoinStyle(), Style.StrokeMiterLimit(),
+							DrawGLJoin(*it0, oldDir, 0, v, -lvOld, Style.StrokeJoinStyle(), Style.StrokeMiterLimitMulThickness(),
 										tmpStyle, Style.StrokeEndCapStyle(), Thickness);
 							p0 = (*it0) - lvOld * v;
 						}
 						else {
 							if (lw < -lvOld) {
-								DrawGLJoin(*it0, oldDir, 0, v, lw, Style.StrokeJoinStyle(), Style.StrokeMiterLimit(),
+								DrawGLJoin(*it0, oldDir, 0, v, lw, Style.StrokeJoinStyle(), Style.StrokeMiterLimitMulThickness(),
 											G_BUTT_CAP, Style.StrokeEndCapStyle(), Thickness);
 								// now exit
 								it1++;
 							}
 							else {
-								DrawGLJoin(*it0, oldDir, 0, v, -lvOld, Style.StrokeJoinStyle(), Style.StrokeMiterLimit(),
+								DrawGLJoin(*it0, oldDir, 0, v, -lvOld, Style.StrokeJoinStyle(), Style.StrokeMiterLimitMulThickness(),
 											tmpStyle, Style.StrokeEndCapStyle(), Thickness);
 								p0 = (*it0) - lvOld * v;
 							}
@@ -868,7 +869,7 @@ recycleLabel:
 							w = (*it2) - (*it1);
 							lw = w.Normalize();
 
-							DrawGLJoin(*it1, v, tmpLen, w, 0, Style.StrokeJoinStyle(), Style.StrokeMiterLimit(),
+							DrawGLJoin(*it1, v, tmpLen, w, 0, Style.StrokeJoinStyle(), Style.StrokeMiterLimitMulThickness(),
 										tmpStyle, G_BUTT_CAP, Thickness);
 
 							if (tmpLen != 0)
@@ -885,7 +886,7 @@ recycleLabel:
 						} while(lv < 0 && it2 != itEnd);
 						// draw remained piece of last segment (so we can take care of end cap style)
 						if (it2 != itEnd) {
-							DrawGLJoin(*it0, oldDir, 0, v, -lvOld, Style.StrokeJoinStyle(), Style.StrokeMiterLimit(),
+							DrawGLJoin(*it0, oldDir, 0, v, -lvOld, Style.StrokeJoinStyle(), Style.StrokeMiterLimitMulThickness(),
 										tmpStyle, Style.StrokeEndCapStyle(), Thickness);
 							p0 = (*it0) - lvOld * v;
 						}
@@ -894,7 +895,7 @@ recycleLabel:
 								// now exit
 								it1++;
 							else {
-								DrawGLJoin(*it0, oldDir, 0, v, -lvOld, Style.StrokeJoinStyle(), Style.StrokeMiterLimit(),
+								DrawGLJoin(*it0, oldDir, 0, v, -lvOld, Style.StrokeJoinStyle(), Style.StrokeMiterLimitMulThickness(),
 											tmpStyle, Style.StrokeEndCapStyle(), Thickness);
 								p0 = (*it0) - lvOld * v;
 							}
@@ -960,14 +961,14 @@ recycleLabel:
 			// take care of last connection
 			if (endDrawed) {
 				if (lw > -lv)
-					DrawGLJoin(*it0, v, dashPatVal + lv, w, -lv, Style.StrokeJoinStyle(), Style.StrokeMiterLimit(),
+					DrawGLJoin(*it0, v, dashPatVal + lv, w, -lv, Style.StrokeJoinStyle(), Style.StrokeMiterLimitMulThickness(),
 								Style.StrokeStartCapStyle(), Style.StrokeEndCapStyle(), Thickness);
 				else {
 					if (startDrawed)
-						DrawGLJoin(*it0, v, dashPatVal + lv, w, lw, Style.StrokeJoinStyle(), Style.StrokeMiterLimit(),
+						DrawGLJoin(*it0, v, dashPatVal + lv, w, lw, Style.StrokeJoinStyle(), Style.StrokeMiterLimitMulThickness(),
 									Style.StrokeStartCapStyle(), G_BUTT_CAP, Thickness);
 					else
-						DrawGLJoin(*it0, v, dashPatVal + lv, w, lw, Style.StrokeJoinStyle(), Style.StrokeMiterLimit(),
+						DrawGLJoin(*it0, v, dashPatVal + lv, w, lw, Style.StrokeJoinStyle(), Style.StrokeMiterLimitMulThickness(),
 									Style.StrokeStartCapStyle(), Style.StrokeEndCapStyle(), Thickness);
 				}
 			}
@@ -988,7 +989,7 @@ recycleLabel:
 			if (endDrawed) {
 				if (startDrawed) {
 					dashPatVal = OfsDashPat[0];
-					DrawGLJoin(*it1, v, lvOld, w, dashPatVal, Style.StrokeJoinStyle(), Style.StrokeMiterLimit(),
+					DrawGLJoin(*it1, v, lvOld, w, dashPatVal, Style.StrokeJoinStyle(), Style.StrokeMiterLimitMulThickness(),
 								Style.StrokeStartCapStyle(), Style.StrokeEndCapStyle(), Thickness);
 				}
 				else

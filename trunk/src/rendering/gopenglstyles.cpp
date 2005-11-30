@@ -181,34 +181,13 @@ void GOpenGLGradientDesc::GenerateTexture1D(const GInt32 Size, GPixelMap& Bitmap
 
 				redKeys.push_back(redKeys[i]);
 				redKeys.back().SetTimePosition((GReal)2 * maxTime - redKeys.back().TimePosition());
-
 				greenKeys.push_back(greenKeys[i]);
 				greenKeys.back().SetTimePosition((GReal)2 * maxTime - greenKeys.back().TimePosition());
-
 				blueKeys.push_back(blueKeys[i]);
 				blueKeys.back().SetTimePosition((GReal)2 * maxTime - blueKeys.back().TimePosition());
-
 				alphaKeys.push_back(alphaKeys[i]);
 				alphaKeys.back().SetTimePosition((GReal)2 * maxTime - alphaKeys.back().TimePosition());
 			}
-
-			/*GInt32 k = (GInt32)redKeys.size();
-			GReal t;
-			for (i = 0; i < k; i++) {
-
-				t = redKeys[i].TimePosition();
-				redKeys[i].SetTimePosition(t * (GReal)0.5);
-
-				t = greenKeys[i].TimePosition();
-				greenKeys[i].SetTimePosition(t * (GReal)0.5);
-
-				t = blueKeys[i].TimePosition();
-				blueKeys[i].SetTimePosition(t * (GReal)0.5);
-
-				t = alphaKeys[i].TimePosition();
-				alphaKeys[i].SetTimePosition(t * (GReal)0.5);
-
-			}*/
 		}
 
 		redCurve.SetKeys(redKeys);

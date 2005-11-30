@@ -31,6 +31,7 @@
 
 #include "amanith/2d/gmesh2d.h"
 #include "amanith/geometry/garea.h"
+#include "amanith/geometry/gaabox.h"
 #include "amanith/support/gavltree.h"
 
 /*!
@@ -45,12 +46,14 @@ namespace Amanith {
 
 	//! Fill rules for tessellation
 	enum GFillBehavior {
-		//! Odd rule
-		G_ODD_RULE = 0,
-		//! Even rule
-		G_EVEN_RULE = 1,
+		//! Odd-even rule
+		G_ODD_EVEN_RULE,
+		//! Even-odd rule
+		G_EVEN_ODD_RULE,
+		//! Non-zero rule
+		G_NON_ZERO_RULE,
 		//! Any rule
-		G_ANY_RULE = 2
+		G_ANY_RULE
 	};
 
 	/*!
@@ -280,7 +283,10 @@ namespace Amanith {
 			\note Please keep OddFill parameter G_TRUE. This is the only supported mode for this version.
 		*/
 		GError Tesselate(const GDynArray<GPoint2>& Points, const GDynArray<GInt32>& PointsPerContour,
-						 GDynArray< GPoint<GDouble, 2> >& Triangles, const GFillBehavior FillRule = G_ODD_RULE);
+						 GDynArray< GPoint<GDouble, 2> >& Triangles, const GFillBehavior FillRule = G_ODD_EVEN_RULE);
+
+		GError Tesselate(const GDynArray<GPoint2>& Points, const GDynArray<GInt32>& PointsPerContour,
+						GDynArray< GPoint<GDouble, 2> >& Triangles, GAABox2& BoundingBox, const GFillBehavior FillRule = G_ODD_EVEN_RULE);
 
 		/*!
 			Build a valid triangulation of given contours and holes.
@@ -326,7 +332,12 @@ namespace Amanith {
 		*/
 		GError Tesselate(const GDynArray<GPoint2>& Points, const GDynArray<GInt32>& PointsPerContour,
 						 GDynArray< GPoint<GDouble, 2> >& TriangPoints, GDynArray< GULong >& TriangIds,
-						 const GFillBehavior FillRule = G_ODD_RULE);
+						 const GFillBehavior FillRule = G_ODD_EVEN_RULE);
+
+
+		GError Tesselate(const GDynArray<GPoint2>& Points, const GDynArray<GInt32>& PointsPerContour,
+						GDynArray< GPoint<GDouble, 2> >& TriangPoints, GDynArray< GULong >& TriangIds,
+						GAABox2& BoundingBox, const GFillBehavior FillRule = G_ODD_EVEN_RULE);
 
 	};
 

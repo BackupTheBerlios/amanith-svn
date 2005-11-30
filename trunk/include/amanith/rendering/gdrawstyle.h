@@ -60,10 +60,10 @@ namespace Amanith {
 
 	// fill rule
 	enum GFillRule {
-		G_EVEN_ODD_RULE,
-		G_ODD_EVEN_RULE,
-		G_NON_ZERO_RULE,
-		G_ANY_RULE
+		G_ODD_EVEN_FILLRULE,
+		G_EVEN_ODD_FILLRULE,
+		G_NON_ZERO_FILLRULE,
+		G_ANY_FILLRULE
 	};
 
 	// paint type
@@ -278,6 +278,7 @@ namespace Amanith {
 		// stroke parameters
 		GReal gStrokeWidth;
 		GReal gThickness;  // defined as stroke_width / 2
+		GReal gMiterMulThickness; // defined as Miter * Thickness
 		GReal gStrokeMiterLimit;
 		GCapStyle gStrokeStartCapStyle;
 		GCapStyle gStrokeEndCapStyle;
@@ -321,13 +322,17 @@ namespace Amanith {
 		}
 		// set stroke width
 		void SetStrokeWidth(const GReal Width);
-		// get stroke thickness (half strokewidth)
+		// get stroke thickness (half stroke width)
 		inline GReal StrokeThickness() const {
 			return gThickness;
 		}
 		// get stroke miter limit
 		inline GReal StrokeMiterLimit() const {
 			return gStrokeMiterLimit;
+		}
+		// get Miterlimit * Thickness
+		inline GReal StrokeMiterLimitMulThickness() const {
+			return gMiterMulThickness;
 		}
 		// set stroke miter limit
 		void SetStrokeMiterLimit(const GReal MiterLimit);
@@ -455,10 +460,11 @@ namespace Amanith {
 		inline void SetCustomData(void *Data) {
 			gCustomData = Data;
 		}
-
+		// get the corresponding offsetted dash pattern as it would not have initial phase
 		inline const GDynArray<GReal>& StrokeOffsettedDashPattern() const {
 			return gStrokeOffsettedDashPattern;
 		}
+		// G_TRUE if first entry of offsetted dash pattern is an "off" trait
 		inline GBool StrokeOffsettedDashPatternEmpty() const {
 			return gStrokeOffsettedDashPatternEmpty;
 		}

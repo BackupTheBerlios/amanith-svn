@@ -164,7 +164,7 @@ void DrawChar(const GFontChar2D* Char, const GReal Deviation, const GMatrix33& T
 		}
 		// triangulate contours
 		GTesselator2D tesselator;
-		tesselator.Tesselate(tmpPts, tmpIndex, gVertices, G_ODD_RULE);
+		tesselator.Tesselate(tmpPts, tmpIndex, gVertices, G_ODD_EVEN_RULE);
 	}
 	else {
 		const GFontChar2D* subChar;

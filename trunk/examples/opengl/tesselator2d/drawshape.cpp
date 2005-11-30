@@ -119,7 +119,7 @@ QGLWidgetTest::QGLWidgetTest(QWidget * parent) : QGLWidget(parent) {
 	gAnim = G_TRUE;
 	gAng1 = gAng2 = gAng3 = 0;
 
-	gFillRule = G_ODD_RULE;
+	gFillRule = G_ODD_EVEN_RULE;
 	gFillMode = 1;
 	gStepAng1 = 0.004f;
 	gStepAng2 = -0.002f;
@@ -513,7 +513,14 @@ void QGLWidgetTest::keyPressEvent(QKeyEvent *e) {
 			gStepAng3 /= 1.25f;
 			break;
 		case Qt::Key_F:
-			gFillRule = (gFillRule + 1) % 3;
+			//gFillRule = (gFillRule + 1) % 3;
+			if (gFillRule == G_ODD_EVEN_RULE)
+				gFillRule = G_EVEN_ODD_RULE;
+			else
+			if (gFillRule == G_EVEN_ODD_RULE)
+				gFillRule = G_ANY_RULE;
+			else
+				gFillRule = G_ODD_EVEN_RULE;
 			break;
 		case Qt::Key_C:
 			gFillMode = (gFillMode + 1) % 3;

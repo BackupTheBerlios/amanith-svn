@@ -62,7 +62,7 @@ public:
 		}
 		// triangulate contours
 		GTesselator2D tesselator;
-		tesselator.Tesselate(tmpPts, tmpIndex, gPoints, G_ODD_RULE);
+		tesselator.Tesselate(tmpPts, tmpIndex, gPoints, G_ODD_EVEN_RULE);
 	}
 	inline const GDynArray<GPoint2>& Points() const {
 		return gPoints;

@@ -22,15 +22,15 @@
 ** not clear to you.
 **********************************************************************/
 
-void TestRadialGradientIn(const GUInt32 TestIndex, const GReal RotAngle, const GReal Scale) {
+void TestConicalGradientOut(const GUInt32 TestIndex, const GReal RotAngle, const GReal Scale) {
 	
 	GUInt32 idx = (TestIndex % 4);
 
 	GMatrix33 ofsTransf, m;
 	GMatrix33 rot, scl, preTrans, postTrans;
 
-	TranslationToMatrix(preTrans, GPoint2(-150, -118));
-	TranslationToMatrix(postTrans, GPoint2(150, 118));
+	TranslationToMatrix(preTrans, GPoint2(0, 0));
+	TranslationToMatrix(postTrans, GPoint2(0, 0));
 	RotationToMatrix(rot, RotAngle);
 	ScaleToMatrix(scl, GVector2(Scale, Scale));
 	ofsTransf = (postTrans * (rot * (scl * preTrans)));
@@ -44,60 +44,60 @@ void TestRadialGradientIn(const GUInt32 TestIndex, const GReal RotAngle, const G
 	gDrawBoard->SetStrokeColor(GVector4(0.0, 0.0, 0.0, 1.000));
 	gDrawBoard->SetFillEnabled(G_TRUE);
 	gDrawBoard->SetFillPaintType(G_GRADIENT_PAINT_TYPE);
-	
-	// OPAQUE
+
 	if (idx == 0) {
+		// OPAQUE
 		gDrawBoard->SetFillColor(GVector4(0.0, 0.0, 0.0, 1.0));
 		// --------------------------------------------------------------
-		gRadGrad1->SetColorInterpolation(G_HERMITE_COLOR_INTERPOLATION);
-		gRadGrad1->SetSpreadMode(G_PAD_COLOR_RAMP_SPREAD);
+		gConGrad3->SetColorInterpolation(G_HERMITE_COLOR_INTERPOLATION);
+		gConGrad3->SetSpreadMode(G_PAD_COLOR_RAMP_SPREAD);
 		TranslationToMatrix(m, GVector3(+20,+18,0));
-		gRadGrad1->SetMatrix(m * ofsTransf);
-		gDrawBoard->SetFillGradient(gRadGrad1);
+		gConGrad3->SetMatrix(m * ofsTransf);
+		gDrawBoard->SetFillGradient(gConGrad3);
 		gDrawBoard->DrawRectangle(GPoint2(20, 18), GPoint2(260, 194));
-		gRadGrad1->SetSpreadMode(G_REPEAT_COLOR_RAMP_SPREAD);
+		gConGrad3->SetSpreadMode(G_REPEAT_COLOR_RAMP_SPREAD);
 		TranslationToMatrix(m, GVector3(+280,+18,0));
-		gRadGrad1->SetMatrix(m * ofsTransf);
-		gDrawBoard->SetFillGradient(gRadGrad1);
+		gConGrad3->SetMatrix(m * ofsTransf);
+		gDrawBoard->SetFillGradient(gConGrad3);
 		gDrawBoard->DrawRectangle(GPoint2(280, 18), GPoint2(520, 194));
-		gRadGrad1->SetSpreadMode(G_REFLECT_COLOR_RAMP_SPREAD);
+		gConGrad3->SetSpreadMode(G_REFLECT_COLOR_RAMP_SPREAD);
 		TranslationToMatrix(m, GVector3(+540,+18,0));
-		gRadGrad1->SetMatrix(m * ofsTransf);
-		gDrawBoard->SetFillGradient(gRadGrad1);
+		gConGrad3->SetMatrix(m * ofsTransf);
+		gDrawBoard->SetFillGradient(gConGrad3);
 		gDrawBoard->DrawRectangle(GPoint2(540, 18), GPoint2(780, 194));
 		// --------------------------------------------------------------
-		gRadGrad1->SetColorInterpolation(G_LINEAR_COLOR_INTERPOLATION);
-		gRadGrad1->SetSpreadMode(G_PAD_COLOR_RAMP_SPREAD);
+		gConGrad3->SetColorInterpolation(G_LINEAR_COLOR_INTERPOLATION);
+		gConGrad3->SetSpreadMode(G_PAD_COLOR_RAMP_SPREAD);
 		TranslationToMatrix(m, GVector3(+20,+212,0));
-		gRadGrad1->SetMatrix(m * ofsTransf);
-		gDrawBoard->SetFillGradient(gRadGrad1);
+		gConGrad3->SetMatrix(m * ofsTransf);
+		gDrawBoard->SetFillGradient(gConGrad3);
 		gDrawBoard->DrawRectangle(GPoint2(20, 212), GPoint2(260, 388));
-		gRadGrad1->SetSpreadMode(G_REPEAT_COLOR_RAMP_SPREAD);
+		gConGrad3->SetSpreadMode(G_REPEAT_COLOR_RAMP_SPREAD);
 		TranslationToMatrix(m, GVector3(+280,+212,0));
-		gRadGrad1->SetMatrix(m * ofsTransf);
-		gDrawBoard->SetFillGradient(gRadGrad1);
+		gConGrad3->SetMatrix(m * ofsTransf);
+		gDrawBoard->SetFillGradient(gConGrad3);
 		gDrawBoard->DrawRectangle(GPoint2(280, 212), GPoint2(520, 388));
-		gRadGrad1->SetSpreadMode(G_REFLECT_COLOR_RAMP_SPREAD);
+		gConGrad3->SetSpreadMode(G_REFLECT_COLOR_RAMP_SPREAD);
 		TranslationToMatrix(m, GVector3(+540,+212,0));
-		gRadGrad1->SetMatrix(m * ofsTransf);
-		gDrawBoard->SetFillGradient(gRadGrad1);
+		gConGrad3->SetMatrix(m * ofsTransf);
+		gDrawBoard->SetFillGradient(gConGrad3);
 		gDrawBoard->DrawRectangle(GPoint2(540, 212), GPoint2(780, 388));
 		// --------------------------------------------------------------
-		gRadGrad1->SetColorInterpolation(G_CONSTANT_COLOR_INTERPOLATION);
-		gRadGrad1->SetSpreadMode(G_PAD_COLOR_RAMP_SPREAD);
+		gConGrad3->SetColorInterpolation(G_CONSTANT_COLOR_INTERPOLATION);
+		gConGrad3->SetSpreadMode(G_PAD_COLOR_RAMP_SPREAD);
 		TranslationToMatrix(m, GVector3(+20,+406,0));
-		gRadGrad1->SetMatrix(m * ofsTransf);
-		gDrawBoard->SetFillGradient(gRadGrad1);
+		gConGrad3->SetMatrix(m * ofsTransf);
+		gDrawBoard->SetFillGradient(gConGrad3);
 		gDrawBoard->DrawRectangle(GPoint2(20, 406), GPoint2(260, 582));
-		gRadGrad1->SetSpreadMode(G_REPEAT_COLOR_RAMP_SPREAD);
+		gConGrad3->SetSpreadMode(G_REPEAT_COLOR_RAMP_SPREAD);
 		TranslationToMatrix(m, GVector3(+280,+406,0));
-		gRadGrad1->SetMatrix(m * ofsTransf);
-		gDrawBoard->SetFillGradient(gRadGrad1);
+		gConGrad3->SetMatrix(m * ofsTransf);
+		gDrawBoard->SetFillGradient(gConGrad3);
 		gDrawBoard->DrawRectangle(GPoint2(280, 406), GPoint2(520, 582));
-		gRadGrad1->SetSpreadMode(G_REFLECT_COLOR_RAMP_SPREAD);
+		gConGrad3->SetSpreadMode(G_REFLECT_COLOR_RAMP_SPREAD);
 		TranslationToMatrix(m, GVector3(+540,+406,0));
-		gRadGrad1->SetMatrix(m * ofsTransf);
-		gDrawBoard->SetFillGradient(gRadGrad1);	
+		gConGrad3->SetMatrix(m * ofsTransf);
+		gDrawBoard->SetFillGradient(gConGrad3);	
 		gDrawBoard->DrawRectangle(GPoint2(540, 406), GPoint2(780, 582));
 		// --------------------------------------------------------------
 	}
@@ -106,55 +106,55 @@ void TestRadialGradientIn(const GUInt32 TestIndex, const GReal RotAngle, const G
 		// TRANSPARENT
 		gDrawBoard->SetFillColor(GVector4(0.0, 0.0, 0.0, 0.5));
 		// --------------------------------------------------------------
-		gRadGrad1->SetColorInterpolation(G_HERMITE_COLOR_INTERPOLATION);
-		gRadGrad1->SetSpreadMode(G_PAD_COLOR_RAMP_SPREAD);
+		gConGrad3->SetColorInterpolation(G_HERMITE_COLOR_INTERPOLATION);
+		gConGrad3->SetSpreadMode(G_PAD_COLOR_RAMP_SPREAD);
 		TranslationToMatrix(m, GVector3(+20,+18,0));
-		gRadGrad1->SetMatrix(m * ofsTransf);
-		gDrawBoard->SetFillGradient(gRadGrad1);
+		gConGrad3->SetMatrix(m * ofsTransf);
+		gDrawBoard->SetFillGradient(gConGrad3);
 		gDrawBoard->DrawRectangle(GPoint2(20, 18), GPoint2(260, 194));
-		gRadGrad1->SetSpreadMode(G_REPEAT_COLOR_RAMP_SPREAD);
+		gConGrad3->SetSpreadMode(G_REPEAT_COLOR_RAMP_SPREAD);
 		TranslationToMatrix(m, GVector3(+280,+18,0));
-		gRadGrad1->SetMatrix(m * ofsTransf);
-		gDrawBoard->SetFillGradient(gRadGrad1);
+		gConGrad3->SetMatrix(m * ofsTransf);
+		gDrawBoard->SetFillGradient(gConGrad3);
 		gDrawBoard->DrawRectangle(GPoint2(280, 18), GPoint2(520, 194));
-		gRadGrad1->SetSpreadMode(G_REFLECT_COLOR_RAMP_SPREAD);
+		gConGrad3->SetSpreadMode(G_REFLECT_COLOR_RAMP_SPREAD);
 		TranslationToMatrix(m, GVector3(+540,+18,0));
-		gRadGrad1->SetMatrix(m * ofsTransf);
-		gDrawBoard->SetFillGradient(gRadGrad1);
+		gConGrad3->SetMatrix(m * ofsTransf);
+		gDrawBoard->SetFillGradient(gConGrad3);
 		gDrawBoard->DrawRectangle(GPoint2(540, 18), GPoint2(780, 194));
 		// --------------------------------------------------------------
-		gRadGrad1->SetColorInterpolation(G_LINEAR_COLOR_INTERPOLATION);
-		gRadGrad1->SetSpreadMode(G_PAD_COLOR_RAMP_SPREAD);
+		gConGrad3->SetColorInterpolation(G_LINEAR_COLOR_INTERPOLATION);
+		gConGrad3->SetSpreadMode(G_PAD_COLOR_RAMP_SPREAD);
 		TranslationToMatrix(m, GVector3(+20,+212,0));
-		gRadGrad1->SetMatrix(m * ofsTransf);
-		gDrawBoard->SetFillGradient(gRadGrad1);
+		gConGrad3->SetMatrix(m * ofsTransf);
+		gDrawBoard->SetFillGradient(gConGrad3);
 		gDrawBoard->DrawRectangle(GPoint2(20, 212), GPoint2(260, 388));
-		gRadGrad1->SetSpreadMode(G_REPEAT_COLOR_RAMP_SPREAD);
+		gConGrad3->SetSpreadMode(G_REPEAT_COLOR_RAMP_SPREAD);
 		TranslationToMatrix(m, GVector3(+280,+212,0));
-		gRadGrad1->SetMatrix(m * ofsTransf);
-		gDrawBoard->SetFillGradient(gRadGrad1);
+		gConGrad3->SetMatrix(m * ofsTransf);
+		gDrawBoard->SetFillGradient(gConGrad3);
 		gDrawBoard->DrawRectangle(GPoint2(280, 212), GPoint2(520, 388));
-		gRadGrad1->SetSpreadMode(G_REFLECT_COLOR_RAMP_SPREAD);
+		gConGrad3->SetSpreadMode(G_REFLECT_COLOR_RAMP_SPREAD);
 		TranslationToMatrix(m, GVector3(+540,+212,0));
-		gRadGrad1->SetMatrix(m * ofsTransf);
-		gDrawBoard->SetFillGradient(gRadGrad1);
+		gConGrad3->SetMatrix(m * ofsTransf);
+		gDrawBoard->SetFillGradient(gConGrad3);
 		gDrawBoard->DrawRectangle(GPoint2(540, 212), GPoint2(780, 388));
 		// --------------------------------------------------------------
-		gRadGrad1->SetColorInterpolation(G_CONSTANT_COLOR_INTERPOLATION);
-		gRadGrad1->SetSpreadMode(G_PAD_COLOR_RAMP_SPREAD);
+		gConGrad3->SetColorInterpolation(G_CONSTANT_COLOR_INTERPOLATION);
+		gConGrad3->SetSpreadMode(G_PAD_COLOR_RAMP_SPREAD);
 		TranslationToMatrix(m, GVector3(+20,+406,0));
-		gRadGrad1->SetMatrix(m * ofsTransf);
-		gDrawBoard->SetFillGradient(gRadGrad1);
+		gConGrad3->SetMatrix(m * ofsTransf);
+		gDrawBoard->SetFillGradient(gConGrad3);
 		gDrawBoard->DrawRectangle(GPoint2(20, 406), GPoint2(260, 582));
-		gRadGrad1->SetSpreadMode(G_REPEAT_COLOR_RAMP_SPREAD);
+		gConGrad3->SetSpreadMode(G_REPEAT_COLOR_RAMP_SPREAD);
 		TranslationToMatrix(m, GVector3(+280,+406,0));
-		gRadGrad1->SetMatrix(m * ofsTransf);
-		gDrawBoard->SetFillGradient(gRadGrad1);
+		gConGrad3->SetMatrix(m * ofsTransf);
+		gDrawBoard->SetFillGradient(gConGrad3);
 		gDrawBoard->DrawRectangle(GPoint2(280, 406), GPoint2(520, 582));
-		gRadGrad1->SetSpreadMode(G_REFLECT_COLOR_RAMP_SPREAD);
+		gConGrad3->SetSpreadMode(G_REFLECT_COLOR_RAMP_SPREAD);
 		TranslationToMatrix(m, GVector3(+540,+406,0));
-		gRadGrad1->SetMatrix(m * ofsTransf);
-		gDrawBoard->SetFillGradient(gRadGrad1);	
+		gConGrad3->SetMatrix(m * ofsTransf);
+		gDrawBoard->SetFillGradient(gConGrad3);
 		gDrawBoard->DrawRectangle(GPoint2(540, 406), GPoint2(780, 582));
 		// --------------------------------------------------------------
 	}
@@ -163,112 +163,111 @@ void TestRadialGradientIn(const GUInt32 TestIndex, const GReal RotAngle, const G
 		// TRANSPARENT IN KEYS
 		gDrawBoard->SetFillColor(GVector4(0.0, 0.0, 0.0, 1.0));
 		// --------------------------------------------------------------
-		gRadGrad2->SetColorInterpolation(G_HERMITE_COLOR_INTERPOLATION);
-		gRadGrad2->SetSpreadMode(G_PAD_COLOR_RAMP_SPREAD);
+		gConGrad4->SetColorInterpolation(G_HERMITE_COLOR_INTERPOLATION);
+		gConGrad4->SetSpreadMode(G_PAD_COLOR_RAMP_SPREAD);
 		TranslationToMatrix(m, GVector3(+20,+18,0));
-		gRadGrad2->SetMatrix(m * ofsTransf);
-		gDrawBoard->SetFillGradient(gRadGrad2);
+		gConGrad4->SetMatrix(m * ofsTransf);
+		gDrawBoard->SetFillGradient(gConGrad4);
 		gDrawBoard->DrawRectangle(GPoint2(20, 18), GPoint2(260, 194));
-		gRadGrad2->SetSpreadMode(G_REPEAT_COLOR_RAMP_SPREAD);
+		gConGrad4->SetSpreadMode(G_REPEAT_COLOR_RAMP_SPREAD);
 		TranslationToMatrix(m, GVector3(+280,+18,0));
-		gRadGrad2->SetMatrix(m * ofsTransf);
-		gDrawBoard->SetFillGradient(gRadGrad2);
+		gConGrad4->SetMatrix(m * ofsTransf);
+		gDrawBoard->SetFillGradient(gConGrad4);
 		gDrawBoard->DrawRectangle(GPoint2(280, 18), GPoint2(520, 194));
-		gRadGrad2->SetSpreadMode(G_REFLECT_COLOR_RAMP_SPREAD);
+		gConGrad4->SetSpreadMode(G_REFLECT_COLOR_RAMP_SPREAD);
 		TranslationToMatrix(m, GVector3(+540,+18,0));
-		gRadGrad2->SetMatrix(m * ofsTransf);
-		gDrawBoard->SetFillGradient(gRadGrad2);
+		gConGrad4->SetMatrix(m * ofsTransf);
+		gDrawBoard->SetFillGradient(gConGrad4);
 		gDrawBoard->DrawRectangle(GPoint2(540, 18), GPoint2(780, 194));
 		// --------------------------------------------------------------
-		gRadGrad2->SetColorInterpolation(G_LINEAR_COLOR_INTERPOLATION);
-		gRadGrad2->SetSpreadMode(G_PAD_COLOR_RAMP_SPREAD);
+		gConGrad4->SetColorInterpolation(G_LINEAR_COLOR_INTERPOLATION);
+		gConGrad4->SetSpreadMode(G_PAD_COLOR_RAMP_SPREAD);
 		TranslationToMatrix(m, GVector3(+20,+212,0));
-		gRadGrad2->SetMatrix(m * ofsTransf);
-		gDrawBoard->SetFillGradient(gRadGrad2);
+		gConGrad4->SetMatrix(m * ofsTransf);
+		gDrawBoard->SetFillGradient(gConGrad4);
 		gDrawBoard->DrawRectangle(GPoint2(20, 212), GPoint2(260, 388));
-		gRadGrad2->SetSpreadMode(G_REPEAT_COLOR_RAMP_SPREAD);
+		gConGrad4->SetSpreadMode(G_REPEAT_COLOR_RAMP_SPREAD);
 		TranslationToMatrix(m, GVector3(+280,+212,0));
-		gRadGrad2->SetMatrix(m * ofsTransf);
-		gDrawBoard->SetFillGradient(gRadGrad2);
+		gConGrad4->SetMatrix(m * ofsTransf);
+		gDrawBoard->SetFillGradient(gConGrad4);
 		gDrawBoard->DrawRectangle(GPoint2(280, 212), GPoint2(520, 388));
-		gRadGrad2->SetSpreadMode(G_REFLECT_COLOR_RAMP_SPREAD);
+		gConGrad4->SetSpreadMode(G_REFLECT_COLOR_RAMP_SPREAD);
 		TranslationToMatrix(m, GVector3(+540,+212,0));
-		gRadGrad2->SetMatrix(m * ofsTransf);
-		gDrawBoard->SetFillGradient(gRadGrad2);
+		gConGrad4->SetMatrix(m * ofsTransf);
+		gDrawBoard->SetFillGradient(gConGrad4);
 		gDrawBoard->DrawRectangle(GPoint2(540, 212), GPoint2(780, 388));
 		// --------------------------------------------------------------
-		gRadGrad2->SetColorInterpolation(G_CONSTANT_COLOR_INTERPOLATION);
-		gRadGrad2->SetSpreadMode(G_PAD_COLOR_RAMP_SPREAD);
+		gConGrad4->SetColorInterpolation(G_CONSTANT_COLOR_INTERPOLATION);
+		gConGrad4->SetSpreadMode(G_PAD_COLOR_RAMP_SPREAD);
 		TranslationToMatrix(m, GVector3(+20,+406,0));
-		gRadGrad2->SetMatrix(m * ofsTransf);
-		gDrawBoard->SetFillGradient(gRadGrad2);
+		gConGrad4->SetMatrix(m * ofsTransf);
+		gDrawBoard->SetFillGradient(gConGrad4);
 		gDrawBoard->DrawRectangle(GPoint2(20, 406), GPoint2(260, 582));
-		gRadGrad2->SetSpreadMode(G_REPEAT_COLOR_RAMP_SPREAD);
+		gConGrad4->SetSpreadMode(G_REPEAT_COLOR_RAMP_SPREAD);
 		TranslationToMatrix(m, GVector3(+280,+406,0));
-		gRadGrad2->SetMatrix(m * ofsTransf);
-		gDrawBoard->SetFillGradient(gRadGrad2);
+		gConGrad4->SetMatrix(m * ofsTransf);
+		gDrawBoard->SetFillGradient(gConGrad4);
 		gDrawBoard->DrawRectangle(GPoint2(280, 406), GPoint2(520, 582));
-		gRadGrad2->SetSpreadMode(G_REFLECT_COLOR_RAMP_SPREAD);
+		gConGrad4->SetSpreadMode(G_REFLECT_COLOR_RAMP_SPREAD);
 		TranslationToMatrix(m, GVector3(+540,+406,0));
-		gRadGrad2->SetMatrix(m * ofsTransf);
-		gDrawBoard->SetFillGradient(gRadGrad2);	
+		gConGrad4->SetMatrix(m * ofsTransf);
+		gDrawBoard->SetFillGradient(gConGrad4);
 		gDrawBoard->DrawRectangle(GPoint2(540, 406), GPoint2(780, 582));
-		// --------------------------------------------------------------
 	}
 	else {
 		// TRANSPARENT IN KEYS AND COLOR
 		gDrawBoard->SetFillColor(GVector4(0.0, 0.0, 0.0, 0.5));
 		// --------------------------------------------------------------
-		gRadGrad2->SetColorInterpolation(G_HERMITE_COLOR_INTERPOLATION);
-		gRadGrad2->SetSpreadMode(G_PAD_COLOR_RAMP_SPREAD);
+		gConGrad4->SetColorInterpolation(G_HERMITE_COLOR_INTERPOLATION);
+		gConGrad4->SetSpreadMode(G_PAD_COLOR_RAMP_SPREAD);
 		TranslationToMatrix(m, GVector3(+20,+18,0));
-		gRadGrad2->SetMatrix(m * ofsTransf);
-		gDrawBoard->SetFillGradient(gRadGrad2);
+		gConGrad4->SetMatrix(m * ofsTransf);
+		gDrawBoard->SetFillGradient(gConGrad4);
 		gDrawBoard->DrawRectangle(GPoint2(20, 18), GPoint2(260, 194));
-		gRadGrad2->SetSpreadMode(G_REPEAT_COLOR_RAMP_SPREAD);
+		gConGrad4->SetSpreadMode(G_REPEAT_COLOR_RAMP_SPREAD);
 		TranslationToMatrix(m, GVector3(+280,+18,0));
-		gRadGrad2->SetMatrix(m * ofsTransf);
-		gDrawBoard->SetFillGradient(gRadGrad2);
+		gConGrad4->SetMatrix(m * ofsTransf);
+		gDrawBoard->SetFillGradient(gConGrad4);
 		gDrawBoard->DrawRectangle(GPoint2(280, 18), GPoint2(520, 194));
-		gRadGrad2->SetSpreadMode(G_REFLECT_COLOR_RAMP_SPREAD);
+		gConGrad4->SetSpreadMode(G_REFLECT_COLOR_RAMP_SPREAD);
 		TranslationToMatrix(m, GVector3(+540,+18,0));
-		gRadGrad2->SetMatrix(m * ofsTransf);
-		gDrawBoard->SetFillGradient(gRadGrad2);
+		gConGrad4->SetMatrix(m * ofsTransf);
+		gDrawBoard->SetFillGradient(gConGrad4);
 		gDrawBoard->DrawRectangle(GPoint2(540, 18), GPoint2(780, 194));
 		// --------------------------------------------------------------
-		gRadGrad2->SetColorInterpolation(G_LINEAR_COLOR_INTERPOLATION);
-		gRadGrad2->SetSpreadMode(G_PAD_COLOR_RAMP_SPREAD);
+		gConGrad4->SetColorInterpolation(G_LINEAR_COLOR_INTERPOLATION);
+		gConGrad4->SetSpreadMode(G_PAD_COLOR_RAMP_SPREAD);
 		TranslationToMatrix(m, GVector3(+20,+212,0));
-		gRadGrad2->SetMatrix(m * ofsTransf);
-		gDrawBoard->SetFillGradient(gRadGrad2);
+		gConGrad4->SetMatrix(m * ofsTransf);
+		gDrawBoard->SetFillGradient(gConGrad4);
 		gDrawBoard->DrawRectangle(GPoint2(20, 212), GPoint2(260, 388));
-		gRadGrad2->SetSpreadMode(G_REPEAT_COLOR_RAMP_SPREAD);
+		gConGrad4->SetSpreadMode(G_REPEAT_COLOR_RAMP_SPREAD);
 		TranslationToMatrix(m, GVector3(+280,+212,0));
-		gRadGrad2->SetMatrix(m * ofsTransf);
-		gDrawBoard->SetFillGradient(gRadGrad2);
+		gConGrad4->SetMatrix(m * ofsTransf);
+		gDrawBoard->SetFillGradient(gConGrad4);
 		gDrawBoard->DrawRectangle(GPoint2(280, 212), GPoint2(520, 388));
-		gRadGrad2->SetSpreadMode(G_REFLECT_COLOR_RAMP_SPREAD);
+		gConGrad4->SetSpreadMode(G_REFLECT_COLOR_RAMP_SPREAD);
 		TranslationToMatrix(m, GVector3(+540,+212,0));
-		gRadGrad2->SetMatrix(m * ofsTransf);
-		gDrawBoard->SetFillGradient(gRadGrad2);
+		gConGrad4->SetMatrix(m * ofsTransf);
+		gDrawBoard->SetFillGradient(gConGrad4);
 		gDrawBoard->DrawRectangle(GPoint2(540, 212), GPoint2(780, 388));
 		// --------------------------------------------------------------
-		gRadGrad2->SetColorInterpolation(G_CONSTANT_COLOR_INTERPOLATION);
-		gRadGrad2->SetSpreadMode(G_PAD_COLOR_RAMP_SPREAD);
+		gConGrad4->SetColorInterpolation(G_CONSTANT_COLOR_INTERPOLATION);
+		gConGrad4->SetSpreadMode(G_PAD_COLOR_RAMP_SPREAD);
 		TranslationToMatrix(m, GVector3(+20,+406,0));
-		gRadGrad2->SetMatrix(m * ofsTransf);
-		gDrawBoard->SetFillGradient(gRadGrad2);
+		gConGrad4->SetMatrix(m * ofsTransf);
+		gDrawBoard->SetFillGradient(gConGrad4);
 		gDrawBoard->DrawRectangle(GPoint2(20, 406), GPoint2(260, 582));
-		gRadGrad2->SetSpreadMode(G_REPEAT_COLOR_RAMP_SPREAD);
+		gConGrad4->SetSpreadMode(G_REPEAT_COLOR_RAMP_SPREAD);
 		TranslationToMatrix(m, GVector3(+280,+406,0));
-		gRadGrad2->SetMatrix(m * ofsTransf);
-		gDrawBoard->SetFillGradient(gRadGrad2);
+		gConGrad4->SetMatrix(m * ofsTransf);
+		gDrawBoard->SetFillGradient(gConGrad4);
 		gDrawBoard->DrawRectangle(GPoint2(280, 406), GPoint2(520, 582));
-		gRadGrad2->SetSpreadMode(G_REFLECT_COLOR_RAMP_SPREAD);
+		gConGrad4->SetSpreadMode(G_REFLECT_COLOR_RAMP_SPREAD);
 		TranslationToMatrix(m, GVector3(+540,+406,0));
-		gRadGrad2->SetMatrix(m * ofsTransf);
-		gDrawBoard->SetFillGradient(gRadGrad2);	
+		gConGrad4->SetMatrix(m * ofsTransf);
+		gDrawBoard->SetFillGradient(gConGrad4);
 		gDrawBoard->DrawRectangle(GPoint2(540, 406), GPoint2(780, 582));
-		// --------------------------------------------------------------
+		// -------------------------------------------------------------
 	}
 }

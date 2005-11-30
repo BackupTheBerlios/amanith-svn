@@ -24,6 +24,9 @@
 
 #include "drawboard.h"
 #include "amanith/geometry/gxformconv.h"
+#include "amanith/2d/gpath2d.h"
+#include "amanith/2d/gbeziercurve2d.h"
+#include "amanith/2d/gbsplinecurve2d.h"
 #include <qmessagebox.h>
 
 // QT4 support
@@ -37,6 +40,7 @@ QGLWidgetTest::QGLWidgetTest(QWidget * parent) : QGLWidget(QGLFormat(QGL::Stenci
 
 	gKernel = new GKernel();
 	gImage = (GPixelMap *)gKernel->CreateNew(G_PIXELMAP_CLASSID);
+	gPath = (GPath2D *)gKernel->CreateNew(G_PATH2D_CLASSID);
 
 	// build path for data (textures)
 	gDataPath = SysUtils::AmanithPath();
@@ -119,6 +123,13 @@ void QGLWidgetTest::initializeGL() {
 	gConGrad2 = gDrawBoard->CreateConicalGradient(GPoint2(120, 88), GPoint2(180, 88), colKeys, G_HERMITE_COLOR_INTERPOLATION);
 	gConGrad4 = gDrawBoard->CreateConicalGradient(GPoint2(0, 0), GPoint2(20, 0), colKeys, G_HERMITE_COLOR_INTERPOLATION);
 
+
+	colKeys.clear();
+	colKeys.push_back(GKeyValue((GReal)0.00, GVector4((GReal)0.0, (GReal)0.0, (GReal)0.0, (GReal)1.0)));
+	colKeys.push_back(GKeyValue((GReal)1.00, GVector4((GReal)0.0, (GReal)0.0, (GReal)0.0, (GReal)0.0)));
+	//colKeys.push_back(GKeyValue((GReal)1.00, GVector4((GReal)1.0, (GReal)0.0, (GReal)0.0, (GReal)1.0)));
+	gLinGrad3 = gDrawBoard->CreateLinearGradient(GPoint2(560, 20), GPoint2(760, 20), colKeys, G_HERMITE_COLOR_INTERPOLATION, G_PAD_COLOR_RAMP_SPREAD);
+
 	// conical gradient
 	colKeys.clear();
 	colKeys.push_back(GKeyValue((GReal)0.00, GVector4((GReal)0.171, (GReal)0.680, (GReal)0.800, (GReal)1.0)));
@@ -162,44 +173,88 @@ void QGLWidgetTest::initializeGL() {
 void QGLWidgetTest::TestDebug() {
 
 	gDrawBoard->SetTargetMode(G_COLOR_MODE);
-	gDrawBoard->SetFillColor(GVector4((GReal)1.0, (GReal)1.0, (GReal)1.0, (GReal)1.0));
-	gDrawBoard->SetFillPaintType(G_GRADIENT_PAINT_TYPE);
-	gDrawBoard->SetFillGradient(gConGrad1);
+	gDrawBoard->SetFillColor(GVector4((GReal)1.0, (GReal)0.0, (GReal)0.0, (GReal)1.0));
+	gDrawBoard->SetFillPaintType(G_COLOR_PAINT_TYPE);
+	gDrawBoard->SetStrokeColor(GVector4((GReal)0.0, (GReal)0.0, (GReal)0.0, (GReal)0.5));
+	gDrawBoard->SetStrokePaintType(G_COLOR_PAINT_TYPE);
+	gDrawBoard->SetStrokeWidth(20);
+	gDrawBoard->SetStrokeStartCapStyle(G_ROUND_CAP);
+	gDrawBoard->SetStrokeEndCapStyle(G_ROUND_CAP);
+	//gDrawBoard->SetStrokeJoinStyle(G_BEVEL_JOIN);
+	gDrawBoard->SetStrokeJoinStyle(G_MITER_JOIN);
+	gDrawBoard->SetStrokeStyle(G_SOLID_STROKE);
 
-	gDrawBoard->SetFillEnabled(G_TRUE);
-	gDrawBoard->SetStrokeEnabled(G_FALSE);
+	gDrawBoard->SetFillEnabled(G_FALSE);
+	gDrawBoard->SetStrokeEnabled(G_TRUE);
 
-	gDrawBoard->DrawRectangle(GPoint2(10, 10), GPoint2(790, 590));
+	//gDrawBoard->DrawRectangle(GPoint2(200, 200), GPoint2(400, 400));
+	//gDrawBoard->DrawRoundRectangle(GPoint2(200, 200), GPoint2(600, 400), 500, 3000);
 
+	gDrawBoard->DrawBezier(GPoint2(100, 100), GPoint2(500, 500), GPoint2(100, 400), GPoint2(400, 100));
 
-	/*glDisable(GL_TEXTURE_1D);
-	glDisable(GL_TEXTURE_2D);
-	glDisable(GL_TEXTURE_GEN_S);
-	glDisable(GL_TEXTURE_GEN_T);
-	glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_RGB, GL_PRIMARY_COLOR);
-	glDisable(GL_BLEND);
+	long double t0, t1, dt;
 
-	GMatrix33 m;
-	GAABox2 box(GPoint2(50, 50), GPoint2(300, 500));
-	gDrawBoard->DrawConicalSector(GPoint2(300, 300), GPoint2(500, 500), box, 
-								  colKeys, inTan, outTan, G_LINEAR_COLOR_INTERPOLATION, 1.0, m);
+	t0 = GetTickCount();
 
-	gDrawBoard->DrawConicalSector(GPoint2(300, 300), GPoint2(500, 500),
-		GAABox2(GPoint2(200, 200), GPoint2(500, 500)), 
-		colKeys, G_CONSTANT_COLOR_INTERPOLATION, 1.0, m);
+	for (GUInt32 i = 0; i < 100000; i++)
+		gDrawBoard->DrawBezier(GPoint2(100, 100), GPoint2(500, 500), GPoint2(100, 400), GPoint2(400, 100));
 
-	GPoint2 p0 = box.Min();
-	GPoint2 p1 = box.Max();
+	t1 = GetTickCount();
+	dt = t1 - t0;
+	if (dt < 0)
+		dt = 0;
 
-	glDisable(GL_BLEND);
-	glColor3f(0.0f, 0.0f, 0.0f);
-	glBegin(GL_LINE_LOOP);
-		glVertex2d(p0[G_X], p0[G_Y]);
-		glVertex2d(p0[G_X], p1[G_Y]);
-		glVertex2d(p1[G_X], p1[G_Y]);
-		glVertex2d(p1[G_X], p0[G_Y]);
-	glEnd();*/
+	GString s;
+	s = StrUtils::ToString((double)dt);
+	MessageBoxA(0, StrUtils::ToAscii(s), "Elapsed time in ms", MB_OK);
 
+	//gDrawBoard->DrawBezier(GPoint2(200, 200), GPoint2(400, 600), GPoint2(600, 200));
+
+	/*GDynArray<GPoint2> pts;
+
+	GBezierCurve2D bezCurve;
+	GBSplineCurve2D bsplineCurve;
+
+	// bezier segment
+	pts.push_back(GPoint2(20, 80));
+	pts.push_back(GPoint2(50, 130));
+	pts.push_back(GPoint2(80, 110));
+	bezCurve.SetPoints(pts);
+	bezCurve.SetDomain(0, (GReal)0.2);
+	gPath->AppendCurve(bezCurve);
+	// another bezier segment
+	pts.clear();
+	pts.push_back(GPoint2(80, 110));
+	pts.push_back(GPoint2(110, 150));
+	pts.push_back(GPoint2(150, 100));
+	pts.push_back(GPoint2(130, 50));
+	bezCurve.SetPoints(pts);
+	bezCurve.SetDomain((GReal)0.2, (GReal)0.5);
+	gPath->AppendCurve(bezCurve);
+	// b-spline curve segment
+	pts.clear();
+	pts.push_back(GPoint2(130, 50));
+	pts.push_back(GPoint2(50, 30));
+	pts.push_back(GPoint2(100, 80));
+	pts.push_back(GPoint2(80, 30));
+	bsplineCurve.SetPoints(pts, 3, (GReal)0.5, 1);
+	gPath->AppendCurve(bsplineCurve);
+	// close the path
+	gPath->ClosePath();
+
+	//gDrawBoard->DrawPath(*gPath);
+
+	/*pts.push_back(GPoint2(100, 100));
+	pts.push_back(GPoint2(300, 300));
+	pts.push_back(GPoint2(300, 300));
+	pts.push_back(GPoint2(100, 500));*/
+
+	//gDrawBoard->DrawPolygon(pts, G_FALSE);
+	//gDrawBoard->DrawEllipseArc(GPoint2(400, 200), GPoint2(500, 300), 250, 150, 0.75, G_TRUE, G_FALSE);
+
+	//gDrawBoard->DrawCircle(GPoint2(300, 300), 200);
+	//gDrawBoard->SetStrokeStyle(G_DASHED_STROKE);
+	//gDrawBoard->DrawEllipse(GPoint2(300, 300), 200, 120);
 }
 
 //----- paintGL ----------------------------------------------
@@ -250,7 +305,7 @@ void QGLWidgetTest::paintGL() {
 			TestColor(gTestIndex);
 	}
 
-//	TestDebug();
+	//TestDebug();
 
 	gDrawBoard->Flush();
 }
