@@ -47,12 +47,21 @@ GRenderingContext::GRenderingContext() {
 	// clip parameters
 	gClipEnabled = G_TRUE;
 	gClipOperation = G_INTERSECTION_CLIP;
-
+	gDrawStyle = NULL;
 }
 
 // *********************************************************************
 //                             GDrawBoard
 // *********************************************************************
+
+// create a draw style
+/*GDrawStyle *GDrawBoard::CreateDrawStyle() {
+
+	GDrawStyle *ds = new (std::nothrow) GDrawStyle();
+	G_ASSERT(ds != NULL);
+	return ds;
+}*/
+
 GDrawBoard::GDrawBoard() {
 
 	gInsideGroup = G_FALSE;
@@ -61,6 +70,14 @@ GDrawBoard::GDrawBoard() {
 }
 
 GDrawBoard::~GDrawBoard() {
+
+	if (gCurrentContext.gDrawStyle)
+		delete gCurrentContext.gDrawStyle;
+}
+
+void GDrawBoard::InitDrawStyle() {
+	GDrawStyle *s = CreateDrawStyle();
+	gCurrentContext.gDrawStyle = s;
 }
 
 // flush (asynchronous)
@@ -124,17 +141,6 @@ void GDrawBoard::GroupEnd() {
 		DoGroupEnd();
 		gInsideGroup = G_FALSE;
 	}
-}
-
-// get active draw style
-GDrawStyle *GDrawBoard::ActiveDrawStyle() {
-
-	return &gCurrentContext.gDrawStyle;
-}
-
-const GDrawStyle *GDrawBoard::ActiveDrawStyle() const {
-
-	return &gCurrentContext.gDrawStyle;
 }
 
 // physical viewport
@@ -306,87 +312,74 @@ void GDrawBoard::SetGroupOpacity(const GReal Opacity) {
 // model-view matrix
 const GMatrix33& GDrawBoard::ModelViewMatrix() const {
 
-	const GDrawStyle *s = ActiveDrawStyle();
-	return s->ModelView();
+	return gCurrentContext.gDrawStyle->ModelView();
 }
 
 void GDrawBoard::SetModelViewMatrix(const GMatrix33& Matrix) {
 
-	GDrawStyle *s = ActiveDrawStyle();
-	s->SetModelView(Matrix);
+	gCurrentContext.gDrawStyle->SetModelView(Matrix);
 }
 //-----------------------------------------------------------
 
 // stroke start cap
 GCapStyle GDrawBoard::StrokeStartCapStyle() const {
 
-	const GDrawStyle *s = ActiveDrawStyle();
-	return s->StrokeStartCapStyle();
+	return gCurrentContext.gDrawStyle->StrokeStartCapStyle();
 }
 
 void GDrawBoard::SetStrokeStartCapStyle(const GCapStyle Style) {
 
-	GDrawStyle *s = ActiveDrawStyle();
-	s->SetStrokeStartCapStyle(Style);
+	gCurrentContext.gDrawStyle->SetStrokeStartCapStyle(Style);
 }
 
 // stroke end cap
 GCapStyle GDrawBoard::StrokeEndCapStyle() const {
 
-	const GDrawStyle *s = ActiveDrawStyle();
-	return s->StrokeEndCapStyle();
+	return gCurrentContext.gDrawStyle->StrokeEndCapStyle();
 }
 
 void GDrawBoard::SetStrokeEndCapStyle(const GCapStyle Style) {
 
-	GDrawStyle *s = ActiveDrawStyle();
-	s->SetStrokeEndCapStyle(Style);
+	gCurrentContext.gDrawStyle->SetStrokeEndCapStyle(Style);
 }
 
 // stroke join style
 GJoinStyle GDrawBoard::StrokeJoinStyle() const {
 
-	const GDrawStyle *s = ActiveDrawStyle();
-	return s->StrokeJoinStyle();
+	return gCurrentContext.gDrawStyle->StrokeJoinStyle();
 }
 
 void GDrawBoard::SetStrokeJoinStyle(const GJoinStyle Style) {
 
-	GDrawStyle *s = ActiveDrawStyle();
-	s->SetStrokeJoinStyle(Style);
+	gCurrentContext.gDrawStyle->SetStrokeJoinStyle(Style);
 }
 
 // stroke width		
 GReal GDrawBoard::StrokeWidth() const {
 
-	const GDrawStyle *s = ActiveDrawStyle();
-	return s->StrokeWidth();
+	return gCurrentContext.gDrawStyle->StrokeWidth();
 }
 
 void GDrawBoard::SetStrokeWidth(const GReal Width) {
 
-	GDrawStyle *s = ActiveDrawStyle();
-	s->SetStrokeWidth(Width);
+	gCurrentContext.gDrawStyle->SetStrokeWidth(Width);
 }
 
 // stroke style
 GStrokeStyle GDrawBoard::StrokeStyle() const {
 
-	const GDrawStyle *s = ActiveDrawStyle();
-	return s->StrokeStyle();
+	return gCurrentContext.gDrawStyle->StrokeStyle();
 }
 
 void GDrawBoard::SetStrokeStyle(const GStrokeStyle Style) {
 
-	GDrawStyle *s = ActiveDrawStyle();
-	s->SetStrokeStyle(Style);
+	gCurrentContext.gDrawStyle->SetStrokeStyle(Style);
 }
 
 // stroke dash pattern
 const GDynArray<GReal>& GDrawBoard::StrokeDashPattern() const {
 
-	const GDrawStyle *s = ActiveDrawStyle();
-	return s->StrokeDashPattern();
+	return gCurrentContext.gDrawStyle->StrokeDashPattern();
 }
 
 GError GDrawBoard::SetStrokeDashPattern(const GDynArray<GReal>& Pattern) {
@@ -394,165 +387,140 @@ GError GDrawBoard::SetStrokeDashPattern(const GDynArray<GReal>& Pattern) {
 	if ((GUInt32)Pattern.size() > MaxDashCount())
 		return G_MEMORY_ERROR;
 
-	GDrawStyle *s = ActiveDrawStyle();
-	s->SetStrokeDashPattern(Pattern);
+	gCurrentContext.gDrawStyle->SetStrokeDashPattern(Pattern);
 	return G_NO_ERROR;
 }
 
 // stroke dash phase
 GReal GDrawBoard::StrokeDashPhase() const {
 
-	const GDrawStyle *s = ActiveDrawStyle();
-	return s->StrokeDashPhase();
+	return gCurrentContext.gDrawStyle->StrokeDashPhase();
 }
 
 void GDrawBoard::SetStrokeDashPhase(const GReal DashPhase) {
 
-	GDrawStyle *s = ActiveDrawStyle();
-	s->SetStrokeDashPhase(DashPhase);
+	gCurrentContext.gDrawStyle->SetStrokeDashPhase(DashPhase);
 }
 
 // stroke paint type
 GPaintType GDrawBoard::StrokePaintType() const {
 
-	const GDrawStyle *s = ActiveDrawStyle();
-	return s->StrokePaintType();
+	return gCurrentContext.gDrawStyle->StrokePaintType();
 }
 
 void GDrawBoard::SetStrokePaintType(const GPaintType PaintType) {
 
-	GDrawStyle *s = ActiveDrawStyle();
-	s->SetStrokePaintType(PaintType);
+	gCurrentContext.gDrawStyle->SetStrokePaintType(PaintType);
 }
 
 // stroke color
 const GVectBase<GReal, 4>& GDrawBoard::StrokeColor() const {
 
-	const GDrawStyle *s = ActiveDrawStyle();
-	return s->StrokeColor();
+	return gCurrentContext.gDrawStyle->StrokeColor();
 }
 
 void GDrawBoard::SetStrokeColor(const GVectBase<GReal, 4>& Color) {
 
-	GDrawStyle *s = ActiveDrawStyle();
-	s->SetStrokeColor(Color);
+	gCurrentContext.gDrawStyle->SetStrokeColor(Color);
 }
 
 // stroke gradient
 GGradientDesc *GDrawBoard::StrokeGradient() const {
 
-	const GDrawStyle *s = ActiveDrawStyle();
-	return s->StrokeGradient();
+	return gCurrentContext.gDrawStyle->StrokeGradient();
 }
 
 void GDrawBoard::SetStrokeGradient(GGradientDesc *Gradient) {
 
-	GDrawStyle *s = ActiveDrawStyle();
-	s->SetStrokeGradient(Gradient);
+	gCurrentContext.gDrawStyle->SetStrokeGradient(Gradient);
 }
 
 // stroke pattern
 GPatternDesc *GDrawBoard::StrokePattern() const {
 
-	const GDrawStyle *s = ActiveDrawStyle();
-	return s->StrokePattern();
+	return gCurrentContext.gDrawStyle->StrokePattern();
 }
 
 void GDrawBoard::SetStrokePattern(GPatternDesc *Pattern) {
 
-	GDrawStyle *s = ActiveDrawStyle();
-	s->SetStrokePattern(Pattern);
+	gCurrentContext.gDrawStyle->SetStrokePattern(Pattern);
 }
 
 // stroke enable/disable
 GBool GDrawBoard::StrokeEnabled() const {
 
-	const GDrawStyle *s = ActiveDrawStyle();
-	return s->StrokeEnabled();
+	return gCurrentContext.gDrawStyle->StrokeEnabled();
 }
 
 void GDrawBoard::SetStrokeEnabled(const GBool Enabled) {
 
-	GDrawStyle *s = ActiveDrawStyle();
-	s->SetStrokeEnabled(Enabled);
+	gCurrentContext.gDrawStyle->SetStrokeEnabled(Enabled);
 }
 
 // fill rule
 GFillRule GDrawBoard::FillRule() const {
 
-	const GDrawStyle *s = ActiveDrawStyle();
-	return s->FillRule();
+	return gCurrentContext.gDrawStyle->FillRule();
 }
 
 void GDrawBoard::SetFillRule(const GFillRule Rule) {
 
-	GDrawStyle *s = ActiveDrawStyle();
-	s->SetFillRule(Rule);
+	gCurrentContext.gDrawStyle->SetFillRule(Rule);
 }
 
 // fill paint type
 GPaintType GDrawBoard::FillPaintType() const {
 
-	const GDrawStyle *s = ActiveDrawStyle();
-	return s->FillPaintType();
+	return gCurrentContext.gDrawStyle->FillPaintType();
 }
 
 void GDrawBoard::SetFillPaintType(const GPaintType PaintType) {
 
-	GDrawStyle *s = ActiveDrawStyle();
-	s->SetFillPaintType(PaintType);
+	gCurrentContext.gDrawStyle->SetFillPaintType(PaintType);
 }
 
 // fill color
 const GVectBase<GReal, 4>& GDrawBoard::FillColor() const {
 
-	const GDrawStyle *s = ActiveDrawStyle();
-	return s->FillColor();
+	return gCurrentContext.gDrawStyle->FillColor();
 }
 
 void GDrawBoard::SetFillColor(const GVectBase<GReal, 4>& Color) {
 
-	GDrawStyle *s = ActiveDrawStyle();
-	s->SetFillColor(Color);
+	gCurrentContext.gDrawStyle->SetFillColor(Color);
 }
 
 // fill gradient
 GGradientDesc *GDrawBoard::FillGradient() const {
 
-	const GDrawStyle *s = ActiveDrawStyle();
-	return s->FillGradient();
+	return gCurrentContext.gDrawStyle->FillGradient();
 }
 
 void GDrawBoard::SetFillGradient(GGradientDesc *Gradient) {
 
-	GDrawStyle *s = ActiveDrawStyle();
-	s->SetFillGradient(Gradient);
+	gCurrentContext.gDrawStyle->SetFillGradient(Gradient);
 }
 
 // fill pattern
 GPatternDesc *GDrawBoard::FillPattern() const {
 
-	const GDrawStyle *s = ActiveDrawStyle();
-	return s->FillPattern();
+	return gCurrentContext.gDrawStyle->FillPattern();
 }
 
 void GDrawBoard::SetFillPattern(GPatternDesc *Pattern) {
 
-	GDrawStyle *s = ActiveDrawStyle();
-	s->SetFillPattern(Pattern);
+	gCurrentContext.gDrawStyle->SetFillPattern(Pattern);
 }
 
 // fill enable/disable
 GBool GDrawBoard::FillEnabled() const {
 
-	const GDrawStyle *s = ActiveDrawStyle();
-	return s->FillEnabled();
+	return gCurrentContext.gDrawStyle->FillEnabled();
 }
 
 void GDrawBoard::SetFillEnabled(const GBool Enabled) {
 
-	GDrawStyle *s = ActiveDrawStyle();
-	s->SetFillEnabled(Enabled);
+	gCurrentContext.gDrawStyle->SetFillEnabled(Enabled);
 }
 
 //---------------------------------------------------------------------------
@@ -561,7 +529,7 @@ void GDrawBoard::SetFillEnabled(const GBool Enabled) {
 // Low level drawing functions
 void GDrawBoard::DrawLine(const GPoint2& P0, const GPoint2& P1) {
 
-	GDrawStyle *s = ActiveDrawStyle();
+	GDrawStyle *s = gCurrentContext.gDrawStyle;
 
 	if (s->StrokeEnabled())
 		DoDrawLine(*s, P0, P1);
@@ -569,7 +537,7 @@ void GDrawBoard::DrawLine(const GPoint2& P0, const GPoint2& P1) {
 
 void GDrawBoard::DrawBezier(const GPoint2& P0, const GPoint2& P1, const GPoint2& P2) {
 
-	GDrawStyle *s = ActiveDrawStyle();
+	GDrawStyle *s = gCurrentContext.gDrawStyle;
 
 	if (s->StrokeEnabled() || s->FillEnabled())
 		DoDrawBezier(*s, P0, P1, P2);
@@ -577,7 +545,7 @@ void GDrawBoard::DrawBezier(const GPoint2& P0, const GPoint2& P1, const GPoint2&
 
 void GDrawBoard::DrawBezier(const GPoint2& P0, const GPoint2& P1, const GPoint2& P2, const GPoint2& P3) {
 
-	GDrawStyle *s = ActiveDrawStyle();
+	GDrawStyle *s = gCurrentContext.gDrawStyle;
 
 	if (s->StrokeEnabled() || s->FillEnabled())
 		DoDrawBezier(*s, P0, P1, P2, P3);
@@ -586,7 +554,7 @@ void GDrawBoard::DrawBezier(const GPoint2& P0, const GPoint2& P1, const GPoint2&
 void GDrawBoard::DrawEllipseArc(const GPoint2& Center, const GReal XSemiAxisLength, const GReal YSemiAxisLength,
 								const GReal OffsetRotation, const GReal StartAngle, const GReal EndAngle, const GBool CCW) {
 
-	GDrawStyle *s = ActiveDrawStyle();
+	GDrawStyle *s = gCurrentContext.gDrawStyle;
 
 	if (s->StrokeEnabled() || s->FillEnabled())
 		DoDrawEllipseArc(*s, Center, XSemiAxisLength, YSemiAxisLength, OffsetRotation, StartAngle, EndAngle, CCW);
@@ -595,7 +563,7 @@ void GDrawBoard::DrawEllipseArc(const GPoint2& Center, const GReal XSemiAxisLeng
 void GDrawBoard::DrawEllipseArc(const GPoint2& P0, const GPoint2& P1, const GReal XSemiAxisLength, const GReal YSemiAxisLength,
 								const GReal OffsetRotation, const GBool LargeArc, const GBool CCW) {
 
-	GDrawStyle *s = ActiveDrawStyle();
+	GDrawStyle *s = gCurrentContext.gDrawStyle;
 
 	if (s->StrokeEnabled() || s->FillEnabled())
 		DoDrawEllipseArc(*s, P0, P1, XSemiAxisLength, YSemiAxisLength, OffsetRotation, LargeArc, CCW);
@@ -603,7 +571,7 @@ void GDrawBoard::DrawEllipseArc(const GPoint2& P0, const GPoint2& P1, const GRea
 
 void GDrawBoard::DrawPolygon(const GDynArray<GPoint2>& Points, const GBool Closed) {
 
-	GDrawStyle *s = ActiveDrawStyle();
+	GDrawStyle *s = gCurrentContext.gDrawStyle;
 
 	if (s->StrokeEnabled() || s->FillEnabled())
 		DoDrawPolygon(*s, Points, Closed);
@@ -619,7 +587,7 @@ void GDrawBoard::DrawRectangle(const GPoint2& Center, const GReal Width, const G
 	GPoint2 p1(Center[G_X] + halfW, Center[G_Y] + halfH);
 
 	GAABox2 box(p0, p1);
-	GDrawStyle *s = ActiveDrawStyle();
+	GDrawStyle *s = gCurrentContext.gDrawStyle;
 
 	if (s->StrokeEnabled() || s->FillEnabled())
 		DoDrawRectangle(*s, box.Min(), box.Max());
@@ -628,7 +596,7 @@ void GDrawBoard::DrawRectangle(const GPoint2& Center, const GReal Width, const G
 void GDrawBoard::DrawRectangle(const GPoint2& P0, const GPoint2& P1) {
 
 	GAABox2 box(P0, P1);
-	GDrawStyle *s = ActiveDrawStyle();
+	GDrawStyle *s = gCurrentContext.gDrawStyle;
 
 	if (s->StrokeEnabled() || s->FillEnabled())
 		DoDrawRectangle(*s, box.Min(), box.Max());
@@ -644,7 +612,7 @@ void GDrawBoard::DrawRoundRectangle(const GPoint2& Center, const GReal Width, co
 	GPoint2 p1(Center[G_X] + halfW, Center[G_Y] + halfH);
 
 	GAABox2 box(p0, p1);
-	GDrawStyle *s = ActiveDrawStyle();
+	GDrawStyle *s = gCurrentContext.gDrawStyle;
 
 	if ((s->StrokeEnabled() || s->FillEnabled()) && ArcWidth > 0 && ArcHeight > 0) {
 		// arc dimensions cannot be larger than box half-dimensions
@@ -658,7 +626,7 @@ void GDrawBoard::DrawRoundRectangle(const GPoint2& Center, const GReal Width, co
 
 void GDrawBoard::DrawRoundRectangle(const GPoint2& P0, const GPoint2& P1, const GReal ArcWidth, const GReal ArcHeight) {
 
-	GDrawStyle *s = ActiveDrawStyle();
+	GDrawStyle *s = gCurrentContext.gDrawStyle;
 	GAABox2 box(P0, P1);
 
 	if ((s->StrokeEnabled() || s->FillEnabled()) && ArcWidth > 0 && ArcHeight > 0) {
@@ -679,7 +647,7 @@ void GDrawBoard::DrawRoundRectangle(const GPoint2& P0, const GPoint2& P1, const 
 
 void GDrawBoard::DrawEllipse(const GPoint2& Center, const GReal XSemiAxisLength, const GReal YSemiAxisLength) {
 
-	GDrawStyle *s = ActiveDrawStyle();
+	GDrawStyle *s = gCurrentContext.gDrawStyle;
 
 	if ((s->StrokeEnabled() || s->FillEnabled()) && XSemiAxisLength > 0 && YSemiAxisLength > 0)
 		DoDrawEllipse(*s, Center, XSemiAxisLength, YSemiAxisLength);
@@ -687,7 +655,7 @@ void GDrawBoard::DrawEllipse(const GPoint2& Center, const GReal XSemiAxisLength,
 
 void GDrawBoard::DrawCircle(const GPoint2& Center, const GReal Radius) {
 
-	GDrawStyle *s = ActiveDrawStyle();
+	GDrawStyle *s = gCurrentContext.gDrawStyle;
 
 	if ((s->StrokeEnabled() || s->FillEnabled()) && Radius > 0)
 		DoDrawCircle(*s, Center, Radius);
@@ -695,10 +663,24 @@ void GDrawBoard::DrawCircle(const GPoint2& Center, const GReal Radius) {
 
 void GDrawBoard::DrawPath(const GCurve2D& Curve) {
 
-	GDrawStyle *s = ActiveDrawStyle();
+	GDrawStyle *s = gCurrentContext.gDrawStyle;
 
 	if ((s->StrokeEnabled() || s->FillEnabled()) && Curve.PointsCount() > 1)
 		DoDrawPath(*s, Curve);
+}
+
+void GDrawBoard::DrawPaths(const GDynArray<GCurve2D *>& Curves) {
+
+	GDrawStyle *s = gCurrentContext.gDrawStyle;
+
+	if ((s->StrokeEnabled() || s->FillEnabled()) && Curves.size() > 0)
+		DoDrawPaths(*s, Curves);
+}
+
+void GDrawBoard::DrawPaths(const GString& SVGPathDescription) {
+
+	if (SVGPathDescription.length() < 2)
+		return;
 }
 
 };  // end namespace Amanith

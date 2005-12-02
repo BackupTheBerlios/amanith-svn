@@ -106,6 +106,27 @@ namespace Amanith {
 		}
 	};
 
+	// *********************************************************************
+	//                          GOpenGLDrawStyle
+	// *********************************************************************
+	class G_EXPORT GOpenGLDrawStyle : public GDrawStyle {
+
+		friend class GOpenGLBoard;
+
+	private:
+		GReal gMiterMulThickness; // defined as Miter * Thickness
+		GReal gRoundJoinAuxCoef;  // defined as 1 / (2 * acos(1 - deviation / thickness))
+
+	public:
+		GOpenGLDrawStyle();
+		void SetStrokeMiterLimit(const GReal MiterLimit);
+		void SetStrokeWidth(const GReal Width);
+		// get Miterlimit * Thickness
+		inline GReal StrokeMiterLimitMulThickness() const {
+			return gMiterMulThickness;
+		}
+	};
+
 	struct GLGrabbedRect {
 		
 		GInt32 X, Y;
@@ -116,6 +137,8 @@ namespace Amanith {
 		GLuint TexName;
 		GBool IsEmpty;
 	};
+
+	typedef std::vector<GPoint2>::const_iterator Point2ConstIt;
 
 	// *********************************************************************
 	//                             GOpenGLBoard
@@ -149,6 +172,16 @@ namespace Amanith {
 		GFloat *gAtan2LookupTable;
 		// tesselator used to triangulate fill region
 		GTesselator2D gTesselator;
+		// SVG-like path data structures
+		GPoint2 gSVGPathCursor;
+		GPoint2 gLastCurveCP;
+		GPoint2 gFirstPathPoint;
+		GInt32 gOldPointsSize;
+		GBool gInsideSVGPaths;
+		GBool gInsideSVGPath;
+		GDynArray<GPoint2> gSVGPathPoints;
+		GDynArray<GInt32> gSVGPathPointsPerContour;
+		GDynArray<GBool> gSVGPathClosedStrokes;
 
 	private:
 		// calculate (squared) deviation given a (squared) pixel deviation
@@ -185,33 +218,35 @@ namespace Amanith {
 		
 		GBool SetGLClipEnabled(const GTargetMode Mode, const GClipOperation Operation);
 
-		void DrawGLCircleSlice(const GPoint2& Center, const GReal Radius, const GPoint2& Start,
+		void DrawGLCircleSlice(const GPoint2& Center, const GReal RoundAuxCoef, const GPoint2& Start,
 							 const GPoint2& End, const GReal SpanAngle, const GBool CCW);
 
 		void DrawGLJoinLine(const GJoinStyle JoinStyle, const GReal MiterLimitMulThickness,
 							const GPoint2& Previous, const GPoint2& P0, const GPoint2& P1,
-							const GReal Thickness);
+							const GReal Thickness, const GReal RoundAuxCoef);
 
 		void DrawGLJoinLineCap(const GJoinStyle JoinStyle, const GReal MiterLimitMulThickness,
 								const GPoint2& Previous, const GPoint2& P0, const GPoint2& P1,
-								const GReal Thickness, const GCapStyle EndCapStyle);
+								const GReal Thickness, const GCapStyle EndCapStyle, const GReal RoundAuxCoef);
 
 		void DrawGLJoin(const GPoint2& JoinCenter, const GVector2& InDirection, const GReal InDistance,
 						const GVector2& OutDirection, const GReal OutDistance, const GJoinStyle JoinStyle,
 						const GReal MiterLimitMulThickness, const GCapStyle StartCapStyle, const GCapStyle EndCapStyle,
-						const GReal Thickness);
+						const GReal Thickness, const GReal RoundAuxCoef);
 
 		void DrawGLCapsLine(const GBool DoStartCap, const GCapStyle StartCapStyle,
 							const GBool DoEndCap, const GCapStyle EndCapStyle,
-							const GPoint2& P0, const GPoint2& P1, const GReal Thickness);
+							const GPoint2& P0, const GPoint2& P1, const GReal Thickness, const GReal RoundAuxCoef);
 
 		// draw solid (non-dashed) stroke
 		void DrawSolidStroke(const GCapStyle StartCapStyle, const GCapStyle EndCapStyle,
 							 const GJoinStyle JoinStyle, const GReal MiterLimitMulThickness,
-							 const GDynArray<GPoint2>& Points, const GBool Closed, const GReal Thickness);
+							 Point2ConstIt PointsBegin, Point2ConstIt PointsEnd,
+							 const GBool Closed, const GReal Thickness, const GReal RoundAuxCoeff);
 		// draw dashed stroke
-		void DrawDashedStroke(const GDrawStyle& Style, const GDynArray<GPoint2>& Points, const GBool Closed,
-							  const GReal Thickness);
+		void DrawDashedStroke(const GOpenGLDrawStyle& Style,
+							  Point2ConstIt PointsBegin, Point2ConstIt PointsEnd,
+							  const GBool Closed, const GReal Thickness, const GReal RoundAuxCoeff);
 
 		// intersect a circle with two rays, returning two intersection points and spanned angle
 		// in CCW direction to go from P0 to P1; precondition is that rays origins are inside the circle
@@ -257,7 +292,7 @@ namespace Amanith {
 		void PushDepthMask();
 		void DrawAndPopDepthMask(const GAABox2& Box, const GDrawStyle& Style, const GBool DrawFill);
 
-		void UpdateStyle(GDrawStyle& Style);
+		void UpdateStyle(GOpenGLDrawStyle& Style);
 		GBool UseStyle(const GPaintType PaintType, const GVector4& Color,
 					  const GOpenGLGradientDesc *Gradient, const GOpenGLPatternDesc *Pattern,
 					  const GMatrix33& ModelView, const GBool UseFill);
@@ -284,8 +319,11 @@ namespace Amanith {
 
 
 		// draw primitives
-		void DrawGLPolygon(const GDrawStyle& Style, const GBool ClosedFill, const GBool ClosedStroke,
+		void DrawGLPolygon(const GOpenGLDrawStyle& Style, const GBool ClosedFill, const GBool ClosedStroke,
 							const GJoinStyle FlattenJoinStyle, const GDynArray<GPoint2>& Points, const GBool Convex);
+
+		void DrawGLPolygons(const GDynArray<GPoint2>& Points, const GDynArray<GInt32>& PointsPerContour,
+							const GDynArray<GBool>& ClosedStrokes, const GOpenGLDrawStyle& Style);
 
 		// here we are sure that corners are opposite and ordered
 		void DoDrawRectangle(GDrawStyle& Style, const GPoint2& MinCorner, const GPoint2& MaxCorner);
@@ -308,11 +346,16 @@ namespace Amanith {
 		void DoDrawPolygon(GDrawStyle& Style, const GDynArray<GPoint2>& Points, const GBool Closed);
 		// here we are sure that Curve has a number of points greater than 1
 		void DoDrawPath(GDrawStyle& Style, const GCurve2D& Curve);
+		// here we are sure that we have at least one curve
+		void DoDrawPaths(GDrawStyle& Style, const GDynArray<GCurve2D *>& Curves);
+
+		// create a draw style
+		GDrawStyle *CreateDrawStyle() const;
 
 	public:
 		void DumpBuffers(const GChar8 *fNameZ, const GChar8 *fNameS);
 		GOpenGLBoard(const GUInt32 LowLeftCornerX, const GUInt32 LowLeftCornerY, const GUInt32 Width, const GUInt32 Height);
-		~GOpenGLBoard();
+		virtual ~GOpenGLBoard();
 
 		// read only parameters
 		GUInt32 MaxDashCount() const;
@@ -344,6 +387,31 @@ namespace Amanith {
 									const GTilingMode TilingMode = G_REPEAT_TILE,
 									const GAABox2 *LogicalWindow = NULL,
 									const GMatrix33& Matrix = G_MATRIX_IDENTITY33);
+
+		// SVG-like path commands
+		void BeginPaths();
+		// begin a sub-path
+		void MoveTo(const GPoint2& P, const GBool Relative);
+		// draw a line
+		void LineTo(const GPoint2& P, const GBool Relative);
+		// draw an horizontal line
+		void HorizontalLineTo(const GReal X, const GBool Relative);
+		// draw a vertical line
+		void VerticalLineTo(const GReal Y, const GBool Relative);
+		// draw a cubic Bezier curve
+		void CurveTo(const GPoint2& P1, const GPoint2& P2, const GPoint2& P, const GBool Relative);
+		// draw a quadratic Bezier curve
+		void CurveTo(const GPoint2& P1, const GPoint2& P, const GBool Relative);
+		// draw a cubic Bezier curve using smooth tangent
+		void SmoothCurveTo(const GPoint2& P2, const GPoint2& P, const GBool Relative);
+		// draw a quadratic Bezier curve using smooth tangent
+		void SmoothCurveTo(const GPoint2& P, const GBool Relative);
+		// draw an elliptical arc
+		void EllipticalArcTo(const GReal Rx, const GReal Ry, const GReal XRot, const GBool LargeArc,
+							 const GBool Sweep, const GPoint2& P, const GBool Relative);
+		// close current sub-path
+		void ClosePath();
+		void EndPaths();
 
 	};
 

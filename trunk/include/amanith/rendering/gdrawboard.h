@@ -64,7 +64,7 @@ namespace Amanith {
 	// *********************************************************************
 	struct GRenderingContext {
 	public:
-		GDrawStyle gDrawStyle;
+		GDrawStyle *gDrawStyle;
 		GRenderingQuality gRenderingQuality;
 		GReal gOpacity;
 		GTargetMode gTargetMode;
@@ -128,10 +128,14 @@ namespace Amanith {
 		virtual void DoDrawPolygon(GDrawStyle& Style, const GDynArray<GPoint2>& Points, const GBool Closed) = 0;
 		// here we are sure that Curve has a number of points greater than 1
 		virtual void DoDrawPath(GDrawStyle& Style, const GCurve2D& Curve) = 0;
+		virtual void DoDrawPaths(GDrawStyle& Style, const GDynArray<GCurve2D *>& Curves) = 0;
 
-		// get active draw style
-		GDrawStyle *ActiveDrawStyle();
-		const GDrawStyle *ActiveDrawStyle() const;
+		// create a draw style (must be implemented by all derived classes)
+		void InitDrawStyle();
+		virtual GDrawStyle *CreateDrawStyle() const = 0;
+		inline GDrawStyle *CurrentStyle() {
+			return gCurrentContext.gDrawStyle;
+		}
 
 	public:
 		GDrawBoard();
@@ -274,6 +278,58 @@ namespace Amanith {
 		void DrawEllipse(const GPoint2& Center, const GReal XSemiAxisLength, const GReal YSemiAxisLength);
 		void DrawCircle(const GPoint2& Center, const GReal Radius);
 		void DrawPath(const GCurve2D& Curve);
+		void DrawPaths(const GDynArray<GCurve2D *>& Curves);
+		void DrawPaths(const GString& SVGPathDescription);
+		inline void DrawPaths(const GChar8 *SVGPathDescription) {
+			DrawPaths(GString(SVGPathDescription));
+		}
+		// SVG-like path commands
+		virtual void BeginPaths() = 0;
+		// begin a sub-path
+		virtual void MoveTo(const GPoint2& P, const GBool Relative) = 0;
+		inline void MoveTo(const GReal X, const GReal Y, const GBool Relative) {
+			MoveTo(GPoint2(X, Y), Relative);
+		}
+		// draw a line
+		virtual void LineTo(const GPoint2& P, const GBool Relative) = 0;
+		inline void LineTo(const GReal X, const GReal Y, const GBool Relative) {
+			LineTo(GPoint2(X, Y), Relative);
+		}
+		// draw an horizontal line
+		virtual void HorizontalLineTo(const GReal X, const GBool Relative) = 0;
+		// draw a vertical line
+		virtual void VerticalLineTo(const GReal Y, const GBool Relative) = 0;
+		// draw a cubic Bezier curve
+		virtual void CurveTo(const GPoint2& P1, const GPoint2& P2, const GPoint2& P, const GBool Relative) = 0;
+		inline void CurveTo(const GReal X1, const GReal Y1, const GReal X2, const GReal Y2,
+							const GReal X, const GReal Y, const GBool Relative) {
+			CurveTo(GPoint2(X1, Y1), GPoint2(X2, Y2), GPoint2(X, Y), Relative);
+		}
+		// draw a quadratic Bezier curve
+		virtual void CurveTo(const GPoint2& P1, const GPoint2& P, const GBool Relative) = 0;
+		inline void CurveTo(const GReal X1, const GReal Y1, const GReal X, const GReal Y, const GBool Relative) {
+			CurveTo(GPoint2(X1, Y1), GPoint2(X, Y), Relative);
+		}
+		// draw a cubic Bezier curve using smooth tangent
+		virtual void SmoothCurveTo(const GPoint2& P2, const GPoint2& P, const GBool Relative) = 0;
+		void SmoothCurveTo(const GReal X2, const GReal Y2, const GReal X, const GReal Y, const GBool Relative) {
+			SmoothCurveTo(GPoint2(X2, Y2), GPoint2(X, Y), Relative);
+		}
+		// draw a quadratic Bezier curve using smooth tangent
+		virtual void SmoothCurveTo(const GPoint2& P, const GBool Relative) = 0;
+		void SmoothCurveTo(const GReal X, const GReal Y, const GBool Relative) {
+			SmoothCurveTo(GPoint2(X, Y), Relative);
+		}
+		// draw an elliptical arc
+		virtual void EllipticalArcTo(const GReal Rx, const GReal Ry, const GReal XRot, const GBool LargeArc,
+									const GBool Sweep, const GPoint2& P, const GBool Relative) = 0;
+		inline void EllipticalArcTo(const GReal Rx, const GReal Ry, const GReal XRot, const GBool LargeArc,
+									const GBool Sweep, const GReal X, const GReal Y, const GBool Relative) {
+			EllipticalArcTo(Rx, Ry, XRot, LargeArc, Sweep, GPoint2(X, Y), Relative);
+		}
+		// close current sub-path
+		virtual void ClosePath() = 0;
+		virtual void EndPaths() = 0;
 
 		// clear board
 		void Clear(const GReal Red, const GReal Green, const GReal Blue, const GBool ClearClipMasks = G_TRUE);

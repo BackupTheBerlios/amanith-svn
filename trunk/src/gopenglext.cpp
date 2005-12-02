@@ -318,7 +318,7 @@ GBool GOpenglExt::IsCubemapSupported() const {
 */
 GBool GOpenglExt::IsRectTextureSupported() {
 
-	if (glewGetExtension("GL_EXT_texture_rectangle") || glewGetExtension("GL_ARB_texture_rectangle"))
+	if (glewGetExtension("GL_EXT_texture_rectangle") || glewGetExtension("GL_ARB_texture_rectangle") || glewGetExtension("GL_NV_texture_rectangle"))
 		return G_TRUE;
 	return G_FALSE;
 }

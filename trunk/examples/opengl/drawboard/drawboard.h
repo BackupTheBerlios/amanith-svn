@@ -60,7 +60,7 @@ private:
 	GBool gUseShaders;
 
 //	GLfloat	gX, gY, gZ;						// Depth Into The Screen
-	GPath2D *gPath;
+	GPath2D *gPath1, *gPath2, *gPath3;
 
 protected:
 	void initializeGL();					// implementation for QGLWidget.initializeGL()

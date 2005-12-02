@@ -225,7 +225,7 @@ void GOpenGLBoard::GrabFrameBuffer(const GPoint<GInt32, 2>& LowLeft, const GUInt
 	glTexParameteri(Shot.Target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(Shot.Target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-	glCopyTexImage2D(Shot.Target, 0, GL_RGB, LowLeft[G_X], LowLeft[G_Y], Width, Height, 0);
+	glCopyTexImage2D(Shot.Target, 0, GL_RGB, LowLeft[G_X], LowLeft[G_Y], Shot.TexWidth, Shot.TexHeight, 0);
 
 	Shot.X = LowLeft[G_X];
 	Shot.Y = LowLeft[G_Y];

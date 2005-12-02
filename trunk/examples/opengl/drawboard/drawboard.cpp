@@ -40,7 +40,9 @@ QGLWidgetTest::QGLWidgetTest(QWidget * parent) : QGLWidget(QGLFormat(QGL::Stenci
 
 	gKernel = new GKernel();
 	gImage = (GPixelMap *)gKernel->CreateNew(G_PIXELMAP_CLASSID);
-	gPath = (GPath2D *)gKernel->CreateNew(G_PATH2D_CLASSID);
+	gPath1 = (GPath2D *)gKernel->CreateNew(G_PATH2D_CLASSID);
+	gPath2 = (GPath2D *)gKernel->CreateNew(G_PATH2D_CLASSID);
+	gPath3 = (GPath2D *)gKernel->CreateNew(G_PATH2D_CLASSID);
 
 	// build path for data (textures)
 	gDataPath = SysUtils::AmanithPath();
@@ -175,22 +177,21 @@ void QGLWidgetTest::TestDebug() {
 	gDrawBoard->SetTargetMode(G_COLOR_MODE);
 	gDrawBoard->SetFillColor(GVector4((GReal)1.0, (GReal)0.0, (GReal)0.0, (GReal)1.0));
 	gDrawBoard->SetFillPaintType(G_COLOR_PAINT_TYPE);
-	gDrawBoard->SetStrokeColor(GVector4((GReal)0.0, (GReal)0.0, (GReal)0.0, (GReal)0.5));
+	gDrawBoard->SetStrokeColor(GVector4((GReal)0.0, (GReal)0.0, (GReal)0.0, (GReal)1.0));
 	gDrawBoard->SetStrokePaintType(G_COLOR_PAINT_TYPE);
-	gDrawBoard->SetStrokeWidth(20);
+	gDrawBoard->SetStrokeWidth(10);
 	gDrawBoard->SetStrokeStartCapStyle(G_ROUND_CAP);
 	gDrawBoard->SetStrokeEndCapStyle(G_ROUND_CAP);
-	//gDrawBoard->SetStrokeJoinStyle(G_BEVEL_JOIN);
-	gDrawBoard->SetStrokeJoinStyle(G_MITER_JOIN);
+	gDrawBoard->SetStrokeJoinStyle(G_ROUND_JOIN);
 	gDrawBoard->SetStrokeStyle(G_SOLID_STROKE);
 
-	gDrawBoard->SetFillEnabled(G_FALSE);
+	gDrawBoard->SetFillEnabled(G_TRUE);
 	gDrawBoard->SetStrokeEnabled(G_TRUE);
 
 	//gDrawBoard->DrawRectangle(GPoint2(200, 200), GPoint2(400, 400));
 	//gDrawBoard->DrawRoundRectangle(GPoint2(200, 200), GPoint2(600, 400), 500, 3000);
 
-	gDrawBoard->DrawBezier(GPoint2(100, 100), GPoint2(500, 500), GPoint2(100, 400), GPoint2(400, 100));
+	/*gDrawBoard->DrawBezier(GPoint2(100, 100), GPoint2(500, 500), GPoint2(100, 400), GPoint2(400, 100));
 
 	long double t0, t1, dt;
 
@@ -206,48 +207,66 @@ void QGLWidgetTest::TestDebug() {
 
 	GString s;
 	s = StrUtils::ToString((double)dt);
-	MessageBoxA(0, StrUtils::ToAscii(s), "Elapsed time in ms", MB_OK);
+	MessageBoxA(0, StrUtils::ToAscii(s), "Elapsed time in ms", MB_OK);*/
 
 	//gDrawBoard->DrawBezier(GPoint2(200, 200), GPoint2(400, 600), GPoint2(600, 200));
 
-	/*GDynArray<GPoint2> pts;
+	GDynArray<GPoint2> pts;
+	GDynArray<GCurve2D *> paths;
 
 	GBezierCurve2D bezCurve;
 	GBSplineCurve2D bsplineCurve;
 
 	// bezier segment
+	pts.clear();
 	pts.push_back(GPoint2(20, 80));
 	pts.push_back(GPoint2(50, 130));
-	pts.push_back(GPoint2(80, 110));
+	pts.push_back(GPoint2(200, 410));
 	bezCurve.SetPoints(pts);
 	bezCurve.SetDomain(0, (GReal)0.2);
-	gPath->AppendCurve(bezCurve);
+	gPath1->AppendCurve(bezCurve);
 	// another bezier segment
 	pts.clear();
-	pts.push_back(GPoint2(80, 110));
-	pts.push_back(GPoint2(110, 150));
-	pts.push_back(GPoint2(150, 100));
-	pts.push_back(GPoint2(130, 50));
+	pts.push_back(GPoint2(200, 410));
+	pts.push_back(GPoint2(410, 450));
+	pts.push_back(GPoint2(350, 300));
+	pts.push_back(GPoint2(530, 50));
 	bezCurve.SetPoints(pts);
 	bezCurve.SetDomain((GReal)0.2, (GReal)0.5);
-	gPath->AppendCurve(bezCurve);
+	gPath1->AppendCurve(bezCurve);
 	// b-spline curve segment
 	pts.clear();
-	pts.push_back(GPoint2(130, 50));
+	pts.push_back(GPoint2(530, 50));
 	pts.push_back(GPoint2(50, 30));
 	pts.push_back(GPoint2(100, 80));
 	pts.push_back(GPoint2(80, 30));
 	bsplineCurve.SetPoints(pts, 3, (GReal)0.5, 1);
-	gPath->AppendCurve(bsplineCurve);
+	gPath1->AppendCurve(bsplineCurve);
 	// close the path
-	gPath->ClosePath();
+	gPath1->ClosePath();
 
-	//gDrawBoard->DrawPath(*gPath);
+	//gDrawBoard->DrawBezier(GPoint2(20, 80), GPoint2(50, 130), GPoint2(200, 410));
 
-	/*pts.push_back(GPoint2(100, 100));
-	pts.push_back(GPoint2(300, 300));
-	pts.push_back(GPoint2(300, 300));
-	pts.push_back(GPoint2(100, 500));*/
+	pts.clear();
+	pts.push_back(GPoint2(200, 200));
+	pts.push_back(GPoint2(600, 250));
+	pts.push_back(GPoint2(750, 110));
+	pts.push_back(GPoint2(200, 100));
+	bezCurve.SetPoints(pts);
+	bezCurve.SetDomain(0, (GReal)0.2);
+	gPath2->AppendCurve(bezCurve);
+	gPath2->ClosePath();
+
+	paths.push_back(gPath1);
+	paths.push_back(gPath2);
+	//gDrawBoard->DrawPaths(paths);
+	//gDrawBoard->DrawPath(*gPath1);
+
+	pts.clear();
+	pts.push_back(GPoint2(20, 80));
+	pts.push_back(GPoint2(50, 130));
+	pts.push_back(GPoint2(200, 410));
+	//pts.push_back(GPoint2(400, 400));
 
 	//gDrawBoard->DrawPolygon(pts, G_FALSE);
 	//gDrawBoard->DrawEllipseArc(GPoint2(400, 200), GPoint2(500, 300), 250, 150, 0.75, G_TRUE, G_FALSE);
@@ -255,6 +274,31 @@ void QGLWidgetTest::TestDebug() {
 	//gDrawBoard->DrawCircle(GPoint2(300, 300), 200);
 	//gDrawBoard->SetStrokeStyle(G_DASHED_STROKE);
 	//gDrawBoard->DrawEllipse(GPoint2(300, 300), 200, 120);
+
+	gDrawBoard->BeginPaths();
+
+	gDrawBoard->MoveTo(GPoint2(200, 100), G_FALSE);
+	gDrawBoard->CurveTo(GPoint2(500, 100), GPoint2(500, 400), G_FALSE);
+
+	gDrawBoard->SmoothCurveTo(GPoint2(200, 400), G_FALSE);
+	gDrawBoard->SmoothCurveTo(GPoint2(200, 80), G_FALSE);
+	gDrawBoard->ClosePath();
+
+	gDrawBoard->MoveTo(GPoint2(250, 300), G_FALSE);
+	gDrawBoard->CurveTo(GPoint2(350, 200), GPoint2(450, 300), GPoint2(280, 400), G_FALSE);
+
+	//gDrawBoard->ClosePath();
+
+/*	gDrawBoard->MoveTo(GPoint2(250, 300), G_FALSE);
+	gDrawBoard->LineTo(GPoint2(450, 430), G_FALSE);
+	gDrawBoard->EllipticalArcTo(260, 160, 0, G_TRUE, G_FALSE, GPoint2(250, 400), G_FALSE);
+	gDrawBoard->ClosePath();*/
+
+	gDrawBoard->MoveTo(GPoint2(250, 300), G_FALSE);
+
+	gDrawBoard->EndPaths();
+
+	//gDrawBoard->DrawLine(GPoint2(250, 300), GPoint2(550, 530));
 }
 
 //----- paintGL ----------------------------------------------
@@ -305,7 +349,7 @@ void QGLWidgetTest::paintGL() {
 			TestColor(gTestIndex);
 	}
 
-	//TestDebug();
+//	TestDebug();
 
 	gDrawBoard->Flush();
 }
@@ -425,6 +469,11 @@ void QGLWidgetTest::keyPressEvent(QKeyEvent *e) {
 				gRandScale = GMath::RangeRandom((GReal)0.33, (GReal)3.0);
 			updateGL();
 			break;
+/*
+		case Qt::Key_0:
+			TestDebug();
+			updateGL();
+			break;*/
 	}
 }
 

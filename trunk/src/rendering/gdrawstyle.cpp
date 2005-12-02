@@ -427,7 +427,6 @@ GDrawStyle::GDrawStyle() {
 	gStrokeWidth = (GReal)1;
 	gThickness = (GReal)0.5;
 	gStrokeMiterLimit = (GReal)4;
-	gMiterMulThickness = gStrokeMiterLimit * gThickness;
 	gStrokeStartCapStyle = G_BUTT_CAP;
 	gStrokeEndCapStyle = G_BUTT_CAP;
 	gStrokeJoinStyle = G_MITER_JOIN;
@@ -449,6 +448,10 @@ GDrawStyle::GDrawStyle() {
 	gFillPatternDesc = NULL;
 	gFillEnabled = G_TRUE;
 	// model-view matrix will start as identity
+}
+
+// destructor
+GDrawStyle::~GDrawStyle() {
 }
 
 // assignment operator
@@ -486,7 +489,6 @@ void GDrawStyle::SetStrokeWidth(const GReal Width) {
 		gModified |= G_DRAWSTYLE_STROKEWIDTH_MODIFIED;
 		gStrokeWidth = w;
 		gThickness = w * (GReal)0.5;
-		gMiterMulThickness = gStrokeMiterLimit * gThickness;
 	}
 }
 
@@ -497,7 +499,6 @@ void GDrawStyle::SetStrokeMiterLimit(const GReal MiterLimit) {
 	if (m != gStrokeMiterLimit) {
 		gModified |= G_DRAWSTYLE_STROKEMITERLIMIT_MODIFIED;
 		gStrokeMiterLimit = m;
-		gMiterMulThickness = gStrokeMiterLimit * gThickness;
 	}
 }
 

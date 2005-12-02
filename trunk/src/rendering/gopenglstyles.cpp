@@ -515,8 +515,39 @@ void GOpenGLPatternDesc::SetImage(const GPixelMap *Image, const GImageQuality Qu
 }
 
 // *********************************************************************
+//                          GOpenGLDrawStyle
+// *********************************************************************
+GOpenGLDrawStyle::GOpenGLDrawStyle() : GDrawStyle() {
+
+	gMiterMulThickness = StrokeMiterLimit() * StrokeThickness();
+}
+
+void GOpenGLDrawStyle::SetStrokeMiterLimit(const GReal MiterLimit) {
+
+	GDrawStyle::SetStrokeMiterLimit(MiterLimit);
+	gMiterMulThickness = StrokeMiterLimit() * StrokeThickness();
+}
+
+void GOpenGLDrawStyle::SetStrokeWidth(const GReal Width) {
+
+	GDrawStyle::SetStrokeWidth(Width);
+	gMiterMulThickness = StrokeMiterLimit() * StrokeThickness();
+}
+
+// *********************************************************************
 //                             GOpenGLBoard
 // *********************************************************************
+
+// create a draw style
+GDrawStyle *GOpenGLBoard::CreateDrawStyle() const {
+
+	GOpenGLDrawStyle *ds = new GOpenGLDrawStyle();
+
+	GReal dev = GMath::Clamp((GReal)0.5, G_EPSILON, ds->StrokeThickness() - (G_EPSILON * ds->StrokeThickness()));
+	ds->gRoundJoinAuxCoef = (GReal)1 / ((GReal)2 * GMath::Acos((GReal)1 - dev / ds->StrokeThickness()));
+
+	return ds;
+}
 
 // paint resources
 GGradientDesc *GOpenGLBoard::CreateLinearGradient(const GPoint2& StartPoint, const GPoint2& EndPoint,
@@ -677,7 +708,7 @@ void GOpenGLBoard::SetGLTextureMatrix(const GMatrix33& Matrix) {
 #endif
 }
 
-void GOpenGLBoard::UpdateStyle(GDrawStyle& Style) {
+void GOpenGLBoard::UpdateStyle(GOpenGLDrawStyle& Style) {
 
 	if (Style.StrokeEnabled()) {
 
@@ -712,6 +743,9 @@ void GOpenGLBoard::UpdateStyle(GDrawStyle& Style) {
 		// pattern image/texture is rebuilt on the fly with SetImage method
 		if (p)
 			p->gModified = 0;
+
+		GReal dev = GMath::Clamp(gFlateness, G_EPSILON, Style.StrokeThickness() - (G_EPSILON * Style.StrokeThickness()));
+		Style.gRoundJoinAuxCoef = (GReal)1 / ((GReal)2 * GMath::Acos((GReal)1 - dev / Style.StrokeThickness()));
 	}
 
 	if (Style.FillEnabled()) {

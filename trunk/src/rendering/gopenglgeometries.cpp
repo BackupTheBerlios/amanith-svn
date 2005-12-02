@@ -55,7 +55,7 @@ inline GFillBehavior FillRuleToBehavior(const GFillRule Rule) {
 	}
 }
 
-void GOpenGLBoard::DrawGLPolygon(const GDrawStyle& Style, const GBool ClosedFill, const GBool ClosedStroke,
+void GOpenGLBoard::DrawGLPolygon(const GOpenGLDrawStyle& Style, const GBool ClosedFill, const GBool ClosedStroke,
 								 const GJoinStyle FlattenJoinStyle, const GDynArray<GPoint2>& Points,
 								 const GBool Convex) {
 
@@ -68,57 +68,60 @@ void GOpenGLBoard::DrawGLPolygon(const GDrawStyle& Style, const GBool ClosedFill
 	GDynArray<GInt32> ptsPerContour;
 	GDynArray< GPoint<GDouble, 2> >::const_iterator it;
 	GDynArray<GPoint2>::const_iterator it2;
-	GUInt32 j;
+	GUInt32 j = 0;
 	GAABox2 box;
 
 	#define DRAW_FILL_DOUBLE \
-	if (!Convex) { \
-		glBegin(GL_TRIANGLES); \
-		for (it = triangles.begin(); it != triangles.end(); ++it) { \
-			glVertex2dv(it->Data()); \
-			it++; \
-			glVertex2dv(it->Data()); \
-			it++; \
-			glVertex2dv(it->Data()); \
+		if (!Convex) { \
+			if (j > 0) { \
+				glBegin(GL_TRIANGLES); \
+				for (it = triangles.begin(); it != triangles.end(); ++it) { \
+					glVertex2dv(it->Data()); \
+					it++; \
+					glVertex2dv(it->Data()); \
+					it++; \
+					glVertex2dv(it->Data()); \
+				} \
+				glEnd(); \
+			} \
 		} \
-		glEnd(); \
-	} \
-	else { \
-		glBegin(GL_POLYGON); \
-		for (it2 = Points.begin(); it2 != Points.end(); ++it2) { \
-			glVertex2dv(it2->Data()); \
-		} \
-		glEnd(); \
-	}
+		else { \
+			glBegin(GL_POLYGON); \
+			for (it2 = Points.begin(); it2 != Points.end(); ++it2) { \
+				glVertex2dv(it2->Data()); \
+			} \
+			glEnd(); \
+		}
 
 	#define DRAW_FILL_FLOAT \
-	if (!Convex) { \
-		glBegin(GL_TRIANGLES); \
-		for (it = triangles.begin(); it != triangles.end(); ++it) { \
-			glVertex2dv(it->Data()); \
-			it++; \
-			glVertex2dv(it->Data()); \
-			it++; \
-			glVertex2dv(it->Data()); \
+		if (!Convex) { \
+			if (j > 0) { \
+				glBegin(GL_TRIANGLES); \
+				for (it = triangles.begin(); it != triangles.end(); ++it) { \
+					glVertex2dv(it->Data()); \
+					it++; \
+					glVertex2dv(it->Data()); \
+					it++; \
+					glVertex2dv(it->Data()); \
+				} \
+				glEnd(); \
+			} \
 		} \
-		glEnd(); \
-	} \
-	else { \
-		glBegin(GL_POLYGON); \
-		for (it2 = Points.begin(); it2 != Points.end(); ++it2) { \
-			glVertex2fv(it2->Data()); \
-		} \
-		glEnd(); \
-	}
+		else { \
+			glBegin(GL_POLYGON); \
+			for (it2 = Points.begin(); it2 != Points.end(); ++it2) \
+				glVertex2fv(it2->Data()); \
+			glEnd(); \
+		}
 
 	#define DRAW_STROKE \
-	if (Style.StrokeStyle() == G_SOLID_STROKE) { \
-			DrawSolidStroke(Style.StrokeStartCapStyle(), Style.StrokeEndCapStyle(), \
-							FlattenJoinStyle, Style.StrokeMiterLimitMulThickness(), \
-							Points, ClosedStroke, Style.StrokeThickness()); \
-	} \
-	else \
-		DrawDashedStroke(Style, Points, ClosedStroke, Style.StrokeThickness());
+		if (Style.StrokeStyle() == G_SOLID_STROKE) { \
+				DrawSolidStroke(Style.StrokeStartCapStyle(), Style.StrokeEndCapStyle(), \
+								FlattenJoinStyle, Style.StrokeMiterLimitMulThickness(), \
+								Points.begin(), Points.end(), ClosedStroke, Style.StrokeThickness(), Style.gRoundJoinAuxCoef); \
+		} \
+		else \
+			DrawDashedStroke(Style, Points.begin(), Points.end(), ClosedStroke, Style.StrokeThickness(), Style.gRoundJoinAuxCoef);
 
 
 	if (ClosedFill) {
@@ -128,6 +131,8 @@ void GOpenGLBoard::DrawGLPolygon(const GDrawStyle& Style, const GBool ClosedFill
 			gTesselator.Tesselate(Points, ptsPerContour, triangles, box, FillRuleToBehavior(Style.FillRule()));
 			j = (GUInt32)triangles.size() / 3;
 			G_ASSERT((triangles.size() % 3) == 0);
+			if (j == 0)
+				box.SetMinMax(Points);
 		}
 		// else we must compute box directly
 		else
@@ -237,13 +242,162 @@ void GOpenGLBoard::DrawGLPolygon(const GDrawStyle& Style, const GBool ClosedFill
 	#undef DRAW_STROKE
 }
 
+void GOpenGLBoard::DrawGLPolygons(const GDynArray<GPoint2>& Points, const GDynArray<GInt32>& PointsPerContour,
+								  const GDynArray<GBool>& ClosedStrokes, const GOpenGLDrawStyle& Style) {
+
+	G_ASSERT(PointsPerContour.size() == ClosedStrokes.size());
+	G_ASSERT(PointsPerContour.size() > 0);
+	G_ASSERT(Points.size() > 0);
+
+	GBool doublePass = SetGLClipEnabled(TargetMode(), ClipOperation());
+	GDynArray< GPoint<GDouble, 2> > triangles;
+	GDynArray< GPoint<GDouble, 2> >::const_iterator itTriangles;
+	GUInt32 i, j;
+	Point2ConstIt itPts0, itPts1;
+	GAABox2 box;
+
+	#define DRAW_FILL \
+		j = (GUInt32)triangles.size() / 3; \
+		if (j > 0) { \
+			glBegin(GL_TRIANGLES); \
+			for (itTriangles = triangles.begin(); itTriangles != triangles.end(); ++itTriangles) { \
+				glVertex2dv(itTriangles->Data()); \
+				itTriangles++; \
+				glVertex2dv(itTriangles->Data()); \
+				itTriangles++; \
+				glVertex2dv(itTriangles->Data()); \
+			} \
+			glEnd(); \
+		}
+
+	#define DRAW_STROKE \
+		j = (GUInt32)PointsPerContour.size(); \
+		itPts0 = itPts1 = Points.begin(); \
+		if (Style.StrokeStyle() == G_SOLID_STROKE) { \
+			for (i = 0; i < j; ++i) { \
+				itPts1 += PointsPerContour[i]; \
+				if (PointsPerContour[i] == 2) { \
+					box.ExtendToInclude(*itPts0); \
+					box.ExtendToInclude(*(itPts0 + 1)); \
+				} \
+				DrawSolidStroke(Style.StrokeStartCapStyle(), Style.StrokeEndCapStyle(), \
+								Style.StrokeJoinStyle(), Style.StrokeMiterLimitMulThickness(), \
+								itPts0, itPts1, ClosedStrokes[i], Style.StrokeThickness(), Style.gRoundJoinAuxCoef); \
+				itPts0 = itPts1; \
+			} \
+		} \
+		else { \
+			for (i = 0; i < j; ++i) { \
+				itPts1 += PointsPerContour[i]; \
+				if (PointsPerContour[i] == 2) { \
+					box.ExtendToInclude(*itPts0); \
+					box.ExtendToInclude(*(itPts0 + 1)); \
+				} \
+				DrawDashedStroke(Style, itPts0, itPts1, ClosedStrokes[i], Style.StrokeThickness(), Style.gRoundJoinAuxCoef); \
+				itPts0 = itPts1; \
+			} \
+		} \
+
+	if (Style.FillEnabled())
+		// if not convex or have some degenerations (intersection, overlapping edges, etc) use tesselator
+		gTesselator.Tesselate(Points, PointsPerContour, triangles, box, FillRuleToBehavior(Style.FillRule()));
+	else
+		box.SetMinMax(Points);
+
+	if (TargetMode() == G_CLIP_MODE) {
+		// take care of replace operation (overflow)
+		ClipReplaceOverflowFix();
+
+		// draw fill
+		if (Style.FillEnabled()) {
+			DRAW_FILL
+		}
+		// draw stroke
+		if (Style.StrokeEnabled()) {
+			DRAW_STROKE
+		}
+		// take care of replace operation
+		UpdateClipMasksState();
+		// calculate bound box of the drawn clip mask
+		GPoint2 pMin(box.Min());
+		GPoint2 pMax(box.Max());
+		if (Style.StrokeEnabled()) {
+			pMin[G_X] -= Style.StrokeThickness();
+			pMin[G_Y] -= Style.StrokeThickness();
+			pMax[G_X] += Style.StrokeThickness();
+			pMax[G_Y] += Style.StrokeThickness();
+			box.SetMinMax(pMin, pMax);
+		}
+		gClipMasksBoxes.push_back(box);
+		return;
+	}
+
+	// in color mode, if we are inside a GroupBegin() / GroupEnd() constructor and group opacity is 0
+	// do not draw anything
+	if (InsideGroup() && gGroupOpacitySupport && GroupOpacity() <= 0)
+		return;
+
+	if (Style.FillEnabled()) {
+		// set fill style using OpenGL
+		GBool useDepth = UseFillStyle(Style);
+		// take care of group opacity, first we have to write into stencil buffer
+		if (doublePass) {
+			GroupFirstPass();
+			// draw fill
+			DRAW_FILL
+			StencilEnableTop();
+		}
+		if (useDepth)
+			PushDepthMask();
+		// draw fill
+		DRAW_FILL
+		// geometric radial gradient and transparent entities uses depth clip, so we must pop off clip mask
+		if (useDepth)
+			DrawAndPopDepthMask(box, Style, G_TRUE);
+	}
+
+	// take care to enable stencil test if necessary
+	SetGLClipEnabled(TargetMode(), ClipOperation());
+
+	if (Style.StrokeEnabled()) {
+		// set stroke style using OpenGL
+		GBool useDepth = UseStrokeStyle(Style);
+		// take care of group opacity, first we have to write into stencil buffer
+		if (doublePass) {
+			GroupFirstPass();
+			// draw stroke
+			DRAW_STROKE
+			StencilEnableTop();
+		}
+		if (useDepth)
+			PushDepthMask();
+		// draw stroke
+		DRAW_STROKE
+		// geometric radial gradient and transparent entities uses depth clip, so we must pop off clip mask
+		if (useDepth) {
+			GPoint2 pMin(box.Min());
+			GPoint2 pMax(box.Max());
+			pMin[G_X] -= Style.StrokeThickness();
+			pMin[G_Y] -= Style.StrokeThickness();
+			pMax[G_X] += Style.StrokeThickness();
+			pMax[G_Y] += Style.StrokeThickness();
+			box.SetMinMax(pMin, pMax);
+			DrawAndPopDepthMask(box, Style, G_FALSE);
+		}
+	}
+	#undef DRAW_FILL
+	#undef DRAW_STROKE
+}
+
 void GOpenGLBoard::DoDrawLine(GDrawStyle& Style, const GPoint2& P0, const GPoint2& P1) {
 
 	if (Distance(P0, P1) <= G_EPSILON)
 		return;
 
+	GOpenGLDrawStyle &s = (GOpenGLDrawStyle &)Style;
+
 	// update style
-	UpdateStyle(Style);
+	UpdateStyle(s);
 	GBool doublePass = SetGLClipEnabled(TargetMode(), ClipOperation());
 
 	if (TargetMode() == G_CLIP_MODE) {
@@ -253,12 +407,12 @@ void GOpenGLBoard::DoDrawLine(GDrawStyle& Style, const GPoint2& P0, const GPoint
 
 		// draw line segment
 		if (Style.StrokeStyle() == G_SOLID_STROKE)
-			DrawGLCapsLine(G_TRUE, Style.StrokeStartCapStyle(), G_TRUE, Style.StrokeEndCapStyle(), P0, P1, Style.StrokeThickness());
+			DrawGLCapsLine(G_TRUE, s.StrokeStartCapStyle(), G_TRUE, s.StrokeEndCapStyle(), P0, P1, s.StrokeThickness(), s.gRoundJoinAuxCoef);
 		else {
 			GDynArray<GPoint2> pts(2);
 			pts[0] = P0;
 			pts[1] = P1;
-			DrawDashedStroke(Style, pts, G_FALSE, Style.StrokeThickness());
+			DrawDashedStroke(s, pts.begin(), pts.end(), G_FALSE, s.StrokeThickness(), s.gRoundJoinAuxCoef);
 		}
 		// take care of replace operation
 		UpdateClipMasksState();
@@ -268,10 +422,10 @@ void GOpenGLBoard::DoDrawLine(GDrawStyle& Style, const GPoint2& P0, const GPoint
 		GPoint2 pMin(tmpBox.Min());
 		GPoint2 pMax(tmpBox.Max());
 
-		pMin[G_X] -= Style.StrokeThickness();
-		pMin[G_Y] -= Style.StrokeThickness();
-		pMax[G_X] += Style.StrokeThickness();
-		pMax[G_Y] += Style.StrokeThickness();
+		pMin[G_X] -= s.StrokeThickness();
+		pMin[G_Y] -= s.StrokeThickness();
+		pMax[G_X] += s.StrokeThickness();
+		pMax[G_Y] += s.StrokeThickness();
 		tmpBox.SetMinMax(pMin, pMax);
 		gClipMasksBoxes.push_back(tmpBox);
 		return;
@@ -283,7 +437,7 @@ void GOpenGLBoard::DoDrawLine(GDrawStyle& Style, const GPoint2& P0, const GPoint
 		return;
 
 	// set stroke style using OpenGL
-	GBool useDepth = UseStrokeStyle(Style);
+	GBool useDepth = UseStrokeStyle(s);
 
 	// take care of group opacity, first we have to write into stencil buffer
 	if (doublePass) {
@@ -291,12 +445,12 @@ void GOpenGLBoard::DoDrawLine(GDrawStyle& Style, const GPoint2& P0, const GPoint
 		GroupFirstPass();
 
 		if (Style.StrokeStyle() == G_SOLID_STROKE)
-			DrawGLCapsLine(G_TRUE, Style.StrokeStartCapStyle(), G_TRUE, Style.StrokeEndCapStyle(), P0, P1, Style.StrokeThickness());
+			DrawGLCapsLine(G_TRUE, s.StrokeStartCapStyle(), G_TRUE, s.StrokeEndCapStyle(), P0, P1, s.StrokeThickness(), s.gRoundJoinAuxCoef);
 		else {
 			GDynArray<GPoint2> pts(2);
 			pts[0] = P0;
 			pts[1] = P1;
-			DrawDashedStroke(Style, pts, G_FALSE, Style.StrokeThickness());
+			DrawDashedStroke(s, pts.begin(), pts.end(), G_FALSE, s.StrokeThickness(), s.gRoundJoinAuxCoef);
 		}
 		StencilEnableTop();
 	}
@@ -306,12 +460,12 @@ void GOpenGLBoard::DoDrawLine(GDrawStyle& Style, const GPoint2& P0, const GPoint
 
 	// draw line segment
 	if (Style.StrokeStyle() == G_SOLID_STROKE)
-		DrawGLCapsLine(G_TRUE, Style.StrokeStartCapStyle(), G_TRUE, Style.StrokeEndCapStyle(), P0, P1, Style.StrokeThickness());
+		DrawGLCapsLine(G_TRUE, s.StrokeStartCapStyle(), G_TRUE, s.StrokeEndCapStyle(), P0, P1, s.StrokeThickness(), s.gRoundJoinAuxCoef);
 	else {
 		GDynArray<GPoint2> pts(2);
 		pts[0] = P0;
 		pts[1] = P1;
-		DrawDashedStroke(Style, pts, G_FALSE, Style.StrokeThickness());
+		DrawDashedStroke(s, pts.begin(), pts.end(), G_FALSE, s.StrokeThickness(), s.gRoundJoinAuxCoef);
 	}
 
 	// geometric radial/conical gradient and transparent entities uses depth clip, so we must pop off clip mask
@@ -321,12 +475,12 @@ void GOpenGLBoard::DoDrawLine(GDrawStyle& Style, const GPoint2& P0, const GPoint
 		GPoint2 pMin(tmpBox.Min());
 		GPoint2 pMax(tmpBox.Max());
 
-		pMin[G_X] -= Style.StrokeThickness();
-		pMin[G_Y] -= Style.StrokeThickness();
-		pMax[G_X] += Style.StrokeThickness();
-		pMax[G_Y] += Style.StrokeThickness();
+		pMin[G_X] -= s.StrokeThickness();
+		pMin[G_Y] -= s.StrokeThickness();
+		pMax[G_X] += s.StrokeThickness();
+		pMax[G_Y] += s.StrokeThickness();
 		tmpBox.SetMinMax(pMin, pMax);
-		DrawAndPopDepthMask(tmpBox, Style, G_FALSE);
+		DrawAndPopDepthMask(tmpBox, s, G_FALSE);
 	}
 }
 
@@ -348,9 +502,9 @@ void GOpenGLBoard::DoDrawRectangle(GDrawStyle& Style, const GPoint2& MinCorner, 
 	pts[3].Set(MaxCorner[G_X], MinCorner[G_Y]);
 
 	// update style
-	UpdateStyle(Style);
+	UpdateStyle((GOpenGLDrawStyle&)Style);
 	// draw polyline
-	DrawGLPolygon(Style, Style.FillEnabled(), G_TRUE, Style.StrokeJoinStyle(), pts, G_TRUE);
+	DrawGLPolygon((const GOpenGLDrawStyle&)Style, Style.FillEnabled(), G_TRUE, Style.StrokeJoinStyle(), pts, G_TRUE);
 }
 
 void GOpenGLBoard::DoDrawRoundRectangle(GDrawStyle& Style, const GPoint2& MinCorner, const GPoint2& MaxCorner,
@@ -428,9 +582,9 @@ void GOpenGLBoard::DoDrawRoundRectangle(GDrawStyle& Style, const GPoint2& MinCor
 	}
 
 	// update style
-	UpdateStyle(Style);
+	UpdateStyle((GOpenGLDrawStyle&)Style);
 	// draw polyline
-	DrawGLPolygon(Style, Style.FillEnabled(), G_TRUE, G_BEVEL_JOIN, pts, G_TRUE);
+	DrawGLPolygon((const GOpenGLDrawStyle&)Style, Style.FillEnabled(), G_TRUE, G_BEVEL_JOIN, pts, G_TRUE);
 }
 
 void GOpenGLBoard::DoDrawBezier(GDrawStyle& Style, const GPoint2& P0, const GPoint2& P1, const GPoint2& P2) {
@@ -443,9 +597,9 @@ void GOpenGLBoard::DoDrawBezier(GDrawStyle& Style, const GPoint2& P0, const GPoi
 	bez.Flatten(pts, gDeviation, G_TRUE);
 
 	// update style
-	UpdateStyle(Style);
+	UpdateStyle((GOpenGLDrawStyle&)Style);
 	// draw polyline
-	DrawGLPolygon(Style, Style.FillEnabled(), G_FALSE, G_BEVEL_JOIN, pts, G_TRUE);
+	DrawGLPolygon((const GOpenGLDrawStyle&)Style, Style.FillEnabled(), G_FALSE, G_BEVEL_JOIN, pts, G_TRUE);
 }
 
 void GOpenGLBoard::DoDrawBezier(GDrawStyle& Style, const GPoint2& P0, const GPoint2& P1, const GPoint2& P2, const GPoint2& P3) {
@@ -458,9 +612,9 @@ void GOpenGLBoard::DoDrawBezier(GDrawStyle& Style, const GPoint2& P0, const GPoi
 	bez.Flatten(pts, gDeviation, G_TRUE);
 
 	// update style
-	UpdateStyle(Style);
+	UpdateStyle((GOpenGLDrawStyle&)Style);
 	// draw polyline
-	DrawGLPolygon(Style, Style.FillEnabled(), G_FALSE, Style.StrokeJoinStyle(), pts, G_FALSE);
+	DrawGLPolygon((const GOpenGLDrawStyle&)Style, Style.FillEnabled(), G_FALSE, Style.StrokeJoinStyle(), pts, G_FALSE);
 }
 
 void GOpenGLBoard::DoDrawEllipseArc(GDrawStyle& Style, const GPoint2& Center, const GReal XSemiAxisLength,
@@ -475,9 +629,9 @@ void GOpenGLBoard::DoDrawEllipseArc(GDrawStyle& Style, const GPoint2& Center, co
 	ellipse.Flatten(pts, gDeviation, G_TRUE);
 
 	// update style
-	UpdateStyle(Style);
+	UpdateStyle((GOpenGLDrawStyle&)Style);
 	// draw polyline
-	DrawGLPolygon(Style, Style.FillEnabled(), G_FALSE, G_BEVEL_JOIN, pts, G_TRUE);
+	DrawGLPolygon((const GOpenGLDrawStyle&)Style, Style.FillEnabled(), G_FALSE, G_BEVEL_JOIN, pts, G_TRUE);
 }
 
 void GOpenGLBoard::DoDrawEllipseArc(GDrawStyle& Style, const GPoint2& P0, const GPoint2& P1, const GReal XSemiAxisLength, const GReal YSemiAxisLength,
@@ -491,9 +645,9 @@ void GOpenGLBoard::DoDrawEllipseArc(GDrawStyle& Style, const GPoint2& P0, const 
 	ellipse.Flatten(pts, gDeviation, G_TRUE);
 
 	// update style
-	UpdateStyle(Style);
+	UpdateStyle((GOpenGLDrawStyle&)Style);
 	// draw polyline
-	DrawGLPolygon(Style, Style.FillEnabled(), G_FALSE, G_BEVEL_JOIN, pts, G_TRUE);
+	DrawGLPolygon((const GOpenGLDrawStyle&)Style, Style.FillEnabled(), G_FALSE, G_BEVEL_JOIN, pts, G_TRUE);
 }
 
 // here we are sure that semi-axes lengths are greater than 0
@@ -528,9 +682,9 @@ void GOpenGLBoard::DoDrawEllipse(GDrawStyle& Style, const GPoint2& Center, const
 	}
 
 	// update style
-	UpdateStyle(Style);
+	UpdateStyle((GOpenGLDrawStyle&)Style);
 	// draw polygon
-	DrawGLPolygon(Style, Style.FillEnabled(), G_TRUE, G_BEVEL_JOIN, pts, G_TRUE);
+	DrawGLPolygon((const GOpenGLDrawStyle&)Style, Style.FillEnabled(), G_TRUE, G_BEVEL_JOIN, pts, G_TRUE);
 }
 
 // here we are sure that Radius is greater than 0
@@ -560,17 +714,17 @@ void GOpenGLBoard::DoDrawCircle(GDrawStyle& Style, const GPoint2& Center, const 
 	}
 
 	// update style
-	UpdateStyle(Style);
+	UpdateStyle((GOpenGLDrawStyle&)Style);
 	// draw polygon
-	DrawGLPolygon(Style, Style.FillEnabled(), G_TRUE, G_BEVEL_JOIN, pts, G_TRUE);
+	DrawGLPolygon((const GOpenGLDrawStyle&)Style, Style.FillEnabled(), G_TRUE, G_BEVEL_JOIN, pts, G_TRUE);
 }
 
 void GOpenGLBoard::DoDrawPolygon(GDrawStyle& Style, const GDynArray<GPoint2>& Points, const GBool Closed) {
 
 	// update style
-	UpdateStyle(Style);
+	UpdateStyle((GOpenGLDrawStyle&)Style);
 	// draw polygon
-	DrawGLPolygon(Style, Style.FillEnabled(), Closed, Style.StrokeJoinStyle(), Points, G_FALSE);
+	DrawGLPolygon((const GOpenGLDrawStyle&)Style, Style.FillEnabled(), Closed, Style.StrokeJoinStyle(), Points, G_FALSE);
 }
 
 void GOpenGLBoard::DoDrawPath(GDrawStyle& Style, const GCurve2D& Curve) {
@@ -578,21 +732,311 @@ void GOpenGLBoard::DoDrawPath(GDrawStyle& Style, const GCurve2D& Curve) {
 	GDynArray<GPoint2> pts;
 
 	// update style
-	UpdateStyle(Style);
+	UpdateStyle((GOpenGLDrawStyle&)Style);
 
 	if (Curve.ClassID() != G_PATH2D_CLASSID && !Curve.IsOfType(G_PATH2D_CLASSID)) {
 		// flatten the curve
 		Curve.Flatten(pts, gDeviation, G_TRUE);
 		// draw polyline
-		DrawGLPolygon(Style, Style.FillEnabled(), G_FALSE, Style.StrokeJoinStyle(), pts, G_FALSE);
+		DrawGLPolygon((const GOpenGLDrawStyle&)Style, Style.FillEnabled(), G_FALSE, Style.StrokeJoinStyle(), pts, G_FALSE);
 	}
 	else {
 		const GPath2D& p = (const GPath2D&)Curve;
 		// flatten the curve
 		p.Flatten(pts, gDeviation, G_TRUE);
 		// draw polyline
-		DrawGLPolygon(Style, Style.FillEnabled(), p.IsClosed(), Style.StrokeJoinStyle(), pts, G_FALSE);
+		DrawGLPolygon((const GOpenGLDrawStyle&)Style, Style.FillEnabled(), p.IsClosed(), Style.StrokeJoinStyle(), pts, G_FALSE);
 	}
 }
+
+// here we are sure that we have at least one curve
+void GOpenGLBoard::DoDrawPaths(GDrawStyle& Style, const GDynArray<GCurve2D *>& Curves) {
+
+	GOpenGLDrawStyle& s = (GOpenGLDrawStyle&)Style;
+	GDynArray<GPoint2> pts;
+	GDynArray<GInt32> ptsPerContour;
+	GInt32 oldSize, newSize;
+	GDynArray<GCurve2D *>::const_iterator itCurves = Curves.begin();
+	GDynArray<GBool> closedStroke;
+	GCurve2D *c;
+
+	oldSize = newSize = 0;
+	ptsPerContour.reserve(Curves.size());
+	closedStroke.reserve(Curves.size());
+
+	for (; itCurves != Curves.end(); ++itCurves) {
+		c = *itCurves;
+		if (c && c->PointsCount() > 1) {
+			c->Flatten(pts, gDeviation, G_TRUE);
+			newSize = (GInt32)pts.size();
+			ptsPerContour.push_back(newSize - oldSize);
+			if (c->ClassID() != G_PATH2D_CLASSID && !c->IsOfType(G_PATH2D_CLASSID))
+				closedStroke.push_back(G_FALSE);
+			else {
+				GPath2D* p = (GPath2D *)(c);
+				closedStroke.push_back(p->IsClosed());
+			}
+			oldSize = newSize;
+		}
+	}
+
+	// empty contours, or 1 point contour, lets exit immediately
+	if (pts.size() < 2)
+		return;
+
+	// update style
+	UpdateStyle(s);
+	// draw polygons
+	DrawGLPolygons(pts, ptsPerContour, closedStroke, s);
+}
+
+
+// SVG-like path commands
+void GOpenGLBoard::BeginPaths() {
+
+	if (!gInsideSVGPaths) {
+		gSVGPathPoints.clear();
+		gSVGPathPointsPerContour.clear();
+		gSVGPathClosedStrokes.clear();
+		gOldPointsSize = 0;
+		gInsideSVGPaths = G_TRUE;
+		gInsideSVGPath = G_FALSE;
+	}
+}
+
+// begin a sub-path
+void GOpenGLBoard::MoveTo(const GPoint2& P, const GBool Relative) {
+
+	GInt32 newSize = (GInt32)gSVGPathPoints.size();
+	
+	// close a potentially pending path
+	if (newSize != gOldPointsSize && gInsideSVGPaths) {
+
+		gSVGPathPoints.push_back(gSVGPathCursor);
+
+		newSize = (GInt32)gSVGPathPoints.size();
+		gSVGPathPointsPerContour.push_back(newSize - gOldPointsSize);
+		gOldPointsSize = newSize;
+		gSVGPathClosedStrokes.push_back(G_FALSE);
+	}
+
+	if (gInsideSVGPaths)
+		gInsideSVGPath = G_TRUE;
+
+	if (Relative)
+		gSVGPathCursor += P;
+	else
+		gSVGPathCursor = P;
+
+	gFirstPathPoint = gLastCurveCP = gSVGPathCursor;
+}
+
+// draw a line
+void GOpenGLBoard::LineTo(const GPoint2& P, const GBool Relative) {
+
+	if (!gInsideSVGPaths || !gInsideSVGPath)
+		return;
+
+	gLastCurveCP = gSVGPathCursor;
+	gSVGPathPoints.push_back(gSVGPathCursor);
+	if (Relative)
+		gSVGPathCursor += P;
+	else
+		gSVGPathCursor = P;
+}
+
+// draw an horizontal line
+void GOpenGLBoard::HorizontalLineTo(const GReal X, const GBool Relative) {
+
+	if (!gInsideSVGPaths || !gInsideSVGPath)
+		return;
+
+	gLastCurveCP = gSVGPathCursor;
+	gSVGPathPoints.push_back(gSVGPathCursor);
+	if (Relative)
+		gSVGPathCursor[G_X] += X;
+	else
+		gSVGPathCursor[G_X] = X;
+}
+
+// draw a vertical line
+void GOpenGLBoard::VerticalLineTo(const GReal Y, const GBool Relative) {
+
+	if (!gInsideSVGPaths || !gInsideSVGPath)
+		return;
+
+	gLastCurveCP = gSVGPathCursor;
+	gSVGPathPoints.push_back(gSVGPathCursor);
+	if (Relative)
+		gSVGPathCursor[G_Y] += Y;
+	else
+		gSVGPathCursor[G_Y] = Y;
+}
+
+// draw a cubic Bezier curve
+void GOpenGLBoard::CurveTo(const GPoint2& P1, const GPoint2& P2, const GPoint2& P, const GBool Relative) {
+
+	if (!gInsideSVGPaths || !gInsideSVGPath)
+		return;
+
+	GBezierCurve2D bez;
+
+	if (Relative) {
+		bez.SetPoints(gSVGPathCursor, gSVGPathCursor + P1, gSVGPathCursor + P2, gSVGPathCursor + P);
+		gSVGPathCursor += P;
+		gLastCurveCP = gSVGPathCursor + P2;
+	}
+	else {
+		bez.SetPoints(gSVGPathCursor, P1, P2, P);
+		gSVGPathCursor = P;
+		gLastCurveCP = P2;
+	}
+	bez.Flatten(gSVGPathPoints, gDeviation, G_FALSE);
+}
+
+// draw a quadratic Bezier curve
+void GOpenGLBoard::CurveTo(const GPoint2& P1, const GPoint2& P, const GBool Relative) {
+
+	if (!gInsideSVGPaths || !gInsideSVGPath)
+		return;
+
+	GBezierCurve2D bez;
+
+	if (Relative) {
+		bez.SetPoints(gSVGPathCursor, gSVGPathCursor + P1, gSVGPathCursor + P);
+		gSVGPathCursor += P;
+		gLastCurveCP = gSVGPathCursor + P1;
+	}
+	else {
+		bez.SetPoints(gSVGPathCursor, P1, P);
+		gSVGPathCursor = P;
+		gLastCurveCP = P1;
+	}
+	bez.Flatten(gSVGPathPoints, gDeviation, G_FALSE);
+}
+
+// draw a cubic Bezier curve using smooth tangent
+void GOpenGLBoard::SmoothCurveTo(const GPoint2& P2, const GPoint2& P, const GBool Relative) {
+
+	if (!gInsideSVGPaths || !gInsideSVGPath)
+		return;
+
+	GBezierCurve2D bez;
+
+	// calculate reflected point
+	GVector2 dir = gSVGPathCursor - gLastCurveCP;
+	GPoint2 p1 = gSVGPathCursor + dir;
+
+	if (Relative) {
+		bez.SetPoints(gSVGPathCursor, p1, gSVGPathCursor + P2, gSVGPathCursor + P);
+		gSVGPathCursor += P;
+	}
+	else {
+		bez.SetPoints(gSVGPathCursor, p1, P2, P);
+		gSVGPathCursor = P;
+	}
+	gLastCurveCP = P2;
+	bez.Flatten(gSVGPathPoints, gDeviation, G_FALSE);
+}
+
+// draw a quadratic Bezier curve using smooth tangent
+void GOpenGLBoard::SmoothCurveTo(const GPoint2& P, const GBool Relative) {
+
+	if (!gInsideSVGPaths || !gInsideSVGPath)
+		return;
+
+	GBezierCurve2D bez;
+
+	// calculate reflected point
+	GVector2 dir = gSVGPathCursor - gLastCurveCP;
+	GPoint2 p1 = gSVGPathCursor + dir;
+
+	if (Relative) {
+		bez.SetPoints(gSVGPathCursor, p1, gSVGPathCursor + P);
+		gSVGPathCursor += P;
+	}
+	else {
+		bez.SetPoints(gSVGPathCursor, p1, P);
+		gSVGPathCursor = P;
+	}
+	gLastCurveCP = p1;
+	bez.Flatten(gSVGPathPoints, gDeviation, G_FALSE);
+}
+
+// draw an elliptical arc
+void GOpenGLBoard::EllipticalArcTo(const GReal Rx, const GReal Ry, const GReal XRot, const GBool LargeArc,
+								   const GBool Sweep, const GPoint2& P, const GBool Relative) {
+
+	if (!gInsideSVGPaths || !gInsideSVGPath)
+		return;
+
+	GEllipseCurve2D ellipse;
+
+	if (Relative)
+		ellipse.SetEllipse(gSVGPathCursor, gSVGPathCursor + P, Rx, Ry, XRot, LargeArc, Sweep);
+	else
+		ellipse.SetEllipse(gSVGPathCursor, P, Rx, Ry, XRot, LargeArc, Sweep);
+
+	ellipse.Flatten(gSVGPathPoints, gDeviation, G_FALSE);
+	if (Relative)
+		gSVGPathCursor += P;
+	else
+		gSVGPathCursor = P;
+
+	gLastCurveCP = gSVGPathPoints.back();
+}
+
+// close current sub-path
+void GOpenGLBoard::ClosePath() {
+
+	if (!gInsideSVGPaths || !gInsideSVGPath)
+		return;
+
+	if (Distance(gSVGPathCursor, gFirstPathPoint) > G_EPSILON)
+		gSVGPathPoints.push_back(gSVGPathCursor);
+
+	GInt32 newSize = (GInt32)gSVGPathPoints.size();
+	
+	gSVGPathPointsPerContour.push_back(newSize - gOldPointsSize);
+	gOldPointsSize = newSize;
+	gSVGPathClosedStrokes.push_back(G_TRUE);
+	gInsideSVGPath = G_FALSE;
+}
+
+void GOpenGLBoard::EndPaths() {
+
+	if (!gInsideSVGPaths)
+		return;
+
+	gInsideSVGPaths = G_FALSE;
+	//if (!gInsideSVGPath)
+	//	return;
+
+	GInt32 newSize = (GInt32)gSVGPathPoints.size();
+
+	// close a potentially pending path
+	if (newSize != gOldPointsSize) {
+
+		//if (Distance(gSVGPathCursor, gFirstPathPoint) > G_EPSILON)
+		gSVGPathPoints.push_back(gSVGPathCursor);
+
+		newSize = (GInt32)gSVGPathPoints.size();
+
+		gSVGPathPointsPerContour.push_back(newSize - gOldPointsSize);
+		gOldPointsSize = newSize;
+		gSVGPathClosedStrokes.push_back(G_FALSE);
+	}
+
+	// empty contours, or 1 point contour, lets exit immediately
+	if (gSVGPathPoints.size() < 2)
+		return;
+
+	GOpenGLDrawStyle *s = (GOpenGLDrawStyle *)CurrentStyle();
+	// update style
+	UpdateStyle(*s);
+	// draw polygons
+	DrawGLPolygons(gSVGPathPoints, gSVGPathPointsPerContour, gSVGPathClosedStrokes, *s);
+}
+
 
 };	// end namespace Amanith

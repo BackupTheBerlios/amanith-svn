@@ -191,6 +191,8 @@ GOpenGLBoard::GOpenGLBoard(const GUInt32 LowLeftCornerX, const GUInt32 LowLeftCo
 	gExtManager = new(std::nothrow) GOpenglExt();
 	GUInt32 stencilBits = gExtManager->StencilBits();
 
+	InitDrawStyle();
+
 	// verify if we can clip using stencil buffer
 	if (stencilBits >= 8) {
 		gClipByStencil = G_TRUE;
@@ -263,14 +265,15 @@ GOpenGLBoard::GOpenGLBoard(const GUInt32 LowLeftCornerX, const GUInt32 LowLeftCo
 	glDisable(GL_TEXTURE_GEN_T);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-
 	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE);
-
 	glTexEnvi(GL_TEXTURE_ENV, GL_OPERAND0_RGB, GL_SRC_COLOR);
 	glTexEnvi(GL_TEXTURE_ENV, GL_OPERAND0_ALPHA, GL_SRC_ALPHA);
-
 	glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB, GL_REPLACE);
 	glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_ALPHA, GL_REPLACE);
+
+	gOldPointsSize = 0;
+	gInsideSVGPath = G_FALSE;
+	gInsideSVGPath = G_FALSE;
 }
 
 GOpenGLBoard::~GOpenGLBoard() {

@@ -382,7 +382,7 @@ void GOpenGLBoard::DrawGLConicalSector(const GPoint2& Center, const GVector2& Di
 		}
 	}
 	else {
-		GReal t0, t1, spanAngle0, spanAngle1;
+		GReal t0, t1, spanAngle0, spanAngle1 = 0;
 		GInt32 i0, i1;
 		// perpendicular direction in CCW respect to DirCenterTarget
 		GVector2 perpDirCT(-DirCenterTarget[G_Y], DirCenterTarget[G_X]);

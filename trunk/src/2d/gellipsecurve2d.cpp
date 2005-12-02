@@ -283,21 +283,21 @@ GError GEllipseCurve2D::SetEllipse(const GPoint2& P0, const GPoint2& P1,
 		if (cross0 < 0) {
 			if (CCW) {
 				// ellipse cc0
-				SetEllipse(cc0, XSemiAxisLength, YSemiAxisLength, OffsetRotation, theta0, theta1, G_TRUE);
+				SetEllipse(cc0, XSemiAxisLength * gf, YSemiAxisLength * gf, OffsetRotation, theta0, theta1, G_TRUE);
 			}
 			else {
 				// ellipse cc1 (to do: invert domain)
-				SetEllipse(cc1, XSemiAxisLength, YSemiAxisLength, OffsetRotation, theta2, theta3, G_FALSE);
+				SetEllipse(cc1, XSemiAxisLength * gf, YSemiAxisLength * gf, OffsetRotation, theta2, theta3, G_FALSE);
 			}
 		}
 		else {
 			if (CCW) {
 				// ellipse cc1
-				SetEllipse(cc1, XSemiAxisLength, YSemiAxisLength, OffsetRotation, theta2, theta3, G_TRUE);
+				SetEllipse(cc1, XSemiAxisLength * gf, YSemiAxisLength * gf, OffsetRotation, theta2, theta3, G_TRUE);
 			}
 			else {
 				// ellipse cc0
-				SetEllipse(cc0, XSemiAxisLength, YSemiAxisLength, OffsetRotation, theta0, theta1, G_FALSE);
+				SetEllipse(cc0, XSemiAxisLength * gf, YSemiAxisLength * gf, OffsetRotation, theta0, theta1, G_FALSE);
 			}
 		}
 	}
@@ -305,21 +305,21 @@ GError GEllipseCurve2D::SetEllipse(const GPoint2& P0, const GPoint2& P1,
 		if (cross0 > 0) {
 			if (CCW) {
 				// ellipse cc0
-				SetEllipse(cc0, XSemiAxisLength, YSemiAxisLength, OffsetRotation, theta0, theta1, G_TRUE);
+				SetEllipse(cc0, XSemiAxisLength * gf, YSemiAxisLength * gf, OffsetRotation, theta0, theta1, G_TRUE);
 			}
 			else {
 				// ellipse cc1
-				SetEllipse(cc1, XSemiAxisLength, YSemiAxisLength, OffsetRotation, theta2, theta3, G_FALSE);
+				SetEllipse(cc1, XSemiAxisLength * gf, YSemiAxisLength * gf, OffsetRotation, theta2, theta3, G_FALSE);
 			}
 		}
 		else {
 			if (CCW) {
 				// ellipse cc1
-				SetEllipse(cc1, XSemiAxisLength, YSemiAxisLength, OffsetRotation, theta2, theta3, G_TRUE);
+				SetEllipse(cc1, XSemiAxisLength * gf, YSemiAxisLength * gf, OffsetRotation, theta2, theta3, G_TRUE);
 			}
 			else {
 				// ellipse cc0 (to do: invert domain)
-				SetEllipse(cc0, XSemiAxisLength, YSemiAxisLength, OffsetRotation, theta0, theta1, G_FALSE);
+				SetEllipse(cc0, XSemiAxisLength * gf, YSemiAxisLength * gf, OffsetRotation, theta0, theta1, G_FALSE);
 			}
 		}
 	}

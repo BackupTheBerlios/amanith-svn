@@ -278,7 +278,6 @@ namespace Amanith {
 		// stroke parameters
 		GReal gStrokeWidth;
 		GReal gThickness;  // defined as stroke_width / 2
-		GReal gMiterMulThickness; // defined as Miter * Thickness
 		GReal gStrokeMiterLimit;
 		GCapStyle gStrokeStartCapStyle;
 		GCapStyle gStrokeEndCapStyle;
@@ -310,10 +309,31 @@ namespace Amanith {
 
 	protected:
 		void UpdateOffsettedDashPattern();
+		// set stroke modified bit flags
+		void SetStrokeWidthModified(const GBool Modified);
+		void SetStrokeMiterLimitModified(const GBool Modified);
+		void SetStrokeStartCapStyleModified(const GBool Modified);
+		void SetStrokeEndCapStyleModified(const GBool Modified);
+		void SetStrokeJoinStyleModified(const GBool Modified);
+		void SetStrokePaintTypeModified(const GBool Modified);
+		void SetStrokeStyleModified(const GBool Modified);
+		void SetStrokeColorModified(const GBool Modified);
+		void SetStrokeDashPatternModified(const GBool Modified);
+		void SetStrokeDashPhaseModified(const GBool Modified);
+		void SetStrokeEnabledModified(const GBool Modified);
+		// set fill modified bit flags
+		void SetFillRuleModified(const GBool Modified);
+		void SetFillPaintTypeModified(const GBool Modified);
+		void SetFillColorModified(const GBool Modified);
+		void SetFillEnabledModified(const GBool Modified);
+		// set model-view modified bit flag
+		void SetModelViewModified(const GBool Modified);
 
 	public:
 		// default constructor
 		GDrawStyle();
+		// destructor
+		virtual ~GDrawStyle();
 		// assignment operator
 		GDrawStyle& operator =(const GDrawStyle& Source);
 		// get stroke width
@@ -321,7 +341,7 @@ namespace Amanith {
 			return gStrokeWidth;
 		}
 		// set stroke width
-		void SetStrokeWidth(const GReal Width);
+		virtual void SetStrokeWidth(const GReal Width);
 		// get stroke thickness (half stroke width)
 		inline GReal StrokeThickness() const {
 			return gThickness;
@@ -330,42 +350,38 @@ namespace Amanith {
 		inline GReal StrokeMiterLimit() const {
 			return gStrokeMiterLimit;
 		}
-		// get Miterlimit * Thickness
-		inline GReal StrokeMiterLimitMulThickness() const {
-			return gMiterMulThickness;
-		}
 		// set stroke miter limit
-		void SetStrokeMiterLimit(const GReal MiterLimit);
+		virtual void SetStrokeMiterLimit(const GReal MiterLimit);
 		// get stroke start cap style
 		inline GCapStyle StrokeStartCapStyle() const {
 			return gStrokeStartCapStyle;
 		}
 		// set stroke start cap style
-		void SetStrokeStartCapStyle(const GCapStyle CapStyle);
+		virtual void SetStrokeStartCapStyle(const GCapStyle CapStyle);
 		// get stroke end cap style
 		inline GCapStyle StrokeEndCapStyle() const {
 			return gStrokeEndCapStyle;
 		}
 		// set stroke end cap style
-		void SetStrokeEndCapStyle(const GCapStyle CapStyle);
+		virtual void SetStrokeEndCapStyle(const GCapStyle CapStyle);
 		// get stroke join style
 		inline GJoinStyle StrokeJoinStyle() const {
 			return gStrokeJoinStyle;
 		}
 		// set stroke join style
-		void SetStrokeJoinStyle(const GJoinStyle JoinStyle);
+		virtual void SetStrokeJoinStyle(const GJoinStyle JoinStyle);
 		// get stroke paint type
 		inline GPaintType StrokePaintType() const {
 			return gStrokePaintType;
 		}
 		// set stroke paint type
-		void SetStrokePaintType(const GPaintType Type);
+		virtual void SetStrokePaintType(const GPaintType Type);
 		// get stroke color
 		inline const GVectBase<GReal, 4>& StrokeColor() const {
 			return gStrokeColor;
 		}
 		// set stroke color
-		void SetStrokeColor(const GVectBase<GReal, 4>& Color);
+		virtual void SetStrokeColor(const GVectBase<GReal, 4>& Color);
 		// get stroke gradient settings
 		inline GGradientDesc* StrokeGradient() const {
 			return gStrokeGradientDesc;
@@ -387,43 +403,43 @@ namespace Amanith {
 			return gStrokeStyle;
 		}
 		// set stroke style
-		void SetStrokeStyle(const GStrokeStyle Style);
+		virtual void SetStrokeStyle(const GStrokeStyle Style);
 		// get stroke dash pattern
 		inline const GDynArray<GReal>& StrokeDashPattern() const {
 			return gStrokeDashPattern;
 		}
 		// set stroke dash pattern
-		void SetStrokeDashPattern(const GDynArray<GReal> DashPattern);
+		virtual void SetStrokeDashPattern(const GDynArray<GReal> DashPattern);
 		// get stroke dash phase
 		inline GReal StrokeDashPhase() const {
 			return gStrokeDashPhase;
 		}
 		// set stroke dash phase
-		void SetStrokeDashPhase(const GReal DashPhase);
+		virtual void SetStrokeDashPhase(const GReal DashPhase);
 		// get stroke enabled
 		inline GBool StrokeEnabled() const {
 			return gStrokeEnabled;
 		}
 		// set stroke enabled
-		void SetStrokeEnabled(const GBool Enabled);
+		virtual void SetStrokeEnabled(const GBool Enabled);
 		// get fill rule
 		inline GFillRule FillRule() const {
 			return gFillRule;
 		}
 		// set fill rule
-		void SetFillRule(const GFillRule Rule);
+		virtual void SetFillRule(const GFillRule Rule);
 		// get fill paint type
 		inline GPaintType FillPaintType() const {
 			return gFillPaintType;
 		}
 		// set fill paint type
-		void SetFillPaintType(const GPaintType Type);
+		virtual void SetFillPaintType(const GPaintType Type);
 		// get fill color
 		inline const GVectBase<GReal, 4>& FillColor() const {
 			return gFillColor;
 		}
 		// set fill color
-		void SetFillColor(const GVectBase<GReal, 4>& Color);
+		virtual void SetFillColor(const GVectBase<GReal, 4>& Color);
 		// get fill gradient settings
 		inline GGradientDesc* FillGradient() const {
 			return gFillGradientDesc;
@@ -445,13 +461,13 @@ namespace Amanith {
 			return gFillEnabled;
 		}
 		// set fill enabled
-		void SetFillEnabled(const GBool Enabled);
+		virtual void SetFillEnabled(const GBool Enabled);
 		// get model-view matrix
 		inline const GMatrix33& ModelView() const {
 			return gModelView;
 		}
 		// set model-view matrix
-		void SetModelView(const GMatrix33 Matrix);
+		virtual void SetModelView(const GMatrix33 Matrix);
 		// get custom data
 		inline void *CustomData() const {
 			return gCustomData;
@@ -519,7 +535,7 @@ namespace Amanith {
 					FillGradientModified() || FillPatternModified());
 		}
 
-		// set stroke modified bit flags
+/*		// set stroke modified bit flags
 		void SetStrokeWidthModified(const GBool Modified);
 		void SetStrokeMiterLimitModified(const GBool Modified);
 		void SetStrokeStartCapStyleModified(const GBool Modified);
@@ -537,7 +553,7 @@ namespace Amanith {
 		void SetFillColorModified(const GBool Modified);
 		void SetFillEnabledModified(const GBool Modified);
 		// set model-view modified bit flag
-		void SetModelViewModified(const GBool Modified);
+		void SetModelViewModified(const GBool Modified);*/
 	};
 
 };	// end namespace Amanith
