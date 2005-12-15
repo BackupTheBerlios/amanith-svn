@@ -73,9 +73,9 @@ ________
  A simple way to clean your bad build could be:
  
     make clean
-    rm -f `find . -name Makefile`
-    rm -f `find . -name Makefile.Release`
-    rm -f `find . -name Makefile.Debug`
+    find ./ -name "Makefile" -delete
+    find ./ -name "Makefile.Release" -delete
+    find ./ -name "Makefile.Debug" -delete
 
  Then, you can retry.
  
@@ -169,9 +169,9 @@ ___________
  A simple way to clean your bad build could be:
 
     make clean
-    rm -f `find . -name Makefile`
-    rm -f `find . -name Makefile.Release`
-    rm -f `find . -name Makefile.Debug`
+    find ./ -name "Makefile" -delete
+    find ./ -name "Makefile.Release" -delete
+    find ./ -name "Makefile.Debug" -delete
 
  Then, you can retry.
  

@@ -62,7 +62,9 @@ del /S Makefile
 del /S Makefile.Release
 del /S Makefile.Debug
 del /S *manifest*
-del /Q .\lib\*.*
+
+del /Q .\lib\amanith.*
+del /Q .\lib\*.lib
 
 del /S *.jbf
 
