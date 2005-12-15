@@ -44,10 +44,11 @@ LRESULT	CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);	// Declaration For WndProc
 
 // Amanith stuff
 GKernel *gKernel = NULL;
-GOpenglExt *gExtManager = NULL;	// extensions manager
+GOpenglExt *gExtManager = NULL;	// OpenGL extensions manager
 GOpenGLBoard *gDrawBoard = NULL;
 GPixelMap *gImage = NULL;
 GGradientDesc *gLinGrad1 = NULL, *gLinGrad2 = NULL, *gLinGrad3 = NULL;
+GGradientDesc *gLinGradLogo1 = NULL, *gLinGradLogo2 = NULL, *gLinGradLogo3 = NULL;
 GGradientDesc *gRadGrad1 = NULL, *gRadGrad2 = NULL, *gRadGrad3 = NULL, *gRadGrad4 = NULL;
 GGradientDesc *gConGrad1 = NULL, *gConGrad2 = NULL, *gConGrad3 = NULL, *gConGrad4 = NULL;
 GPatternDesc *gPattern = NULL;
@@ -62,18 +63,16 @@ GString gDataPath;
 // 5 = conical gradient (out)
 // 6 = pattern
 // 7 = stroking
-// 8 = masks
+// 8 = masks and group opacity
+// 9 = shapes
 GUInt32 gTestSuite = 0;
 GUInt32 gTestIndex = 0;
 GBool gDrawBackGround = G_TRUE;
 GReal gRandAngle = 0;
-GReal gRandScale = 1;
+GReal gRandScaleX = 1;
+GReal gRandScaleY = 1;
 GRenderingQuality gRenderingQuality = G_HIGH_RENDERING_QUALITY;
 GBool gUseShaders = G_TRUE;
-
-bool arbMultisampleSupported = false;
-int arbMultisampleFormat = 0;
-bool activateFSAA = true;
 
 #include "test_color.h"
 #include "test_lineargradient.h"
@@ -84,19 +83,22 @@ bool activateFSAA = true;
 #include "test_pattern.h"
 #include "test_stroking.h"
 #include "test_masks.h"
+#include "test_geometries.h"
 
-// InitMultisample: Used To Query The Multisample Frequencies
-bool InitMultisample(HINSTANCE hInstance, HWND hWnd, PIXELFORMATDESCRIPTOR pfd)
-{  
+bool arbMultisampleSupported = false;
+int arbMultisampleFormat = 0;
+bool activateFSAA = true;
+
+// InitMultisample: used to query the multisample frequencies
+bool InitMultisample(HINSTANCE hInstance, HWND hWnd, PIXELFORMATDESCRIPTOR pfd) {  
 
 	// using Amanith OpenGL extension manager is just a matter of test function pointer...
-	if (!wglChoosePixelFormatARB) 
-	{
+	if (!wglChoosePixelFormatARB) {
 		arbMultisampleSupported = false;
 		return false;
 	}
 
-	// Get Our Current Device Context
+	// get our current device context
 	HDC hDC = GetDC(hWnd);
 
 	int		pixelFormat;
@@ -117,7 +119,7 @@ bool InitMultisample(HINSTANCE hInstance, HWND hWnd, PIXELFORMATDESCRIPTOR pfd)
 			WGL_SAMPLES_ARB, 4,
 			0, 0
 	};
-	// First We Check To See If We Can Get A Pixel Format For 6 Samples
+	// first we check to see if we can get a pixel format for 4 samples
 	valid = wglChoosePixelFormatARB(hDC, iAttributes, fAttributes, 1, &pixelFormat, &numFormats);
 	if (valid && numFormats >= 1) {
 		arbMultisampleSupported = true;
@@ -125,26 +127,17 @@ bool InitMultisample(HINSTANCE hInstance, HWND hWnd, PIXELFORMATDESCRIPTOR pfd)
 		return arbMultisampleSupported;
 	}
 
-	// Our Pixel Format With 6 Samples Failed, Test For 4 Samples
-	iAttributes[19] = 4;
-	valid = wglChoosePixelFormatARB(hDC, iAttributes, fAttributes, 1, &pixelFormat, &numFormats);
-	if (valid && numFormats >= 1) {
-		arbMultisampleSupported = true;
-		arbMultisampleFormat = pixelFormat;	 
-		return arbMultisampleSupported;
-	}
-
-	// Our Pixel Format With 4 Samples Failed, Test For 2 Samples
+	// our pixel format with 4 samples failed, test for 2 samples
 	iAttributes[19] = 2;
 	valid = wglChoosePixelFormatARB(hDC, iAttributes, fAttributes, 1, &pixelFormat, &numFormats);
-	// If We Returned True, And Our Format Count Is Greater Than 1
+	// if we returned true, and our format count is greater than 1
 	if (valid && numFormats >= 1) {
 		arbMultisampleSupported = true;
 		arbMultisampleFormat = pixelFormat;	
 		return arbMultisampleSupported;
 	}
 
-	// Return The Valid Format
+	// return the valid format
 	return arbMultisampleSupported;
 }
 
@@ -196,7 +189,9 @@ int InitGL(GLvoid) {
 	colKeys.push_back(GKeyValue((GReal)0.70, GVector4((GReal)0.980, (GReal)0.950, (GReal)0.000, (GReal)1.0)));
 	colKeys.push_back(GKeyValue((GReal)1.00, GVector4((GReal)0.171, (GReal)0.680, (GReal)0.800, (GReal)1.0)));
 
-	gRadGrad1 = gDrawBoard->CreateRadialGradient(GPoint2(90, 58), GPoint2(150, 118), 110, colKeys, G_HERMITE_COLOR_INTERPOLATION, G_PAD_COLOR_RAMP_SPREAD);
+	//gRadGrad1 = gDrawBoard->CreateRadialGradient(GPoint2(90, 58), GPoint2(150, 118), 110, colKeys, G_HERMITE_COLOR_INTERPOLATION, G_PAD_COLOR_RAMP_SPREAD);
+	gRadGrad1 = gDrawBoard->CreateRadialGradient(GPoint2(90, 58), GPoint2(90, 28), 110, colKeys, G_HERMITE_COLOR_INTERPOLATION, G_PAD_COLOR_RAMP_SPREAD);
+
 	gRadGrad3 = gDrawBoard->CreateRadialGradient(GPoint2(-90, -70), GPoint2(-130, -130), 100, colKeys, G_HERMITE_COLOR_INTERPOLATION, G_PAD_COLOR_RAMP_SPREAD);
 	gConGrad1 = gDrawBoard->CreateConicalGradient(GPoint2(120, 88), GPoint2(180, 88), colKeys, G_HERMITE_COLOR_INTERPOLATION);
 	gConGrad3 = gDrawBoard->CreateConicalGradient(GPoint2(0, 0), GPoint2(20, 0), colKeys, G_HERMITE_COLOR_INTERPOLATION);
@@ -226,14 +221,6 @@ int InitGL(GLvoid) {
 	colKeys.push_back(GKeyValue((GReal)1.00, GVector4((GReal)0.0, (GReal)0.0, (GReal)0.0, (GReal)0.0)));
 	gLinGrad3 = gDrawBoard->CreateLinearGradient(GPoint2(560, 20), GPoint2(760, 20), colKeys, G_HERMITE_COLOR_INTERPOLATION, G_PAD_COLOR_RAMP_SPREAD);
 
-	// conical gradient
-	colKeys.clear();
-	colKeys.push_back(GKeyValue((GReal)0.00, GVector4((GReal)0.171, (GReal)0.680, (GReal)0.800, (GReal)1.0)));
-	colKeys.push_back(GKeyValue((GReal)0.30, GVector4((GReal)0.540, (GReal)0.138, (GReal)0.757, (GReal)1.0)));
-	colKeys.push_back(GKeyValue((GReal)0.60, GVector4((GReal)1.000, (GReal)0.500, (GReal)0.000, (GReal)1.0)));
-	colKeys.push_back(GKeyValue((GReal)0.70, GVector4((GReal)0.980, (GReal)0.950, (GReal)0.000, (GReal)1.0)));
-	colKeys.push_back(GKeyValue((GReal)1.00, GVector4((GReal)0.171, (GReal)0.680, (GReal)0.800, (GReal)1.0)));
-
 	// background
 	s = gDataPath + "background.png";
 	err = gImage->Load(StrUtils::ToAscii(s), "expandpalette=true");
@@ -254,7 +241,6 @@ int InitGL(GLvoid) {
 	else
 		gPattern = NULL;
 
-
 	// dashes
 	gDrawBoard->SetStrokeDashPhase(0);
 	GDynArray<GReal> pat;
@@ -264,12 +250,32 @@ int InitGL(GLvoid) {
 	pat.push_back(35);
 	gDrawBoard->SetStrokeDashPattern(pat);
 
+	// gradients for logo
+	colKeys.clear();
+	colKeys.push_back(GKeyValue((GReal)0.00, GVector4((GReal)1.0, (GReal)1.0, (GReal)0.44, (GReal)1.0)));
+	colKeys.push_back(GKeyValue((GReal)1.00, GVector4((GReal)1.0, (GReal)1.0, (GReal)1.00, (GReal)1.0)));
+	gLinGradLogo1 = gDrawBoard->CreateLinearGradient(GPoint2(306, 280), GPoint2(460, 102), colKeys, G_LINEAR_COLOR_INTERPOLATION, G_PAD_COLOR_RAMP_SPREAD);
+
+	colKeys.clear();
+	colKeys.push_back(GKeyValue((GReal)0.00, GVector4((GReal)1.0, (GReal)0.215, (GReal)0.172, (GReal)1.0)));
+	colKeys.push_back(GKeyValue((GReal)1.00, GVector4((GReal)1.0, (GReal)0.500, (GReal)0.000, (GReal)1.0)));
+	gLinGradLogo2 = gDrawBoard->CreateLinearGradient(GPoint2(276, 438), GPoint2(580, 206), colKeys, G_LINEAR_COLOR_INTERPOLATION, G_PAD_COLOR_RAMP_SPREAD);
+
+	colKeys.clear();
+	colKeys.push_back(GKeyValue((GReal)0.00, GVector4((GReal)1.0, (GReal)1.0, (GReal)1.0, (GReal)1.0)));
+	colKeys.push_back(GKeyValue((GReal)1.00, GVector4((GReal)1.0, (GReal)1.0, (GReal)1.0, (GReal)0.0)));
+	gLinGradLogo3 = gDrawBoard->CreateLinearGradient(GPoint2(300, 460), GPoint2(417, 330), colKeys, G_LINEAR_COLOR_INTERPOLATION, G_PAD_COLOR_RAMP_SPREAD);
+
 	return TRUE;
 }
 
 int DrawGLScene(GLvoid)	{
 
 	gDrawBoard->Clear(1.0, 1.0, 1.0, G_TRUE);
+
+	GMatrix33 k;
+	Identity(k);
+	gDrawBoard->SetModelViewMatrix(k);
 
 	if (gDrawBackGround) {
 
@@ -287,28 +293,31 @@ int DrawGLScene(GLvoid)	{
 			TestColor(gTestIndex);
 			break;
 		case 1:
-			TestLinearGradient(gTestIndex, gRandAngle, gRandScale);
+			TestLinearGradient(gTestIndex, gRandAngle, gRandScaleX);
 			break;
 		case 2:
-			TestRadialGradientIn(gTestIndex, gRandAngle, gRandScale);
+			TestRadialGradientIn(gTestIndex, gRandAngle, gRandScaleX, gRandScaleY);
 			break;
 		case 3:
-			TestRadialGradientOut(gTestIndex, gRandAngle, gRandScale);
+			TestRadialGradientOut(gTestIndex, gRandAngle, gRandScaleX, gRandScaleY);
 			break;
 		case 4:
-			TestConicalGradientIn(gTestIndex, gRandAngle, gRandScale);
+			TestConicalGradientIn(gTestIndex, gRandAngle, gRandScaleX, gRandScaleY);
 			break;
 		case 5:
-			TestConicalGradientOut(gTestIndex, gRandAngle, gRandScale);
+			TestConicalGradientOut(gTestIndex, gRandAngle, gRandScaleX, gRandScaleY);
 			break;
 		case 6:
-			TestPattern(gTestIndex, gRandAngle, gRandScale);
+			TestPattern(gTestIndex, gRandAngle, gRandScaleX, gRandScaleY);
 			break;
 		case 7:
 			TestStroke(gTestIndex);
 			break;
 		case 8:
 			TestMasks(gTestIndex);
+			break;
+		case 9:
+			TestGeometries(gTestIndex);
 			break;
 		default:
 			TestColor(gTestIndex);
@@ -435,8 +444,7 @@ BOOL CreateGLWindow(char* title, int width, int height, int bits, bool fullscree
 		return FALSE;
 	}
 
-	if(!arbMultisampleSupported)
-	{
+	if(!arbMultisampleSupported) {
 		if (!(PixelFormat = ChoosePixelFormat(hDC, &pfd))) {
 			KillGLWindow();
 			MessageBox(NULL, "Can't Find A Suitable PixelFormat.", "ERROR", MB_OK | MB_ICONEXCLAMATION);
@@ -447,7 +455,7 @@ BOOL CreateGLWindow(char* title, int width, int height, int bits, bool fullscree
 		PixelFormat = arbMultisampleFormat;
 
 
-	if (!SetPixelFormat(hDC, PixelFormat, &pfd))	{
+	if (!SetPixelFormat(hDC, PixelFormat, &pfd)) {
 		KillGLWindow();
 		MessageBox(NULL, "Can't Set The PixelFormat.", "ERROR", MB_OK | MB_ICONEXCLAMATION);
 		return FALSE;
@@ -465,13 +473,11 @@ BOOL CreateGLWindow(char* title, int width, int height, int bits, bool fullscree
 		return FALSE;
 	}
 
-	if (!arbMultisampleSupported)
-	{
+	if (!arbMultisampleSupported) {
 		if (!gExtManager)
 			gExtManager = new GOpenglExt();
 
-		if (InitMultisample(hInstance, hWnd, pfd))
-		{
+		if (InitMultisample(hInstance, hWnd, pfd)) {
 			KillGLWindow();
 			return CreateGLWindow(title, width, height, bits, fullscreenflag);
 		}
@@ -567,7 +573,7 @@ int WINAPI WinMain(	HINSTANCE	hInstance,			// Instance
 	fullscreen = FALSE;							// Windowed Mode
 
 	// Create Our OpenGL Window
-	if (!CreateGLWindow("Color animation example - Press F1 for help", 800, 600, 16, fullscreen))
+	if (!CreateGLWindow("OpenGL drawboard example - Press F1 for help", 800, 600, 16, fullscreen))
 		return 0;									// Quit If Window Was Not Created
 
 	// init application
@@ -600,74 +606,225 @@ int WINAPI WinMain(	HINSTANCE	hInstance,			// Instance
 					SwapBuffers(hDC);
 				}
 			}
-			// Draw The Scene.  Watch For ESC Key And Quit Messages From DrawGLScene()
-			/*if ((active && !DrawGLScene()) || keys[VK_ESCAPE])	// Active?  Was There A Quit Received?
-				done = TRUE;							// ESC or DrawGLScene Signalled A Quit
-			else									// Not Time To Quit, Update Screen
-				SwapBuffers(hDC);					// Swap Buffers (Double Buffering)*/
 
 			if (keys[VK_F1]) {						// Is F1 Being Pressed?
 				keys[VK_F1] = FALSE;
-				s = "1..9: Toggle draw test\n";
-				s += "PageUp/PageDown: Switch transparency modes\n";
+				s = "F2: contextual example description\n";
+				s += "0..9: Toggle draw test\n";
+				s += "PageUp/PageDown: Switch draw sheet\n";
 				s += "B: Toggle background\n";
 				s += "R: Switch rendering quality (low/normal/high)\n";
 				s += "S: Enable/Disable shaders (for gradients) if supported\n";
 				s += "Space: Change matrix (valid for gradient and pattern tests)\n";
-				MessageBox(NULL, StrUtils::ToAscii(s), "Command keys", MB_OK | MB_ICONINFORMATION);
+				MessageBox(NULL, StrUtils::ToAscii(s), "Command keys", MB_OK | MB_ICONINFORMATION | MB_APPLMODAL);
+			}
+			// F2 key, contextual description
+			if (keys[VK_F2]) {
+				keys[VK_F2] = FALSE;
+				switch (gTestSuite) {
+					case 0:
+						s = "This board shows simple color filling with opaque and transparent colors.\n";
+						s += "In the leftmost column colors are 100% opaque, in the middle column colors are ";
+						s += "66% opaque\n and in the rightmost column colors are 33% opaque.\n";
+						s += "Compositing is done drawing smaller rectangles over larger ones.";
+						MessageBox(NULL, StrUtils::ToAscii(s), "Current board description", MB_OK | MB_ICONINFORMATION | MB_APPLMODAL);
+						break;
+					case 1:
+						s = "This board shows simple linear gradient filling.\n\n";
+						s += "In the rows different color interpolation schema are shown:\n";
+						s += "Topmost row: CONSTANT interpolation.\n";
+						s += "Middle row: LINEAR interpolation.\n";
+						s += "Lower row: HERMITE interpolation.\n\n";
+						s += "In the columns different spread methods are shown:\n";
+						s += "Leftmost column: PAD spread method.\n";
+						s += "Middle column: REPEAT spread method.\n";
+						s += "Rightmost column: REFLECT spread method.\n\n";
+						s += "Use PageUp/PageDown keys to switch to transparency modes:\n";
+						s += "100% opaque fill and 100% opaque color keys.\n";
+						s += "50% opaque fill and 100% opaque color keys.\n";
+						s += "100% opaque fill and some non 100% opaque color keys.\n";
+						s += "50% opaque fill and some non 100% opaque color keys.";
+						MessageBox(NULL, StrUtils::ToAscii(s), "Current board description", MB_OK | MB_ICONINFORMATION | MB_APPLMODAL);
+						break;
+					case 2:
+						s = "This board shows simple radial gradient filling, with focus point inside filled shapes.\n\n";
+						s += "In the rows different color interpolation schema are shown:\n";
+						s += "Topmost row: CONSTANT interpolation.\n";
+						s += "Middle row: LINEAR interpolation.\n";
+						s += "Lower row: HERMITE interpolation (available only if fragment programs are supported).\n\n";
+						s += "In the columns different spread methods are shown:\n";
+						s += "Leftmost column: PAD spread method.\n";
+						s += "Middle column: REPEAT spread method.\n";
+						s += "Rightmost column: REFLECT spread method.\n\n";
+						s += "Use PageUp/PageDown keys to switch to transparency modes:\n";
+						s += "100% opaque fill and 100% opaque color keys.\n";
+						s += "50% opaque fill and 100% opaque color keys.\n";
+						s += "100% opaque fill and some non 100% opaque color keys.\n";
+						s += "50% opaque fill and some non 100% opaque color keys.";
+						MessageBox(NULL, StrUtils::ToAscii(s), "Current board description", MB_OK | MB_ICONINFORMATION | MB_APPLMODAL);
+						break;
+					case 3:
+						s = "This board shows simple radial gradient filling, with focus point outside filled shapes.\n\n";
+						s += "In the rows different color interpolation schema are shown:\n";
+						s += "Topmost row: CONSTANT interpolation.\n";
+						s += "Middle row: LINEAR interpolation.\n";
+						s += "Lower row: HERMITE interpolation (available only if fragment programs are supported).\n\n";
+						s += "In the columns different spread methods are shown:\n";
+						s += "Leftmost column: PAD spread method.\n";
+						s += "Middle column: REPEAT spread method.\n";
+						s += "Rightmost column: REFLECT spread method.\n\n";
+						s += "Use PageUp/PageDown keys to switch to transparency modes:\n";
+						s += "100% opaque fill and 100% opaque color keys.\n";
+						s += "50% opaque fill and 100% opaque color keys.\n";
+						s += "100% opaque fill and some non 100% opaque color keys.\n";
+						s += "50% opaque fill and some non 100% opaque color keys.";
+						MessageBox(NULL, StrUtils::ToAscii(s), "Current board description", MB_OK | MB_ICONINFORMATION | MB_APPLMODAL);
+						break;
+					case 4:
+						s = "This board shows simple conical gradient filling, with center point inside filled shapes.\n\n";
+						s += "In the rows different color interpolation schema are shown:\n";
+						s += "Topmost row: CONSTANT interpolation.\n";
+						s += "Middle row: LINEAR interpolation.\n";
+						s += "Lower row: HERMITE interpolation.\n\n";
+						s += "In the columns different spread methods are shown:\n";
+						s += "Leftmost column: PAD spread method.\n";
+						s += "Middle column: REPEAT spread method.\n";
+						s += "Rightmost column: REFLECT spread method.\n\n";
+						s += "Use PageUp/PageDown keys to switch to transparency modes:\n";
+						s += "100% opaque fill and 100% opaque color keys.\n";
+						s += "50% opaque fill and 100% opaque color keys.\n";
+						s += "100% opaque fill and some non 100% opaque color keys.\n";
+						s += "50% opaque fill and some non 100% opaque color keys.";
+						MessageBox(NULL, StrUtils::ToAscii(s), "Current board description", MB_OK | MB_ICONINFORMATION | MB_APPLMODAL);
+						break;
+					case 5:
+						s = "This board shows simple conical gradient filling, with center point outside filled shapes.\n\n";
+						s += "In the rows different color interpolation schema are shown:\n";
+						s += "Topmost row: CONSTANT interpolation.\n";
+						s += "Middle row: LINEAR interpolation.\n";
+						s += "Lower row: HERMITE interpolation.\n\n";
+						s += "In the columns different spread methods are shown:\n";
+						s += "Leftmost column: PAD spread method.\n";
+						s += "Middle column: REPEAT spread method.\n";
+						s += "Rightmost column: REFLECT spread method.\n\n";
+						s += "Use PageUp/PageDown keys to switch to transparency modes:\n";
+						s += "100% opaque fill and 100% opaque color keys.\n";
+						s += "50% opaque fill and 100% opaque color keys.\n";
+						s += "100% opaque fill and some non 100% opaque color keys.\n";
+						s += "50% opaque fill and some non 100% opaque color keys.";
+						MessageBox(NULL, StrUtils::ToAscii(s), "Current board description", MB_OK | MB_ICONINFORMATION | MB_APPLMODAL);
+						break;
+					case 6:
+						s = "This board shows simple pattern filling.\n\n";
+						s += "In the rows different opacity percentage are shown:\n";
+						s += "Topmost row: 33% opaque filling.\n";
+						s += "Middle row: 66% opaque filling.\n";
+						s += "Lower row: 100% opaque filling.\n\n";
+						s += "In the columns different pattern tiling modes are shown:\n";
+						s += "Leftmost column: PAD tiling mode.\n";
+						s += "Middle column: REPEAT tiling mode.\n";
+						s += "Rightmost column: REFLECT tiling mode.\n\n";
+						MessageBox(NULL, StrUtils::ToAscii(s), "Current board description", MB_OK | MB_ICONINFORMATION | MB_APPLMODAL);
+						break;
+					case 7:
+						s = "This board shows all supported stroking features.\n\n";
+						s += "Supported stroke styles are SOLID and DASHED (with also initial phase support).\n";
+						s += "Supported join types are BEVEL, MITER and ROUND.\n";
+						s += "Supported caps types (they could be used independently for start and end cap) are BUTT, SQUARE and ROUND.\n";
+						MessageBox(NULL, StrUtils::ToAscii(s), "Current board description", MB_OK | MB_ICONINFORMATION | MB_APPLMODAL);
+						break;
+					case 8:
+						s = "This board shows clip masks and group opacity (you can switch between them using PageUp/PageDown keys).\n\n";
+						s += "Clip masks sheet description:\n";
+						s += "Leftmost column: unclipped shapes.\n";
+						s += "Middle column: clip masks (the darker color is the intersection of the masks).\n";
+						s += "Rightmost column: clipped shapes, using masks in \"and\" (intersection).\n\n";
+						s += "Group opacity sheet description:\n";
+						s += "Leftmost column: shapes are drawn without group opacity.\n";
+						s += "Middle column: shapes are drawn using (in different modes) group opacity.\n";
+						s += "Rightmost column: shapes are drawn with group opacity (like in the middle column) over a background.\n";
+						MessageBox(NULL, StrUtils::ToAscii(s), "Current board description", MB_OK | MB_ICONINFORMATION | MB_APPLMODAL);
+						break;
+					case 9:
+						s = "This board shows some supported geometric primitives (you can switch between them using PageUp/PageDown keys).\n\n";
+						s += "Stroke primitives sheet description:\n";
+						s += "Lower row: a line, a quadratic Bezier curve and a cubic Bezier curve.\n";
+						s += "Middle row: 2 elliptical arcs (build using different constructors) and a polyline.\n";
+						s += "Topmost row: a round rectangle, a circle and an ellipse.\n\n";
+						s += "Amanith logo sheet description:\n";
+						s += "Here's Amanith mushroom, it's constructed directly with SVG paths.";
+						MessageBox(NULL, StrUtils::ToAscii(s), "Current board description", MB_OK | MB_ICONINFORMATION | MB_APPLMODAL);
+						break;
+				}
 			}
 			// 1 key
 			if (keys[49]) {
 				keys[49] = FALSE;
 				gTestSuite = 0;
+				gTestIndex = 0;
 				doDraw = TRUE;
 			}
 			// 2 key
 			if (keys[50]) {
 				keys[50] = FALSE;
 				gTestSuite = 1;
+				gTestIndex = 0;
 				doDraw = TRUE;
 			}
 			// 3 key
 			if (keys[51]) {
 				keys[51] = FALSE;
 				gTestSuite = 2;
+				gTestIndex = 0;
 				doDraw = TRUE;
 			}
 			// 4 key
 			if (keys[52]) {
 				keys[52] = FALSE;
 				gTestSuite = 3;
+				gTestIndex = 0;
 				doDraw = TRUE;
 			}
 			// 5 key
 			if (keys[53]) {
 				keys[53] = FALSE;
 				gTestSuite = 4;
+				gTestIndex = 0;
 				doDraw = TRUE;
 			}
 			// 6 key
 			if (keys[54]) {
 				keys[54] = FALSE;
 				gTestSuite = 5;
+				gTestIndex = 0;
 				doDraw = TRUE;
 			}
 			// 7 key
 			if (keys[55]) {
 				keys[55] = FALSE;
 				gTestSuite = 6;
+				gTestIndex = 0;
 				doDraw = TRUE;
 			}
 			// 8 key
 			if (keys[56]) {
 				keys[56] = FALSE;
 				gTestSuite = 7;
+				gTestIndex = 0;
 				doDraw = TRUE;
 			}
 			// 9 key
 			if (keys[57]) {
 				keys[57] = FALSE;
 				gTestSuite = 8;
+				gTestIndex = 0;
+				doDraw = TRUE;
+			}
+			// 0 key
+			if (keys[48]) {
+				keys[48] = FALSE;
+				gTestSuite = 9;
+				gTestIndex = 0;
 				doDraw = TRUE;
 			}
 			// B key
@@ -722,10 +879,14 @@ int WINAPI WinMain(	HINSTANCE	hInstance,			// Instance
 			if (keys[VK_SPACE]) {
 				keys[VK_SPACE] = FALSE;
 				gRandAngle = GMath::RangeRandom((GReal)0, (GReal)G_2PI);
-				if (gTestSuite == 4)
-					gRandScale = GMath::RangeRandom((GReal)0.1, (GReal)1.5);
-				else
-					gRandScale = GMath::RangeRandom((GReal)0.33, (GReal)3.0);
+				if (gTestSuite == 6) {
+					gRandScaleX = GMath::RangeRandom((GReal)0.1, (GReal)1.5);
+					gRandScaleY = GMath::RangeRandom((GReal)0.1, (GReal)1.5);
+				}
+				else {
+					gRandScaleX = GMath::RangeRandom((GReal)0.33, (GReal)3.0);
+					gRandScaleY = GMath::RangeRandom((GReal)0.33, (GReal)3.0);
+				}
 				doDraw = TRUE;
 			}
 		}

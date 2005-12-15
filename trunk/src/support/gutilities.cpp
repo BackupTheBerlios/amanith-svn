@@ -1,5 +1,5 @@
 /****************************************************************************
-** $file: amanith/src/support/gutilities.cpp   0.1.1.0   edited Sep 24 08:00
+** $file: amanith/src/support/gutilities.cpp   0.2.0.0   edited Dec, 12 2005
 **
 ** Global general purpose utilities.
 **
@@ -27,7 +27,6 @@
 **********************************************************************/
 
 #include "amanith/support/gutilities.h"
-#include "amanith/support/gblowfish.h"
 
 #include <cstdlib>  // for getenv function
 #include <algorithm>
@@ -883,109 +882,6 @@ GError StrUtils::FromString(const GString& SourceStr, GQuaternion& Quat) {
 		qaux[i] = (GReal)StrUtils::ToDouble(*it);
 
 	Quat = qaux;
-	return G_NO_ERROR;
-}
-
-/*!
-	\param Input the input string we wanna encrypt with a Blow Fish algorithm
-	\param Password the string used as encryption key. It must have a length not longer than 56 characters.
-	\param Output the encoded output string
-	\param HexAscii if G_TRUE, the encrypted string will be converted into a printable form
-	\return G_NO_ERROR if operation will succeed, else an error code. For example if Input string or Password string are
-	empty, a G_INVALID_PARAMETER code will be returned.
-*/
-GError StrUtils::Encode(const GString& Input, const GString& Password, GString& Output, const GBool HexAscii) {
-
-	GUInt32 i, j = (GUInt32)Input.size(), k, sizeInt32 = sizeof(GUInt32);
-	GUChar8 c1;
-	GString s;
-
-	if ((j == 0) || (Password.length() == 0) || (Password.length() > 56))
-		return G_INVALID_PARAMETER;
-
-	GBlowFish encoder;
-
-	j += sizeInt32;
-	GDynArray<GChar8> inStr(j);
-	GDynArray<GChar8> outStr(j + (8 - j % 8), 0);
-
-	j -= sizeInt32;
-	// first integer is string length
-	GUInt32 *head = (GUInt32 *)&inStr[0];
-	*head = j;
-	for (i = 0; i < j; i++)
-		inStr[i + sizeInt32] = Input[i];
-
-	encoder.Initialize((const GUChar8 *)StrUtils::ToAscii(Password), (GInt32)Password.length());
-	k = encoder.Encode((GUChar8 *)&inStr[0], (GUChar8 *)&outStr[0], j + sizeInt32);
-
-	Output = "";
-	for (i = 0; i < k; i++) {
-		c1 = (GUChar8)outStr[i];
-		if (HexAscii)
-			Output += StrUtils::ToHex(c1, 2);
-		else
-			Output += c1;
-	}
-	return G_NO_ERROR;
-}
-
-/*!
-	\param Input the encoded input string
-	\param Password the password used to decode input. It must have a length not longer than 56 characters, and for
-	a correct result it must match the one used during encoding.
-	\param Output the output, decoded string.
-	\param HexAscii if G_TRUE specifies that the string was encoded with this flag set to G_TRUE, so this function, before
-	decoding using Blow Fish algorithm, does an inverse operation.
-	\return G_NO_ERROR if operation will succeed, else an error code. For example if Input string or Password string are
-	empty, a G_INVALID_PARAMETER code will be returned.
-*/
-GError StrUtils::Decode(const GString& Input, const GString& Password, GString& Output, const GBool HexAscii) {
-
-	GInt32 i, j = (GInt32)Input.size();
-	GUInt32 sizeInt32 = sizeof(GUInt32), w, q;
-	GUChar8 c1, c2;
-
-	if ((j == 0) || (Password.length() == 0)|| (Password.length() > 56))
-		return G_INVALID_PARAMETER;
-
-	GBlowFish decoder;
-	GDynArray<GUChar8> inStr(j);
-	GDynArray<GChar8> outStr(j + (8 - j % 8), 0);
-
-	if (HexAscii) {
-		j = j / 2;
-		for (i = 0; i < j; i++) {
-			c1 = Input[i * 2];
-			if (c1 <= '9')
-				c1 -= '0';
-			else
-				c1 = c1 - 'A' + 10;
-
-			c2 = Input[i * 2 + 1];
-			if (c2 <= '9')
-				c2 -= '0';
-			else
-				c2 = c2 - 'A' + 10;
-
-			inStr[i] = c1 * 16 + c2;
-		}
-	}
-	else {
-		for (i = 0; i < j; i++)
-			inStr[i] = Input[i];
-	}
-
-	decoder.Initialize((const GUChar8 *)StrUtils::ToAscii(Password), (GInt32)Password.length());
-	decoder.Decode((GUChar8 *)&inStr[0], (GUChar8 *)&outStr[0], j);
-
-	Output = "";
-	GUInt32 *head = (GUInt32 *)&outStr[0];
-	w = *head;
-	for (q = 0; q < w; q++) {
-		c1 = (GUChar8)outStr[q + sizeInt32];
-		Output += c1;
-	}
 	return G_NO_ERROR;
 }
 

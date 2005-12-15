@@ -1,3 +1,67 @@
+2005-12-12
+
+	* Version 0.2
+	==========================
+
+	* Added drawboard (in OpenVG/SVG style) class: current version is implemented on top of OpenGL, going from OpenGL 1.1 to OpenGL 2.0,
+	using extensions where available and fragment programs too. This lead to an accelerated drawboard that exploits all hardware features
+	present on graphic board to achieve the best possible performance, without renounce to visual quality.
+	High level features:
+
+		- The entire drawboard is adaptive; performance and visual quality are scalable using three quality steps: LOW, NORMAL, HIGH.
+		- Fragment programs can be forced off by the user. This parameter can be useful on those boards where they
+		are badly supported.
+		- Logical viewport can be modified independently by the physical one, at any time.
+		- Shapes can be stroked and/or filled, independently.
+		- Stroke can be solid or dashed (with an optional initial phase), and also stroke thickness can be changed.
+		- Supported stroke joins are: BEVEL, ROUND, MITER.
+		- Supported stroke caps are: BUTT, SQUARE, ROUND.
+		- Supported drawing styles are: PLAIN COLOR, LINEAR GRADIENT, RADIAL GRADIENT, CONICAL GRADIENT, PATTERN.
+		- Supported color interpolation modes in gradients are: CONSTANT, LINEAR, HERMITE.
+		- Supported spread methods in gradients and patterns are: PAD, REPEAT, REFLECT.
+		- Gradients and patterns have their own transformation matrix, that is independent from all other matrices.
+		- The opacity is always supported in colors, gradients, gradients color keys and patterns.
+		- Group opacity is also supported, but it requires that OpenGL render context has been opened with at least 4bits stencil buffer.
+		- Clip paths are supported when the OpenGL render context has been opened with at least 4bits stencil buffer. They can be
+		enabled/disabled at any time. From the user point of view, clip paths are exposed through a 'stack', where paths can be
+		pushed and popped specifying an AND or REPLACE operator.
+		- Stroke and fill can be drawn using any of supported styles, independently.
+		- Supported geometric primitives are: LINE, QUADRATIC BEZIER, CUBIC BEZIER, ELLIPTICAL ARC, RECTANGLE, ROUND RECTANGLE,
+		CIRCLE, ELLIPSE, POLYGON, PATH.
+		- Path can be specified using SVG commands or directly with SVG string (path 'd' attribute).
+		- All Amanith curves and path can be drawn directly, this makes the user free to draw also BSpline, high order Bezier and so on.
+		- Every shape can be transformed specifying a model-view matrix, that can be changed at any time.
+
+	* Added a new example that shows drawboard capabilities.
+
+	* Added ellipse curve class (derived from GCurve2D class), it supports construction using 2-points fit or center-axes methods.
+
+	* Added two version of Tesselate method (of GTesselator2D class) that return an axes-aligned bounding box of specified contours.
+
+	* Added a ShearToMatrix() method that builds a shear matrix given shear factors.
+
+	* Added antialias (FSAA) to all examples.
+
+	* Added Create() method to GPixelMap class, it resets the image, setting new dimensions and pixel format.
+
+	* Extended OpenGL extension manager class, now it detects used colorbits, stencilbits and used AA samples.
+
+	* Extended lowlevel_stuff example, now it shows all class proxies, using Amanith introspection feature.
+
+	* Ported Amanith to MacOS X Tiger (using XCode 2.2).
+
+	* Fixed a bug into GBezierCurve2D class, that prevent (in some rare cases) correct flattening of cubic curves.
+
+	* Fixed matrix polar decomposition.
+
+	* Fixed Romberg integrator (now minimum number of steps is 2).
+
+	* Fixed all Visual Studio 2005 compiler "deprecation" warnings.
+
+	* Tools and viewimage example have been removed due to some incompatibility issues between Qt3 and Qt4 branches.
+
+
+
 2005-09-24
 
 	* Version 0.1.1

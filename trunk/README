@@ -3,8 +3,8 @@ AMANITH FRAMEWORK README
 Crossplatform, Opensource, Ansi C++, Framework aimed to handle 2d and 3d Vector Graphic.
 
  =-----------------------------=
- | Version: 0.1.1              |
- | Released: 24 September 2005 |
+ | Version: 0.2.0              |
+ | Released: 15 December 2005  |
  | Licence: QPL                |
  | Url: www.amanith.org        |
  =-----------------------------=
@@ -30,6 +30,7 @@ Content of the package
  |       |       |-----> bezier2d
  |       |       |-----> bspline2d
  |       |       |-----> delaunay2d
+ |       |       |-----> drawboard
  |       |       |-----> font2d
  |       |       |-----> hermite2d
  |       |       |-----> path2d
@@ -40,9 +41,7 @@ Content of the package
  |       |       |-----> vectorizer
  |       |
  |       |-----> others
- |       |       |-----> lowlevel_stuff
- |       |
- |       |-----> viewimage
+ |               |-----> lowlevel_stuff
  |
  |-----> include
  |       |-----> amanith
@@ -61,10 +60,6 @@ Content of the package
  |       |-----> numerics
  |       |-----> support
  |
- |-----> tools
- |       |-----> plugwizard
- |       |-----> uuid_gen
- |
  |-----> vs2003
  |       |-----> 3rdparts
  |       |       |-----> freetype2
@@ -81,6 +76,7 @@ Content of the package
  |       |       |       |-----> bezier2d
  |       |       |       |-----> bspline2d
  |       |       |       |-----> delaunay2d
+ |       |       |       |-----> drawboard
  |       |       |       |-----> font2d
  |       |       |       |-----> hermite2d
  |       |       |       |-----> path2d

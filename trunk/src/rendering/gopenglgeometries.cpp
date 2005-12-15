@@ -1,5 +1,5 @@
 /****************************************************************************
-** $file: amanith/src/rendering/gopenglgeometries.cpp   0.1.1.0   edited Sep 24 08:00
+** $file: amanith/src/rendering/gopenglgeometries.cpp   0.2.0.0   edited Dec, 12 2005
 **
 ** OpenGL based draw board geometries functions implementation.
 **
@@ -143,6 +143,9 @@ void GOpenGLBoard::DrawGLPolygon(const GOpenGLDrawStyle& Style, const GBool Clos
 
 	if (TargetMode() == G_CLIP_MODE) {
 
+		if (!gClipMasksSupport)
+			return;
+
 		// take care of replace operation (overflow)
 		ClipReplaceOverflowFix();
 
@@ -178,7 +181,7 @@ void GOpenGLBoard::DrawGLPolygon(const GOpenGLDrawStyle& Style, const GBool Clos
 
 	// in color mode, if we are inside a GroupBegin() / GroupEnd() constructor and group opacity is 0
 	// do not draw anything
-	if (InsideGroup() && gGroupOpacitySupport && GroupOpacity() <= 0)
+	if (InsideGroup() && GroupOpacity() <= 0 && gGroupOpacitySupport)
 		return;
 
 	if (ClosedFill) {
@@ -305,6 +308,10 @@ void GOpenGLBoard::DrawGLPolygons(const GDynArray<GPoint2>& Points, const GDynAr
 		box.SetMinMax(Points);
 
 	if (TargetMode() == G_CLIP_MODE) {
+
+		if (!gClipMasksSupport)
+			return;
+
 		// take care of replace operation (overflow)
 		ClipReplaceOverflowFix();
 
@@ -334,7 +341,7 @@ void GOpenGLBoard::DrawGLPolygons(const GDynArray<GPoint2>& Points, const GDynAr
 
 	// in color mode, if we are inside a GroupBegin() / GroupEnd() constructor and group opacity is 0
 	// do not draw anything
-	if (InsideGroup() && gGroupOpacitySupport && GroupOpacity() <= 0)
+	if (InsideGroup() && GroupOpacity() <= 0 && gGroupOpacitySupport)
 		return;
 
 	if (Style.FillEnabled()) {
@@ -402,6 +409,9 @@ void GOpenGLBoard::DoDrawLine(GDrawStyle& Style, const GPoint2& P0, const GPoint
 
 	if (TargetMode() == G_CLIP_MODE) {
 
+		if (!gClipMasksSupport)
+			return;
+
 		// take care of replace operation (overflow)
 		ClipReplaceOverflowFix();
 
@@ -433,7 +443,7 @@ void GOpenGLBoard::DoDrawLine(GDrawStyle& Style, const GPoint2& P0, const GPoint
 
 	// in color mode, if we are inside a GroupBegin() / GroupEnd() constructor and group opacity is 0
 	// do not draw anything
-	if (InsideGroup() && GroupOpacity() <= 0)
+	if (InsideGroup() && GroupOpacity() <= 0 && gGroupOpacitySupport)
 		return;
 
 	// set stroke style using OpenGL
@@ -1009,17 +1019,12 @@ void GOpenGLBoard::EndPaths() {
 		return;
 
 	gInsideSVGPaths = G_FALSE;
-	//if (!gInsideSVGPath)
-	//	return;
-
 	GInt32 newSize = (GInt32)gSVGPathPoints.size();
 
 	// close a potentially pending path
 	if (newSize != gOldPointsSize) {
 
-		//if (Distance(gSVGPathCursor, gFirstPathPoint) > G_EPSILON)
 		gSVGPathPoints.push_back(gSVGPathCursor);
-
 		newSize = (GInt32)gSVGPathPoints.size();
 
 		gSVGPathPointsPerContour.push_back(newSize - gOldPointsSize);

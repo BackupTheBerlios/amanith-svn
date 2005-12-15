@@ -14,5 +14,5 @@ win32: RC_FILE = example.rc
 
 # Qt4 support
 contains(DEFINES, USE_QT4) {
-    QT += opengl qt3support
+    QT += opengl
 }

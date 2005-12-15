@@ -1,5 +1,5 @@
 /****************************************************************************
-** $file: amanith/src/gpluglib.h   0.1.0.0   edited Jun 30 08:00
+** $file: amanith/src/gpluglib.h   0.2.0.0   edited Dec, 12 2005
 **
 ** Low level plugin loader implementation.
 **

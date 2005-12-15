@@ -1,5 +1,5 @@
 /****************************************************************************
-** $file: amanith/src/rendering/gopenglmasks.cpp   0.1.1.0   edited Sep 24 08:00
+** $file: amanith/src/rendering/gopenglmasks.cpp   0.2.0.0   edited Dec, 12 2005
 **
 ** OpenGL based draw board clip masks functions implementation.
 **
@@ -38,7 +38,7 @@ namespace Amanith {
 
 void GOpenGLBoard::StencilPush() {
 
-	if (!gClipByStencil)
+	if (!gClipMasksSupport)
 		return;
 
 	glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
@@ -57,7 +57,7 @@ void GOpenGLBoard::StencilPush() {
 
 void GOpenGLBoard::StencilPop() {
 
-	if (!gClipByStencil)
+	if (!gClipMasksSupport)
 		return;
 
 	if (gTopStencilValue == 0) {
@@ -73,7 +73,7 @@ void GOpenGLBoard::StencilPop() {
 
 void GOpenGLBoard::StencilReplace() {
 
-	if (!gClipByStencil)
+	if (!gClipMasksSupport)
 		return;
 
 	glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
@@ -88,7 +88,7 @@ void GOpenGLBoard::StencilReplace() {
 
 void GOpenGLBoard::StencilEnableTop() {
 
-	if (!gClipByStencil)
+	if (!gClipMasksSupport)
 		return;
 
 	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE);

@@ -28,7 +28,11 @@
 #include <amanith/gkernel.h>
 #include <amanith/gopenglext.h>
 #include <amanith/2d/gbeziercurve2d.h>
+#ifdef USE_QT4
+#include <QGLWidget>
+#else
 #include <qgl.h>
+#endif
 
 using namespace Amanith;
 
@@ -50,13 +54,17 @@ private:
 
 protected:
 	void initializeGL();					// implementation for QGLWidget.initializeGL()
-    void paintGL();							// implementation for QGLWidget.paintGL()
+	void paintGL();						// implementation for QGLWidget.paintGL()
 	void resizeGL(int width, int height);	// implementation for QGLWidget.resizeGL()
 	void keyPressEvent(QKeyEvent *e);		// keyboard event handler
 
 public:
 	// constructor
+#ifdef USE_QT4
+	QGLWidgetTest(const QGLFormat& Format, QWidget *parent = 0);
+#else
 	QGLWidgetTest(QWidget *parent = 0);
+#endif
 	// destructor
 	~QGLWidgetTest();
 	void timerEvent(QTimerEvent* e);

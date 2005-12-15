@@ -1,5 +1,5 @@
 /****************************************************************************
-** $file: amanith/gopenglext.h   0.1.1.0   edited Sep 24 08:00
+** $file: amanith/gopenglext.h   0.2.0.0   edited Dec, 12 2005
 **
 ** Opengl extension manager definition.
 **
@@ -102,6 +102,8 @@ namespace Amanith {
 		GUInt32 DepthBits() const;
 		//! Get number of stencil bitplanes.
 		GUInt32 StencilBits() const;
+		//! Get number of multisamples used by render context
+		GUInt32 MultiSamples() const;
 		//! Get the list of supported OpenGL functions over OpenGL 1.1 version
 		const GStringList& SupportedFunctions() const;
 		//! Print out the information log for a shader object or a program object

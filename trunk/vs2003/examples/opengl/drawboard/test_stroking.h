@@ -25,7 +25,7 @@
 
 void TestStroke(const GUInt32 TestIndex) {
 	
-	GUInt32 idx = TestIndex & 0;//(TestIndex % 4);
+	GUInt32 idx = TestIndex & 0;
 
 	gDrawBoard->SetTargetMode(G_COLOR_MODE);
 	gDrawBoard->SetFillEnabled(G_FALSE);

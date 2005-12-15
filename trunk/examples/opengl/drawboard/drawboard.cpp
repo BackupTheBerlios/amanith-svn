@@ -36,13 +36,14 @@
 #endif
 
 // constructor
-QGLWidgetTest::QGLWidgetTest(QWidget * parent) : QGLWidget(QGLFormat(QGL::StencilBuffer), parent) {
+#ifdef USE_QT4
+QGLWidgetTest::QGLWidgetTest(const QGLFormat& Format, QWidget *parent) : QGLWidget(Format, parent) {
+#else
+QGLWidgetTest::QGLWidgetTest(QWidget * parent) : QGLWidget(parent) {
+#endif
 
 	gKernel = new GKernel();
 	gImage = (GPixelMap *)gKernel->CreateNew(G_PIXELMAP_CLASSID);
-	gPath1 = (GPath2D *)gKernel->CreateNew(G_PATH2D_CLASSID);
-	gPath2 = (GPath2D *)gKernel->CreateNew(G_PATH2D_CLASSID);
-	gPath3 = (GPath2D *)gKernel->CreateNew(G_PATH2D_CLASSID);
 
 	// build path for data (textures)
 	gDataPath = SysUtils::AmanithPath();
@@ -56,9 +57,11 @@ QGLWidgetTest::QGLWidgetTest(QWidget * parent) : QGLWidget(QGLFormat(QGL::Stenci
 	gTestIndex = 0;
 	// start with not using random matrix
 	gRandAngle = 0;
-	gRandScale = 1;
+	gRandScaleX = 1;
+	gRandScaleY = 1;
 	gRenderingQuality = G_HIGH_RENDERING_QUALITY;
 	gUseShaders = G_TRUE;
+	gDrawBackGround = G_TRUE;
 	// set an 800x600 window
 	this->setGeometry(50, 50, 800, 600);
 }
@@ -90,7 +93,6 @@ void QGLWidgetTest::initializeGL() {
 	colKeys.push_back(GKeyValue((GReal)0.50, GVector4((GReal)0.8, (GReal)0.8, (GReal)0.0, (GReal)1.0)));
 	colKeys.push_back(GKeyValue((GReal)0.75, GVector4((GReal)0.0, (GReal)0.3, (GReal)0.5, (GReal)1.0)));
 	colKeys.push_back(GKeyValue((GReal)1.00, GVector4((GReal)0.4, (GReal)0.0, (GReal)0.5, (GReal)1.0)));
-	//colKeys.push_back(GKeyValue((GReal)1.00, GVector4((GReal)1.0, (GReal)0.0, (GReal)0.0, (GReal)1.0)));
 	gLinGrad1 = gDrawBoard->CreateLinearGradient(GPoint2(80, 48), GPoint2(160, 128), colKeys, G_HERMITE_COLOR_INTERPOLATION, G_PAD_COLOR_RAMP_SPREAD);
 	
 	colKeys.clear();
@@ -99,7 +101,6 @@ void QGLWidgetTest::initializeGL() {
 	colKeys.push_back(GKeyValue((GReal)0.60, GVector4((GReal)1.000, (GReal)0.500, (GReal)0.000, (GReal)1.0)));
 	colKeys.push_back(GKeyValue((GReal)0.70, GVector4((GReal)0.980, (GReal)0.950, (GReal)0.000, (GReal)1.0)));
 	colKeys.push_back(GKeyValue((GReal)1.00, GVector4((GReal)0.171, (GReal)0.680, (GReal)0.800, (GReal)1.0)));
-	//colKeys.push_back(GKeyValue((GReal)1.00, GVector4((GReal)0.171, (GReal)0.200, (GReal)0.400, (GReal)1.0)));
 
 	gRadGrad1 = gDrawBoard->CreateRadialGradient(GPoint2(90, 58), GPoint2(150, 118), 110, colKeys, G_HERMITE_COLOR_INTERPOLATION, G_PAD_COLOR_RAMP_SPREAD);
 	gRadGrad3 = gDrawBoard->CreateRadialGradient(GPoint2(-90, -70), GPoint2(-130, -130), 100, colKeys, G_HERMITE_COLOR_INTERPOLATION, G_PAD_COLOR_RAMP_SPREAD);
@@ -125,21 +126,11 @@ void QGLWidgetTest::initializeGL() {
 	gConGrad2 = gDrawBoard->CreateConicalGradient(GPoint2(120, 88), GPoint2(180, 88), colKeys, G_HERMITE_COLOR_INTERPOLATION);
 	gConGrad4 = gDrawBoard->CreateConicalGradient(GPoint2(0, 0), GPoint2(20, 0), colKeys, G_HERMITE_COLOR_INTERPOLATION);
 
-
 	colKeys.clear();
 	colKeys.push_back(GKeyValue((GReal)0.00, GVector4((GReal)0.0, (GReal)0.0, (GReal)0.0, (GReal)1.0)));
 	colKeys.push_back(GKeyValue((GReal)1.00, GVector4((GReal)0.0, (GReal)0.0, (GReal)0.0, (GReal)0.0)));
-	//colKeys.push_back(GKeyValue((GReal)1.00, GVector4((GReal)1.0, (GReal)0.0, (GReal)0.0, (GReal)1.0)));
 	gLinGrad3 = gDrawBoard->CreateLinearGradient(GPoint2(560, 20), GPoint2(760, 20), colKeys, G_HERMITE_COLOR_INTERPOLATION, G_PAD_COLOR_RAMP_SPREAD);
 
-	// conical gradient
-	colKeys.clear();
-	colKeys.push_back(GKeyValue((GReal)0.00, GVector4((GReal)0.171, (GReal)0.680, (GReal)0.800, (GReal)1.0)));
-	colKeys.push_back(GKeyValue((GReal)0.30, GVector4((GReal)0.540, (GReal)0.138, (GReal)0.757, (GReal)1.0)));
-	colKeys.push_back(GKeyValue((GReal)0.60, GVector4((GReal)1.000, (GReal)0.500, (GReal)0.000, (GReal)1.0)));
-	colKeys.push_back(GKeyValue((GReal)0.70, GVector4((GReal)0.980, (GReal)0.950, (GReal)0.000, (GReal)1.0)));
-	colKeys.push_back(GKeyValue((GReal)1.00, GVector4((GReal)0.171, (GReal)0.680, (GReal)0.800, (GReal)1.0)));
-	
 	// background
 	s = gDataPath + "background.png";
 	err = gImage->Load(StrUtils::ToAscii(s), "expandpalette=true");
@@ -160,7 +151,6 @@ void QGLWidgetTest::initializeGL() {
 	else
 		gPattern = NULL;
 
-
 	// dashes
 	gDrawBoard->SetStrokeDashPhase(0);
 	GDynArray<GReal> pat;
@@ -169,136 +159,22 @@ void QGLWidgetTest::initializeGL() {
 	pat.push_back(30);
 	pat.push_back(35);
 	gDrawBoard->SetStrokeDashPattern(pat);
-}
-//------------------------------------------------------------
 
-void QGLWidgetTest::TestDebug() {
-
-	gDrawBoard->SetTargetMode(G_COLOR_MODE);
-	gDrawBoard->SetFillColor(GVector4((GReal)1.0, (GReal)0.0, (GReal)0.0, (GReal)1.0));
-	gDrawBoard->SetFillPaintType(G_COLOR_PAINT_TYPE);
-	gDrawBoard->SetStrokeColor(GVector4((GReal)0.0, (GReal)0.0, (GReal)0.0, (GReal)1.0));
-	gDrawBoard->SetStrokePaintType(G_COLOR_PAINT_TYPE);
-	gDrawBoard->SetStrokeWidth(10);
-	gDrawBoard->SetStrokeStartCapStyle(G_ROUND_CAP);
-	gDrawBoard->SetStrokeEndCapStyle(G_ROUND_CAP);
-	gDrawBoard->SetStrokeJoinStyle(G_ROUND_JOIN);
-	gDrawBoard->SetStrokeStyle(G_SOLID_STROKE);
-
-	gDrawBoard->SetFillEnabled(G_TRUE);
-	gDrawBoard->SetStrokeEnabled(G_TRUE);
-
-	//gDrawBoard->DrawRectangle(GPoint2(200, 200), GPoint2(400, 400));
-	//gDrawBoard->DrawRoundRectangle(GPoint2(200, 200), GPoint2(600, 400), 500, 3000);
-
-	/*gDrawBoard->DrawBezier(GPoint2(100, 100), GPoint2(500, 500), GPoint2(100, 400), GPoint2(400, 100));
-
-	long double t0, t1, dt;
-
-	t0 = GetTickCount();
-
-	for (GUInt32 i = 0; i < 100000; i++)
-		gDrawBoard->DrawBezier(GPoint2(100, 100), GPoint2(500, 500), GPoint2(100, 400), GPoint2(400, 100));
-
-	t1 = GetTickCount();
-	dt = t1 - t0;
-	if (dt < 0)
-		dt = 0;
-
-	GString s;
-	s = StrUtils::ToString((double)dt);
-	MessageBoxA(0, StrUtils::ToAscii(s), "Elapsed time in ms", MB_OK);*/
-
-	//gDrawBoard->DrawBezier(GPoint2(200, 200), GPoint2(400, 600), GPoint2(600, 200));
-
-	GDynArray<GPoint2> pts;
-	GDynArray<GCurve2D *> paths;
-
-	GBezierCurve2D bezCurve;
-	GBSplineCurve2D bsplineCurve;
-
-	// bezier segment
-	pts.clear();
-	pts.push_back(GPoint2(20, 80));
-	pts.push_back(GPoint2(50, 130));
-	pts.push_back(GPoint2(200, 410));
-	bezCurve.SetPoints(pts);
-	bezCurve.SetDomain(0, (GReal)0.2);
-	gPath1->AppendCurve(bezCurve);
-	// another bezier segment
-	pts.clear();
-	pts.push_back(GPoint2(200, 410));
-	pts.push_back(GPoint2(410, 450));
-	pts.push_back(GPoint2(350, 300));
-	pts.push_back(GPoint2(530, 50));
-	bezCurve.SetPoints(pts);
-	bezCurve.SetDomain((GReal)0.2, (GReal)0.5);
-	gPath1->AppendCurve(bezCurve);
-	// b-spline curve segment
-	pts.clear();
-	pts.push_back(GPoint2(530, 50));
-	pts.push_back(GPoint2(50, 30));
-	pts.push_back(GPoint2(100, 80));
-	pts.push_back(GPoint2(80, 30));
-	bsplineCurve.SetPoints(pts, 3, (GReal)0.5, 1);
-	gPath1->AppendCurve(bsplineCurve);
-	// close the path
-	gPath1->ClosePath();
-
-	//gDrawBoard->DrawBezier(GPoint2(20, 80), GPoint2(50, 130), GPoint2(200, 410));
-
-	pts.clear();
-	pts.push_back(GPoint2(200, 200));
-	pts.push_back(GPoint2(600, 250));
-	pts.push_back(GPoint2(750, 110));
-	pts.push_back(GPoint2(200, 100));
-	bezCurve.SetPoints(pts);
-	bezCurve.SetDomain(0, (GReal)0.2);
-	gPath2->AppendCurve(bezCurve);
-	gPath2->ClosePath();
-
-	paths.push_back(gPath1);
-	paths.push_back(gPath2);
-	//gDrawBoard->DrawPaths(paths);
-	//gDrawBoard->DrawPath(*gPath1);
-
-	pts.clear();
-	pts.push_back(GPoint2(20, 80));
-	pts.push_back(GPoint2(50, 130));
-	pts.push_back(GPoint2(200, 410));
-	//pts.push_back(GPoint2(400, 400));
-
-	//gDrawBoard->DrawPolygon(pts, G_FALSE);
-	//gDrawBoard->DrawEllipseArc(GPoint2(400, 200), GPoint2(500, 300), 250, 150, 0.75, G_TRUE, G_FALSE);
-
-	//gDrawBoard->DrawCircle(GPoint2(300, 300), 200);
-	//gDrawBoard->SetStrokeStyle(G_DASHED_STROKE);
-	//gDrawBoard->DrawEllipse(GPoint2(300, 300), 200, 120);
-
-	gDrawBoard->BeginPaths();
-
-	gDrawBoard->MoveTo(GPoint2(200, 100), G_FALSE);
-	gDrawBoard->CurveTo(GPoint2(500, 100), GPoint2(500, 400), G_FALSE);
-
-	gDrawBoard->SmoothCurveTo(GPoint2(200, 400), G_FALSE);
-	gDrawBoard->SmoothCurveTo(GPoint2(200, 80), G_FALSE);
-	gDrawBoard->ClosePath();
-
-	gDrawBoard->MoveTo(GPoint2(250, 300), G_FALSE);
-	gDrawBoard->CurveTo(GPoint2(350, 200), GPoint2(450, 300), GPoint2(280, 400), G_FALSE);
-
-	//gDrawBoard->ClosePath();
-
-/*	gDrawBoard->MoveTo(GPoint2(250, 300), G_FALSE);
-	gDrawBoard->LineTo(GPoint2(450, 430), G_FALSE);
-	gDrawBoard->EllipticalArcTo(260, 160, 0, G_TRUE, G_FALSE, GPoint2(250, 400), G_FALSE);
-	gDrawBoard->ClosePath();*/
-
-	gDrawBoard->MoveTo(GPoint2(250, 300), G_FALSE);
-
-	gDrawBoard->EndPaths();
-
-	//gDrawBoard->DrawLine(GPoint2(250, 300), GPoint2(550, 530));
+	// gradients for logo
+	colKeys.clear();
+	colKeys.push_back(GKeyValue((GReal)0.00, GVector4((GReal)1.0, (GReal)1.0, (GReal)0.44, (GReal)1.0)));
+	colKeys.push_back(GKeyValue((GReal)1.00, GVector4((GReal)1.0, (GReal)1.0, (GReal)1.00, (GReal)1.0)));
+	gLinGradLogo1 = gDrawBoard->CreateLinearGradient(GPoint2(306, 280), GPoint2(460, 102), colKeys, G_LINEAR_COLOR_INTERPOLATION, G_PAD_COLOR_RAMP_SPREAD);
+	
+	colKeys.clear();
+	colKeys.push_back(GKeyValue((GReal)0.00, GVector4((GReal)1.0, (GReal)0.215, (GReal)0.172, (GReal)1.0)));
+	colKeys.push_back(GKeyValue((GReal)1.00, GVector4((GReal)1.0, (GReal)0.500, (GReal)0.000, (GReal)1.0)));
+	gLinGradLogo2 = gDrawBoard->CreateLinearGradient(GPoint2(276, 438), GPoint2(580, 206), colKeys, G_LINEAR_COLOR_INTERPOLATION, G_PAD_COLOR_RAMP_SPREAD);
+	
+	colKeys.clear();
+	colKeys.push_back(GKeyValue((GReal)0.00, GVector4((GReal)1.0, (GReal)1.0, (GReal)1.0, (GReal)1.0)));
+	colKeys.push_back(GKeyValue((GReal)1.00, GVector4((GReal)1.0, (GReal)1.0, (GReal)1.0, (GReal)0.0)));
+	gLinGradLogo3 = gDrawBoard->CreateLinearGradient(GPoint2(300, 460), GPoint2(417, 330), colKeys, G_LINEAR_COLOR_INTERPOLATION, G_PAD_COLOR_RAMP_SPREAD);
 }
 
 //----- paintGL ----------------------------------------------
@@ -322,22 +198,22 @@ void QGLWidgetTest::paintGL() {
 			TestColor(gTestIndex);
 			break;
 		case 1:
-			TestLinearGradient(gTestIndex, gRandAngle, gRandScale);
+			TestLinearGradient(gTestIndex, gRandAngle, gRandScaleX);
 			break;
 		case 2:
-			TestRadialGradientIn(gTestIndex, gRandAngle, gRandScale);
+			TestRadialGradientIn(gTestIndex, gRandAngle, gRandScaleX, gRandScaleY);
 			break;
 		case 3:
-			TestRadialGradientOut(gTestIndex, gRandAngle, gRandScale);
+			TestRadialGradientOut(gTestIndex, gRandAngle, gRandScaleX, gRandScaleY);
 			break;
 		case 4:
-			TestConicalGradientIn(gTestIndex, gRandAngle, gRandScale);
+			TestConicalGradientIn(gTestIndex, gRandAngle, gRandScaleX, gRandScaleY);
 			break;
 		case 5:
-			TestConicalGradientOut(gTestIndex, gRandAngle, gRandScale);
+			TestConicalGradientOut(gTestIndex, gRandAngle, gRandScaleX, gRandScaleY);
 			break;
 		case 6:
-			TestPattern(gTestIndex, gRandAngle, gRandScale);
+			TestPattern(gTestIndex, gRandAngle, gRandScaleX, gRandScaleY);
 			break;
 		case 7:
 			TestStroke(gTestIndex);
@@ -345,11 +221,12 @@ void QGLWidgetTest::paintGL() {
 		case 8:
 			TestMasks(gTestIndex);
 			break;
+		case 9:
+			TestGeometries(gTestIndex);
+			break;
 		default:
 			TestColor(gTestIndex);
 	}
-
-//	TestDebug();
 
 	gDrawBoard->Flush();
 }
@@ -372,8 +249,9 @@ void QGLWidgetTest::keyPressEvent(QKeyEvent *e) {
 
 	switch(e->key()) {
 		case Qt::Key_F1:
-			s = "1..9: Toggle draw test\n";
-			s += "PageUp/PageDown: Switch transparency modes\n";
+			s = "F2: contextual example description\n";
+			s += "0..9: Toggle draw test\n";
+			s += "PageUp/PageDown: Switch draw sheet\n";
 			s += "B: Toggle background\n";
 			s += "R: Switch rendering quality (low/normal/high)\n";
 			s += "S: Enable/Disable shaders (for gradients) if supported\n";
@@ -381,42 +259,194 @@ void QGLWidgetTest::keyPressEvent(QKeyEvent *e) {
 			QMessageBox::information(this, "Command keys", s);
 			break;
 
+		case Qt::Key_F2:
+			switch (gTestSuite) {
+				case 0:
+					s = "This board shows simple color filling with opaque and transparent colors.\n";
+					s += "In the leftmost column colors are 100% opaque, in the middle column colors are ";
+					s += "66% opaque\n and in the rightmost column colors are 33% opaque.\n";
+					s += "Compositing is done drawing smaller rectangles over larger ones.";
+					QMessageBox::information(this, "Current board description", s);
+					break;
+				case 1:
+					s = "This board shows simple linear gradient filling.\n\n";
+					s += "In the rows different color interpolation schema are shown:\n";
+					s += "Topmost row: CONSTANT interpolation.\n";
+					s += "Middle row: LINEAR interpolation.\n";
+					s += "Lower row: HERMITE interpolation.\n\n";
+					s += "In the columns different spread methods are shown:\n";
+					s += "Leftmost column: PAD spread method.\n";
+					s += "Middle column: REPEAT spread method.\n";
+					s += "Rightmost column: REFLECT spread method.\n\n";
+					s += "Use PageUp/PageDown keys to switch to transparency modes:\n";
+					s += "100% opaque fill and 100% opaque color keys.\n";
+					s += "50% opaque fill and 100% opaque color keys.\n";
+					s += "100% opaque fill and some non 100% opaque color keys.\n";
+					s += "50% opaque fill and some non 100% opaque color keys.";
+					QMessageBox::information(this, "Current board description", s);
+					break;
+				case 2:
+					s = "This board shows simple radial gradient filling, with focus point inside filled shapes.\n\n";
+					s += "In the rows different color interpolation schema are shown:\n";
+					s += "Topmost row: CONSTANT interpolation.\n";
+					s += "Middle row: LINEAR interpolation.\n";
+					s += "Lower row: HERMITE interpolation (available only if fragment programs are supported).\n\n";
+					s += "In the columns different spread methods are shown:\n";
+					s += "Leftmost column: PAD spread method.\n";
+					s += "Middle column: REPEAT spread method.\n";
+					s += "Rightmost column: REFLECT spread method.\n\n";
+					s += "Use PageUp/PageDown keys to switch to transparency modes:\n";
+					s += "100% opaque fill and 100% opaque color keys.\n";
+					s += "50% opaque fill and 100% opaque color keys.\n";
+					s += "100% opaque fill and some non 100% opaque color keys.\n";
+					s += "50% opaque fill and some non 100% opaque color keys.";
+					QMessageBox::information(this, "Current board description", s);
+					break;
+				case 3:
+					s = "This board shows simple radial gradient filling, with focus point outside filled shapes.\n\n";
+					s += "In the rows different color interpolation schema are shown:\n";
+					s += "Topmost row: CONSTANT interpolation.\n";
+					s += "Middle row: LINEAR interpolation.\n";
+					s += "Lower row: HERMITE interpolation (available only if fragment programs are supported).\n\n";
+					s += "In the columns different spread methods are shown:\n";
+					s += "Leftmost column: PAD spread method.\n";
+					s += "Middle column: REPEAT spread method.\n";
+					s += "Rightmost column: REFLECT spread method.\n\n";
+					s += "Use PageUp/PageDown keys to switch to transparency modes:\n";
+					s += "100% opaque fill and 100% opaque color keys.\n";
+					s += "50% opaque fill and 100% opaque color keys.\n";
+					s += "100% opaque fill and some non 100% opaque color keys.\n";
+					s += "50% opaque fill and some non 100% opaque color keys.";
+					QMessageBox::information(this, "Current board description", s);
+					break;
+				case 4:
+					s = "This board shows simple conical gradient filling, with center point inside filled shapes.\n\n";
+					s += "In the rows different color interpolation schema are shown:\n";
+					s += "Topmost row: CONSTANT interpolation.\n";
+					s += "Middle row: LINEAR interpolation.\n";
+					s += "Lower row: HERMITE interpolation.\n\n";
+					s += "In the columns different spread methods are shown:\n";
+					s += "Leftmost column: PAD spread method.\n";
+					s += "Middle column: REPEAT spread method.\n";
+					s += "Rightmost column: REFLECT spread method.\n\n";
+					s += "Use PageUp/PageDown keys to switch to transparency modes:\n";
+					s += "100% opaque fill and 100% opaque color keys.\n";
+					s += "50% opaque fill and 100% opaque color keys.\n";
+					s += "100% opaque fill and some non 100% opaque color keys.\n";
+					s += "50% opaque fill and some non 100% opaque color keys.";
+					QMessageBox::information(this, "Current board description", s);
+					break;
+				case 5:
+					s = "This board shows simple conical gradient filling, with center point outside filled shapes.\n\n";
+					s += "In the rows different color interpolation schema are shown:\n";
+					s += "Topmost row: CONSTANT interpolation.\n";
+					s += "Middle row: LINEAR interpolation.\n";
+					s += "Lower row: HERMITE interpolation.\n\n";
+					s += "In the columns different spread methods are shown:\n";
+					s += "Leftmost column: PAD spread method.\n";
+					s += "Middle column: REPEAT spread method.\n";
+					s += "Rightmost column: REFLECT spread method.\n\n";
+					s += "Use PageUp/PageDown keys to switch to transparency modes:\n";
+					s += "100% opaque fill and 100% opaque color keys.\n";
+					s += "50% opaque fill and 100% opaque color keys.\n";
+					s += "100% opaque fill and some non 100% opaque color keys.\n";
+					s += "50% opaque fill and some non 100% opaque color keys.";
+					QMessageBox::information(this, "Current board description", s);
+					break;
+				case 6:
+					s = "This board shows simple pattern filling.\n\n";
+					s += "In the rows different opacity percentage are shown:\n";
+					s += "Topmost row: 33% opaque filling.\n";
+					s += "Middle row: 66% opaque filling.\n";
+					s += "Lower row: 100% opaque filling.\n\n";
+					s += "In the columns different pattern tiling modes are shown:\n";
+					s += "Leftmost column: PAD tiling mode.\n";
+					s += "Middle column: REPEAT tiling mode.\n";
+					s += "Rightmost column: REFLECT tiling mode.\n\n";
+					QMessageBox::information(this, "Current board description", s);
+					break;
+				case 7:
+					s = "This board shows all supported stroking features.\n\n";
+					s += "Supported stroke styles are SOLID and DASHED (with also initial phase support).\n";
+					s += "Supported join types are BEVEL, MITER and ROUND.\n";
+					s += "Supported caps types (they could be used independently for start and end cap) are BUTT, SQUARE and ROUND.\n";
+					QMessageBox::information(this, "Current board description", s);
+					break;
+				case 8:
+					s = "This board shows clip masks and group opacity (you can switch between them using PageUp/PageDown keys).\n\n";
+					s += "Clip masks sheet description:\n";
+					s += "Leftmost column: unclipped shapes.\n";
+					s += "Middle column: clip masks (the darker color is the intersection of the masks).\n";
+					s += "Rightmost column: clipped shapes, using masks in \"and\" (intersection).\n\n";
+					s += "Group opacity sheet description:\n";
+					s += "Leftmost column: shapes are drawn without group opacity.\n";
+					s += "Middle column: shapes are drawn using (in different modes) group opacity.\n";
+					s += "Rightmost column: shapes are drawn with group opacity (like in the middle column) over a background.\n";
+					QMessageBox::information(this, "Current board description", s);
+					break;
+				case 9:
+					s = "This board shows some supported geometric primitives (you can switch between them using PageUp/PageDown keys).\n\n";
+					s += "Stroke primitives sheet description:\n";
+					s += "Lower row: a line, a quadratic Bezier curve and a cubic Bezier curve.\n";
+					s += "Middle row: 2 elliptical arcs (build using different constructors) and a polyline.\n";
+					s += "Topmost row: a round rectangle, a circle and an ellipse.\n\n";
+					s += "Amanith logo sheet description:\n";
+					s += "Here's Amanith mushroom, it's constructed directly with SVG paths.";
+					QMessageBox::information(this, "Current board description", s);
+					break;
+			}
+			break;
 		case Qt::Key_1:
 			gTestSuite = 0;
+			gTestIndex = 0;
 			updateGL();
 			break;
 		case Qt::Key_2:
 			gTestSuite = 1;
+			gTestIndex = 0;
 			updateGL();
 			break;
 		case Qt::Key_3:
 			gTestSuite = 2;
+			gTestIndex = 0;
 			updateGL();
 			break;
 		case Qt::Key_4:
 			gTestSuite = 3;
+			gTestIndex = 0;
 			updateGL();
 			break;
 		case Qt::Key_5:
 			gTestSuite = 4;
+			gTestIndex = 0;
 			updateGL();
 			break;
 		case Qt::Key_6:
 			gTestSuite = 5;
+			gTestIndex = 0;
 			updateGL();
 			break;
 		case Qt::Key_7:
 			gTestSuite = 6;
+			gTestIndex = 0;
 			updateGL();
 			break;
 		case Qt::Key_8:
 			gTestSuite = 7;
+			gTestIndex = 0;
 			updateGL();
 			break;
 		case Qt::Key_9:
 			gTestSuite = 8;
+			gTestIndex = 0;
 			updateGL();
 			break;
+		case Qt::Key_0:
+			gTestSuite = 9;
+			gTestIndex = 0;
+			updateGL();
+			break;
+
 		case Qt::Key_B:
 			if (gDrawBackGround)
 				gDrawBackGround = G_FALSE;
@@ -463,17 +493,16 @@ void QGLWidgetTest::keyPressEvent(QKeyEvent *e) {
 
 		case Qt::Key_Space:
 			gRandAngle = GMath::RangeRandom((GReal)0, (GReal)G_2PI);
-			if (gTestSuite == 6)
-				gRandScale = GMath::RangeRandom((GReal)0.1, (GReal)1.5);
-			else
-				gRandScale = GMath::RangeRandom((GReal)0.33, (GReal)3.0);
+			if (gTestSuite == 6) {
+				gRandScaleX = GMath::RangeRandom((GReal)0.1, (GReal)1.5);
+				gRandScaleY = GMath::RangeRandom((GReal)0.1, (GReal)1.5);
+			}
+			else {
+				gRandScaleX = GMath::RangeRandom((GReal)0.33, (GReal)3.0);
+				gRandScaleY = GMath::RangeRandom((GReal)0.33, (GReal)3.0);
+			}
 			updateGL();
 			break;
-/*
-		case Qt::Key_0:
-			TestDebug();
-			updateGL();
-			break;*/
 	}
 }
 

@@ -57,7 +57,6 @@ GTimeValue gCurrentTime;
 GTimeValue gTimeStep;
 GBool gDrawPalette;
 
-
 void setLightAndTransform() {
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
@@ -495,12 +494,15 @@ BOOL CreateGLWindow(char* title, int width, int height, int bits, bool fullscree
 		MessageBox(NULL, "Can't Create A GL Device Context.", "ERROR", MB_OK | MB_ICONEXCLAMATION);
 		return FALSE;
 	}
+
 	if (!(PixelFormat = ChoosePixelFormat(hDC, &pfd))) {
 		KillGLWindow();
 		MessageBox(NULL, "Can't Find A Suitable PixelFormat.", "ERROR", MB_OK | MB_ICONEXCLAMATION);
 		return FALSE;
 	}
-	if (!SetPixelFormat(hDC, PixelFormat, &pfd))	{
+
+
+	if (!SetPixelFormat(hDC, PixelFormat, &pfd)) {
 		KillGLWindow();
 		MessageBox(NULL, "Can't Set The PixelFormat.", "ERROR", MB_OK | MB_ICONEXCLAMATION);
 		return FALSE;
@@ -512,7 +514,7 @@ BOOL CreateGLWindow(char* title, int width, int height, int bits, bool fullscree
 		return FALSE;
 	}
 
-	if (!wglMakeCurrent(hDC,hRC)) {
+	if (!wglMakeCurrent(hDC, hRC)) {
 		KillGLWindow();
 		MessageBox(NULL, "Can't Activate The GL Rendering Context.", "ERROR", MB_OK | MB_ICONEXCLAMATION);
 		return FALSE;
@@ -632,7 +634,7 @@ int WINAPI WinMain(	HINSTANCE	hInstance,			// Instance
 				s += "Space: Generate a new random palette\n";
 				s += "I: Change interpolation type (constant/linear/hermite)\n";
 				s += "O: Change 'out of range' behavior (constant/loop/ping-pong)";
-				MessageBox(NULL, StrUtils::ToAscii(s), "Command keys", MB_OK | MB_ICONINFORMATION);
+				MessageBox(NULL, StrUtils::ToAscii(s), "Command keys", MB_OK | MB_ICONINFORMATION | MB_APPLMODAL);
 			}
 			// A key
 			if (keys[65]) {

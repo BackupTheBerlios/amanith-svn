@@ -1,5 +1,5 @@
 /****************************************************************************
-** $file: amanith/src/rendering/gopenglgroups.cpp   0.1.1.0   edited Sep 24 08:00
+** $file: amanith/src/rendering/gopenglgroups.cpp   0.2.0.0   edited Dec, 12 2005
 **
 ** OpenGL based draw board group functions implementation.
 **
@@ -37,16 +37,6 @@ namespace Amanith {
 
 void GOpenGLBoard::PushGLWindowMode() {
 
-	/*glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glLoadIdentity();
-	glOrtho(0,winWidth,0,winHeight,-1,1);
-	//glTranslatef(.35,.35,0);
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-	glLoadIdentity();
-	glTranslatef(.35,.35,0);*/
-
 	GUInt32 x, y, w, h;
 	Viewport(x, y, w, h);
 
@@ -71,7 +61,7 @@ void GOpenGLBoard::PopGLWindowMode() {
 void GOpenGLBoard::DoGroupBegin(const GAABox2& LogicBox) {
 
 	// if group opacity is not supported by hardware or group opacity is 1, ignore group as opaque
-	if (GroupOpacity() >= 1 || GroupOpacity() <= 0 || TargetMode() == G_CLIP_MODE)
+	if (GroupOpacity() >= 1 || GroupOpacity() <= 0 || TargetMode() == G_CLIP_MODE || !gGroupOpacitySupport)
 		return;
 
 	if (LogicBox.Volume() <= G_EPSILON) {
@@ -112,7 +102,7 @@ void GOpenGLBoard::DoGroupBegin(const GAABox2& LogicBox) {
 void GOpenGLBoard::DoGroupEnd() {
 
 	// if group opacity is not supported by hardware or group opacity is 1, ignore group as opaque
-	if (GroupOpacity() >= 1 || GroupOpacity()<= 0 || gGLGroupRect.IsEmpty || TargetMode() == G_CLIP_MODE)
+	if (GroupOpacity() >= 1 || GroupOpacity()<= 0 || gGLGroupRect.IsEmpty || TargetMode() == G_CLIP_MODE || !gGroupOpacitySupport)
 		return;
 
 	PushGLWindowMode();

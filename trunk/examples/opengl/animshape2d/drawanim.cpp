@@ -90,7 +90,11 @@ void GTesselatedGlyph::GenDisplayList() {
 }
 
 //------------------------------------------------------------
+#ifdef USE_QT4
+QGLWidgetTest::QGLWidgetTest(const QGLFormat& Format, QWidget *parent) : QGLWidget(Format, parent) {
+#else
 QGLWidgetTest::QGLWidgetTest(QWidget * parent) : QGLWidget(parent) {
+#endif
 
 	GError err;
 
@@ -322,7 +326,7 @@ void QGLWidgetTest::initializeGL() {
 	// bind background texture to OpenGL
 	glGenTextures(1, &gBindedTexture);
 	glBindTexture(GL_TEXTURE_2D, gBindedTexture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, gBackGround->Width(), gBackGround->Height(),
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, gBackGround->Width(), gBackGround->Height(),
 				 0, GL_BGRA, GL_UNSIGNED_BYTE, gBackGround->Pixels());
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -479,7 +483,10 @@ void QGLWidgetTest::keyPressEvent(QKeyEvent *e) {
 			}
 			break;
 		case Qt::Key_B:
-			gBlockAnim = !gBlockAnim;
+			if (gBlockAnim)
+				gBlockAnim = G_FALSE;
+			else
+				gBlockAnim = G_TRUE;
 			break;
 		case Qt::Key_N:
 			gLogicTick /= (GReal)1.2;

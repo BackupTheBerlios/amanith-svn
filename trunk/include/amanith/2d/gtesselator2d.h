@@ -1,5 +1,5 @@
 /****************************************************************************
-** $file: amanith/2d/gtesselator2d.h   0.1.1.0   edited Sep 24 08:00
+** $file: amanith/2d/gtesselator2d.h   0.2.0.0   edited Dec, 12 2005
 **
 ** 2D Polygonal shape tesselator definition.
 **
@@ -50,7 +50,7 @@ namespace Amanith {
 		G_ODD_EVEN_RULE,
 		//! Even-odd rule
 		G_EVEN_ODD_RULE,
-		//! Non-zero rule
+		//! Non-zero rule (not yet supported)
 		G_NON_ZERO_RULE,
 		//! Any rule
 		G_ANY_RULE

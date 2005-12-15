@@ -28,11 +28,13 @@
 #include <amanith/gkernel.h>
 #include <amanith/gopenglext.h>
 #include <amanith/2d/gmesh2d.h>
+#ifdef USE_QT4
+#include <QGLWidget>
+#else
 #include <qgl.h>
+#endif
 
 using namespace Amanith;
-
-class QGLWidgetTest;
 
 class QGLWidgetTest : public QGLWidget {
 
@@ -57,7 +59,11 @@ protected:
 
 public:
 	// constructor
+#ifdef USE_QT4
+	QGLWidgetTest(const QGLFormat& Format, QWidget *parent = 0);
+#else
 	QGLWidgetTest(QWidget *parent = 0);
+#endif
 	// destructor
 	~QGLWidgetTest();
 	void timerEvent(QTimerEvent* e);

@@ -39,6 +39,8 @@ HINSTANCE	hInstance;		// Holds The Instance Of The Application
 bool keys[256];			// Array Used For The Keyboard Routine
 bool active = TRUE;		// Window Active Flag Set To TRUE By Default
 bool fullscreen = TRUE;	// Fullscreen Flag Set To Fullscreen Mode By Default
+bool arbMultisampleSupported = false;
+int arbMultisampleFormat = 0;
 
 LRESULT	CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);	// Declaration For WndProc
 
@@ -62,6 +64,59 @@ GLfloat z_light;			// Light z
 GLfloat lightAmbient[4];	// Ambient Light Values
 GLfloat lightDiffuse[4];	// Diffuse Light Values
 GLfloat lightPosition[4];	// Light Position
+
+// InitMultisample: Used To Query The Multisample Frequencies
+bool InitMultisample(HINSTANCE hInstance, HWND hWnd, PIXELFORMATDESCRIPTOR pfd)
+{  
+
+	// using Amanith OpenGL extension manager is just a matter of test function pointer...
+	if (!wglChoosePixelFormatARB) 
+	{
+		arbMultisampleSupported = false;
+		return false;
+	}
+
+	// Get Our Current Device Context
+	HDC hDC = GetDC(hWnd);
+
+	int		pixelFormat;
+	int		valid;
+	UINT	numFormats;
+	float	fAttributes[] = {0, 0};
+
+	int iAttributes[] =	{
+		WGL_DRAW_TO_WINDOW_ARB, GL_TRUE,
+			WGL_SUPPORT_OPENGL_ARB, GL_TRUE,
+			WGL_ACCELERATION_ARB,WGL_FULL_ACCELERATION_ARB,
+			WGL_COLOR_BITS_ARB, 16,
+			WGL_ALPHA_BITS_ARB, 0,
+			WGL_DEPTH_BITS_ARB, 16,
+			WGL_STENCIL_BITS_ARB, 0,
+			WGL_DOUBLE_BUFFER_ARB, GL_TRUE,
+			WGL_SAMPLE_BUFFERS_ARB, GL_TRUE,
+			WGL_SAMPLES_ARB, 4,
+			0, 0
+	};
+	// First We Check To See If We Can Get A Pixel Format For 4 Samples
+	valid = wglChoosePixelFormatARB(hDC, iAttributes, fAttributes, 1, &pixelFormat, &numFormats);
+
+	// If We Returned True, And Our Format Count Is Greater Than 1
+	if (valid && numFormats >= 1) {
+		arbMultisampleSupported = true;
+		arbMultisampleFormat = pixelFormat;	
+		return arbMultisampleSupported;
+	}
+	// Our Pixel Format With 4 Samples Failed, Test For 2 Samples
+	iAttributes[19] = 2;
+	valid = wglChoosePixelFormatARB(hDC, iAttributes, fAttributes, 1, &pixelFormat, &numFormats);
+	if (valid && numFormats >= 1) {
+		arbMultisampleSupported = true;
+		arbMultisampleFormat = pixelFormat;	 
+		return arbMultisampleSupported;
+	}
+	// Return The Valid Format
+	return arbMultisampleSupported;
+}
 
 void InitApp() {
 
@@ -127,7 +182,7 @@ GLuint loadTexture(const GChar8 *fileName, const GChar8 *Options) {
 	err = imgTexture->Load(fileName, Options);
 	glGenTextures(1, &texture[0]);
 	glBindTexture(GL_TEXTURE_2D, texture[0]);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, imgTexture->Width(), imgTexture->Height(),
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, imgTexture->Width(), imgTexture->Height(),
 				 0, GL_BGRA, GL_UNSIGNED_BYTE, imgTexture->Pixels());
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -183,12 +238,12 @@ void createCubeTex() {
 		glTexParameteri(GL_TEXTURE_CUBE_MAP_ARB, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_CUBE_MAP_ARB, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_CUBE_MAP_ARB, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X_ARB, 0, 4, img5->Width(), img5->Height(), 0, GL_BGRA, GL_UNSIGNED_BYTE, img5->Pixels());
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X_ARB, 0, 4, img6->Width(), img6->Height(), 0, GL_BGRA, GL_UNSIGNED_BYTE, img6->Pixels());
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y_ARB, 0, 4, img3->Width(), img3->Height(), 0, GL_BGRA, GL_UNSIGNED_BYTE, img3->Pixels());
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y_ARB, 0, 4, img4->Width(), img4->Height(), 0, GL_BGRA, GL_UNSIGNED_BYTE, img4->Pixels());
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z_ARB, 0, 4, img1->Width(), img1->Height(), 0, GL_BGRA, GL_UNSIGNED_BYTE, img1->Pixels());
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z_ARB, 0, 4, img2->Width(), img2->Height(), 0, GL_BGRA, GL_UNSIGNED_BYTE, img2->Pixels());
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X_ARB, 0, GL_RGBA8, img5->Width(), img5->Height(), 0, GL_BGRA, GL_UNSIGNED_BYTE, img5->Pixels());
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X_ARB, 0, GL_RGBA8, img6->Width(), img6->Height(), 0, GL_BGRA, GL_UNSIGNED_BYTE, img6->Pixels());
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y_ARB, 0, GL_RGBA8, img3->Width(), img3->Height(), 0, GL_BGRA, GL_UNSIGNED_BYTE, img3->Pixels());
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y_ARB, 0, GL_RGBA8, img4->Width(), img4->Height(), 0, GL_BGRA, GL_UNSIGNED_BYTE, img4->Pixels());
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z_ARB, 0, GL_RGBA8, img1->Width(), img1->Height(), 0, GL_BGRA, GL_UNSIGNED_BYTE, img1->Pixels());
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z_ARB, 0, GL_RGBA8, img2->Width(), img2->Height(), 0, GL_BGRA, GL_UNSIGNED_BYTE, img2->Pixels());
 	}
 	// even without this free step, memory would be retrieved by kernel
 	// by the destructor (garbage collector)
@@ -904,9 +959,6 @@ int InitGL(GLvoid) {
 
 	GString fName;
 
-	// create extensions manager
-	gExtManager = new GOpenglExt();
-
 	glShadeModel(GL_SMOOTH);							// Enable Smooth Shading
 	glClearColor(0.0f, 0.0f, 0.0f, 0.5f);				// Black Background
 	glClearDepth(1.0f);									// Depth Buffer Setup
@@ -1085,12 +1137,18 @@ BOOL CreateGLWindow(char* title, int width, int height, int bits, bool fullscree
 		MessageBox(NULL, "Can't Create A GL Device Context.", "ERROR", MB_OK | MB_ICONEXCLAMATION);
 		return FALSE;
 	}
-	if (!(PixelFormat = ChoosePixelFormat(hDC, &pfd))) {
-		KillGLWindow();
-		MessageBox(NULL, "Can't Find A Suitable PixelFormat.", "ERROR", MB_OK | MB_ICONEXCLAMATION);
-		return FALSE;
+
+	if (!arbMultisampleSupported) {
+		if (!(PixelFormat = ChoosePixelFormat(hDC, &pfd))) {
+			KillGLWindow();
+			MessageBox(NULL, "Can't Find A Suitable PixelFormat.", "ERROR", MB_OK | MB_ICONEXCLAMATION);
+			return FALSE;
+		}
 	}
-	if (!SetPixelFormat(hDC, PixelFormat, &pfd))	{
+	else
+		PixelFormat = arbMultisampleFormat;
+
+	if (!SetPixelFormat(hDC, PixelFormat, &pfd)) {
 		KillGLWindow();
 		MessageBox(NULL, "Can't Set The PixelFormat.", "ERROR", MB_OK | MB_ICONEXCLAMATION);
 		return FALSE;
@@ -1102,10 +1160,21 @@ BOOL CreateGLWindow(char* title, int width, int height, int bits, bool fullscree
 		return FALSE;
 	}
 
-	if (!wglMakeCurrent(hDC,hRC)) {
+	if (!wglMakeCurrent(hDC, hRC)) {
 		KillGLWindow();
 		MessageBox(NULL, "Can't Activate The GL Rendering Context.", "ERROR", MB_OK | MB_ICONEXCLAMATION);
 		return FALSE;
+	}
+
+	if (!arbMultisampleSupported) {
+		// create extensions manager
+		if (!gExtManager)
+			gExtManager = new GOpenglExt();
+
+		if (InitMultisample(hInstance, hWnd, pfd)) {
+			KillGLWindow();
+			return CreateGLWindow(title, width, height, bits, fullscreenflag);
+		}
 	}
 
 	ShowWindow(hWnd, SW_SHOW);						// Show The Window
@@ -1227,7 +1296,7 @@ int WINAPI WinMain(	HINSTANCE	hInstance,			// Instance
 				s += "Space: Toggle animation\n";
 				s += "A/Z: Zoom +/-\n";
 				s += "L: Toggle light";
-				MessageBox(NULL, StrUtils::ToAscii(s), "Command keys", MB_OK | MB_ICONINFORMATION);
+				MessageBox(NULL, StrUtils::ToAscii(s), "Command keys", MB_OK | MB_ICONINFORMATION | MB_APPLMODAL);
 			}
 			// A
 			if (keys[65]) {

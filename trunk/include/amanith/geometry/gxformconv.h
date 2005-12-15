@@ -1,7 +1,7 @@
 /****************************************************************************
-** $file: amanith/geometry/gxformconv.h   0.1.1.0   edited Sep 24 08:00
+** $file: amanith/geometry/gxformconv.h   0.2.0.0   edited Dec, 12 2005
 **
-** Conversion between transformations representations (quaternions, matrix and vectors)
+** Conversion between transformation representations (quaternions, matrix and vectors)
 **
 **
 ** Copyright (C) 2004-2005 Mazatech Inc. All rights reserved.
@@ -71,9 +71,7 @@ namespace Amanith {
 		\param ApplicationOrder rotations application order.
 		\param RightOrder specify if specified ApplicationOrder must be "seen" from right to left (G_TRUE value) or
 		from left to right (G_FALSE value).
-		\note Adapted from Graphics Gems IV "Euler Angle Conversion". Due to a <b>doxygen bug</b>, similar function (same name
-		but different parameters) are still present into source code, but they cannot be documented. Please refer to
-		source file for the full list of RotationToMatrix() versions.
+		\note Adapted from Graphics Gems IV "Euler Angle Conversion".
 	*/
 	template <typename DATA_TYPE, GUInt32 ROWS, GUInt32 COLS>
 	void RotationToMatrix(GMatrix<DATA_TYPE, ROWS, COLS>& Result,
@@ -246,9 +244,7 @@ namespace Amanith {
 	/*!
 		Build a scale matrix, specifying scaling factors.
 
-		\note due to a <b>doxygen bug</b>, similar function (same name but different parameters) are still present
-		into source code, but they cannot be documented. Please refer to source file for the full list of
-		ScaleToMatrix() versions.
+		\note Each scale factor is inserted respectively into a diagonal matrix position.
 	*/
 	template <typename DATA_TYPE, GUInt32 ROWS, GUInt32 COLS, GUInt32 SIZE>
 	void ScaleToMatrix(GMatrix<DATA_TYPE, ROWS, COLS>& Result,	const GVectBase<DATA_TYPE, SIZE>& ScaleFactors) {
@@ -276,10 +272,6 @@ namespace Amanith {
 		Sets the rotation quaternion using the given matrix; this algorithm avoids
 		near-zero divides by looking for a large component
 		(3x3, 3x4, 4x3, or 4x4 are all valid sizes. In general n x m are valid if n and m are >= 3).
-
-		\note due to a <b>doxygen bug</b>, similar function (same name but different parameters) are still present
-		into source code, but they cannot be documented. Please refer to source file for the full list of
-		MatrixToRotation() versions.
     */
 	template <typename DATA_TYPE, GUInt32 ROWS, GUInt32 COLS>
 	void MatrixToRotation(GQuat<DATA_TYPE>& Result, const GMatrix<DATA_TYPE, ROWS, COLS>& M) {
@@ -513,6 +505,95 @@ namespace Amanith {
 		#undef EulRepYes
 		#undef EulParEven
 		#undef EulParOdd
+	}
+
+	/*!
+		Build a 2D shear matrix, specifying shear factors. Result matrix must have at least 2 rows and 2
+		columns. Shear factors are inserted respectively into [0][1] position ShearX, and into [1][0] position
+		ShearY, see the picture below:\n
+
+		\f[
+		Result = \left[ \begin{array}{ccc}
+		1 & \mbox{ShearX} & \mbox{...} \\
+		\mbox{ShearY} & 1 & \mbox{...} \\
+		\mbox{...} & \mbox{...} & \mbox{...} \end{array} \right]
+		\f]
+		\note Result matrix is first set as an identity, then shear factors are inserted.
+	*/
+	template <typename DATA_TYPE, GUInt32 ROWS, GUInt32 COLS>
+	void Shear2DToMatrix(GMatrix<DATA_TYPE, ROWS, COLS>& Result, const DATA_TYPE ShearX, const DATA_TYPE ShearY) {
+
+		G_ASSERT(ROWS >= 2 && COLS >= 2);
+
+		Identity(Result);
+		Result[0][1] = ShearX;
+		Result[1][0] = ShearY;
+	}
+
+	/*!
+		Build a 3D shear matrix, specifying shear factors and their respective axes. Result matrix must have at
+		least 3 rows and 3 columns. Shear factors are inserted according to specified application axes, see the
+		picture belove for the possible 3 cases:\n
+
+		\f[
+		X, Y = \left[ \begin{array}{cccc}
+		1 & 0 & \mbox{Shear0} & \mbox{...} \\
+		0 & 1 & \mbox{Shear1} & \mbox{...} \\
+		0 & 0 & 1 & \mbox{...} \end{array} \right]
+		\f]
+
+		\f[
+		X, Z =  \left[ \begin{array}{cccc}
+		1 & \mbox{Shear0} & 0 & \mbox{...} \\
+		0 & 1 & 0 & \mbox{...} \\
+		0 & \mbox{Shear1} & 1 & \mbox{...} \end{array} \right]
+		\f]
+
+		\f[
+		Y, Z = \left[ \begin{array}{cccc}
+		1 & 0 & 0 & \mbox{...} \\
+		\mbox{Shear0} & 1 & 0 & \mbox{...} \\
+		\mbox{Shear1} & 0 & 1 & \mbox{...} \end{array} \right]
+		\f]
+		\note Result matrix is first set as an identity, then shear factors are inserted.
+	*/
+	template <typename DATA_TYPE, GUInt32 ROWS, GUInt32 COLS>
+	void Shear3DToMatrix(GMatrix<DATA_TYPE, ROWS, COLS>& Result, const GVectorIndex Axis0, const DATA_TYPE Shear0,
+						 const GVectorIndex Axis1, const DATA_TYPE Shear1) {
+
+		G_ASSERT(ROWS >= 3 && COLS >= 3);
+		G_ASSERT(Axis0 != Axis1);
+
+		GVectorIndex i0, i1;
+		DATA_TYPE s0, s1;
+		Identity(Result);
+
+		if (Axis0 > Axis1) {
+			i0 = Axis1;
+			i1 = Axis0;
+			s0 = Shear1;
+			s1 = Shear0;
+		}
+		else {
+			i0 = Axis0;
+			i1 = Axis1;
+			s0 = Shear0;
+			s1 = Shear1;
+		}
+
+		if (Axis0 == G_X && Axis1 == G_Y) {
+			Result[G_X][G_Z] = s0;
+			Result[G_Y][G_Z] = s1;
+		}
+		else
+		if (Axis0 == G_X && Axis1 == G_Z) {
+			Result[G_X][G_Y] = s0;
+			Result[G_Z][G_Y] = s1;
+		}
+		if (Axis0 == G_Y && Axis1 == G_Z) {
+			Result[G_Y][G_X] = s0;
+			Result[G_Z][G_X] = s1;
+		}
 	}
 
 };	// end namespace Amanith

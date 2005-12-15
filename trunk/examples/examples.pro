@@ -2,7 +2,7 @@ include(../config/settings.conf)
 
 TEMPLATE = subdirs
 CONFIG	+= ordered
-SUBDIRS = others viewimage
+SUBDIRS = others
 
 
 contains(DEFINES, _OPENGLEXT_PLUGIN) {

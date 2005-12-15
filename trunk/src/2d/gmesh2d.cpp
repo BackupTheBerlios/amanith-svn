@@ -1,5 +1,5 @@
 /****************************************************************************
-** $file: amanith/src/2d/gmesh2d.cpp   0.1.1.0   edited Sep 24 08:00
+** $file: amanith/src/2d/gmesh2d.cpp   0.2.0.0   edited Dec, 12 2005
 **
 ** 2D Mesh definition.
 **

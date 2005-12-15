@@ -1,5 +1,5 @@
 /****************************************************************************
-** $file: amanith/src/2d/ghermitecurve2d.cpp   0.1.1.0   edited Sep 24 08:00
+** $file: amanith/src/2d/ghermitecurve2d.cpp   0.2.0.0   edited Dec, 12 2005
 **
 ** 2D Hermite curve segment implementation.
 **
@@ -405,46 +405,10 @@ GReal GHermiteCurve2D::SegmentVariation(const GUInt32 Index) const {
 
    G_ASSERT((GInt32)Index < (GInt32)PointsCount() - 1);
    GBezierCurve2D tmpBez;
-   //GError err;
 
    SegmentToBezierConversion(Index, tmpBez);
    return tmpBez.Variation();
-   //err = tmpBez.Flatten(Contour, MaxDeviation, IncludeLastPoint);
-   //return err;
 }
-
-/*
-// calculate variation on i-th segment (key (i) to key (i+1)); it suppose that
-// Index is valid and also parameter range is inside specified segment range
-GReal GHermiteCurve2D::SegmentVariation(const GUInt32 Index, const GReal MinParam, const GReal MaxParam) const {
-
-	G_ASSERT((GInt32)Index < (GInt32)PointsCount() - 1);
-	G_ASSERT(MinParam >= gKeys[Index].Parameter && MaxParam <= gKeys[Index + 1].Parameter);
-
-	GUInt32 i, numSeg;
-	GReal step, u, curVariation, tmpVariation;
-	GPoint2 p0(SegmentEvaluate(Index, MinParam));
-	GPoint2 p1(SegmentEvaluate(Index, MaxParam));
-	GPoint2 v;
-	GRay2 ray(p0, p1 - p0);
-
-	// normalize ray direction
-	ray.Normalize();
-	// taken from Graphics Gems 3: "Curve tessellation criteria through sampling"
-	numSeg = 2 * (3 + 1);
-	step = (MaxParam - MinParam) / (GReal)numSeg;
-	u = MinParam;
-	curVariation = -1;
-	for (i = 0; i < numSeg - 1; i++) {
-		u += step;
-		v = Evaluate(u);
-		tmpVariation = DistanceSquared(v, ray); 
-		if (tmpVariation > curVariation)
-			curVariation = tmpVariation;
-	}
-	return curVariation;
-}
-*/
 
 // set control points
 GError GHermiteCurve2D::SetPoints(const GDynArray<GPoint2>& NewPoints,
@@ -518,6 +482,13 @@ inline bool HermiteKeyLE(const Amanith::GHermiteKey2D& k1, const Amanith::GHermi
 	return G_FALSE;
 }
 
+inline bool HermiteKeyL(const Amanith::GHermiteKey2D& k1, const Amanith::GHermiteKey2D& k2) {
+
+	if (k1.Parameter < k2.Parameter)
+		return G_TRUE;
+	return G_FALSE;
+}
+
 // sort keys
 void GHermiteCurve2D::SortKeys() {
 
@@ -545,7 +516,7 @@ GBool GHermiteCurve2D::ParamToKeyIndex(const GReal Param, GUInt32& KeyIndex) con
 	GHermiteKey2D tmpKey;
 
 	tmpKey.Parameter = Param;
-	result = std::lower_bound(gKeys.begin(), gKeys.end(), tmpKey, HermiteKeyLE);
+	result = std::lower_bound(gKeys.begin(), gKeys.end(), tmpKey, HermiteKeyL);
 
 	if (result == gKeys.end())
 		return G_FALSE;

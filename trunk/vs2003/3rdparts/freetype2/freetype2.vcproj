@@ -25,7 +25,7 @@
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="5"
 				UsePrecompiledHeader="0"
-				WarningLevel="3"
+				WarningLevel="0"
 				Detect64BitPortabilityProblems="TRUE"
 				DebugInformationFormat="4"/>
 			<Tool
@@ -65,7 +65,7 @@
 				PreprocessorDefinitions="WIN32;NDEBUG;_LIB;_FONTS_TRUETYPE_MODULE;_FONTS_TYPE1_MODULE;_FONTS_TYPE42_MODULE;_FONTS_CFF_MODULE;_FONTS_PFR_MODULE;_FONTS_CID_MODULE;_FONTS_MAC_MODULE"
 				RuntimeLibrary="4"
 				UsePrecompiledHeader="0"
-				WarningLevel="3"
+				WarningLevel="0"
 				Detect64BitPortabilityProblems="TRUE"
 				DebugInformationFormat="3"/>
 			<Tool

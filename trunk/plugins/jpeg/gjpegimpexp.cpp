@@ -1,5 +1,5 @@
 /****************************************************************************
-** $file: amanith/plugins/jpeg/gjpegimpext.cpp   0.1.1.0   edited Sep 24 08:00
+** $file: amanith/plugins/jpeg/gjpegimpext.cpp   0.2.0.0   edited Dec, 12 2005
 **
 ** 2D Pixelmap JPEG import/export plugin implementation.
 **
@@ -122,7 +122,7 @@ GError GJpegImpExp::RawJpegLoad(const GChar8 *FileName, GInt32& Width, GInt32& H
      */
     struct my_error_mgr jerr;
     /* More stuff */
-	std::FILE *infile;               /* source file */
+	std::FILE *infile = NULL;               /* source file */
     JSAMPARRAY rowbuffer;        /* Output row buffer */
     GInt32 row_stride;              /* physical row width in output buffer */
 
@@ -131,10 +131,14 @@ GError GJpegImpExp::RawJpegLoad(const GChar8 *FileName, GInt32& Width, GInt32& H
      * VERY IMPORTANT: use "b" option to fopen() if you are on a machine that
      * requires it in order to read binary files.
      */
-
+#if defined(G_OS_WIN) && _MSC_VER >= 1400
+	errno_t openErr = fopen_s(&infile, FileName, "rb");
+	if (!infile || openErr)
+		return G_READ_ERROR;
+#else
 	if ((infile = std::fopen(FileName, "rb")) == NULL)
 		return G_READ_ERROR;
-
+#endif
     /* Step 1: allocate and initialize JPEG decompression object */
 
     /* We set up the normal JPEG error routines, then override error_exit. */
@@ -330,9 +334,16 @@ GError GJpegImpExp::RawJpegSave(const GChar8 *FileName, const GInt32 Width, cons
     * VERY IMPORTANT: use "b" option to fopen() if you are on a machine that
     * requires it in order to write binary files.
     */
+#if defined(G_OS_WIN) && _MSC_VER >= 1400
+	std::FILE *outfile = NULL;
+	errno_t openErr = fopen_s(&outfile, FileName, "wb");
+	if (!outfile || openErr)
+		return G_WRITE_ERROR;
+#else
 	std::FILE *outfile = std::fopen(FileName, "wb");
 	if (!outfile)
         return G_WRITE_ERROR;
+#endif
     jpeg_stdio_dest(&cinfo, outfile);
 
 

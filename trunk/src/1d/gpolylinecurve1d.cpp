@@ -1,5 +1,5 @@
 /****************************************************************************
-** $file: amanith/src/1d/gpolylinecurve1d.cpp   0.1.1.0   edited Sep 24 08:00
+** $file: amanith/src/1d/gpolylinecurve1d.cpp   0.2.0.0   edited Dec, 12 2005
 **
 ** 1D Polyline curve segment implementation.
 **
@@ -287,6 +287,13 @@ inline bool PolyLineKeyLE(const Amanith::GPolyLineKey1D& k1, const Amanith::GPol
 	return G_FALSE;
 }
 
+inline bool PolyLineKeyL(const Amanith::GPolyLineKey1D& k1, const Amanith::GPolyLineKey1D& k2) {
+
+	if (k1.Parameter < k2.Parameter)
+		return G_TRUE;
+	return G_FALSE;
+}
+
 // sort keys
 void GPolyLineCurve1D::SortKeys() {
 
@@ -313,7 +320,7 @@ GBool GPolyLineCurve1D::ParamToKeyIndex(const GReal Param, GUInt32& KeyIndex) co
 	GPolyLineKey1D tmpKey;
 
 	tmpKey.Parameter = Param;
-	result = std::lower_bound(gKeys.begin(), gKeys.end(), tmpKey, PolyLineKeyLE);
+	result = std::lower_bound(gKeys.begin(), gKeys.end(), tmpKey, PolyLineKeyL);
 
 	if (result == gKeys.end())
 		return G_FALSE;

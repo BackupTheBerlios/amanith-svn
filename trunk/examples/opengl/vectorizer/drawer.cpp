@@ -36,7 +36,11 @@
 
 static int timer_interval = 0;			// timer interval (millisec)
 
+#ifdef USE_QT4
+QGLWidgetTest::QGLWidgetTest(const QGLFormat& Format, QWidget *parent) : QGLWidget(Format, parent) {
+#else
 QGLWidgetTest::QGLWidgetTest(QWidget * parent) : QGLWidget(parent) {
+#endif
 
 	GString s;
 	GError err;
@@ -115,10 +119,16 @@ void QGLWidgetTest::keyPressEvent(QKeyEvent *e) {
 			break;
 
 		case Qt::Key_Space:
-			gWireFrame = !gWireFrame;
+			if (gWireFrame)
+				gWireFrame = G_FALSE;
+			else
+				gWireFrame = G_TRUE;
 			break;
 		case Qt::Key_F:
-			gFillDraw = !gFillDraw;
+			if (gFillDraw)
+				gFillDraw = G_FALSE;
+			else
+				gFillDraw = G_TRUE;
 			break;
 		case Qt::Key_A:
 			gZ -= 0.05f;

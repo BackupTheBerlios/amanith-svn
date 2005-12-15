@@ -1,5 +1,5 @@
 /****************************************************************************
-** $file: amanith/src/rendering/gdrawstyle.cpp   0.1.1.0   edited Sep 24 08:00
+** $file: amanith/src/rendering/gdrawstyle.cpp   0.2.0.0   edited Dec, 12 2005
 **
 ** Draw style implementation.
 **
@@ -27,6 +27,7 @@
 **********************************************************************/
 
 #include "amanith/rendering/gdrawstyle.h"
+#include "amanith/geometry/gxformconv.h"
 #include <cstring>  // for memcmp function
 
 /*!
@@ -58,6 +59,7 @@ GGradientDesc::GGradientDesc() {
 	// gStartPoint and gAuxPoint constructors will set (0, 0)
 	gRadius = 1;
 	gSpreadMode = G_REPEAT_COLOR_RAMP_SPREAD;
+	gColorInterpolation = G_LINEAR_COLOR_INTERPOLATION;
 	// gMatrix constructor will set identity
 }
 
@@ -144,6 +146,31 @@ void GGradientDesc::SetSpreadMode(const GColorRampSpreadMode SpreadMode) {
 void GGradientDesc::SetMatrix(const GMatrix33& Matrix) {
 
 	if (gMatrix != Matrix) {
+
+		// calculate inverse gradient matrix
+		GMatrix33 preTrans, tmpInv;
+		GMatrix22 n, b;
+		GBool ok;
+		GReal det;
+
+		TranslationToMatrix(preTrans, GPoint2(-Matrix[0][2], -Matrix[1][2]));
+		n[0][0] = Matrix[0][0];
+		n[0][1] = Matrix[0][1];
+		n[1][0] = Matrix[1][0];
+		n[1][1] = Matrix[1][1];
+		ok = InvertFull_GJ(b, n, det);
+		if (!ok) {
+			G_DEBUG("GGradientDesc::SetMatrix, matrix is singular!");
+			return;
+		}
+		tmpInv[0][0] = b[0][0];
+		tmpInv[0][1] = b[0][1];
+		tmpInv[1][0] = b[1][0];
+		tmpInv[1][1] = b[1][1];
+		tmpInv[0][2] = 0;
+		tmpInv[1][2] = 0;
+		gInverseMatrix = tmpInv * preTrans;
+
 		gModified |= G_GRADIENT_MATRIX_MODIFIED;
 		gMatrix = Matrix;
 	}
@@ -269,7 +296,6 @@ void GGradientDesc::SetMatrixModified(const GBool Modified) {
 //                            GPatternDesc
 // *********************************************************************
 
-//#define G_PATTERN_IMAGE_MODIFIED				1
 #define G_PATTERN_TILINGMODE_MODIFIED			2
 #define G_PATTERN_MATRIX_MODIFIED				4
 #define G_PATTERN_LOGICAL_WINDOW_MODIFIED		8
@@ -310,38 +336,35 @@ void GPatternDesc::SetTilingMode(const GTilingMode TilingMode) {
 void GPatternDesc::SetMatrix(const GMatrix33& Matrix) {
 
 	if (gMatrix != Matrix) {
+
+		// calculate inverse pattern matrix
+		GMatrix33 preTrans, tmpInv;
+		GMatrix22 n, b;
+		GBool ok;
+		GReal det;
+
+		TranslationToMatrix(preTrans, GPoint2(-Matrix[0][2], -Matrix[1][2]));
+		n[0][0] = Matrix[0][0];
+		n[0][1] = Matrix[0][1];
+		n[1][0] = Matrix[1][0];
+		n[1][1] = Matrix[1][1];
+		ok = InvertFull_GJ(b, n, det);
+		if (!ok) {
+			G_DEBUG("GPatternDesc::SetMatrix, matrix is singular!");
+			return;
+		}
+		tmpInv[0][0] = b[0][0];
+		tmpInv[0][1] = b[0][1];
+		tmpInv[1][0] = b[1][0];
+		tmpInv[1][1] = b[1][1];
+		tmpInv[0][2] = 0;
+		tmpInv[1][2] = 0;
+		gInverseMatrix = tmpInv * preTrans;
+
 		gModified |= G_PATTERN_MATRIX_MODIFIED;
 		gMatrix = Matrix;
 	}
 }
-
-/*// set image
-void GPatternDesc::SetImage(const GPixelMap *Image) {
-
-	// NULL images are not permitted
-	if (!Image)
-		return;
-
-	// change pointers
-	if (Image != gImage) {
-		gModified |= G_PATTERN_IMAGE_MODIFIED;
-		gImage = Image;
-		return;
-	}
-	// now i'm sure that both images are not NULL
-	if ((Image->Width() != gImage->Width()) || (Image->Height() != gImage->Height()) ||
-		(Image->PixelFormat() != gImage->PixelFormat()) ||
-		(Image->Pixels() != gImage->Pixels()) || (Image->Palette() != gImage->Palette())) {
-		gModified |= G_PATTERN_IMAGE_MODIFIED;
-		gImage = Image;
-		return;
-	}
-	// now check pixels color
-	if (std::memcmp(Image->Pixels(), gImage->Pixels(), Image->Size()) != 0) {
-		gModified |= G_PATTERN_IMAGE_MODIFIED;
-		gImage = Image;
-	}
-}*/
 
 GBool GPatternDesc::LogicalWindowModified() const {
 
@@ -388,7 +411,6 @@ void GPatternDesc::SetMatrixModified(const GBool Modified) {
 		gModified &= ((GUInt32)(~0) - G_PATTERN_MATRIX_MODIFIED);
 }
 
-//#undef G_PATTERN_IMAGE_MODIFIED
 #undef G_PATTERN_TILINGMODE_MODIFIED
 #undef G_PATTERN_MATRIX_MODIFIED
 #undef G_PATTERN_LOGICAL_WINDOW_MODIFIED
@@ -447,7 +469,7 @@ GDrawStyle::GDrawStyle() {
 	gFillGradientDesc = NULL;
 	gFillPatternDesc = NULL;
 	gFillEnabled = G_TRUE;
-	// model-view matrix will start as identity
+	// model-view matrix (and its inverse) will start as identities
 }
 
 // destructor
@@ -477,7 +499,6 @@ GDrawStyle& GDrawStyle::operator=(const GDrawStyle& Source) {
 	SetFillGradient(Source.FillGradient());
 	SetFillPattern(Source.FillPattern());
 	SetModelView(Source.ModelView());
-	SetCustomData(Source.CustomData());
 	return *this;
 }
 
@@ -712,9 +733,34 @@ void GDrawStyle::SetFillEnabled(const GBool Enabled) {
 }
 
 // set model-view matrix
-void GDrawStyle::SetModelView(const GMatrix33 Matrix) {
+void GDrawStyle::SetModelView(const GMatrix33& Matrix) {
 
 	if (gModelView != Matrix) {
+		// calculate inverse model-view matrix
+		GMatrix33 preTrans, tmpInv;
+		GMatrix22 n, b;
+		GBool ok;
+		GReal det;
+
+		TranslationToMatrix(preTrans, GPoint2(-Matrix[0][2], -Matrix[1][2]));
+		n[0][0] = Matrix[0][0];
+		n[0][1] = Matrix[0][1];
+		n[1][0] = Matrix[1][0];
+		n[1][1] = Matrix[1][1];
+		ok = InvertFull_GJ(b, n, det);
+		if (!ok) {
+			G_DEBUG("GDrawStyle::SetModelView, matrix is singular!");
+			return;
+		}
+
+		tmpInv[0][0] = b[0][0];
+		tmpInv[0][1] = b[0][1];
+		tmpInv[1][0] = b[1][0];
+		tmpInv[1][1] = b[1][1];
+		tmpInv[0][2] = 0;
+		tmpInv[1][2] = 0;
+		gInverseModelView = tmpInv * preTrans;
+
 		gModified |= G_DRAWSTYLE_MODELVIEW_MODIFIED;
 		gModelView = Matrix;
 	}
@@ -960,7 +1006,6 @@ void GDrawStyle::SetModelViewModified(const GBool Modified) {
 	else
 		gModified &= ((GUInt32)(~0) - G_DRAWSTYLE_MODELVIEW_MODIFIED);
 }
-
 
 #undef G_DRAWSTYLE_STROKEWIDTH_MODIFIED
 #undef G_DRAWSTYLE_STROKEMITERLIMIT_MODIFIED

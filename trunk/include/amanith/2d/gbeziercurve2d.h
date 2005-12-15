@@ -1,5 +1,5 @@
 /****************************************************************************
-** $file: amanith/2d/gbeziercurve2d.h   0.1.1.0   edited Sep 24 08:00
+** $file: amanith/2d/gbeziercurve2d.h   0.2.0.0   edited Dec, 12 2005
 **
 ** 2D Bezier curve segment definition.
 **
@@ -99,8 +99,7 @@ namespace Amanith {
 		//! Calculate first and second order forward differences
 		void BuildForwDiff() const;
 		//! Finds inflection points of a cubic Bezier curve; used by Flatten3() method.
-		GBool FindInflectionPoints(const GReal Ax, const GReal Bx, const GReal Cx,
-								   const GReal Ay, const GReal By, const GReal Cy,
+		GBool FindInflectionPoints(const GReal A, const GReal B, const GReal C,
 								   GReal& Flex1, GReal& Flex2, GReal& Cuspid) const;
 		//! Excise inflection points of a cubic Bezier curve; used by Flatten3() method.
 		void ExciseInflectionPoint(const GReal Flex, const GReal Flatness, GReal& ParamMinus, GReal& ParamPlus) const;

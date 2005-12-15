@@ -1,5 +1,5 @@
 /****************************************************************************
-** $file: amanith/src/rendering/gopenglconicalgrad.cpp   0.1.1.0   edited Sep 24 08:00
+** $file: amanith/src/rendering/gopenglconicalgrad.cpp   0.2.0.0   edited Dec, 12 2005
 **
 ** OpenGL based draw board conical gradient functions implementation.
 **
@@ -399,6 +399,11 @@ void GOpenGLBoard::DrawGLConicalSector(const GPoint2& Center, const GVector2& Di
 		if (angP1 < 0)
 			angP1 += (GReal)G_2PI;
 
+		if (angP1 < angP0) {
+			if (GMath::Abs(angP1) <= G_EPSILON)
+				angP1 = (GReal)G_2PI;
+		}
+
 		// find first sector greater or equal to angP0
 		i0 = 0;
 		do {
@@ -718,12 +723,10 @@ void GOpenGLBoard::DrawConicalSector(const GPoint2& Center, const GPoint2& Targe
 									const GDynArray<GKeyValue>& ColorKeys,
 									const GDynArray<GVector4>& InTangents, const GDynArray<GVector4>& OutTangents,
 									const GColorRampInterpolation Interpolation,
-									const GReal MultAlpha, const GMatrix33& GradientMatrix) const {
+									const GReal MultAlpha, const GMatrix33& GradientMatrix, const GMatrix33& InverseGradientMatrix,
+									const GMatrix33& ModelViewMatrix) const {
 
-	GPoint2 transfCenter = GradientMatrix * Center;
-	GPoint2 transfTarget = GradientMatrix * Target;
-
-	GVector2 dirCT = transfTarget - transfCenter;
+	GVector2 dirCT = Target - Center;
 	GReal dirCTlen = dirCT.Length();
 
 	// calculate normalized direction
@@ -738,18 +741,33 @@ void GOpenGLBoard::DrawConicalSector(const GPoint2& Center, const GPoint2& Targe
 	GPoint2 p1(p2[G_X], p0[G_Y]);
 	GPoint2 p3(p0[G_X], p2[G_Y]);
 
+	GMatrix33 m = InverseGradientMatrix * ModelViewMatrix;
+	GPoint2 q0 = m * p0;
+	GPoint2 q1 = m * p1;
+	GPoint2 q2 = m * p2;
+	GPoint2 q3 = m * p3;
+
+	// transform the box using model-view matrix
+	GAABox2 tmpBox(q0, q1);
+	tmpBox.ExtendToInclude(q2);
+	tmpBox.ExtendToInclude(q3);
+	p0 = tmpBox.Min();
+	p2 = tmpBox.Max();
+	p1.Set(p2[G_X], p0[G_Y]);
+	p3.Set(p0[G_X], p2[G_Y]);
+
 	GReal dMax, d;
 	GBool wholeDisk = G_FALSE;
 
 	// calculate the maximum radius
-	dMax = DistanceSquared(p0, transfCenter);
-	d = DistanceSquared(p1, transfCenter);
+	dMax = DistanceSquared(p0, Center);
+	d = DistanceSquared(p1, Center);
 	if (d > dMax)
 		dMax = d;
-	d = DistanceSquared(p2, transfCenter);
+	d = DistanceSquared(p2, Center);
 	if (d > dMax)
 		dMax = d;
-	d = DistanceSquared(p3, transfCenter);
+	d = DistanceSquared(p3, Center);
 	if (d > dMax)
 		dMax = d;
 	dMax = GMath::Sqrt(dMax);
@@ -757,10 +775,9 @@ void GOpenGLBoard::DrawConicalSector(const GPoint2& Center, const GPoint2& Targe
 	if (dMax <= G_EPSILON)
 		return;
 
-
 	// if the focus is inside the box, whole disk must be rendered (and in this case tMin is 0)
-	if ((transfCenter[G_X] > p0[G_X] && transfCenter[G_X] < p2[G_X]) &&
-		(transfCenter[G_Y] > p0[G_Y] && transfCenter[G_Y] < p2[G_Y]))
+	if ((Center[G_X] > p0[G_X] && Center[G_X] < p2[G_X]) &&
+		(Center[G_Y] > p0[G_Y] && Center[G_Y] < p2[G_Y]))
 		wholeDisk = G_TRUE;
 	else {
 		// calculate axes transformation (transform box corners int the coordinate system given by Center-Target
@@ -772,23 +789,23 @@ void GOpenGLBoard::DrawConicalSector(const GPoint2& Center, const GPoint2& Targe
 		GReal angles[4];
 		GPoint2 pts[4];
 
-		if (DistanceSquared(p0, transfCenter) > G_EPSILON) {
-			pts[iMax] = A * (p0 - transfCenter);
+		if (DistanceSquared(p0, Center) > G_EPSILON) {
+			pts[iMax] = A * (p0 - Center);
 			angles[iMax] = GMath::Atan2(pts[iMax][G_Y], pts[iMax][G_X]);
 			iMax++;
 		}
-		if (DistanceSquared(p1, transfCenter) > G_EPSILON) {
-			pts[iMax] = A * (p1 - transfCenter);
+		if (DistanceSquared(p1, Center) > G_EPSILON) {
+			pts[iMax] = A * (p1 - Center);
 			angles[iMax] = GMath::Atan2(pts[iMax][G_Y], pts[iMax][G_X]);
 			iMax++;
 		}
-		if (DistanceSquared(p2, transfCenter) > G_EPSILON) {
-			pts[iMax] = A * (p2 - transfCenter);
+		if (DistanceSquared(p2, Center) > G_EPSILON) {
+			pts[iMax] = A * (p2 - Center);
 			angles[iMax] = GMath::Atan2(pts[iMax][G_Y], pts[iMax][G_X]);
 			iMax++;
 		}
-		if (DistanceSquared(p3, transfCenter) > G_EPSILON) {
-			pts[iMax] = A * (p3 - transfCenter);
+		if (DistanceSquared(p3, Center) > G_EPSILON) {
+			pts[iMax] = A * (p3 - Center);
 			angles[iMax] = GMath::Atan2(pts[iMax][G_Y], pts[iMax][G_X]);
 			iMax++;
 		}
@@ -847,14 +864,19 @@ void GOpenGLBoard::DrawConicalSector(const GPoint2& Center, const GPoint2& Targe
 		}
 		// anti-transform "external" point into the original coordinate system
 		Transpose(A, A);
-		pMin = (A * pMin) + transfCenter;
-		pMax = (A * pMax) + transfCenter;
+		pMin = (A * pMin) + Center;
+		pMax = (A * pMax) + Center;
 	}
+
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	SetGLModelViewMatrix(GradientMatrix);
 
 	// draw the shaded sector (we have to expand by 5% radius, to avoid low quality related issues; NB: the radius
 	// DO NOT influences performances)
-	DrawGLConicalSector(transfCenter, dirCT, dMax * (GReal)1.05, pMin, pMax, wholeDisk, ColorKeys,
+	DrawGLConicalSector(Center, dirCT, dMax * (GReal)1.05, pMin, pMax, wholeDisk, ColorKeys,
 						InTangents, OutTangents, Interpolation, MultAlpha);
+	glPopMatrix();
 }
 
 };	// end namespace Amanith

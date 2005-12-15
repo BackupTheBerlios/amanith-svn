@@ -28,15 +28,25 @@
 int main(int argc, char ** argv) {
 
     QApplication app(argc, argv);
-    //QPixmapViewer test;
-	QGLWidgetTest test;
 
+#ifdef USE_QT4
+	QGLFormat fmt;
+	fmt.setSampleBuffers(true);
+	QGLWidgetTest test(fmt);
+#else
+	QGLWidgetTest test;
 	app.setMainWidget(&test);
+#endif
+
 	// if you want full screen support, please uncomment the following line
 	// test.setWindowState(test.windowState() ^ Qt::WindowFullScreen);
 	test.show();
 	test.setFocus();
+#ifdef USE_QT4
+	test.setWindowTitle("Bitmap vectorizer example - Press F1 for help");
+#else
 	test.setCaption("Bitmap vectorizer example - Press F1 for help");
+#endif
     app.connect(&app, SIGNAL(lastWindowClosed()), &app, SLOT(quit()));
     return app.exec();
 }

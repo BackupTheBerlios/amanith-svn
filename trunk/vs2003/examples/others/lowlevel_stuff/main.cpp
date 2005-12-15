@@ -385,6 +385,40 @@ void TestDistance() {
 	d = SignedDistance(pln, oobox3);
 }
 
+void PrintProxy(const GProxyState& Proxy, const GString& Prefix) {
+
+	GDynArray<GProxyState> children;
+	GInt32 i, j;
+
+	// print proxy information
+	GString s = Prefix + Proxy.Proxy()->ClassID().IDName();
+	if (Proxy.External())
+		s += " - EXTERNAL (shared library)";
+	printf("%s\n", StrUtils::ToAscii(s));
+	GString newPrefix = Prefix + "\t";
+
+	kernel->ChildClassProxies(Proxy.Proxy()->ClassID(), children);
+	j = (GInt32)children.size();
+	for (i = 0; i < j; ++i) {
+		PrintProxy(children[i], newPrefix);
+	}
+}
+
+void TestProxies() {
+
+	GDynArray<GProxyState> roots;
+
+	printf("\n\nAmanith proxies tree:\n");
+	// get root class proxies
+	kernel->RootClassProxies(roots);
+	GInt32 i, j = (GInt32)roots.size();
+
+	for (i = 0; i < j; ++i)
+		PrintProxy(roots[i], "");
+
+	printf("\n");
+}
+
 int main(void) {
 
 	kernel = new GKernel();
@@ -400,8 +434,9 @@ int main(void) {
 	TestStrUtils();
 	TestSysInfo();
 	TestPixelMap();
-
 	TestIntersect();
+	TestDistance();
+	TestProxies();
 	delete kernel;
 	return 0;
 }

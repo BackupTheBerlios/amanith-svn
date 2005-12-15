@@ -39,10 +39,14 @@ bool keys[256];			// Array Used For The Keyboard Routine
 bool active = TRUE;		// Window Active Flag Set To TRUE By Default
 bool fullscreen = TRUE;	// Fullscreen Flag Set To Fullscreen Mode By Default
 
+bool arbMultisampleSupported = false;
+int arbMultisampleFormat = 0;
+
 LRESULT	CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);	// Declaration For WndProc
 
 // Amanith stuff
 GKernel *gKernel;
+GOpenglExt *gExtManager = NULL;	// extensions manager
 GFont2D *gFont;
 GString gDataPath;
 GDynArray< GPoint<GDouble, 2> > gVertices;
@@ -55,6 +59,58 @@ GBool gWireFrame;
 GReal gDeviation;
 GLfloat	gX, gY, gZ;								// Depth Into The Screen
 
+// InitMultisample: Used To Query The Multisample Frequencies
+bool InitMultisample(HINSTANCE hInstance, HWND hWnd, PIXELFORMATDESCRIPTOR pfd)
+{  
+
+	// using Amanith OpenGL extension manager is just a matter of test function pointer...
+	if (!wglChoosePixelFormatARB) 
+	{
+		arbMultisampleSupported = false;
+		return false;
+	}
+
+	// Get Our Current Device Context
+	HDC hDC = GetDC(hWnd);
+
+	int		pixelFormat;
+	int		valid;
+	UINT	numFormats;
+	float	fAttributes[] = {0, 0};
+
+	int iAttributes[] =	{
+		WGL_DRAW_TO_WINDOW_ARB, GL_TRUE,
+			WGL_SUPPORT_OPENGL_ARB, GL_TRUE,
+			WGL_ACCELERATION_ARB,WGL_FULL_ACCELERATION_ARB,
+			WGL_COLOR_BITS_ARB, 16,
+			WGL_ALPHA_BITS_ARB, 0,
+			WGL_DEPTH_BITS_ARB, 16,
+			WGL_STENCIL_BITS_ARB, 0,
+			WGL_DOUBLE_BUFFER_ARB, GL_TRUE,
+			WGL_SAMPLE_BUFFERS_ARB, GL_TRUE,
+			WGL_SAMPLES_ARB, 4,
+			0, 0
+	};
+	// First We Check To See If We Can Get A Pixel Format For 4 Samples
+	valid = wglChoosePixelFormatARB(hDC, iAttributes, fAttributes, 1, &pixelFormat, &numFormats);
+
+	// If We Returned True, And Our Format Count Is Greater Than 1
+	if (valid && numFormats >= 1) {
+		arbMultisampleSupported = true;
+		arbMultisampleFormat = pixelFormat;	
+		return arbMultisampleSupported;
+	}
+	// Our Pixel Format With 4 Samples Failed, Test For 2 Samples
+	iAttributes[19] = 2;
+	valid = wglChoosePixelFormatARB(hDC, iAttributes, fAttributes, 1, &pixelFormat, &numFormats);
+	if (valid && numFormats >= 1) {
+		arbMultisampleSupported = true;
+		arbMultisampleFormat = pixelFormat;	 
+		return arbMultisampleSupported;
+	}
+	// Return The Valid Format
+	return arbMultisampleSupported;
+}
 
 void setLightAndTransform() {
 	glMatrixMode(GL_MODELVIEW);
@@ -225,6 +281,8 @@ void KillApp() {
 
 	if (gKernel)
 		delete gKernel;
+	if (gExtManager)
+		delete gExtManager;
 }
 
 
@@ -373,12 +431,18 @@ BOOL CreateGLWindow(char* title, int width, int height, int bits, bool fullscree
 		MessageBox(NULL, "Can't Create A GL Device Context.", "ERROR", MB_OK | MB_ICONEXCLAMATION);
 		return FALSE;
 	}
-	if (!(PixelFormat = ChoosePixelFormat(hDC, &pfd))) {
-		KillGLWindow();
-		MessageBox(NULL, "Can't Find A Suitable PixelFormat.", "ERROR", MB_OK | MB_ICONEXCLAMATION);
-		return FALSE;
+
+	if (!arbMultisampleSupported) {
+		if (!(PixelFormat = ChoosePixelFormat(hDC, &pfd))) {
+			KillGLWindow();
+			MessageBox(NULL, "Can't Find A Suitable PixelFormat.", "ERROR", MB_OK | MB_ICONEXCLAMATION);
+			return FALSE;
+		}
 	}
-	if (!SetPixelFormat(hDC, PixelFormat, &pfd))	{
+	else
+		PixelFormat = arbMultisampleFormat;
+
+	if (!SetPixelFormat(hDC, PixelFormat, &pfd)) {
 		KillGLWindow();
 		MessageBox(NULL, "Can't Set The PixelFormat.", "ERROR", MB_OK | MB_ICONEXCLAMATION);
 		return FALSE;
@@ -390,10 +454,21 @@ BOOL CreateGLWindow(char* title, int width, int height, int bits, bool fullscree
 		return FALSE;
 	}
 
-	if (!wglMakeCurrent(hDC,hRC)) {
+	if (!wglMakeCurrent(hDC, hRC)) {
 		KillGLWindow();
 		MessageBox(NULL, "Can't Activate The GL Rendering Context.", "ERROR", MB_OK | MB_ICONEXCLAMATION);
 		return FALSE;
+	}
+
+	if (!arbMultisampleSupported) {
+		// create extensions manager
+		if (!gExtManager)
+			gExtManager = new GOpenglExt();
+
+		if (InitMultisample(hInstance, hWnd, pfd)) {
+			KillGLWindow();
+			return CreateGLWindow(title, width, height, bits, fullscreenflag);
+		}
 	}
 
 	ShowWindow(hWnd, SW_SHOW);						// Show The Window
@@ -512,7 +587,7 @@ int WINAPI WinMain(	HINSTANCE	hInstance,			// Instance
 				s += "M/N: Fine/Rough adaptive flattening\n";
 				s += "F: Toggle solid/outlines\n";
 				s += "PgUp/PgDown: Previous/Next font letter";
-				MessageBox(NULL, StrUtils::ToAscii(s), "Command keys", MB_OK | MB_ICONINFORMATION);
+				MessageBox(NULL, StrUtils::ToAscii(s), "Command keys", MB_OK | MB_ICONINFORMATION | MB_APPLMODAL);
 			}
 			if (keys[VK_PRIOR]) {
 				keys[VK_PRIOR] = FALSE;

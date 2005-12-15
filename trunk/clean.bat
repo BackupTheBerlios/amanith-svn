@@ -46,18 +46,6 @@ del .\plugins\*.a
 del .\plugins\*.dll
 
 
-del /S .\tools\*.obj
-del /S .\tools\*.idb
-del /S .\tools\*.pdb
-del /S .\tools\*.ncb
-del /S .\tools\*.ilk
-del /S .\tools\*.sln
-del /S .\tools\*.vcproj
-del /S /AH .\tools\*.suo
-del /S .\tools\*.exe
-del /S .\examples\*.res
-
-
 del /S .\vs2003\*.obj
 del /S .\vs2003\*.idb
 del /S .\vs2003\*.pdb
@@ -71,6 +59,9 @@ del /S .\vs2003\*.exe
 del /S BuildLog.*
 del /S *.ui.bak
 del /S Makefile
+del /S Makefile.Release
+del /S Makefile.Debug
+del /S *manifest*
 del /Q .\lib\*.*
 
 del /S *.jbf

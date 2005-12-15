@@ -1,5 +1,5 @@
 /****************************************************************************
-** $file: amanith/plugins/fonts/gfontimpext.cpp   0.1.1.0   edited Sep 24 08:00
+** $file: amanith/plugins/fonts/gfontimpext.cpp   0.2.0.0   edited Dec, 12 2005
 **
 ** 2D Font import/export plugin implementation.
 **

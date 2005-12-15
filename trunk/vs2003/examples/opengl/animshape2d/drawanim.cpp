@@ -249,7 +249,7 @@ bool InitMultisample(HINSTANCE hInstance, HWND hWnd, PIXELFORMATDESCRIPTOR pfd)
 		arbMultisampleFormat = pixelFormat;	
 		return arbMultisampleSupported;
 	}
-	// Our Pixel Format With 8 Samples Failed, Test For 6 Samples
+	// Our Pixel Format With 4 Samples Failed, Test For 2 Samples
 	iAttributes[19] = 2;
 	valid = wglChoosePixelFormatARB(hDC, iAttributes, fAttributes, 1, &pixelFormat, &numFormats);
 	if (valid && numFormats >= 1) {
@@ -824,8 +824,8 @@ int InitGL(GLvoid) {
 	// bind background texture to OpenGL
 	glGenTextures(1, &gBindedTexture);
 	glBindTexture(GL_TEXTURE_2D, gBindedTexture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, gBackGround->Width(), gBackGround->Height(),
-		0, GL_BGRA, GL_UNSIGNED_BYTE, gBackGround->Pixels());
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, gBackGround->Width(), gBackGround->Height(),
+				 0, GL_BGRA, GL_UNSIGNED_BYTE, gBackGround->Pixels());
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	return TRUE;
@@ -1090,9 +1090,7 @@ BOOL CreateGLWindow(char* title, int width, int height, int bits, bool fullscree
 		return FALSE;
 	}
 
-
-	if(!arbMultisampleSupported)
-	{
+	if (!arbMultisampleSupported) {
 		if (!(PixelFormat = ChoosePixelFormat(hDC, &pfd))) {
 			KillGLWindow();
 			MessageBox(NULL, "Can't Find A Suitable PixelFormat.", "ERROR", MB_OK | MB_ICONEXCLAMATION);
@@ -1102,8 +1100,7 @@ BOOL CreateGLWindow(char* title, int width, int height, int bits, bool fullscree
 	else
 		PixelFormat = arbMultisampleFormat;
 
-
-	if (!SetPixelFormat(hDC, PixelFormat, &pfd))	{
+	if (!SetPixelFormat(hDC, PixelFormat, &pfd)) {
 		KillGLWindow();
 		MessageBox(NULL, "Can't Set The PixelFormat.", "ERROR", MB_OK | MB_ICONEXCLAMATION);
 		return FALSE;
@@ -1121,14 +1118,12 @@ BOOL CreateGLWindow(char* title, int width, int height, int bits, bool fullscree
 		return FALSE;
 	}
 
-	if (!arbMultisampleSupported)
-	{
+	if (!arbMultisampleSupported) {
 		// create extensions manager
 		if (!gExtManager)
 			gExtManager = new GOpenglExt();
 
-		if (InitMultisample(hInstance, hWnd, pfd))
-		{
+		if (InitMultisample(hInstance, hWnd, pfd)) {
 			KillGLWindow();
 			return CreateGLWindow(title, width, height, bits, fullscreenflag);
 		}
@@ -1248,7 +1243,7 @@ int WINAPI WinMain(	HINSTANCE	hInstance,			// Instance
 				s += "B: Toggle animation On/Off.\n";
 				s += "O: Toggle antialias (if supported) On/Off.\n";
 				s += "N/M: Increase/Decrease animation speed.";
-				MessageBox(NULL, StrUtils::ToAscii(s), "Command keys", MB_OK | MB_ICONINFORMATION);
+				MessageBox(NULL, StrUtils::ToAscii(s), "Command keys", MB_OK | MB_ICONINFORMATION | MB_APPLMODAL);
 			}
 			// A key
 			if (keys[65]) {

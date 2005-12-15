@@ -1,5 +1,5 @@
 /****************************************************************************
-** $file: amanith/2d/gpixelmap.h   0.1.1.0   edited Sep 24 08:00
+** $file: amanith/2d/gpixelmap.h   0.2.0.0   edited Dec, 12 2005
 **
 ** 2D Pixelmap definition.
 **
@@ -203,25 +203,25 @@ namespace Amanith {
 
 			- Soft version
 				\f[
-				bottom = \left( \begin{array}{ccc}
+				bottom = \left[ \begin{array}{ccc}
 				1 & 0 & 1 \\
 				0 & -4 & 0 \\
-				1 & 0 & 1 \end{array} \right)
-				top = \left( \begin{array}{ccc}
+				1 & 0 & 1 \end{array} \right]
+				top = \left[ \begin{array}{ccc}
 				-1 & 0 & -1 \\
 				0 & 4 & 0 \\
-				-1 & 0 & -1 \end{array} \right)
+				-1 & 0 & -1 \end{array} \right]
 				\f]
 			- Strong version
 				\f[
-				bottom = \left( \begin{array}{ccc}
+				bottom = \left[ \begin{array}{ccc}
 				1 & 1 & 1 \\
 				1 & -8 & 1 \\
-				1 & 1 & 1 \end{array} \right)
-				top = \left( \begin{array}{ccc}
+				1 & 1 & 1 \end{array} \right]
+				top = \left[ \begin{array}{ccc}
 				-1 & -1 & -1 \\
 				-1 & 8 & -1 \\
-				-1 & -1 & -1 \end{array} \right)
+				-1 & -1 & -1 \end{array} \right]
 				\f]
 
 			\param Divisor the divisor used, must be positive. The more the value is, the less is edge
@@ -528,25 +528,25 @@ namespace Amanith {
 
 			- Soft version
 				\f[
-				bottom = \left( \begin{array}{ccc}
+				bottom = \left[ \begin{array}{ccc}
 				1 & 0 & 1 \\
 				0 & -4 & 0 \\
-				1 & 0 & 1 \end{array} \right)
-				top = \left( \begin{array}{ccc}
+				1 & 0 & 1 \end{array} \right]
+				top = \left[ \begin{array}{ccc}
 				-1 & 0 & -1 \\
 				0 & 4 & 0 \\
-				-1 & 0 & -1 \end{array} \right)
+				-1 & 0 & -1 \end{array} \right]
 				\f]
 			- Strong version
 				\f[
-				bottom = \left( \begin{array}{ccc}
+				bottom = \left[ \begin{array}{ccc}
 				1 & 1 & 1 \\
 				1 & -8 & 1 \\
-				1 & 1 & 1 \end{array} \right)
-				top = \left( \begin{array}{ccc}
+				1 & 1 & 1 \end{array} \right]
+				top = \left[ \begin{array}{ccc}
 				-1 & -1 & -1 \\
 				-1 & 8 & -1 \\
-				-1 & -1 & -1 \end{array} \right)
+				-1 & -1 & -1 \end{array} \right]
 				\f]
 
 			\param Divisor the divisor used, must be positive. The more the value is, the less is edge enhancement.

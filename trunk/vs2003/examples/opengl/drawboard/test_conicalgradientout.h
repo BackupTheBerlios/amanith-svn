@@ -22,7 +22,7 @@
 ** not clear to you.
 **********************************************************************/
 
-void TestConicalGradientOut(const GUInt32 TestIndex, const GReal RotAngle, const GReal Scale) {
+void TestConicalGradientOut(const GUInt32 TestIndex, const GReal RotAngle, const GReal ScaleX, const GReal ScaleY) {
 	
 	GUInt32 idx = (TestIndex % 4);
 
@@ -32,7 +32,7 @@ void TestConicalGradientOut(const GUInt32 TestIndex, const GReal RotAngle, const
 	TranslationToMatrix(preTrans, GPoint2(0, 0));
 	TranslationToMatrix(postTrans, GPoint2(0, 0));
 	RotationToMatrix(rot, RotAngle);
-	ScaleToMatrix(scl, GVector2(Scale, Scale));
+	ScaleToMatrix(scl, GVector2(ScaleX, ScaleY));
 	ofsTransf = (postTrans * (rot * (scl * preTrans)));
 
 	gDrawBoard->SetTargetMode(G_COLOR_MODE);

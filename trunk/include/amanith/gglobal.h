@@ -1,5 +1,5 @@
 /****************************************************************************
-** $file: amanith/gglobal.h   0.1.1.0   edited Sep 24 08:00
+** $file: amanith/gglobal.h   0.2.0.0   edited Dec, 12 2005
 **
 ** Global types and constants.
 **
@@ -67,8 +67,8 @@
 namespace Amanith {
 
 	// G_VERSION is (major << 24) + (minor << 16) + (patch << 8) + build
-	#define G_AMANITH_VERSION 0x00010100
-	#define G_VERSION_STR "0.1.1.0"
+	#define G_AMANITH_VERSION 0x00020000
+	#define G_VERSION_STR "0.2.0.0"
 
 	//! English language option
 	#define G_LANG_EN     0
@@ -104,7 +104,7 @@ namespace Amanith {
 		G_W = 3
 	};
 
-	//! Type used to specify in witch order Euler transforms will be applied (ex: rotations)
+	//! Type used to specify in which order Euler transforms will be applied (ex: rotations)
 	enum GEulerOrder {
 		G_XYX = 0,
 		G_XYZ = 1,
@@ -119,6 +119,7 @@ namespace Amanith {
 		G_ZYX = 10,
 		G_ZYZ = 11
 	};
+
 	//! Sort options
 	enum GSortType {
 		//! No sort

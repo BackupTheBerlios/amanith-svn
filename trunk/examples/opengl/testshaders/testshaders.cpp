@@ -40,7 +40,11 @@
 static int timer_interval = 0;			// timer interval (millisec)
 
 // constructor
+#ifdef USE_QT4
+QGLWidgetTest::QGLWidgetTest(const QGLFormat& Format, QWidget *parent) : QGLWidget(Format, parent) {
+#else
 QGLWidgetTest::QGLWidgetTest(QWidget * parent) : QGLWidget(parent) {
+#endif
 
 	GString s;
 	gKernel = new GKernel();
@@ -210,7 +214,11 @@ void QGLWidgetTest::keyPressEvent(QKeyEvent *e) {
 	QString s;
 
 	switch(e->key()) {
-		case Qt::Key_L:	light = !light;
+		case Qt::Key_L:
+			if (light)
+				light = G_FALSE;
+			else
+				light = G_TRUE;
 			break;
 		case Qt::Key_A: z += 1.0f;
 			break;
@@ -272,7 +280,7 @@ GLuint QGLWidgetTest::loadTexture(const GChar8 *fileName, const GChar8 *Options)
 	glGenTextures(1, &texture[0]);
 	glBindTexture(GL_TEXTURE_2D, texture[0]);
 
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, imgTexture->Width(), imgTexture->Height(),
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, imgTexture->Width(), imgTexture->Height(),
 		0, GL_BGRA, GL_UNSIGNED_BYTE, imgTexture->Pixels());
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -334,12 +342,12 @@ void QGLWidgetTest::createCubeTex() {
 		glTexParameteri(GL_TEXTURE_CUBE_MAP_ARB, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_CUBE_MAP_ARB, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_CUBE_MAP_ARB, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X_ARB, 0, 4, img5->Width(), img5->Height(), 0, GL_BGRA, GL_UNSIGNED_BYTE, img5->Pixels());
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X_ARB, 0, 4, img6->Width(), img6->Height(), 0, GL_BGRA, GL_UNSIGNED_BYTE, img6->Pixels());
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y_ARB, 0, 4, img3->Width(), img3->Height(), 0, GL_BGRA, GL_UNSIGNED_BYTE, img3->Pixels());
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y_ARB, 0, 4, img4->Width(), img4->Height(), 0, GL_BGRA, GL_UNSIGNED_BYTE, img4->Pixels());
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z_ARB, 0, 4, img1->Width(), img1->Height(), 0, GL_BGRA, GL_UNSIGNED_BYTE, img1->Pixels());
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z_ARB, 0, 4, img2->Width(), img2->Height(), 0, GL_BGRA, GL_UNSIGNED_BYTE, img2->Pixels());
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X_ARB, 0, GL_RGBA8, img5->Width(), img5->Height(), 0, GL_BGRA, GL_UNSIGNED_BYTE, img5->Pixels());
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X_ARB, 0, GL_RGBA8, img6->Width(), img6->Height(), 0, GL_BGRA, GL_UNSIGNED_BYTE, img6->Pixels());
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y_ARB, 0, GL_RGBA8, img3->Width(), img3->Height(), 0, GL_BGRA, GL_UNSIGNED_BYTE, img3->Pixels());
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y_ARB, 0, GL_RGBA8, img4->Width(), img4->Height(), 0, GL_BGRA, GL_UNSIGNED_BYTE, img4->Pixels());
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z_ARB, 0, GL_RGBA8, img1->Width(), img1->Height(), 0, GL_BGRA, GL_UNSIGNED_BYTE, img1->Pixels());
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z_ARB, 0, GL_RGBA8, img2->Width(), img2->Height(), 0, GL_BGRA, GL_UNSIGNED_BYTE, img2->Pixels());
 	}
 	// even without this free step, memory would be retrieved by kernel
 	// by the destructor (garbage collector)

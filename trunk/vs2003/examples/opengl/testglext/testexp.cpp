@@ -398,7 +398,7 @@ int WINAPI WinMain(	HINSTANCE	hInstance,			// Instance
 					s += "OcclusionQuery is supported\n";
 				else
 					s += "OcclusionQuery isn't supported\n";
-				MessageBox(NULL, StrUtils::ToAscii(s), "Command keys", MB_OK | MB_ICONINFORMATION);
+				MessageBox(NULL, StrUtils::ToAscii(s), "Command keys", MB_OK | MB_ICONINFORMATION | MB_APPLMODAL);
 			}
 		}
 	}

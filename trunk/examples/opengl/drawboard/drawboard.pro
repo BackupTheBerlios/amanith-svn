@@ -16,11 +16,12 @@ SOURCES = main.cpp \
           test_conicalgradientout.cpp \
           test_pattern.cpp \
           test_stroking.cpp \
+          test_geometries.cpp \
           test_masks.cpp
 
 win32: RC_FILE = example.rc
 
 # Qt4 support
 contains(DEFINES, USE_QT4) {
-    QT += opengl qt3support
+    QT += opengl
 }

@@ -1,5 +1,5 @@
 /****************************************************************************
-** $file: amanith/src/rendering/gopenglstroke.cpp   0.1.1.0   edited Sep 24 08:00
+** $file: amanith/src/rendering/gopenglstroke.cpp   0.2.0.0   edited Dec, 12 2005
 **
 ** OpenGL based draw board stroke functions implementation.
 **
@@ -240,12 +240,10 @@ void GOpenGLBoard::DrawGLJoinLine(const GJoinStyle JoinStyle, const GReal MiterL
 
 	#ifdef DOUBLE_REAL_TYPE
 		glVertex2dv(l0.Data());
-		//glVertex2dv(P1.Data());
 		glVertex2dv(l1.Data());
 		glVertex2dv(l2.Data());
 	#else
 		glVertex2fv(l0.Data());
-		//glVertex2fv(P1.Data());
 		glVertex2fv(l1.Data());
 		glVertex2fv(l2.Data());
 	#endif
@@ -650,7 +648,6 @@ void GOpenGLBoard::DrawSolidStroke(const GCapStyle StartCapStyle, const GCapStyl
 	else {
 		GReal dist = Distance(*PointsBegin, lastPoint);
 
-		//if (Points.size() == 3 && (dist < G_EPSILON))
 		if ((PointsEnd - PointsBegin) == 3 && (dist < G_EPSILON))
 			DrawGLCapsLine(G_TRUE, StartCapStyle, G_TRUE, EndCapStyle, *it0, *it1, Thickness, RoundAuxCoeff);
 		// contour made at least by 3 (different) points

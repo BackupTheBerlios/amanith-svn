@@ -37,7 +37,11 @@
 static int timer_interval = 0;			// timer interval (millisec)
 
 // constructor
+#ifdef USE_QT4
+QGLWidgetTest::QGLWidgetTest(const QGLFormat& Format, QWidget *parent) : QGLWidget(Format, parent) {
+#else
 QGLWidgetTest::QGLWidgetTest(QWidget * parent) : QGLWidget(parent) {
+#endif
 
 	gKernel = new GKernel();
 	gPath = (GPath2D *)gKernel->CreateNew(G_PATH2D_CLASSID);

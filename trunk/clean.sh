@@ -1,57 +1,60 @@
-cd $AMANITHDIR
 make clean
-rm $AMANITHDIR/Makefile
-rm $AMANITHDIR/3rdpart/Makefile
-rm $AMANITHDIR/3rdpart/freetype2/Makefile
-rm $AMANITHDIR/3rdpart/libjpeg/Makefile
-rm $AMANITHDIR/3rdpart/libpng/Makefile
-rm $AMANITHDIR/3rdpart/zlib/Makefile
-rm $AMANITHDIR/build/Makefile
-rm $AMANITHDIR/examples/Makefile
-rm $AMANITHDIR/examples/opengl/Makefile
-rm $AMANITHDIR/examples/opengl/animcolor/Makefile
-rm $AMANITHDIR/examples/opengl/animshape2d/Makefile
-rm $AMANITHDIR/examples/opengl/bezier2d/Makefile
-rm $AMANITHDIR/examples/opengl/bspline2d/Makefile
-rm $AMANITHDIR/examples/opengl/delaunay2d/Makefile
-rm $AMANITHDIR/examples/opengl/font2d/Makefile
-rm $AMANITHDIR/examples/opengl/hermite2d/Makefile
-rm $AMANITHDIR/examples/opengl/path2d/Makefile
-rm $AMANITHDIR/examples/opengl/polyline2d/Makefile
-rm $AMANITHDIR/examples/opengl/testglext/Makefile
-rm $AMANITHDIR/examples/opengl/testshaders/Makefile
-rm $AMANITHDIR/examples/opengl/tesselator2d/Makefile
-rm $AMANITHDIR/examples/opengl/vectorizer/Makefile
-rm $AMANITHDIR/examples/others/Makefile
-rm $AMANITHDIR/examples/others/lowlevel_stuff/Makefile
-rm $AMANITHDIR/examples/viewimage/Makefile
-rm $AMANITHDIR/plugins/Makefile
-rm $AMANITHDIR/plugins/fonts/Makefile
-rm $AMANITHDIR/plugins/jpeg/Makefile
-rm $AMANITHDIR/plugins/png/Makefile
-rm $AMANITHDIR/tools/Makefile
-rm $AMANITHDIR/tools/plugwizard/Makefile
-rm $AMANITHDIR/tools/uuid_gen/Makefile
 
-rm $AMANITHDIR/lib/*
-rm $AMANITHDIR/plugins/lib*
+find ./ -name "Makefile" -delete
+find ./ -name "Makefile.Release" -delete
+find ./ -name "Makefile.Debug" -delete
 
-rm $AMANITHDIR/examples/opengl/animcolor/drawanim
-rm $AMANITHDIR/examples/opengl/animshape2d/drawanim
-rm $AMANITHDIR/examples/opengl/bezier2d/drawbezier
-rm $AMANITHDIR/examples/opengl/bspline2d/drawbspline
-rm $AMANITHDIR/examples/opengl/delaunay2d/delaunay2d
-rm $AMANITHDIR/examples/opengl/font2d/drawfont
-rm $AMANITHDIR/examples/opengl/hermite2d/drawhermite
-rm $AMANITHDIR/examples/opengl/path2d/path2d
-rm $AMANITHDIR/examples/opengl/polyline2d/drawpolyline
-rm $AMANITHDIR/examples/opengl/testglext/testglext
-rm $AMANITHDIR/examples/opengl/testshaders/testshaders
-rm $AMANITHDIR/examples/opengl/tesselator2d/tesselator2d
-rm $AMANITHDIR/examples/opengl/vectorizer/vectorizer
-rm $AMANITHDIR/examples/others/lowlevel_stuff/lowlevel
-rm $AMANITHDIR/examples/viewimage/viewimage
-rm $AMANITHDIR/tools/plugwizard/plugwizard
-rm $AMANITHDIR/tools/uuid_gen/uuid_gen
+find ./3rdpart/ -name "*.idb" -delete
+find ./3rdpart/ -name "*.pdb" -delete
+find ./3rdpart/ -name "*.ncb" -delete
+find ./3rdpart/ -name "*.ilk" -delete
+find ./3rdpart/ -name "*.sln" -delete
+find ./3rdpart/ -name "*.vcproj" -delete
+find ./3rdpart/ -name "*.suo" -delete
 
-make distclean
+find ./build/ -name "*.idb" -delete
+find ./build/ -name "*.pdb" -delete
+find ./build/ -name "*.ncb" -delete
+find ./build/ -name "*.ilk" -delete
+find ./build/ -name "*.sln" -delete
+find ./build/ -name "*.vcproj" -delete
+find ./build/ -name "*.suo" -delete
+
+find ./examples/ -name "*.idb" -delete
+find ./examples/ -name "*.pdb" -delete
+find ./examples/ -name "*.ncb" -delete
+find ./examples/ -name "*.ilk" -delete
+find ./examples/ -name "*.sln" -delete
+find ./examples/ -name "*.vcproj" -delete
+find ./examples/ -name "*.suo" -delete
+find ./examples/ -name "*.exe" -delete
+find ./examples/ -name "*.res" -delete
+
+find ./plugins/ -name "*.idb" -delete
+find ./plugins/ -name "*.pdb" -delete
+find ./plugins/ -name "*.ncb" -delete
+find ./plugins/ -name "*.ilk" -delete
+find ./plugins/ -name "*.sln" -delete
+find ./plugins/ -name "*.vcproj" -delete
+find ./plugins/ -name "*.suo" -delete
+
+rm ./plugins/*.lib
+rm ./plugins/*.a
+rm ./plugins/*.dll
+
+find ./vs2003/ -name "*.idb" -delete
+find ./vs2003/ -name "*.pdb" -delete
+find ./vs2003/ -name "*.ncb" -delete
+find ./vs2003/ -name "*.ilk" -delete
+find ./vs2003/ -name "*.lib" -delete
+find ./vs2003/ -name "*.exp" -delete
+find ./vs2003/ -name "*.exe" -delete
+
+find ./ -name "BuildLog.*" -delete
+find ./ -name "*.ui.bak" -delete
+find ./ -name "*manifest*" -delete
+find ./lib/ -name "*.*" -delete
+find ./ -name "*.jbf" -delete
+
+rm ./*.ncb
+rm ./*.suo

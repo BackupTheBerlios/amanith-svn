@@ -27,7 +27,7 @@
 
 void QGLWidgetTest::TestMasks(const GUInt32 TestIndex) {
 
-	GUInt32 idx = TestIndex % 2;//(TestIndex % 4);
+	GUInt32 idx = TestIndex % 2;
 	GMatrix33 m;
 
 	gDrawBoard->SetTargetMode(G_COLOR_MODE);
@@ -89,19 +89,15 @@ void QGLWidgetTest::TestMasks(const GUInt32 TestIndex) {
 		gDrawBoard->DrawRectangle(GPoint2(160, 127), GPoint2(230, 165));
 		// ------------------------------------------------------------------------
 		gDrawBoard->SetFillPaintType(G_COLOR_PAINT_TYPE);
-		gDrawBoard->SetStrokePaintType(G_COLOR_PAINT_TYPE);
-		gDrawBoard->SetStrokeJoinStyle(G_ROUND_JOIN);
-		gDrawBoard->SetStrokeColor(GVector4((GReal)0.6, (GReal)0.6, (GReal)0.6, (GReal)1.0));
+		gDrawBoard->SetStrokeEnabled(G_FALSE);
 		gDrawBoard->SetFillColor(GVector4((GReal)0.6, (GReal)0.6, (GReal)0.6, (GReal)1.0));
-		gDrawBoard->DrawRectangle(GPoint2(70+260, 60), GPoint2(210+260, 152));
+		gDrawBoard->DrawRoundRectangle(GPoint2(50+260, 40), GPoint2(230+260, 172), GReal(20), GReal(20));
 		// ------------------------------------------------------------------------
 		gDrawBoard->SetTargetMode(G_CLIP_MODE);
-		gDrawBoard->SetStrokeJoinStyle(G_ROUND_JOIN);
-		gDrawBoard->SetStrokeColor(GVector4((GReal)0.0, (GReal)0.0, (GReal)0.0,(GReal)1.0));
-		gDrawBoard->SetFillColor(GVector4((GReal)0.0, (GReal)0.0, (GReal)0.0, (GReal)1.0));
-		gDrawBoard->DrawRectangle(GPoint2(70+520, 60), GPoint2(210+520, 152));
+		gDrawBoard->DrawRoundRectangle(GPoint2(50+520, 40), GPoint2(230+520, 172), GReal(20), GReal(20));
 		TranslationToMatrix(m, GVector2(+520,+0));
 		gDrawBoard->SetTargetMode(G_COLOR_MODE);
+		gDrawBoard->SetStrokeEnabled(G_TRUE);
 		gDrawBoard->SetStrokeStyle(G_SOLID_STROKE);
 		gDrawBoard->SetStrokeJoinStyle(G_MITER_JOIN);
 		gDrawBoard->SetStrokeWidth(40);
@@ -167,32 +163,16 @@ void QGLWidgetTest::TestMasks(const GUInt32 TestIndex) {
 		gDrawBoard->DrawRectangle(GPoint2(160, 127+194), GPoint2(230, 165+194));
 		// ------------------------------------------------------------------------
 		gDrawBoard->SetFillPaintType(G_COLOR_PAINT_TYPE);
-		gDrawBoard->SetStrokePaintType(G_COLOR_PAINT_TYPE);
-		gDrawBoard->SetStrokeJoinStyle(G_ROUND_JOIN);
-		gDrawBoard->SetGroupOpacity(0.4);
-		gDrawBoard->GroupBegin();
-		gDrawBoard->SetStrokeColor(GVector4((GReal)0.0, (GReal)0.0, (GReal)0.0, (GReal)1.0));
-		gDrawBoard->SetFillColor(GVector4((GReal)0.0, (GReal)0.0, (GReal)0.0, (GReal)1.0));
-		gDrawBoard->DrawRectangle(GPoint2(70+260, 60+194), GPoint2(175+260, 112+194));
-		gDrawBoard->GroupEnd();
-		gDrawBoard->SetGroupOpacity(0.4);
-		gDrawBoard->GroupBegin();
-		gDrawBoard->SetStrokeColor(GVector4((GReal)0.0, (GReal)0.0, (GReal)0.0, (GReal)1.0));
-		gDrawBoard->SetFillColor(GVector4((GReal)0.0, (GReal)0.0, (GReal)0.0, (GReal)1.0));
-		gDrawBoard->DrawRectangle(GPoint2(105+260, 100+194), GPoint2(210+260, 152+194));
-		gDrawBoard->GroupEnd();
+		gDrawBoard->SetStrokeEnabled(G_FALSE);
+		gDrawBoard->SetFillColor(GVector4((GReal)0.0, (GReal)0.0, (GReal)0.0, (GReal)0.4));
+		gDrawBoard->DrawRoundRectangle(GPoint2(50+260, 40+194), GPoint2(195+260, 132+194), GReal(20), GReal(20));
+		gDrawBoard->DrawRoundRectangle(GPoint2(85+260, 80+194), GPoint2(230+260, 172+194), GReal(20), GReal(20));
 		// ------------------------------------------------------------------------
 		gDrawBoard->SetTargetMode(G_CLIP_MODE);
-		gDrawBoard->SetFillPaintType(G_COLOR_PAINT_TYPE);
-		gDrawBoard->SetStrokePaintType(G_COLOR_PAINT_TYPE);
-		gDrawBoard->SetStrokeJoinStyle(G_ROUND_JOIN);
-		gDrawBoard->GroupBegin();
-		gDrawBoard->DrawRectangle(GPoint2(70+520, 60+194), GPoint2(175+520, 112+194));
-		gDrawBoard->GroupEnd();
-		gDrawBoard->GroupBegin();
-		gDrawBoard->DrawRectangle(GPoint2(105+520, 100+194), GPoint2(210+520, 152+194));
-		gDrawBoard->GroupEnd();
+		gDrawBoard->DrawRoundRectangle(GPoint2(50+520, 40+194), GPoint2(195+520, 132+194), GReal(20), GReal(20));
+		gDrawBoard->DrawRoundRectangle(GPoint2(85+520, 80+194), GPoint2(230+520, 172+194), GReal(20), GReal(20));
 		TranslationToMatrix(m, GVector2(+520,+194));
+		gDrawBoard->SetStrokeEnabled(G_TRUE);
 		gDrawBoard->SetTargetMode(G_COLOR_MODE);
 		gDrawBoard->SetStrokeStyle(G_SOLID_STROKE);
 		gDrawBoard->SetStrokeJoinStyle(G_MITER_JOIN);
@@ -260,39 +240,18 @@ void QGLWidgetTest::TestMasks(const GUInt32 TestIndex) {
 		gDrawBoard->DrawRectangle(GPoint2(160, 127+388), GPoint2(230, 165+388));
 		// ------------------------------------------------------------------------
 		gDrawBoard->SetFillPaintType(G_COLOR_PAINT_TYPE);
-		gDrawBoard->SetStrokePaintType(G_COLOR_PAINT_TYPE);
-		gDrawBoard->SetStrokeJoinStyle(G_ROUND_JOIN);
-		gDrawBoard->SetGroupOpacity(0.4);
-		gDrawBoard->GroupBegin();
-		gDrawBoard->SetStrokeColor(GVector4((GReal)0.0, (GReal)0.0, (GReal)0.0, (GReal)1.0));
-		gDrawBoard->SetFillColor(GVector4((GReal)0.0, (GReal)0.0, (GReal)0.0, (GReal)1.0));
-		gDrawBoard->DrawRectangle(GPoint2(70+260, 60+388), GPoint2(175+260, 112+388));
-		gDrawBoard->GroupEnd();
-		gDrawBoard->GroupBegin();
-		gDrawBoard->SetStrokeColor(GVector4((GReal)0.0, (GReal)0.0, (GReal)0.0, (GReal)1.0));
-		gDrawBoard->SetFillColor(GVector4((GReal)0.0, (GReal)0.0, (GReal)0.0, (GReal)1.0));
-		gDrawBoard->DrawRectangle(GPoint2(105+260, 100+388), GPoint2(210+260, 152+388));
-		gDrawBoard->GroupEnd();
-		gDrawBoard->GroupBegin();
-		gDrawBoard->SetStrokeColor(GVector4((GReal)0.0, (GReal)0.0, (GReal)0.0, (GReal)1.0));
-		gDrawBoard->SetFillColor(GVector4((GReal)0.0, (GReal)0.0, (GReal)0.0, (GReal)1.0));
-		gDrawBoard->DrawRectangle(GPoint2(115+260, 70+388), GPoint2(165+260, 142+388));
-		gDrawBoard->GroupEnd();
+		gDrawBoard->SetStrokeEnabled(G_FALSE);
+		gDrawBoard->SetFillColor(GVector4((GReal)0.0, (GReal)0.0, (GReal)0.0, (GReal)0.4));
+		gDrawBoard->DrawRoundRectangle(GPoint2(50+260, 40+388), GPoint2(195+260, 132+388), GReal(20), GReal(20));
+		gDrawBoard->DrawRoundRectangle(GPoint2(85+260, 80+388), GPoint2(230+260, 172+388), GReal(20), GReal(20));
+		gDrawBoard->DrawRoundRectangle(GPoint2(95+260, 50+388), GPoint2(185+260, 162+388), GReal(20), GReal(20));
 		// ------------------------------------------------------------------------
 		gDrawBoard->SetTargetMode(G_CLIP_MODE);
-		gDrawBoard->SetFillPaintType(G_COLOR_PAINT_TYPE);
-		gDrawBoard->SetStrokePaintType(G_COLOR_PAINT_TYPE);
-		gDrawBoard->SetStrokeJoinStyle(G_ROUND_JOIN);
-		gDrawBoard->GroupBegin();
-		gDrawBoard->DrawRectangle(GPoint2(70+520, 60+388), GPoint2(175+520, 112+388));
-		gDrawBoard->GroupEnd();
-		gDrawBoard->GroupBegin();
-		gDrawBoard->DrawRectangle(GPoint2(105+520, 100+388), GPoint2(210+520, 152+388));
-		gDrawBoard->GroupEnd();
-		gDrawBoard->GroupBegin();
-		gDrawBoard->DrawRectangle(GPoint2(115+520, 70+388), GPoint2(165+520, 142+388));
-		gDrawBoard->GroupEnd();
+		gDrawBoard->DrawRoundRectangle(GPoint2(50+520, 40+388), GPoint2(195+520, 132+388), GReal(20), GReal(20));
+		gDrawBoard->DrawRoundRectangle(GPoint2(85+520, 80+388), GPoint2(230+520, 172+388), GReal(20), GReal(20));
+		gDrawBoard->DrawRoundRectangle(GPoint2(95+520, 50+388), GPoint2(185+520, 162+388), GReal(20), GReal(20));
 		TranslationToMatrix(m, GVector2(+520,+388));
+		gDrawBoard->SetStrokeEnabled(G_TRUE);
 		gDrawBoard->SetTargetMode(G_COLOR_MODE);
 		gDrawBoard->SetStrokeStyle(G_SOLID_STROKE);
 		gDrawBoard->SetStrokeJoinStyle(G_MITER_JOIN);
@@ -344,7 +303,7 @@ void QGLWidgetTest::TestMasks(const GUInt32 TestIndex) {
 		gDrawBoard->SetFillPaintType(G_COLOR_PAINT_TYPE);
 		gDrawBoard->SetStrokePaintType(G_COLOR_PAINT_TYPE);
 		gDrawBoard->SetStrokeJoinStyle(G_ROUND_JOIN);
-		gDrawBoard->SetGroupOpacity(0.5);
+		gDrawBoard->SetGroupOpacity((GReal)0.5);
 		gDrawBoard->GroupBegin(GAABox2(GPoint2(90+200, 40), GPoint2(195+300, 112+40)));
 		gDrawBoard->SetStrokeColor(GVector4((GReal)1.0, (GReal)0.0, (GReal)0.0, (GReal)1.0));
 		gDrawBoard->SetFillColor(GVector4((GReal)1.0, (GReal)0.0, (GReal)0.0, (GReal)1.0));
@@ -359,7 +318,7 @@ void QGLWidgetTest::TestMasks(const GUInt32 TestIndex) {
 		gDrawBoard->SetFillPaintType(G_COLOR_PAINT_TYPE);
 		gDrawBoard->SetStrokePaintType(G_COLOR_PAINT_TYPE);
 		gDrawBoard->SetStrokeJoinStyle(G_ROUND_JOIN);
-		gDrawBoard->SetGroupOpacity(0.5);
+		gDrawBoard->SetGroupOpacity((GReal)0.5);
 		gDrawBoard->GroupBegin(GAABox2(GPoint2(90+460, 40), GPoint2(195+560, 112+40)));
 		gDrawBoard->SetStrokeColor(GVector4((GReal)1.0, (GReal)0.0, (GReal)0.0, (GReal)1.0));
 		gDrawBoard->SetFillColor(GVector4((GReal)1.0, (GReal)0.0, (GReal)0.0, (GReal)1.0));
@@ -380,8 +339,8 @@ void QGLWidgetTest::TestMasks(const GUInt32 TestIndex) {
 		gDrawBoard->SetFillPaintType(G_COLOR_PAINT_TYPE);
 		gDrawBoard->SetStrokePaintType(G_COLOR_PAINT_TYPE);
 		gDrawBoard->SetStrokeJoinStyle(G_ROUND_JOIN);
-		gDrawBoard->SetGroupOpacity(0.5);
-		gDrawBoard->GroupBegin();
+		gDrawBoard->SetGroupOpacity((GReal)0.5);
+		gDrawBoard->GroupBegin(GAABox2(GPoint2(280, 212), GPoint2(520, 388)));
 		gDrawBoard->SetStrokeColor(GVector4((GReal)1.0, (GReal)0.0, (GReal)0.0, (GReal)1.0));
 		gDrawBoard->SetFillColor(GVector4((GReal)1.0, (GReal)0.0, (GReal)0.0, (GReal)1.0));
 		gDrawBoard->DrawRectangle(GPoint2(70+260, 45+194), GPoint2(175+260, 97+194));
@@ -396,8 +355,8 @@ void QGLWidgetTest::TestMasks(const GUInt32 TestIndex) {
 		gDrawBoard->SetFillPaintType(G_COLOR_PAINT_TYPE);
 		gDrawBoard->SetStrokePaintType(G_COLOR_PAINT_TYPE);
 		gDrawBoard->SetStrokeJoinStyle(G_ROUND_JOIN);
-		gDrawBoard->SetGroupOpacity(0.5);
-		gDrawBoard->GroupBegin();
+		gDrawBoard->SetGroupOpacity((GReal)0.5);
+		gDrawBoard->GroupBegin(GAABox2(GPoint2(540, 212), GPoint2(780, 388)));
 		gDrawBoard->SetStrokeColor(GVector4((GReal)1.0, (GReal)0.0, (GReal)0.0, (GReal)1.0));
 		gDrawBoard->SetFillColor(GVector4((GReal)1.0, (GReal)0.0, (GReal)0.0, (GReal)1.0));
 		gDrawBoard->DrawRectangle(GPoint2(70+520, 45+194), GPoint2(175+520, 97+194));
@@ -419,13 +378,13 @@ void QGLWidgetTest::TestMasks(const GUInt32 TestIndex) {
 		gDrawBoard->SetFillPaintType(G_COLOR_PAINT_TYPE);
 		gDrawBoard->SetStrokePaintType(G_COLOR_PAINT_TYPE);
 		gDrawBoard->SetStrokeJoinStyle(G_ROUND_JOIN);
-		gDrawBoard->SetGroupOpacity(0.5);
-		gDrawBoard->GroupBegin();
+		gDrawBoard->SetGroupOpacity((GReal)0.5);
+		gDrawBoard->GroupBegin(GAABox2(GPoint2(280, 406), GPoint2(520, 582)));
 		gDrawBoard->SetStrokeColor(GVector4((GReal)1.0, (GReal)0.0, (GReal)0.0, (GReal)1.0));
 		gDrawBoard->SetFillColor(GVector4((GReal)1.0, (GReal)0.0, (GReal)0.0, (GReal)1.0));
 		gDrawBoard->DrawRectangle(GPoint2(70+260, 45+388), GPoint2(175+260, 97+388));
 		gDrawBoard->GroupEnd();
-		gDrawBoard->GroupBegin();
+		gDrawBoard->GroupBegin(GAABox2(GPoint2(280, 406), GPoint2(520, 582)));
 		gDrawBoard->SetStrokeColor(GVector4((GReal)1.0, (GReal)0.0, (GReal)0.0, (GReal)1.0));
 		gDrawBoard->SetFillColor(GVector4((GReal)1.0, (GReal)0.0, (GReal)0.0, (GReal)1.0));
 		gDrawBoard->DrawRectangle(GPoint2(110+260, 70+388), GPoint2(210+260, 168+388));
@@ -439,18 +398,16 @@ void QGLWidgetTest::TestMasks(const GUInt32 TestIndex) {
 		gDrawBoard->SetFillPaintType(G_COLOR_PAINT_TYPE);
 		gDrawBoard->SetStrokePaintType(G_COLOR_PAINT_TYPE);
 		gDrawBoard->SetStrokeJoinStyle(G_ROUND_JOIN);
-		gDrawBoard->SetGroupOpacity(0.5);
-		gDrawBoard->GroupBegin();
+		gDrawBoard->SetGroupOpacity((GReal)0.5);
+		gDrawBoard->GroupBegin(GAABox2(GPoint2(540, 406), GPoint2(780, 582)));
 		gDrawBoard->SetStrokeColor(GVector4((GReal)1.0, (GReal)0.0, (GReal)0.0, (GReal)1.0));
 		gDrawBoard->SetFillColor(GVector4((GReal)1.0, (GReal)0.0, (GReal)0.0, (GReal)1.0));
 		gDrawBoard->DrawRectangle(GPoint2(70+520, 45+388), GPoint2(175+520, 97+388));
 		gDrawBoard->GroupEnd();
-		gDrawBoard->GroupBegin();
+		gDrawBoard->GroupBegin(GAABox2(GPoint2(540, 406), GPoint2(780, 582)));
 		gDrawBoard->SetStrokeColor(GVector4((GReal)1.0, (GReal)0.0, (GReal)0.0, (GReal)1.0));
 		gDrawBoard->SetFillColor(GVector4((GReal)1.0, (GReal)0.0, (GReal)0.0, (GReal)1.0));
 		gDrawBoard->DrawRectangle(GPoint2(110+520, 70+388), GPoint2(210+520, 168+388));
 		gDrawBoard->GroupEnd();
-
 	}
-
 }

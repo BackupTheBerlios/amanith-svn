@@ -1,5 +1,5 @@
 /****************************************************************************
-** $file: amanith/src/rendering/gopenglradialgrad.cpp   0.1.1.0   edited Sep 24 08:00
+** $file: amanith/src/rendering/gopenglradialgrad.cpp   0.2.0.0   edited Dec, 12 2005
 **
 ** OpenGL based draw board radial gradient functions implementation.
 **
@@ -588,9 +588,7 @@ GInt32 GOpenGLBoard::SignBoxDisk(const GAABox2& Box, const GPoint2& Center, cons
 			return GMath::Sign(distX - Radius);
 		else {
 			// Arvo's algorithm
-			//GReal d = GMath::Sqrt(distX * distX) + (distY * distY);
 			return GMath::Sign((distX * distX) + (distY * distY) - Radius * Radius);
-			//return GMath::Sign(d - Radius);
 		}
 	}
 }
@@ -599,15 +597,15 @@ void GOpenGLBoard::DrawRadialSector(const GPoint2& Center, const GPoint2& Focus,
 									const GAABox2& BoundingBox,
 									const GDynArray<GKeyValue>& ColorKeys, const GColorRampInterpolation Interpolation,
 									const GColorRampSpreadMode SpreadMode,
-									const GReal MultAlpha, const GMatrix33& GradientMatrix) const {
+									const GReal MultAlpha, const GMatrix33& GradientMatrix,
+									const GMatrix33& InverseGradientMatrix, const GMatrix33& ModelViewMatrix) const {
 
 
-	GPoint2 transfFocus = GradientMatrix * Focus;
-	GPoint2 transfCenter = GradientMatrix * Center;
-	GPoint2 tmpRadiusPoint(Center[G_X] + Radius, Center[G_Y]);
-	GPoint2 transfRadiusPoint = GradientMatrix * tmpRadiusPoint;
-	GReal transfRadius = Distance(transfCenter, transfRadiusPoint);
-
+	GPoint2 transfFocus = Focus;
+	GPoint2 transfCenter = Center;
+	//GPoint2 tmpRadiusPoint(Center[G_X] + Radius, Center[G_Y]);
+	//GPoint2 transfRadiusPoint = GradientMatrix * tmpRadiusPoint;
+	GReal transfRadius = Radius;//Distance(transfCenter, transfRadiusPoint);
 
 	GPoint2 realFocus(transfFocus);
 	if (Distance(transfFocus, transfCenter) >= transfRadius)
@@ -617,6 +615,22 @@ void GOpenGLBoard::DrawRadialSector(const GPoint2& Center, const GPoint2& Focus,
 	GPoint2 p2 = BoundingBox.Max();
 	GPoint2 p1(p2[G_X], p0[G_Y]);
 	GPoint2 p3(p0[G_X], p2[G_Y]);
+
+	GMatrix33 m = InverseGradientMatrix * ModelViewMatrix;
+	GPoint2 q0 = m * p0;
+	GPoint2 q1 = m * p1;
+	GPoint2 q2 = m * p2;
+	GPoint2 q3 = m * p3;
+
+	// transform the box using model-view matrix
+	GAABox2 tmpBox(q0, q1);
+	tmpBox.ExtendToInclude(q2);
+	tmpBox.ExtendToInclude(q3);
+	p0 = tmpBox.Min();
+	p2 = tmpBox.Max();
+	p1.Set(p2[G_X], p0[G_Y]);
+	p3.Set(p0[G_X], p2[G_Y]);
+
 
 	GPoint2 pMax, pMin;
 	GVector2 v;
@@ -676,8 +690,8 @@ void GOpenGLBoard::DrawRadialSector(const GPoint2& Center, const GPoint2& Focus,
 
 
 	// if the focus is inside the box, whole disk must be rendered (and in this case tMin is 0)
-	if ((realFocus[G_X] > BoundingBox.Min()[G_X] && realFocus[G_X] < BoundingBox.Max()[G_X]) &&
-		(realFocus[G_Y] > BoundingBox.Min()[G_Y] && realFocus[G_Y] < BoundingBox.Max()[G_Y])) {
+	if ((realFocus[G_X] > p0[G_X] && realFocus[G_X] < p2[G_X]) &&
+		(realFocus[G_Y] > p0[G_Y] && realFocus[G_Y] < p2[G_Y])) {
 		wholeDisk = G_TRUE;
 		tMin = 0;
 	}
@@ -690,15 +704,15 @@ void GOpenGLBoard::DrawRadialSector(const GPoint2& Center, const GPoint2& Focus,
 		GReal lenFC = dirFC.Length();
 
 	#ifdef _DEBUG
-		GInt32 signHead = SignBoxDisk(BoundingBox, realFocus + tHead * dirFC, tHead * transfRadius);
-		GInt32 signTail = SignBoxDisk(BoundingBox, realFocus + tTail * dirFC, tTail * transfRadius);
+		GInt32 signHead = SignBoxDisk(tmpBox, realFocus + tHead * dirFC, tHead * transfRadius);
+		GInt32 signTail = SignBoxDisk(tmpBox, realFocus + tTail * dirFC, tTail * transfRadius);
 		G_ASSERT((signHead * signTail) <= 0);
 	#endif
 
 		// now use a bisection iterative method to find a good bound for tMin
 		do {
 			GReal tPivot = (tTail + tHead) * (GReal)0.5;
-			GInt32 signPivot = SignBoxDisk(BoundingBox, realFocus + tPivot * dirFC, tPivot * transfRadius);
+			GInt32 signPivot = SignBoxDisk(tmpBox, realFocus + tPivot * dirFC, tPivot * transfRadius);
 
 			if (signPivot == 0) {
 				tTail = tPivot;
@@ -715,7 +729,7 @@ void GOpenGLBoard::DrawRadialSector(const GPoint2& Center, const GPoint2& Focus,
 
 		// it handles the case when focus and center are the same 
 		if (lenFC <= G_EPSILON) {
-			dirFC = BoundingBox.Center() - realFocus;
+			dirFC = tmpBox.Center() - realFocus;
 			lenFC = dirFC.Length();
 		}
 
@@ -810,8 +824,18 @@ void GOpenGLBoard::DrawRadialSector(const GPoint2& Center, const GPoint2& Focus,
 	}
 
 	// draw the shaded sector
+	//DrawGLRadialSector(transfCenter, realFocus, transfRadius, tMin, tMax, pMin, pMax, wholeDisk, ColorKeys,
+	//				   Interpolation, SpreadMode, MultAlpha);
+
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	SetGLModelViewMatrix(GradientMatrix);
+
 	DrawGLRadialSector(transfCenter, realFocus, transfRadius, tMin, tMax, pMin, pMax, wholeDisk, ColorKeys,
 					   Interpolation, SpreadMode, MultAlpha);
+
+	glPopMatrix();
+
 }
 
 };	// end namespace Amanith

@@ -28,7 +28,11 @@
 #include <amanith/gkernel.h>
 #include <amanith/2d/gpixelmap.h>
 #include <amanith/rendering/gopenglboard.h>
+#ifdef USE_QT4
+#include <QGLWidget>
+#else
 #include <qgl.h>
+#endif
 
 using namespace Amanith;
 
@@ -38,7 +42,7 @@ private:
 	GKernel *gKernel;
 	GOpenGLBoard *gDrawBoard;
 	GPixelMap *gImage;
-	GGradientDesc *gLinGrad1, *gLinGrad2, *gLinGrad3;
+	GGradientDesc *gLinGrad1, *gLinGrad2, *gLinGrad3, *gLinGradLogo1, *gLinGradLogo2, *gLinGradLogo3;
 	GGradientDesc *gRadGrad1, *gRadGrad2, *gRadGrad3, *gRadGrad4;
 	GGradientDesc *gConGrad1, *gConGrad2, *gConGrad3, *gConGrad4;
 	GPatternDesc *gPattern;
@@ -49,18 +53,20 @@ private:
 	// 1 = linear gradient
 	// 2 = radial gradient (in)
 	// 3 = radial gradient (out)
-	// 4 = pattern
-	// 5 = stroking
+	// 4 = conical gradient (in)
+	// 5 = conical gradient (out)
+	// 6 = pattern
+	// 7 = stroking
+	// 8 = masks and group opacity
+	// 9 = shapes
 	GUInt32 gTestSuite;
 	GUInt32 gTestIndex;
 	GBool gDrawBackGround;
 	GReal gRandAngle;
-	GReal gRandScale;
+	GReal gRandScaleX;
+	GReal gRandScaleY;
 	GRenderingQuality gRenderingQuality;
 	GBool gUseShaders;
-
-//	GLfloat	gX, gY, gZ;						// Depth Into The Screen
-	GPath2D *gPath1, *gPath2, *gPath3;
 
 protected:
 	void initializeGL();					// implementation for QGLWidget.initializeGL()
@@ -70,19 +76,22 @@ protected:
 
 	void TestColor(const GUInt32 TestIndex);
 	void TestLinearGradient(const GUInt32 TestIndex, const GReal RotAngle, const GReal Scale);
-	void TestRadialGradientIn(const GUInt32 TestIndex, const GReal RotAngle, const GReal Scale);
-	void TestRadialGradientOut(const GUInt32 TestIndex, const GReal RotAngle, const GReal Scale);
-	void TestConicalGradientIn(const GUInt32 TestIndex, const GReal RotAngle, const GReal Scale);
-	void TestConicalGradientOut(const GUInt32 TestIndex, const GReal RotAngle, const GReal Scale);
-	void TestPattern(const GUInt32 TestIndex, const GReal RotAngle, const GReal Scale);
+	void TestRadialGradientIn(const GUInt32 TestIndex, const GReal RotAngle, const GReal ScaleX, const GReal ScaleY);
+	void TestRadialGradientOut(const GUInt32 TestIndex, const GReal RotAngle, const GReal ScaleX, const GReal ScaleY);
+	void TestConicalGradientIn(const GUInt32 TestIndex, const GReal RotAngle, const GReal ScaleX, const GReal ScaleY);
+	void TestConicalGradientOut(const GUInt32 TestIndex, const GReal RotAngle, const GReal ScaleX, const GReal ScaleY);
+	void TestPattern(const GUInt32 TestIndex, const GReal RotAngle, const GReal ScaleX, const GReal ScaleY);
 	void TestStroke(const GUInt32 TestIndex);
 	void TestMasks(const GUInt32 TestIndex);
-
-	void TestDebug();
+	void TestGeometries(const GUInt32 TestIndex);
 
 public:
 	// constructor
+#ifdef USE_QT4
+	QGLWidgetTest(const QGLFormat& Format, QWidget *parent = 0);
+#else
 	QGLWidgetTest(QWidget *parent = 0);
+#endif
 	// destructor
 	~QGLWidgetTest();
 	//void timerEvent(QTimerEvent* e);

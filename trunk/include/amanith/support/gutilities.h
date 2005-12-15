@@ -1,5 +1,5 @@
 /****************************************************************************
-** $file: amanith/support/gutilities.h   0.1.1.0   edited Sep 24 08:00
+** $file: amanith/support/gutilities.h   0.2.0.0   edited Dec, 12 2005
 **
 ** Global general purpose utilities.
 **
@@ -188,10 +188,6 @@ namespace Amanith {
 		}
 		//! Set quaternion values from string representation
 		static GError FromString(const GString& SourceStr, GQuaternion& Quat);
-		//! Encode a given string using BlowFish algorithm
-		static GError Encode(const GString& Input, const GString& Password, GString& Output, const GBool HexAscii = G_TRUE);
-		//! Decode an encoded (by the Encode() function) string
-		static GError Decode(const GString& Input, const GString& Password, GString& Output, const GBool HexAscii = G_TRUE);
 	};
 
 

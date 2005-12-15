@@ -22,15 +22,15 @@
 ** not clear to you.
 **********************************************************************/
 
-void TestPattern(const GUInt32 TestIndex, const GReal RotAngle, const GReal Scale) {
+void TestPattern(const GUInt32 TestIndex, const GReal RotAngle, const GReal ScaleX, const GReal ScaleY) {
 	
-	GUInt32 idx = TestIndex & 0;//(TestIndex % 4);
+	GUInt32 idx = TestIndex & 0;
 
 	GMatrix33 ofsTransf, m;
 	GMatrix33 rot, scl;
 
 	RotationToMatrix(rot, RotAngle);
-	ScaleToMatrix(scl, GVector2(Scale, Scale));
+	ScaleToMatrix(scl, GVector2(ScaleX, ScaleY));
 	ofsTransf = (rot * scl);
 
 	gDrawBoard->SetTargetMode(G_COLOR_MODE);

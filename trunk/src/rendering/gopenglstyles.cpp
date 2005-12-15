@@ -1,5 +1,5 @@
 /****************************************************************************
-** $file: amanith/src/rendering/gopenglstyles.cpp   0.1.1.0   edited Sep 24 08:00
+** $file: amanith/src/rendering/gopenglstyles.cpp   0.2.0.0   edited Dec, 12 2005
 **
 ** OpenGL based draw board styles functions implementation.
 **
@@ -265,7 +265,7 @@ void GOpenGLGradientDesc::UpdateOpenGLTextureLinRad(const GRenderingQuality Qual
 	}
 	glBindTexture(GL_TEXTURE_1D, gGradientTexture);
 	SetGLGradientQuality(Quality);
-	glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA, (GLsizei)size, 0, GL_RGBA, GL_UNSIGNED_BYTE, (GLvoid *)pixels);
+	glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA8, (GLsizei)size, 0, GL_RGBA, GL_UNSIGNED_BYTE, (GLvoid *)pixels);
 }
 
 void GOpenGLGradientDesc::UpdateOpenGLTextureCon(const GRenderingQuality Quality, const GUInt32 MaxTextureSize,
@@ -321,7 +321,7 @@ void GOpenGLGradientDesc::UpdateOpenGLTextureCon(const GRenderingQuality Quality
 	// set texture min/mag filters
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, (GLsizei)Atan2LookupTableSize, (GLsizei)Atan2LookupTableSize,
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, (GLsizei)Atan2LookupTableSize, (GLsizei)Atan2LookupTableSize,
 				0, GL_RGBA, GL_UNSIGNED_BYTE, (GLvoid *)pixelsDst);
 }
 
@@ -362,7 +362,6 @@ void GOpenGLGradientDesc::UpdateHermiteTangents() {
 		gInTangents[i] = GVector4(redKey.InTangent, greenKey.InTangent, blueKey.InTangent, alphaKey.InTangent);
 		gOutTangents[i] = GVector4(redKey.OutTangent, greenKey.OutTangent, blueKey.OutTangent, alphaKey.OutTangent);
 	}
-
 }
 
 // set color keys
@@ -373,18 +372,33 @@ void GOpenGLGradientDesc::SetColorKeys(const GDynArray<GKeyValue>& ColorKeys) {
 	GDynArray<GKeyValue> tmpKeys;
 	GKeyValue tmpKey;
 
+	tmpKeys.reserve(ColorKeys.size());
+
+	// clamp all color components in the range [0; 1]
 	for (; it != ColorKeys.end(); ++it) {
 		if (it->KeyType() == G_VECTOR3_KEY) {
 			GVector3 v = it->Vect3Value();
+			GReal t = it->TimePosition();
+			v[G_X] = GMath::Clamp(v[G_X], (GReal)0, (GReal)1);
+			v[G_Y] = GMath::Clamp(v[G_Y], (GReal)0, (GReal)1);
+			v[G_Z] = GMath::Clamp(v[G_Z], (GReal)0, (GReal)1);
 			tmpKey.SetValue(GVector4(v[G_X], v[G_Y], v[G_Z], (GReal)1.0));
+			tmpKey.SetTimePosition(t);
 			tmpKeys.push_back(tmpKey);
 		}
 		else
 		if (it->KeyType() == G_VECTOR4_KEY) {
-
-			if (it->Vect4Value()[G_W] < (GReal)1.0)
+			GVector4 v = it->Vect4Value();
+			GReal t = it->TimePosition();
+			v[G_X] = GMath::Clamp(v[G_X], (GReal)0, (GReal)1);
+			v[G_Y] = GMath::Clamp(v[G_Y], (GReal)0, (GReal)1);
+			v[G_Z] = GMath::Clamp(v[G_Z], (GReal)0, (GReal)1);
+			v[G_W] = GMath::Clamp(v[G_W], (GReal)0, (GReal)1);
+			if (v[G_W] < (GReal)1)
 				gAlphaKeys = G_TRUE;
-			tmpKeys.push_back(*it);
+			tmpKey.SetValue(v);
+			tmpKey.SetTimePosition(t);
+			tmpKeys.push_back(tmpKey);
 		}
 	}
 
@@ -462,7 +476,7 @@ void GOpenGLPatternDesc::SetImage(const GPixelMap *Image, const GImageQuality Qu
 		glGenTextures(1, &gPatternTexture);
 		glBindTexture(GL_TEXTURE_2D, gPatternTexture);
 		SetGLImageQuality(Quality);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, (GLsizei)img->Width(), (GLsizei)img->Height(),
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, (GLsizei)img->Width(), (GLsizei)img->Height(),
 					 0, GL_BGRA, GL_UNSIGNED_BYTE, (GLvoid *)img->Pixels());
 		return;
 	}
@@ -484,7 +498,7 @@ void GOpenGLPatternDesc::SetImage(const GPixelMap *Image, const GImageQuality Qu
 	// for low and normal quality levels, we can upload texture directly
 	if (Quality == G_LOW_IMAGE_QUALITY || Quality == G_NORMAL_IMAGE_QUALITY) {
 
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, (GLsizei)tmpImage.Width(), (GLsizei)tmpImage.Height(),
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, (GLsizei)tmpImage.Width(), (GLsizei)tmpImage.Height(),
 					 0, GL_BGRA, GL_UNSIGNED_BYTE, (GLvoid *)tmpImage.Pixels());
 		return;
 	}
@@ -494,7 +508,7 @@ void GOpenGLPatternDesc::SetImage(const GPixelMap *Image, const GImageQuality Qu
 	GInt32 level = 0;
 
 	do {
-		glTexImage2D(GL_TEXTURE_2D, level, GL_RGBA, (GLsizei)tmpImage.Width(), (GLsizei)tmpImage.Height(),
+		glTexImage2D(GL_TEXTURE_2D, level, GL_RGBA8, (GLsizei)tmpImage.Width(), (GLsizei)tmpImage.Height(),
 					 0, GL_BGRA, GL_UNSIGNED_BYTE, (GLvoid *)tmpImage.Pixels());
 
 		if (size > 1) {
@@ -506,7 +520,7 @@ void GOpenGLPatternDesc::SetImage(const GPixelMap *Image, const GImageQuality Qu
 			if (newH == 0)
 				newH = 1;
 
-			tmpImage.Resize((GUInt32)newW, (GUInt32)newH, G_RESIZE_CATMULLROM);
+			tmpImage.Resize((GUInt32)newW, (GUInt32)newH, G_RESIZE_BOX);
 		}
 
 		size /= 2;
@@ -786,10 +800,15 @@ void GOpenGLBoard::UpdateStyle(GOpenGLDrawStyle& Style) {
 
 GBool GOpenGLBoard::UseStyle(const GPaintType PaintType, const GVector4& Color,
 							 const GOpenGLGradientDesc *Gradient, const GOpenGLPatternDesc *Pattern,
-							 const GMatrix33& ModelView, const GBool UseFill) {
+							 const GMatrix33& ModelView, const GMatrix33& InverseModelView, const GBool UseFill) {
+
+	glDisable(GL_FRAGMENT_PROGRAM_ARB);
 
 	if (TargetMode() == G_CLIP_MODE)
 		return G_FALSE;
+
+	glMatrixMode(GL_MODELVIEW);
+	SetGLModelViewMatrix(ModelView);
 
 	GBool useDepthBuffer = G_FALSE;
 	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE);
@@ -823,7 +842,6 @@ GBool GOpenGLBoard::UseStyle(const GPaintType PaintType, const GVector4& Color,
 		glDisable(GL_TEXTURE_2D);
 		glDisable(GL_TEXTURE_GEN_S);
 		glDisable(GL_TEXTURE_GEN_T);
-		glDisable(GL_FRAGMENT_PROGRAM_ARB);
 
 		SetGLColor(col);
 	}
@@ -852,6 +870,9 @@ GBool GOpenGLBoard::UseStyle(const GPaintType PaintType, const GVector4& Color,
 					else {
 						glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_ALPHA, GL_TEXTURE);
 						glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_ALPHA, GL_REPLACE);
+						// this fix is due to some old hardware
+						col[G_W] = (GReal)1;
+						SetGLColor(col);
 					}
 				}
 				// we have only stroke opacity
@@ -864,15 +885,19 @@ GBool GOpenGLBoard::UseStyle(const GPaintType PaintType, const GVector4& Color,
 				if (!UseFill)
 					useDepthBuffer = G_TRUE;
 			}
-			else
+			else {
 				glDisable(GL_BLEND);
+				// this fix is due to some old hardware
+				SetGLColor(col);
+			}
 
 			// select gradient texture for RGB channels
 			glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_RGB, GL_TEXTURE);
 
+			GMatrix33 genMatrix = InverseModelView * Gradient->Matrix();
 			// affine transform end points
-			GPoint2 sPoint = Gradient->Matrix() * Gradient->StartPoint();
-			GPoint2 ePoint = Gradient->Matrix() * Gradient->AuxPoint();
+			GPoint2 sPoint = genMatrix * Gradient->StartPoint();
+			GPoint2 ePoint = genMatrix * Gradient->AuxPoint();
 
 			// calculate direction
 			GVector2 n = ePoint - sPoint;
@@ -894,6 +919,7 @@ GBool GOpenGLBoard::UseStyle(const GPaintType PaintType, const GVector4& Color,
 			#endif
 
 			GVector4 plane(n[G_X], n[G_Y], 0, 0);
+
 			// lets use texture coordinate generation in eye space which is in canvas coordinates
 			glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_EYE_LINEAR);
 			#ifdef DOUBLE_REAL_TYPE
@@ -907,7 +933,6 @@ GBool GOpenGLBoard::UseStyle(const GPaintType PaintType, const GVector4& Color,
 			glDisable(GL_TEXTURE_2D);
 			glEnable(GL_TEXTURE_GEN_S);
 			glDisable(GL_TEXTURE_GEN_T);
-			glDisable(GL_FRAGMENT_PROGRAM_ARB);
 
 			// bind gradient texture
 			glBindTexture(GL_TEXTURE_1D, Gradient->GradientTexture());
@@ -936,7 +961,6 @@ GBool GOpenGLBoard::UseStyle(const GPaintType PaintType, const GVector4& Color,
 				glDisable(GL_TEXTURE_2D);
 				glDisable(GL_TEXTURE_GEN_S);
 				glDisable(GL_TEXTURE_GEN_T);
-				glDisable(GL_FRAGMENT_PROGRAM_ARB);
 				glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_RGB, GL_PRIMARY_COLOR);
 
 				GVector4 col(Color);
@@ -992,35 +1016,36 @@ GBool GOpenGLBoard::UseStyle(const GPaintType PaintType, const GVector4& Color,
 
 					glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, gRadGradGLProgram);
 
-					GPoint2 pc = Gradient->Matrix() * Gradient->StartPoint();
-					GPoint2 pf = Gradient->Matrix() * Gradient->AuxPoint();
-					GPoint2 pr(Gradient->StartPoint()[G_X] + Gradient->Radius(), Gradient->StartPoint()[G_Y]);
-					GPoint2 transfRadiusPoint = Gradient->Matrix() * pr;
+					GPoint2 pc = Gradient->StartPoint();
+					GPoint2 pf = Gradient->AuxPoint();
+					GReal newRadius = Gradient->Radius();
+
+					// if focus is outside gradient circle, we must reset it
+					if (Distance(pf, pc) > newRadius)
+						pf = pc;
+
 					GVector2 fc = (pf - pc);
-					GReal newRadius = Distance(transfRadiusPoint, pc);
 
 					float focuscenter[4] = { (float)fc[G_X], (float)fc[G_Y], 0.0f, 0.0f };
+
+					// this fix a STRANGE bug on some GeForce boards (we have found it on a 7800GT) where
+					// an x-aligned focus-center makes the fragment program run in an anomalous manner.
+					if (GMath::Abs(focuscenter[0]) <= 1.1920928955078125e-07f)
+						focuscenter[0] = (2.0f * 1.1920928955078125e-07f);
+
 					float qCoef[4] = { (float)(fc.LengthSquared() - GMath::Sqr(newRadius)), 0.0f, 0.0f, 0.0f };
 
-					// generate a physical to logical matrix
-					GMatrix<float, 3, 3> preTrans, scale, postTrans, m;
-
-					TranslationToMatrix(preTrans, GVect<float, 2>(-(float)gViewport[G_X], -(float)gViewport[G_Y]));
-					ScaleToMatrix(scale, GVect<float, 2>( ((float)gProjection[G_Y] - (float)gProjection[G_X]) / (float)gViewport[G_Z],
-														  ((float)gProjection[G_W] - (float)gProjection[G_Z]) / (float)gViewport[G_W]));
-					TranslationToMatrix(postTrans, GVect<float, 2>((float)gProjection[G_X], (float)gProjection[G_Z]));
-
-					m = postTrans * (scale * preTrans);
+					GMatrix33 m = Gradient->InverseMatrix() * PhysicalToLogicalMatrix();
 					m[0][2] -= (float)pf[G_X];
 					m[1][2] -= (float)pf[G_Y];
 
-					float mrs[4] = { m[0][0], m[0][1], m[1][0], m[1][1]};
-					float mtr[4] = { m[0][2], 0.0f, m[1][2], 0.0f};
+					float mrs[4] = { (float)m[0][0], (float)m[0][1], (float)m[1][0], (float)m[1][1]};
+					float mtr[4] = { (float)m[0][2], 0.0f, (float)m[1][2], 0.0f};
 
 					glProgramLocalParameter4fvARB(GL_FRAGMENT_PROGRAM_ARB, 0, focuscenter);	// (Focus - Center).xy, 0, 0
 					glProgramLocalParameter4fvARB(GL_FRAGMENT_PROGRAM_ARB, 1, qCoef);		// (Focus-Center).LengthSquared - Radius^2, 0, 0, 0
-					glProgramLocalParameter4fvARB(GL_FRAGMENT_PROGRAM_ARB, 2, mrs);
-					glProgramLocalParameter4fvARB(GL_FRAGMENT_PROGRAM_ARB, 3, mtr);
+					glProgramLocalParameter4fvARB(GL_FRAGMENT_PROGRAM_ARB, 2, mrs);	// InverseGradMatrix * PhysicalToLogical (affine part)
+					glProgramLocalParameter4fvARB(GL_FRAGMENT_PROGRAM_ARB, 3, mtr); // InverseGradMatrix * PhysicalToLogical (translation part)
 
 					// Color alpha
 					GVect<float, 4> col(1, 1, 1, (float)Color[G_W]);
@@ -1068,10 +1093,9 @@ GBool GOpenGLBoard::UseStyle(const GPaintType PaintType, const GVector4& Color,
 				else {
 					glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, gConGradGLProgram);
 
-					GPoint2 pc = Gradient->Matrix() * Gradient->StartPoint();
-					GPoint2 pt = Gradient->Matrix() * Gradient->AuxPoint();
-					GPoint2 ipc = LogicalToPhysicalReal(pc);
-					GPoint2 ipt = LogicalToPhysicalReal(pt);
+					const GPoint2& pc = Gradient->StartPoint();
+					const GPoint2& pt = Gradient->AuxPoint();
+
 					GVector2 dir = pt - pc;
 					GReal l = dir.Length();
 
@@ -1081,7 +1105,7 @@ GBool GOpenGLBoard::UseStyle(const GPaintType PaintType, const GVector4& Color,
 						dir /= l;
 
 					float rotM[4] = { (float)dir[G_X], (float)dir[G_Y], (float)(-dir[G_Y]), (float)dir[G_X] };
-					float center[4] = { (float)ipc[G_X], (float)ipc[G_Y], 0.0f, 0.0f };
+					float center[4] = { (float)pc[G_X], (float)pc[G_Y], 0.0f, 0.0f };
 					static float texBias[4] = { 0.5f, 0.5f, 0.5f, 0.5f };
 
 					glProgramLocalParameter4fvARB(GL_FRAGMENT_PROGRAM_ARB, 0, rotM);	// 0 = [cos, sin, -sin, cos]
@@ -1090,6 +1114,13 @@ GBool GOpenGLBoard::UseStyle(const GPaintType PaintType, const GVector4& Color,
 					// Color alpha
 					GVect<float, 4> col(1, 1, 1, (float)Color[G_W]);
 					glProgramLocalParameter4fvARB(GL_FRAGMENT_PROGRAM_ARB, 3, (const float *)col.Data()); // 3 = [1, 1, 1, Alpha]
+					// inverse gradient matrix
+					GMatrix33 m = Gradient->InverseMatrix() * PhysicalToLogicalMatrix();
+
+					float mrs[4] = { (float)m[0][0], (float)m[0][1], (float)m[1][0], (float)m[1][1]};
+					float mtr[4] = { (float)m[0][2], 0.0f, (float)m[1][2], 0.0f};
+					glProgramLocalParameter4fvARB(GL_FRAGMENT_PROGRAM_ARB, 4, mrs); // InverseGradMatrix (affine part)
+					glProgramLocalParameter4fvARB(GL_FRAGMENT_PROGRAM_ARB, 5, mtr); // InverseGradMatrix (translation part)
 
 					// set alpha pipeline, according to stroke and color keys opacity
 					if (Gradient->gAlphaKeys || col[G_W] < 1.0f)
@@ -1121,12 +1152,12 @@ GBool GOpenGLBoard::UseStyle(const GPaintType PaintType, const GVector4& Color,
 			glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_ALPHA, GL_PRIMARY_COLOR);
 			glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE1_ALPHA, GL_TEXTURE);
 			glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_ALPHA, GL_MODULATE);
-			SetGLColor(col);
 		}
 		else {
 			glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_ALPHA, GL_TEXTURE);
 			glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_ALPHA, GL_REPLACE);
 		}
+		SetGLColor(col);
 
 		glEnable(GL_BLEND);
 		if (!UseFill)
@@ -1143,13 +1174,10 @@ GBool GOpenGLBoard::UseStyle(const GPaintType PaintType, const GVector4& Color,
 		GReal xAxisLen = patWindow.Dimension(G_X);
 		GReal yAxisLen = patWindow.Dimension(G_Y);
 
+		GMatrix33 m, postTrans, postTrans2, scale;
 
-		GMatrix33 m, invPatMatrix(Pattern->Matrix()), postTrans, postTrans2, scale, preTrans, m2;
-		GMatrix22 n, b;
-		GReal det;
-
-		GVector4 planeS(1, 0, 0, 0);
-		GVector4 planeT(0, 1, 0, 0);
+		GVector4 planeS(InverseModelView[0][0], InverseModelView[1][0], 0, InverseModelView[0][2]);
+		GVector4 planeT(InverseModelView[0][1], InverseModelView[1][1], 0, InverseModelView[1][2]);
 
 	#ifdef DOUBLE_REAL_TYPE
 		glTexGendv(GL_S, GL_EYE_PLANE, (const GLdouble *)planeS.Data());
@@ -1159,26 +1187,11 @@ GBool GOpenGLBoard::UseStyle(const GPaintType PaintType, const GVector4& Color,
 		glTexGenfv(GL_T, GL_EYE_PLANE, (const GLfloat *)planeT.Data());
 	#endif
 
-		TranslationToMatrix(preTrans, GPoint2(-invPatMatrix[0][2], -invPatMatrix[1][2]));
-
-		n[0][0] = invPatMatrix[0][0];
-		n[0][1] = invPatMatrix[0][1];
-		n[1][0] = invPatMatrix[1][0];
-		n[1][1] = invPatMatrix[1][1];
-		InvertFull_GJ(b, n, det);
-		invPatMatrix[0][0] = b[0][0];
-		invPatMatrix[0][1] = b[0][1];
-		invPatMatrix[1][0] = b[1][0];
-		invPatMatrix[1][1] = b[1][1];
-		invPatMatrix[0][2] = 0;
-		invPatMatrix[1][2] = 0;
-
 		TranslationToMatrix(postTrans2, -patWindow.Min());
-		TranslationToMatrix(postTrans, GPoint2(0, 1));
 		ScaleToMatrix(scale, GVector2(1 / xAxisLen, -1 / yAxisLen));
+		TranslationToMatrix(postTrans, GPoint2(0, 1));
 
-		m2 = invPatMatrix * preTrans;
-		m = (postTrans * (scale * (postTrans2 * m2)));
+		m = (postTrans * (scale * (postTrans2 * Pattern->InverseMatrix())));
 
 		// load texture matrix
 		glMatrixMode(GL_TEXTURE);
@@ -1189,7 +1202,6 @@ GBool GOpenGLBoard::UseStyle(const GPaintType PaintType, const GVector4& Color,
 		glEnable(GL_TEXTURE_2D);
 		glEnable(GL_TEXTURE_GEN_S);
 		glEnable(GL_TEXTURE_GEN_T);
-		glDisable(GL_FRAGMENT_PROGRAM_ARB);
 
 		// bind gradient texture
 		glBindTexture(GL_TEXTURE_2D, Pattern->PatternTexture());
@@ -1212,21 +1224,21 @@ GBool GOpenGLBoard::UseStyle(const GPaintType PaintType, const GVector4& Color,
 
 	}
 
-	glMatrixMode(GL_MODELVIEW);
-	SetGLModelViewMatrix(ModelView);
 	return useDepthBuffer;
 }
 
 GBool GOpenGLBoard::UseStrokeStyle(const GDrawStyle& Style) {
 
 	return UseStyle(Style.StrokePaintType(), Style.StrokeColor(), (const GOpenGLGradientDesc *)Style.StrokeGradient(),
-					(const GOpenGLPatternDesc *)Style.StrokePattern(), Style.ModelView(), G_FALSE);//ImageQuality());
+					(const GOpenGLPatternDesc *)Style.StrokePattern(), Style.ModelView(), Style.InverseModelView(),
+					G_FALSE);
 }
 
 GBool GOpenGLBoard::UseFillStyle(const GDrawStyle& Style) {
 
 	return UseStyle(Style.FillPaintType(), Style.FillColor(), (const GOpenGLGradientDesc *)Style.FillGradient(),
-					(const GOpenGLPatternDesc *)Style.FillPattern(), Style.ModelView(), G_TRUE);//ImageQuality());
+					(const GOpenGLPatternDesc *)Style.FillPattern(), Style.ModelView(), Style.InverseModelView(),
+					G_TRUE);
 }
 
 void GOpenGLBoard::PushDepthMask() {
@@ -1247,8 +1259,7 @@ void GOpenGLBoard::PushDepthMask() {
 	m[1][1] = (GReal)2 / (top - bottom);
 	m[1][3] = -(top + bottom) / (top - bottom);
 
-	GVector4 v(10, 10, 0, 1), w;
-	w = m * v;
+	m[2][3] = (GReal)2e-7 - (GReal)1;
 
 	// now all points (that have z = 0 because glVertex2dv/fv) will have a z-window value equal to 0.5
 	glMatrixMode(GL_PROJECTION);
@@ -1305,22 +1316,22 @@ void GOpenGLBoard::DrawAndPopDepthMask(const GAABox2& Box, const GDrawStyle& Sty
 		if (DrawFill)
 			DrawRadialSector(g->StartPoint(), g->AuxPoint(), g->Radius(), Box, g->ColorKeys(),
 							 g->ColorInterpolation(), g->SpreadMode(), Style.FillColor()[G_W],
-							 g->Matrix());
+							 g->Matrix(), g->InverseMatrix(), Style.ModelView());
 		else
 			DrawRadialSector(g->StartPoint(), g->AuxPoint(), g->Radius(), Box, g->ColorKeys(),
 							 g->ColorInterpolation(), g->SpreadMode(), Style.StrokeColor()[G_W],
-							 g->Matrix());
+							 g->Matrix(), g->InverseMatrix(), Style.ModelView());
 	}
 	else
 	if (drawConGrad) {
 		if (DrawFill)
 			DrawConicalSector(g->StartPoint(), g->AuxPoint(), Box, g->ColorKeys(), g->gInTangents, g->gOutTangents,
 							  g->ColorInterpolation(), Style.FillColor()[G_W],
-							  g->Matrix());
+							  g->Matrix(), g->InverseMatrix(), Style.ModelView());
 		else
 			DrawConicalSector(g->StartPoint(), g->AuxPoint(), Box, g->ColorKeys(), g->gInTangents, g->gOutTangents,
 							  g->ColorInterpolation(), Style.StrokeColor()[G_W],
-							  g->Matrix());
+							  g->Matrix(), g->InverseMatrix(), Style.ModelView());
 	}
 	else {
 		// draw into color buffer

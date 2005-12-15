@@ -46,7 +46,7 @@ void BuildFont(void) {
 
 #if defined(G_OS_WIN) && !defined(__CYGWIN__) && !defined(__GNUC__)
 
-	myhdc = qt_display_dc();
+	myhdc = GetDC(0);
 	HFONT  font;									// Windows Font ID
 	base = glGenLists(96);							// Storage For 96 Characters
 
@@ -98,7 +98,11 @@ void DeleteFont(void) {
 }
 
 // constructor
+#ifdef USE_QT4
+QGLWidgetTest::QGLWidgetTest(const QGLFormat& Format, QWidget *parent) : QGLWidget(Format, parent) {
+#else
 QGLWidgetTest::QGLWidgetTest(QWidget * parent) : QGLWidget(parent) {
+#endif
 
 	GString s;
 	GError err;
@@ -268,7 +272,7 @@ void QGLWidgetTest::initializeGL() {
 	// bind the texture
 	glGenTextures(1, &texture);
 	glBindTexture(GL_TEXTURE_2D, texture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, gTexture->Width(), gTexture->Height(),
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, gTexture->Width(), gTexture->Height(),
 				 0, GL_BGRA, GL_UNSIGNED_BYTE, gTexture->Pixels());
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -461,7 +465,10 @@ void QGLWidgetTest::keyPressEvent(QKeyEvent *e) {
 			break;
 
 		case Qt::Key_Space:
-			gWireFrame = !gWireFrame;
+			if (gWireFrame)
+				gWireFrame = G_FALSE;
+			else
+				gWireFrame = G_TRUE;
 			break;
 		case Qt::Key_A:
 			gZ -= 0.5f;
@@ -500,7 +507,10 @@ void QGLWidgetTest::keyPressEvent(QKeyEvent *e) {
 			gX -= 0.025f;
 			break;	
 		case Qt::Key_B:
-			gAnim = !gAnim;
+			if (gAnim)
+				gAnim = G_FALSE;
+			else
+				gAnim = G_TRUE;
 			break;
 		case Qt::Key_M:
 			gStepAng1 *= 1.25f;
@@ -513,7 +523,6 @@ void QGLWidgetTest::keyPressEvent(QKeyEvent *e) {
 			gStepAng3 /= 1.25f;
 			break;
 		case Qt::Key_F:
-			//gFillRule = (gFillRule + 1) % 3;
 			if (gFillRule == G_ODD_EVEN_RULE)
 				gFillRule = G_EVEN_ODD_RULE;
 			else

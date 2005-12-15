@@ -1,5 +1,5 @@
 /****************************************************************************
-** $file: amanith/plugins/png/gpngimpext.cpp   0.1.1.0   edited Sep 24 08:00
+** $file: amanith/plugins/png/gpngimpext.cpp   0.2.0.0   edited Dec, 12 2005
 **
 ** 2D Pixelmap PNG import/export plugin implementation.
 **
@@ -115,10 +115,16 @@ GError GPngImpExp::RawPngLoad(const GChar8 *FileName, GInt32& Width, GInt32& Hei
 	if (!OutBuffer)
 		return G_INVALID_PARAMETER;
 
+#if defined(G_OS_WIN) && _MSC_VER >= 1400
+	std::FILE *infile = NULL;
+	errno_t openErr = fopen_s(&infile, FileName, "rb");
+	if (!infile || openErr)
+		return G_READ_ERROR;
+#else
 	std::FILE *infile;               /* source file */
 	if ((infile = std::fopen(FileName, "rb")) == NULL)
 		return G_READ_ERROR;
-
+#endif
 	/* Create and initialize the png_struct with the desired error handler
 	* functions.  If you want to use the default stderr and longjump method,
 	* you can supply NULL for the last three parameters.  We also supply the
@@ -320,20 +326,22 @@ GError GPngImpExp::RawPngSave(const GChar8 *FileName, const GInt32 Width, const 
 
 #if defined(_PNG_WRITE)
 
-	std::FILE * fp;
+	std::FILE *fp = NULL;
 	png_structp png_ptr;
 	png_infop info_ptr;
 	png_text text_ptr[3];
 
-	// just to avoid warnings
-	//if (NumPaletteEntries && PaletteBuffer)
-	//	fp = NULL;
-
 	// open the file
+#if defined(G_OS_WIN) && _MSC_VER >= 1400
+	errno_t openErr = fopen_s(&fp, FileName, "wb");
+	if (!fp || openErr)
+		return G_WRITE_ERROR;
+#else
 	fp = std::fopen(FileName, "wb");
 	if (fp == NULL)
 		return G_WRITE_ERROR;
-  
+#endif
+
 	/* Create and initialize the png_struct with the desired error handler
 	* functions.  If you want to use the default stderr and longjump method,
 	* you can supply NULL for the last three parameters.  We also check that

@@ -1,5 +1,5 @@
 /****************************************************************************
-** $file: amanith/src/gerror.cpp   0.1.0.0   edited Jun 30 08:00
+** $file: amanith/src/gerror.cpp   0.2.0.0   edited Dec, 12 2005
 **
 ** Global error codes.
 **

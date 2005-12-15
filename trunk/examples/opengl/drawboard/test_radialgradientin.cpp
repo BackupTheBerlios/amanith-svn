@@ -25,7 +25,7 @@
 #include "drawboard.h"
 #include "amanith/geometry/gxformconv.h"
 
-void QGLWidgetTest::TestRadialGradientIn(const GUInt32 TestIndex, const GReal RotAngle, const GReal Scale) {
+void QGLWidgetTest::TestRadialGradientIn(const GUInt32 TestIndex, const GReal RotAngle, const GReal ScaleX, const GReal ScaleY) {
 	
 	GUInt32 idx = (TestIndex % 4);
 
@@ -35,7 +35,7 @@ void QGLWidgetTest::TestRadialGradientIn(const GUInt32 TestIndex, const GReal Ro
 	TranslationToMatrix(preTrans, GPoint2(-150, -118));
 	TranslationToMatrix(postTrans, GPoint2(150, 118));
 	RotationToMatrix(rot, RotAngle);
-	ScaleToMatrix(scl, GVector2(Scale, Scale));
+	ScaleToMatrix(scl, GVector2(ScaleX, ScaleY));
 	ofsTransf = (postTrans * (rot * (scl * preTrans)));
 
 	gDrawBoard->SetTargetMode(G_COLOR_MODE);

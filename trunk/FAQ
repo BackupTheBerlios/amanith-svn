@@ -1,52 +1,70 @@
-AMANITH FRAMEWORK F.A.Q.
-************************
+AMANITH FRAMEWORK F.A.Q. -  V 0.2.0 - Edited 12.12.2005
+*******************************************************
+
+1.  What is Amanith Framework ?
+2.  Which prerequirements must be satisfied to compile Amanith Framework ?
+3.  Where I can find the latest Amanith Framework official release ?
+4.  Where I can find the Amanith Framework CVS/SVN source tree ?
+5.  For which kind of projects is Amanith Framework suitable ?
+6.  Can I port Amanith under a different os/architecture/compiler ?
+7.  Can I give an active contribute to the Amanith Framework development ?
+8.  If I need a particular feature, can You implement this just for me ?
+9.  Can I use Amanith Framework to develop a non OpenSource project ?
+10.  Can I write a plugin & release it under a licence different from QPL ?
+11.  In which ways can I help Amanith Community ?
+12.  Have you got some troubles compiling Amanith ?
+13.  Have you got some troubles launching Amanith examples ?
+
 
 1.  What is Amanith Framework ?
 ===============================
-    Amanith Framework is a crossplatform opensource ansi C++ framework aimed to handle 2d and 3d vector graphic.
-    The most important difference that you have to understand when you compare Amanith with other similar projects is
-    that Amanith isn't a scenegraph; with Amanith you can manipulate graphics elements (like lines, curves, meshes,
-    and so on...) with powerful operators (like cut, join, and so on...). So if you are trying to do a CAD or a
-    modelling tool (that don't requires high computational precision) you are, without any doubt, on the right way.
-    One of Amanith's strenght points is the highly customization capability that make possible to compile the framework
-    with a wide options range (like the possibility to choose, for example, between double or float as real numbers
-    representation, without change anything into code sources) and including/excluding many modules to add/subtract
-    various features (a.e.: jpeg and png picture format support); in addition you can choose to compile all modules as
-    plugins, so, thanks to the Amanith kernel-plugins system, you can load/unload them at runtime, saving a lot of ram for
-    other tasks.
-    Another important thing that you have to keep in mind when you look Amanith is that all the framework has been written
-    using only ANSI C++, that grants stability and reliability beside the portability on many hw/sw architectures.
-    Currently Amanith compiles without any problems under many Unix environments (a.e.: linux, bsd, irix), Windows, and
-    MacOS X, with different compilers like VisualStudio, Xcode and Gcc.
+    Amanith Framework is a crossplatform opensource ansi C++ framework aimed to handle vector graphic.
+    Amanith gives to developers a complete and reliable set of classes to work with geometric elements
+    (lines, curves, paths, meshes, and so on); it provides many powerful modelling operators (like cut,
+    join, flatten and so on) and, at the same time, the fastest rendering layer totally built on top of
+    OpenGL. Some other useful classes included in Amanith complete the framework with: fonts and pixelmaps
+    support, hierarchycal animations, fast and robust tesselation, bitmap to vector tracing, mathematics and
+    calculus functions, matrices, distance and intersection queries.
+    One of Amanith's strenght points is the highly customization capability that make possible to compile
+    the framework with a wide options range (like the possibility to choose, for example, between double or
+    float as real numbers representation, without change anything into code sources) and including/excluding
+    many modules to add/subtract various features (a.e.: jpeg and png picture format support); in addition you
+    can choose to compile all modules as plugins, so, thanks to the Amanith kernel-plugins system, you can
+    load/unload them at runtime, saving a lot of ram for other tasks.
+    Another important thing that you have to keep in mind when you look Amanith is that all the framework has
+    been written using only ANSI C++, that grants stability and reliability beside the portability on many hw/sw
+    architectures. Currently Amanith compiles without any problems under many Unix environments (a.e.: linux,
+    bsd, irix), Windows, and MacOS X, with different compilers like VisualStudio, Xcode and Gcc.
 
 
 2.  Which prerequirements must be satisfied to compile Amanith Framework ?
 ==========================================================================
-    Obviously, you need a machine with an operating system installed and a C/C++ compiler.
-    We have personally tested Amanith (and its compilation process) on the environments listed below :
+    Obviously, you need a machine (32/64 bits) with an operating system installed and a C/C++ compiler.
+    We have personally tested Amanith (and its compilation process) on the environments listed below:
 
-        -> Windows 2000, XP, 2003 (Visual Studio .net, Visual Studio 6)
-        -> MacOs X Panther, Tiger (Xcode 1.x)
+        -> Windows 2000, XP, 2003 (Visual Studio .net, Visual Studio 2005, Visual Studio 6)
+        -> MacOs X Panther, Tiger (Xcode 1.x, Xcode 2.x)
         -> Linux all flavours (Gcc 2.95+)
+        -> FreeBsd (Gcc 3.4+)
         -> Irix 6.5 (Gcc 2.95+)
 
     The entire Amanith building system is strongly based on the wonderful Qmake tool from Trolltech, you can find it as
     a part of the QT libraries (available for many different environments, and released under QPL/GPL licence) here:
-    http://www.trolltech.com/download/opensource.html. The Amanith Framework core has no dependancy from QT, but
-    the examples and tools distributed with Amanith depends on the QT libs for the gui & widgets, so if you want to
-    compile them, first install the QT libs.
+    http://www.trolltech.com/download/opensource.html. The Amanith Framework library has no dependancy from QT, but
+    the examples distributed with Amanith depends on the QT libs for the gui & widgets, so if you want to compile them,
+    first install the QT libs.
     If you need to use (and compile) Amanith under a different environment unsupported by Qmake, don't despair, you can
-    try to manually edit the makefile in accordance with your requirements (don't forget that Amanith has been written
+    try to manually edit the makefile's in accordance with your requirements (don't forget that Amanith has been written
     in pure ANSI C++) and remember to inform us at develop@amanith.org if the operation had a successful ending.
 
 
-3. Where I can find the latest Amanith Framework official release ?
-===================================================================
+3.  Where I can find the latest Amanith Framework official release ?
+====================================================================
     You can find the latest release in the Amanith Website downloads section at http://www.amanith.org/download
 
 
-4. Where I can find the Amanith Framework CVS/SVN source tree ?
-===============================================================
+4.  Where I can find the Amanith Framework CVS/SVN source tree ?
+================================================================
     You can find the official Amanith Framework subversion repository at http://developer.berlios.de/svn/?group_id=3656
 
 
@@ -103,3 +121,19 @@ AMANITH FRAMEWORK F.A.Q.
 =================================================
     You can help Amanith Community in many ways like Donations, Bug Reporting, Feedbacks, Code & Algorithms, Helping 
     inexperienced users, Partecipating in forum discussion boards, and so on...
+
+
+12.  Have you got some troubles compiling Amanith ?
+===================================================
+    The most common problems during Amanith compilation process involve the wrong set of the $AMANITHDIR env.
+    If $AMANITHDIR environment variable points to a different location than Amanith directory, when you launch 'qmake amanith.pro' all
+    the Makefile(s) will be badly generated and a consecutive 'make' command will probably stop the compilation process with some errors.
+    Before to start the compilation process again, you need to do 'make clean' AND to delete all generated Makefile(s)
+    (and Makefile.Release/Makefile.Debug too), then you can reset $AMANITHDIR and retry.
+
+
+13.  Have you got some troubles launching Amanith examples ?
+============================================================
+    If examples didn't start it's possible that link editor under *nix systems (ld) can't see Amanith shared library, make sure that LD_LIBRARY_PATH
+    (on Linux) or DYLD_LIBRARY_PATH (on MacOsX) is correctly set, or make a symbolic link to Amanith shared library inside your system default
+    libraries directory. If you are using Windows make sure to have %AMANITHDIR%/lib in your PATH.

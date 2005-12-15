@@ -27,15 +27,26 @@
 
 int main(int argc, char ** argv) {
 
-    QApplication a(argc, argv);
-    QGLWidgetTest test;
+    QApplication app(argc, argv);
 
-	a.setMainWidget(&test);
+#ifdef USE_QT4
+	QGLFormat fmt;
+	fmt.setSampleBuffers(true);
+	QGLWidgetTest test(fmt);
+#else
+	QGLWidgetTest test;
+	app.setMainWidget(&test);
+#endif
+
 	// if you want full screen support, please uncomment the following line
 	// test.setWindowState(test.windowState() ^ Qt::WindowFullScreen);
 	test.show();
 	test.setFocus();
+#ifdef USE_QT4
+	test.setWindowTitle("OpenGL extensions example - Press F1 to see supported extensions");
+#else
 	test.setCaption("OpenGL extensions example - Press F1 to see supported extensions");
-    a.connect(&a, SIGNAL(lastWindowClosed()), &a, SLOT(quit()));
-    return a.exec();
+#endif
+    app.connect(&app, SIGNAL(lastWindowClosed()), &app, SLOT(quit()));
+    return app.exec();
 }

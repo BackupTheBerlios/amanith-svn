@@ -216,10 +216,10 @@
 					RelativePath="..\..\src\support\gavltree.cpp">
 				</File>
 				<File
-					RelativePath="..\..\src\support\gblowfish.cpp">
+					RelativePath="..\..\src\support\glew.c">
 				</File>
 				<File
-					RelativePath="..\..\src\support\glew.c">
+					RelativePath="..\..\src\support\gsvgpathtokenizer.cpp">
 				</File>
 				<File
 					RelativePath="..\..\src\support\gutilities.cpp">

@@ -1,5 +1,5 @@
 /****************************************************************************
-** $file: amanith/src/1d/ghermitecurve1d.cpp   0.1.1.0   edited Sep 24 08:00
+** $file: amanith/src/1d/ghermitecurve1d.cpp   0.2.0.0   edited Dec, 12 2005
 **
 ** 1D Hermite curve segment implementation.
 **
@@ -472,6 +472,13 @@ inline bool HermiteKeyLE(const Amanith::GHermiteKey1D& k1, const Amanith::GHermi
 	return G_FALSE;
 }
 
+inline bool HermiteKeyL(const Amanith::GHermiteKey1D& k1, const Amanith::GHermiteKey1D& k2) {
+
+	if (k1.Parameter < k2.Parameter)
+		return G_TRUE;
+	return G_FALSE;
+}
+
 // sort keys
 void GHermiteCurve1D::SortKeys() {
 
@@ -498,7 +505,7 @@ GBool GHermiteCurve1D::ParamToKeyIndex(const GReal Param, GUInt32& KeyIndex) con
 	GHermiteKey1D tmpKey;
 
 	tmpKey.Parameter = Param;
-	result = std::lower_bound(gKeys.begin(), gKeys.end(), tmpKey, HermiteKeyLE);
+	result = std::lower_bound(gKeys.begin(), gKeys.end(), tmpKey, HermiteKeyL);
 
 	if (result == gKeys.end())
 		return G_FALSE;

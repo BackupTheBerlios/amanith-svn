@@ -1,5 +1,5 @@
 /****************************************************************************
-** $file: amanith/src/rendering/gopenglboard.cpp   0.1.1.0   edited Sep 24 08:00
+** $file: amanith/src/rendering/gopenglboard.cpp   0.2.0.0   edited Dec, 12 2005
 **
 ** OpenGL based draw board implementation.
 **
@@ -41,47 +41,6 @@ namespace Amanith {
 //                             GOpenGLBoard
 // *********************************************************************
 
-void GOpenGLBoard::DumpBuffers(const GChar8 *fNameZ, const GChar8 *fNameS) {
-
-	GUInt32 x, y, w, h;
-	Viewport(x, y, w, h);
-
-	GLubyte *buf;
-	std::FILE *f = NULL;
-
-	glPixelStorei(GL_UNPACK_ALIGNMENT, 8);
-
-	buf = new GLubyte[w * h * 2];
-
-	/*glReadPixels(0, 0, w, h, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, buf);
-
-	f = std::fopen(fNameZ, "wb");
-	std::fwrite(buf, 1, w*h, f);
-	std::fflush(f);
-	std::fclose(f);*/
-
-	std::memset(buf, 0, w*h);
-	glReadPixels(0, 0, w, h, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, buf);
-
-	// open the file
-#if defined(G_OS_WIN) && _MSC_VER >= 1400
-	errno_t openErr = fopen_s(&f, fNameS, "wb");
-	if (f && !openErr) {
-		std::fwrite(buf, 1, w*h, f);
-		std::fflush(f);
-		std::fclose(f);
-	}
-#else
-	f = std::fopen(fNameS, "wb");
-	if (f) {
-		std::fwrite(buf, 1, w*h, f);
-		std::fflush(f);
-		std::fclose(f);
-	}
-#endif
-	delete [] buf;
-}
-
 /*
 Radial fragment program
 Parameters:	0 = [(Focus - Center).x, (Focus - Center).y, 0, 0]
@@ -93,6 +52,7 @@ Parameters:	0 = [(Focus - Center).x, (Focus - Center).y, 0, 0]
 */
 static const char *const RadialProgram =
     "!!ARBfp1.0"
+	"OPTION ARB_precision_hint_nicest;"
 	"PARAM c[6] = { program.local[0..5] };"
     "TEMP R0;"
 	"MAD R0, fragment.position.xyxy, c[2], c[3];"
@@ -123,12 +83,18 @@ Parameters:	0 = [cos, sin, -sin, cos]
 			1 = [Center.x, Center.y, 0, 0]
 			2 = [0.5, 0.5, 0.5, 0.5]
 			3 = [1, 1, 1, Alpha]
+			4 = [a00, a01, a10, a11]
+			5 = [a02, 0, a12, 0]
 */
 static const char *const ConicalProgram =
     "!!ARBfp1.0"
-	"PARAM c[4] = { program.local[0..3] };"
+	"OPTION ARB_precision_hint_nicest;"
+	"PARAM c[6] = { program.local[0..5] };"
     "TEMP R0;"
-	"SUB R0, fragment.position.xyxy, c[1].xyxy;"
+	"MAD R0, fragment.position.xyxy, c[4], c[5];"
+	"ADD R0.x, R0.x, R0.y;"
+	"ADD R0.y, R0.z, R0.w;"
+	"SUB R0, R0.xyxy, c[1].xyxy;"
 	"MUL R0, R0, c[0];"
 	"ADD R0.xy, R0.x, R0.y;"
 	"ADD R0.zw, R0.z, R0.w;"
@@ -193,9 +159,15 @@ GOpenGLBoard::GOpenGLBoard(const GUInt32 LowLeftCornerX, const GUInt32 LowLeftCo
 
 	InitDrawStyle();
 
+	// verify if we can do group opacity
+	if (stencilBits < 4)
+		gGroupOpacitySupport = G_FALSE;
+	else
+		gGroupOpacitySupport = G_TRUE;
+
 	// verify if we can clip using stencil buffer
-	if (stencilBits >= 8) {
-		gClipByStencil = G_TRUE;
+	if (stencilBits >= 4) {
+		gClipMasksSupport = G_TRUE;
 		// for example, if we have an 8bit stencil buffer, stencil mask will be 127
 		gStencilMask = (1 << (stencilBits - 1)) - 1;
 		gStencilDualMask = (~gStencilMask);
@@ -203,11 +175,17 @@ GOpenGLBoard::GOpenGLBoard(const GUInt32 LowLeftCornerX, const GUInt32 LowLeftCo
 		gMaxTopStencilValue = gStencilMask - 3;
 	}
 	else
-		gClipByStencil = G_FALSE;
+		gClipMasksSupport = G_FALSE;
 
 	gTopStencilValue = 0;
 	// set "old" state of clipping operations
 	gFirstClipMaskReplace = G_FALSE;
+
+	// ask for number of multisamples
+	if (gExtManager->MultiSamples() > 0)
+		gMultiSamplePresent = G_TRUE;
+	else
+		gMultiSamplePresent = G_FALSE;
 
 	// fragment programs support
 	gFragmentProgramsSupport = gExtManager->IsArbProgramsSupported();
@@ -321,7 +299,7 @@ GUInt32 GOpenGLBoard::MaxDashCount() const {
 	return G_MAX_UINT16;
 }
 
-GUInt32 GOpenGLBoard::MaxKernelSize() const {
+/*GUInt32 GOpenGLBoard::MaxKernelSize() const {
 
 	if (gExtManager)
 		return GMath::Min(gExtManager->MaxConvolutionWidth(), gExtManager->MaxConvolutionHeight());
@@ -332,7 +310,7 @@ GUInt32 GOpenGLBoard::MaxKernelSize() const {
 GUInt32 GOpenGLBoard::MaxSeparableKernelSize() const {
 
 	return MaxKernelSize();
-}
+}*/
 
 GUInt32 GOpenGLBoard::MaxColorKeys() const {
 
@@ -362,9 +340,9 @@ GUInt32 GOpenGLBoard::MaxImageBytes() const {
 
 void GOpenGLBoard::UpdateDeviation(const GRenderingQuality Quality) {
 
-	#define LOW_QUALITY_PIXEL_DEVIATION (1.5 * 1.5)
-	#define NORMAL_QUALITY_PIXEL_DEVIATION (0.75 * 0.75)
-	#define HIGH_QUALITY_PIXEL_DEVIATION (0.25 * 0.25)
+	#define LOW_QUALITY_PIXEL_DEVIATION (1.4 * 1.4)
+	#define NORMAL_QUALITY_PIXEL_DEVIATION (0.5 * 0.5)
+	#define HIGH_QUALITY_PIXEL_DEVIATION (0.2 * 0.2)
 
 	switch (Quality) {
 
@@ -391,10 +369,12 @@ void GOpenGLBoard::UpdateDeviation(const GRenderingQuality Quality) {
 void GOpenGLBoard::DoSetRenderingQuality(const GRenderingQuality Quality) {
 
 	UpdateDeviation(Quality);
-	if (Quality == G_LOW_RENDERING_QUALITY)
-		glDisable(GL_MULTISAMPLE_ARB);
-	else
-		glEnable(GL_MULTISAMPLE_ARB);
+	if (gMultiSamplePresent) {
+		if (Quality == G_LOW_RENDERING_QUALITY)
+			glDisable(GL_MULTISAMPLE_ARB);
+		else
+			glEnable(GL_MULTISAMPLE_ARB);
+	}
 }
 
 void GOpenGLBoard::DoSetTargetMode(const GTargetMode Mode) {
@@ -409,7 +389,6 @@ void GOpenGLBoard::DoSetClipOperation(const GClipOperation Operation) {
 	// just to avoid warning
 	if (Operation) {
 	}
-//	gClipMaskDrawed = G_FALSE;
 }
 
 void GOpenGLBoard::DoSetClipEnabled(const GBool Enabled) {
@@ -440,7 +419,7 @@ void GOpenGLBoard::DoClear(const GReal Red, const GReal Green, const GReal Blue,
 
 	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 
-	if (gClipByStencil) {
+	if (gClipMasksSupport) {
 		glClearColor((GLclampf)Red, (GLclampf)Green, (GLclampf)Blue, 1.0f);
 		glClearDepth(1.0);
 		if (ClearClipMasks) {
@@ -461,7 +440,7 @@ void GOpenGLBoard::DoClear(const GReal Red, const GReal Green, const GReal Blue,
 
 GBool GOpenGLBoard::SetGLClipEnabled(const GTargetMode Mode, const GClipOperation Operation) {
 
-	if (gClipByStencil) {
+	if (gClipMasksSupport) {
 
 		// write to the stencil using current clip operation
 		if (Mode == G_CLIP_MODE) {
@@ -482,7 +461,7 @@ GBool GOpenGLBoard::SetGLClipEnabled(const GTargetMode Mode, const GClipOperatio
 				return G_FALSE;
 			}
 			else {
-				if (GroupOpacity() < 1 && GroupOpacity() > 0 && !gGLGroupRect.IsEmpty) {
+				if (GroupOpacity() < 1 && GroupOpacity() > 0 && !gGLGroupRect.IsEmpty && gGroupOpacitySupport) {
 					// we have to do a double-pass algorithm (first write into stencil, then into color buffer)
 					return G_TRUE;
 				}
@@ -505,7 +484,10 @@ void GOpenGLBoard::DoSetViewport(const GUInt32 LowLeftCornerX, const GUInt32 Low
 
 void GOpenGLBoard::DoSetProjection(const GReal Left, const GReal Right, const GReal Bottom, const GReal Top) {
 
-/*	GMatrix44 m;
+/*	
+	To better understand this is an equivalent code to glOrtho
+
+	GMatrix44 m;
 
 	m[0][0] = 2.0 / (Right - Left);
 	m[0][3] = -(Right + Left) / (Right - Left);

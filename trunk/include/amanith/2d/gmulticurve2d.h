@@ -1,5 +1,5 @@
 /****************************************************************************
-** $file: amanith/2d/gmulticurve2d.h   0.1.1.0   edited Sep 24 08:00
+** $file: amanith/2d/gmulticurve2d.h   0.2.0.0   edited Dec, 12 2005
 **
 ** 2D Base multicurve segment definition.
 **

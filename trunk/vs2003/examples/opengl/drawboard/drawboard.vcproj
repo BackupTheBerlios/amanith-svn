@@ -128,7 +128,19 @@
 				RelativePath=".\test_color.h">
 			</File>
 			<File
+				RelativePath=".\test_conicalgradientin.h">
+			</File>
+			<File
+				RelativePath=".\test_conicalgradientout.h">
+			</File>
+			<File
+				RelativePath=".\test_geometries.h">
+			</File>
+			<File
 				RelativePath=".\test_lineargradient.h">
+			</File>
+			<File
+				RelativePath=".\test_masks.h">
 			</File>
 			<File
 				RelativePath=".\test_pattern.h">

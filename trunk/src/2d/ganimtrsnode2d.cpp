@@ -1,5 +1,5 @@
 /****************************************************************************
-** $file: amanith/src/ganimtrsnode2d.cpp   0.1.1.0   edited Sep 24 08:00
+** $file: amanith/src/ganimtrsnode2d.cpp   0.2.0.0   edited Dec, 12 2005
 **
 ** 2D TRS (Translation-Rotation-Scale) animated node implementation.
 **

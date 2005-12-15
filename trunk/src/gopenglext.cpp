@@ -1,5 +1,5 @@
 /****************************************************************************
-** $file: amanith/src/gopenglext.cpp   0.1.0.0   edited Jun 30 08:00
+** $file: amanith/src/gopenglext.cpp   0.2.0.0   edited Dec, 12 2005
 **
 ** Opengl extension manager implementation.
 **
@@ -430,6 +430,13 @@ GUInt32 GOpenglExt::StencilBits() const {
 
 	GLint num = 0;
 	glGetIntegerv(GL_STENCIL_BITS, &num);
+	return (GUInt32)num;
+}
+
+GUInt32 GOpenglExt::MultiSamples() const {
+
+	GLint num = 0;
+	glGetIntegerv(GL_SAMPLES_ARB, &num);
 	return (GUInt32)num;
 }
 

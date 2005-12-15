@@ -1,5 +1,5 @@
 /****************************************************************************
-** $file: amanith/src/rendering/gdrawboard.cpp   0.1.1.0   edited Sep 24 08:00
+** $file: amanith/src/rendering/gdrawboard.cpp   0.2.0.0   edited Dec, 12 2005
 **
 ** Abstract draw board implementation.
 **
@@ -27,6 +27,8 @@
 **********************************************************************/
 
 #include "amanith/rendering/gdrawboard.h"
+#include "amanith/support/gsvgpathtokenizer.h"
+#include "amanith/geometry/gxformconv.h"
 #include <new>
 
 /*!
@@ -53,14 +55,6 @@ GRenderingContext::GRenderingContext() {
 // *********************************************************************
 //                             GDrawBoard
 // *********************************************************************
-
-// create a draw style
-/*GDrawStyle *GDrawBoard::CreateDrawStyle() {
-
-	GDrawStyle *ds = new (std::nothrow) GDrawStyle();
-	G_ASSERT(ds != NULL);
-	return ds;
-}*/
 
 GDrawBoard::GDrawBoard() {
 
@@ -106,7 +100,7 @@ void GDrawBoard::GroupBegin() {
 
 	if (!gInsideGroup) {
 		gInsideGroup = G_TRUE;
-		//gProjection; // x = left; y = right; z = bottom; w = top
+		// gProjection x = left; y = right; z = bottom; w = top
 		GPoint2 p0(gProjection[G_X], gProjection[G_Z]);
 		GPoint2 p1(gProjection[G_Y], gProjection[G_W]);
 		DoGroupBegin(GAABox2(p0, p1));
@@ -121,7 +115,7 @@ void GDrawBoard::GroupBegin(const GAABox2& LogicBox) {
 		GInterval<GReal> xInterval0(LogicBox.Min()[G_X], LogicBox.Max()[G_X]);
 		GInterval<GReal> yInterval0(LogicBox.Min()[G_Y], LogicBox.Max()[G_Y]);
 
-		// gProjection; // x = left; y = right; z = bottom; w = top
+		// gProjection x = left; y = right; z = bottom; w = top
 		GInterval<GReal> xInterval1(gProjection[G_X], gProjection[G_Y]);
 		GInterval<GReal> yInterval1(gProjection[G_Z], gProjection[G_W]);
 
@@ -227,6 +221,19 @@ GPoint2 GDrawBoard::PhysicalToLogical(const GPoint<GInt32, 2>& PhysicalPoint) {
 	return GPoint2(x, y);
 }
 
+// physical to logical matrix
+GMatrix33 GDrawBoard::PhysicalToLogicalMatrix() const {
+
+	GMatrix33 preTrans, scale, postTrans;
+
+	// build physical to logical matrix
+	TranslationToMatrix(preTrans, GVector2(-(GReal)gViewport[G_X], -(GReal)gViewport[G_Y]));
+	ScaleToMatrix(scale, GVector2((gProjection[G_Y] - gProjection[G_X]) / (GReal)gViewport[G_Z],
+								  (gProjection[G_W] - gProjection[G_Z]) / (GReal)gViewport[G_W]));
+	TranslationToMatrix(postTrans, GVector2(gProjection[G_X], gProjection[G_Z]));
+	// build final matrix
+	return (postTrans * (scale * preTrans));
+}
 
 //---------------------------------------------------------------------------
 //                             RENDERING CONTEXT
@@ -363,6 +370,17 @@ GReal GDrawBoard::StrokeWidth() const {
 void GDrawBoard::SetStrokeWidth(const GReal Width) {
 
 	gCurrentContext.gDrawStyle->SetStrokeWidth(Width);
+}
+
+// stroke miter limit
+GReal GDrawBoard::StrokeMiterLimit() const {
+
+	return gCurrentContext.gDrawStyle->StrokeMiterLimit();
+}
+
+void GDrawBoard::SetStrokeMiterLimit(const GReal Limit) {
+
+	gCurrentContext.gDrawStyle->SetStrokeMiterLimit(Limit);
 }
 
 // stroke style
@@ -556,7 +574,7 @@ void GDrawBoard::DrawEllipseArc(const GPoint2& Center, const GReal XSemiAxisLeng
 
 	GDrawStyle *s = gCurrentContext.gDrawStyle;
 
-	if (s->StrokeEnabled() || s->FillEnabled())
+	if ((s->StrokeEnabled() || s->FillEnabled()) && XSemiAxisLength > 0 && YSemiAxisLength > 0)
 		DoDrawEllipseArc(*s, Center, XSemiAxisLength, YSemiAxisLength, OffsetRotation, StartAngle, EndAngle, CCW);
 }
 
@@ -565,7 +583,7 @@ void GDrawBoard::DrawEllipseArc(const GPoint2& P0, const GPoint2& P1, const GRea
 
 	GDrawStyle *s = gCurrentContext.gDrawStyle;
 
-	if (s->StrokeEnabled() || s->FillEnabled())
+	if ((s->StrokeEnabled() || s->FillEnabled()) && XSemiAxisLength > 0 && YSemiAxisLength > 0)
 		DoDrawEllipseArc(*s, P0, P1, XSemiAxisLength, YSemiAxisLength, OffsetRotation, LargeArc, CCW);
 }
 
@@ -681,6 +699,115 @@ void GDrawBoard::DrawPaths(const GString& SVGPathDescription) {
 
 	if (SVGPathDescription.length() < 2)
 		return;
+
+	GReal arg[6];
+	GBool largeArc, sweep;
+	GChar8 cmd;
+	// instantiate a new tokenizer
+	GSVGPathTokenizer tokenizer(SVGPathDescription);
+
+	BeginPaths();
+
+	while (tokenizer.NextTkn()) {
+
+		// extract command
+		cmd = tokenizer.LastCmd();
+
+		switch(cmd)	{
+
+			// moveto command
+			case 'M':
+			case 'm':
+				arg[0] = tokenizer.LastNum();
+				arg[1] = tokenizer.NextTknAsReal(cmd);
+				MoveTo(arg[0], arg[1], cmd == 'm');
+				break;
+
+			// lineto command
+			case 'L':
+			case 'l':
+				arg[0] = tokenizer.LastNum();
+				arg[1] = tokenizer.NextTknAsReal(cmd);
+				LineTo(arg[0], arg[1], cmd == 'l');
+				break;
+
+			// vertical lineto command
+			case 'V':
+			case 'v':
+				arg[0] = tokenizer.LastNum();
+				VerticalLineTo(arg[0], cmd == 'v');
+				break;
+
+			// horizontal lineto command
+			case 'H':
+			case 'h':
+				arg[0] = tokenizer.LastNum();
+				HorizontalLineTo(arg[0], cmd == 'h');
+				break;
+
+			// quadratic Bezier curve
+			case 'Q':
+			case 'q':
+				arg[0] = tokenizer.LastNum();
+				arg[1] = tokenizer.NextTknAsReal(cmd);
+				arg[2] = tokenizer.NextTknAsReal(cmd);
+				arg[3] = tokenizer.NextTknAsReal(cmd);
+				CurveTo(arg[0], arg[1], arg[2], arg[3], cmd == 'q');
+				break;
+
+			// quadratic Bezier smooth curve
+			case 'T':
+			case 't':
+				arg[0] = tokenizer.LastNum();
+				arg[1] = tokenizer.NextTknAsReal(cmd);
+				SmoothCurveTo(arg[0], arg[1], cmd == 't');
+				break;
+
+			// cubic Bezier curve
+			case 'C':
+			case 'c':
+				arg[0] = tokenizer.LastNum();
+				arg[1] = tokenizer.NextTknAsReal(cmd);
+				arg[2] = tokenizer.NextTknAsReal(cmd);
+				arg[3] = tokenizer.NextTknAsReal(cmd);
+				arg[4] = tokenizer.NextTknAsReal(cmd);
+				arg[5] = tokenizer.NextTknAsReal(cmd);
+				CurveTo(arg[0], arg[1], arg[2], arg[3], arg[4], arg[5], cmd == 'c');
+				break;
+
+			// cubic Bezier smooth curve
+			case 'S':
+			case 's':
+				arg[0] = tokenizer.LastNum();
+				arg[1] = tokenizer.NextTknAsReal(cmd);
+				arg[2] = tokenizer.NextTknAsReal(cmd);
+				arg[3] = tokenizer.NextTknAsReal(cmd);
+				SmoothCurveTo(arg[0], arg[1], arg[2], arg[3], cmd == 's');
+				break;
+
+			case 'A':
+			case 'a':
+				arg[0] = tokenizer.LastNum();
+				arg[1] = tokenizer.NextTknAsReal(cmd);
+				arg[2] = tokenizer.NextTknAsReal(cmd);
+				largeArc = tokenizer.NextTknAsBool(cmd);
+				sweep = tokenizer.NextTknAsBool(cmd);
+				arg[3] = tokenizer.NextTknAsReal(cmd);
+				arg[4] = tokenizer.NextTknAsReal(cmd);
+				EllipticalArcTo(arg[0], arg[1], GMath::Deg2Rad(arg[2]), largeArc, sweep, arg[3], arg[4], cmd == 'a');
+				break;
+
+			case 'Z':
+			case 'z':
+				ClosePath();
+				break;
+
+		default:
+			G_DEBUG("SVG path invalid command");
+		}
+	}
+
+	EndPaths();
 }
 
 };  // end namespace Amanith
