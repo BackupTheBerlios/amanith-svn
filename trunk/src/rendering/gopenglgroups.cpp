@@ -60,6 +60,8 @@ void GOpenGLBoard::PopGLWindowMode() {
 
 void GOpenGLBoard::DoGroupBegin(const GAABox2& LogicBox) {
 
+	gIsFirstGroupDrawing = G_TRUE;
+
 	// if group opacity is not supported by hardware or group opacity is 1, ignore group as opaque
 	if (GroupOpacity() >= 1 || GroupOpacity() <= 0 || TargetMode() == G_CLIP_MODE || !gGroupOpacitySupport)
 		return;
@@ -100,6 +102,21 @@ void GOpenGLBoard::DoGroupBegin(const GAABox2& LogicBox) {
 }
 
 void GOpenGLBoard::DoGroupEnd() {
+
+	if (TargetMode() == G_CLIP_MODE && gIsFirstGroupDrawing == G_FALSE) {
+		UpdateClipMasksState();
+		gClipMasksBoxes.push_back(gGroupBox);
+		if (gTopStencilValue < gMaxTopStencilValue) {
+			if (ClipOperation() == G_INTERSECTION_CLIP)
+				gTopStencilValue++;
+			else {
+				// in the case of replace operation, gTopStencilValue has been already incremented by
+				// the first drawing operation
+			}
+		}
+	}
+
+	gIsFirstGroupDrawing = G_FALSE;
 
 	// if group opacity is not supported by hardware or group opacity is 1, ignore group as opaque
 	if (GroupOpacity() >= 1 || GroupOpacity()<= 0 || gGLGroupRect.IsEmpty || TargetMode() == G_CLIP_MODE || !gGroupOpacitySupport)

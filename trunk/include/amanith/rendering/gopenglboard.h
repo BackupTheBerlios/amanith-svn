@@ -64,11 +64,12 @@ namespace Amanith {
 		GDynArray<GVector4> gInTangents;
 		GDynArray<GVector4> gOutTangents;
 
-		void GenerateTexture1D(const GInt32 Size, GPixelMap& Bitmap);
+		void GenerateTexture1D(const GInt32 Size, GPixelMap& Bitmap, const GBool ReflectKeys);
 
 	protected:
 		static void SetGLGradientQuality(const GRenderingQuality Quality);
-		void UpdateOpenGLTextureLinRad(const GRenderingQuality Quality, const GUInt32 MaxTextureSize);
+		void UpdateOpenGLTextureLinRad(const GRenderingQuality Quality, const GUInt32 MaxTextureSize,
+									   const GBool MirroredRepeatSupported);
 		void UpdateOpenGLTextureCon(const GRenderingQuality Quality, const GUInt32 MaxTextureSize,
 									const GInt32 Atan2LookupTableSize, const GFloat *gAtan2LookupTable);
 		void UpdateHermiteTangents();
@@ -103,8 +104,12 @@ namespace Amanith {
 	private:
 		//! OpenGL texture handle.
 		GLuint gPatternTexture;
-		//! Maximum size of permitted OpenGL texture.
+		//! OpenGL mirrored texture handle (useful for those hardware where "mirrored repeat" extension is not supported
+		GLuint gPatternMirroredTexture;
+		//! Maximum size of permitted OpenGL texture. Written only at creation time by GOpenGLBoard.
 		GUInt32 gMaxTextureSize;
+		//! G_TRUE if "mirrored repeat" is supported, else G_FALSE. Written only at creation time by GOpenGLBoard.
+		GUInt32 gMirroredRepeatSupport;
 
 	protected:
 		static void SetGLImageQuality(const GImageQuality Quality);
@@ -152,6 +157,10 @@ namespace Amanith {
 	public:
 		//! Constructor.
 		GOpenGLDrawStyle();
+		//! Set stroke color. This implementation clamps each entry in the range [0; 1].
+		void SetStrokeColor(const GVectBase<GReal, 4>& Color);
+		//! Set fill color. This implementation clamps each entry in the range [0; 1].
+		void SetFillColor(const GVectBase<GReal, 4>& Color);
 		//! Set srtoke miter limit; in this implementation, additional internal constants are calculated.
 		void SetStrokeMiterLimit(const GReal MiterLimit);
 		//! Set srtoke pen width; in this implementation, additional internal constants are calculated.
@@ -208,6 +217,8 @@ namespace Amanith {
 		GBool gGroupOpacitySupport;
 		//! G_TRUE if OpenGL context has been opened with multi samples (FSAA), else G_FALSE.
 		GBool gMultiSamplePresent;
+		//! G_TRUE if mirrored repeat for texture's UV is supported by the graphics device, else G_FALSE.
+		GBool gMirroredRepeatSupport;
 		//! Current maximum value on top of the stencil stack.
 		GLint gTopStencilValue;
 		//! Maximum permitted value on top of the stencil stack.
@@ -219,6 +230,8 @@ namespace Amanith {
 
 		GBool gFirstClipMaskReplace;
 		GList<GAABox2> gClipMasksBoxes;
+		GAABox2 gGroupBox;
+		GBool gIsFirstGroupDrawing;
 		//! Current squared deviation, used by all adaptive geometric primitives.
 		GReal gDeviation;
 		//! Defined as Sqrt(gDeviation).
@@ -249,8 +262,9 @@ namespace Amanith {
 		GDynArray<GPoint2> gSVGPathPoints;
 		GDynArray<GInt32> gSVGPathPointsPerContour;
 		GDynArray<GBool> gSVGPathClosedStrokes;
+		//! HTML character mask (for valid color characters).
+		GChar8 gHTMLMask[32];
 
-	private:
 		//! Calculate (squared) deviation given a (squared) pixel deviation.
 		GReal CalcDeviation(const GReal PixelDeviation);
 		//! Calculate (squared) pixel deviation given a (squared) deviation.
@@ -272,6 +286,9 @@ namespace Amanith {
 
 		// double pass technique for group opacity
 		void GroupFirstPass();
+		// initialize HTML valid color characters table
+		void BuildHTMLMask();
+		GBool IsValidHTMLColorChar(const GUChar8 Char);
 
 	protected:
 		//! Delete all user-generated gradients.
@@ -629,6 +646,18 @@ namespace Amanith {
 		*/
 		void DoDrawPaths(GDrawStyle& Style, const GDynArray<GCurve2D *>& Curves);
 		/*!
+			Do the effective screenshot.
+
+			This function permits to grab a rectangular portion of the framebuffer, and put it into
+			a bitmap. Here it's ensured that P0 <= P1.
+
+			\param Output the output image, where grabbed portion will be copied into.
+			\param P0 a corner of the rectangle portion to grab.
+			\param P1 the opposite (to P0) corner of the rectangle.
+			\return G_NO_ERROR if the operation succeeds, else an error code.
+		*/
+		GError DoScreenShot(GPixelMap& Output, const GVectBase<GUInt32, 2>& P0, const GVectBase<GUInt32, 2>& P1) const;
+		/*!
 			Create a new OpenGL draw style.
 		*/
 		GDrawStyle *CreateDrawStyle() const;
@@ -750,7 +779,14 @@ namespace Amanith {
 									const GTilingMode TilingMode = G_REPEAT_TILE,
 									const GAABox2 *LogicalWindow = NULL,
 									const GMatrix33& Matrix = G_MATRIX_IDENTITY33);
+		/*!
+			Convert a color from a string format to its numerical representation (where each component is in
+			the range [0; 1]. Implementation supports color in these forms:\n\n
 
+			- HTML syntax: #F0A10063 (RGBA), #A10063 (RGB), #8F36 (RGBA), #8F3 (RGB)
+			- SVG color keywords taken from http://www.w3.org/TR/SVG11/types.html#ColorKeywords (ex: "antiquewhite")
+		*/
+		GVector4 ColorFromString(const GString& Color);
 		/*!
 			Start an SVG-like path block.
 			Each opened block must be closed calling EndPaths() function.
@@ -865,6 +901,10 @@ namespace Amanith {
 			Close an SVG-like path block.
 		*/
 		void EndPaths();
+
+		#ifdef _DEBUG
+			void DumpStencilBuffer(const GChar8 *FileName);
+		#endif
 	};
 
 };	// end namespace Amanith

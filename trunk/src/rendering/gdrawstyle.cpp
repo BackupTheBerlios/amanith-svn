@@ -562,16 +562,9 @@ void GDrawStyle::SetStrokePaintType(const GPaintType Type) {
 // set stroke color
 void GDrawStyle::SetStrokeColor(const GVectBase<GReal, 4>& Color) {
 
-	GVector4 c(Color);
-
-	c[G_X] = GMath::Clamp(c[G_X], (GReal)0, (GReal)1);
-	c[G_Y] = GMath::Clamp(c[G_Y], (GReal)0, (GReal)1);
-	c[G_Z] = GMath::Clamp(c[G_Z], (GReal)0, (GReal)1);
-	c[G_W] = GMath::Clamp(c[G_W], (GReal)0, (GReal)1);
-
-	if (c != gStrokeColor) {
+	if (Color != gStrokeColor) {
 		gModified |= G_DRAWSTYLE_STROKECOLOR_MODIFIED;
-		gStrokeColor = c;
+		gStrokeColor = Color;
 	}
 }
 
@@ -709,18 +702,10 @@ void GDrawStyle::SetFillPaintType(const GPaintType Type) {
 // set fill color
 void GDrawStyle::SetFillColor(const GVectBase<GReal, 4>& Color) {
 
-	GVector4 c(Color);
-
-	c[G_X] = GMath::Clamp(c[G_X], (GReal)0, (GReal)1);
-	c[G_Y] = GMath::Clamp(c[G_Y], (GReal)0, (GReal)1);
-	c[G_Z] = GMath::Clamp(c[G_Z], (GReal)0, (GReal)1);
-	c[G_W] = GMath::Clamp(c[G_W], (GReal)0, (GReal)1);
-
-	if (c != gFillColor) {
+	if (Color != gFillColor) {
 		gModified |= G_DRAWSTYLE_FILLCOLOR_MODIFIED;
-		gFillColor = c;
+		gFillColor = Color;
 	}
-
 }
 
 // set fill enabled

@@ -417,6 +417,20 @@ namespace Amanith {
 			\note this method <b>MUST</b> be implemented by all derived classes.
 		*/
 		virtual void DoDrawPaths(GDrawStyle& Style, const GDynArray<GCurve2D *>& Curves) = 0;
+		/*!
+			Do the effective screenshot.
+
+			This function permits to grab a rectangular portion of the framebuffer, and put it into
+			a bitmap. Here it's ensured that P0 <= P1.
+
+			\param Output the output image, where grabbed portion will be copied into.
+			\param P0 a corner of the rectangle portion to grab.
+			\param P1 the opposite (to P0) corner of the rectangle.
+			\return G_NO_ERROR if the operation succeeds, else an error code.
+			\note this method <b>MUST</b> be implemented by all derived classes.
+		*/
+		virtual GError DoScreenShot(GPixelMap& Output, const GVectBase<GUInt32, 2>& P0, const GVectBase<GUInt32, 2>& P1) const = 0;
+
 
 		inline GDrawStyle *CurrentStyle() {
 			return gCurrentContext.gDrawStyle;
@@ -613,8 +627,12 @@ namespace Amanith {
 		void SetStrokePaintType(const GPaintType PaintType);
 		//! Get stroke color.
 		const GVectBase<GReal, 4>& StrokeColor() const;
-		//! Set stroke color.
+		//! Set stroke color, specifying color components.
 		void SetStrokeColor(const GVectBase<GReal, 4>& Color);
+		//! Set stroke color, specifying color components.
+		inline void SetStrokeColor(const GReal Red, const GReal Green, const GReal Blue, const GReal Alpha) {
+			SetStrokeColor(GVectBase<GReal, 4>(Red, Green, Blue, Alpha));
+		}
 		//! Get stroke gradient (that will be used when stroke paint type is GRADIENT).
 		GGradientDesc *StrokeGradient() const;
 		//! Set stroke gradient (that will be used when stroke paint type is GRADIENT).
@@ -641,8 +659,12 @@ namespace Amanith {
 		void SetFillPaintType(const GPaintType PaintType);
 		//! Get fill color.
 		const GVectBase<GReal, 4>& FillColor() const;
-		//! Set fill color.
+		//! Set fill color, specifying color components.
 		void SetFillColor(const GVectBase<GReal, 4>& Color);
+		//! Set fill color, specifying color components.
+		inline void SetFillColor(const GReal Red, const GReal Green, const GReal Blue, const GReal Alpha) {
+			SetFillColor(GVectBase<GReal, 4>(Red, Green, Blue, Alpha));
+		}
 		//! Get fill gradient (that will be used when stroke paint type is GRADIENT).
 		GGradientDesc *FillGradient() const;
 		//! Set fill gradient (that will be used when stroke paint type is GRADIENT).
@@ -661,10 +683,25 @@ namespace Amanith {
 		//---------------------------------------------------------------------------
 		//! Draw a line, going form P0 to P1.
 		void DrawLine(const GPoint2& P0, const GPoint2& P1);
+		//! Draw a line, going form (X0, Y0) to (X1, Y1).
+		inline void DrawLine(const GReal X0, const GReal Y0, const GReal X1, const GReal Y1) {
+			DrawLine(GPoint2(X0, Y0), GPoint2(X1, Y1));
+		}
 		//! Draw a quadratic Bezier curve, going form P0 to P2 and having P1 as central control point.
 		void DrawBezier(const GPoint2& P0, const GPoint2& P1, const GPoint2& P2);
-		//! Draw a cubic Bezier curve, going form P0 to P4 and having P1 and P2 as control points.
+
+		//! Draw a quadratic Bezier curve, going form (X0, Y0) to (X2, Y2) and having (X1, Y1) as central control point.
+		inline void DrawBezier(const GReal X0, const GReal Y0, const GReal X1, const GReal Y1,
+							   const GReal X2, const GReal Y2) {
+			DrawBezier(GPoint2(X0, Y0), GPoint2(X1, Y1), GPoint2(X2, Y2));
+		}
+		//! Draw a cubic Bezier curve, going form P0 to P3 and having P1 and P2 as control points.
 		void DrawBezier(const GPoint2& P0, const GPoint2& P1, const GPoint2& P2, const GPoint2& P3);
+		//! Draw a cubic Bezier curve, going form (X0, Y0) to (X3, Y3) and having (X1, Y1) and (X2, Y2) as control points.
+		inline void DrawBezier(const GReal X0, const GReal Y0, const GReal X1, const GReal Y1,
+							   const GReal X2, const GReal Y2, const GReal X3, const GReal Y3) {
+			DrawBezier(GPoint2(X0, Y0), GPoint2(X1, Y1), GPoint2(X2, Y2), GPoint2(X3, Y3));
+		}
 		/*!
 			Draw an ellipse arc.
 
@@ -681,6 +718,24 @@ namespace Amanith {
 							const GReal OffsetRotation = 0, const GReal StartAngle = 0, const GReal EndAngle = G_2PI,
 							const GBool CCW = G_TRUE);
 		/*!
+			Draw an ellipse arc.
+
+			\param X the center abscissa of the ellipse.
+			\param Y the center ordinate of the ellipse.
+			\param XSemiAxisLength the radius of the ellipse along x-axis. It must be greater than 0.
+			\param YSemiAxisLength the radius of the ellipse along y-axis. It must be greater than 0.
+			\param OffsetRotation an optional offset rotation (expressed in radians) relative to the x-axis.
+			\param StartAngle an angle (in radians) that defines the start point of the arc.
+			\param EndAngle an angle (in radians) that defines the end point of the arc.
+			\param CCW if G_TRUE the ellipse arc has to go from start point to end point in counter clockwise
+			direction, else G_FALSE (clockwise direction).
+		*/
+		inline void DrawEllipseArc(const GReal X, const GReal Y, const GReal XSemiAxisLength, const GReal YSemiAxisLength,
+							const GReal OffsetRotation = 0, const GReal StartAngle = 0, const GReal EndAngle = G_2PI,
+							const GBool CCW = G_TRUE) {
+			DrawEllipseArc(GPoint2(X, Y), XSemiAxisLength, YSemiAxisLength, OffsetRotation, StartAngle, EndAngle, CCW);
+		}
+		/*!
 			Draw an ellipse arc, using a two-points fit schema.
 
 			\param P0 the start point of the arc.
@@ -695,6 +750,27 @@ namespace Amanith {
 		*/
 		void DrawEllipseArc(const GPoint2& P0, const GPoint2& P1, const GReal XSemiAxisLength, const GReal YSemiAxisLength,
 							const GReal OffsetRotation = 0, const GBool LargeArc = G_TRUE, const GBool CCW = G_FALSE);
+
+		/*!
+			Draw an ellipse arc, using a two-points fit schema.
+
+			\param X0 the start point abscissa of the arc.
+			\param Y0 the start point ordinate of the arc.
+			\param X1 the end point abscissa of the arc.
+			\param Y1 the end point abscissa of the arc.
+			\param XSemiAxisLength the radius of the ellipse along x-axis. It must be greater than 0.
+			\param YSemiAxisLength the radius of the ellipse along y-axis. It must be greater than 0.
+			\param OffsetRotation an optional offset rotation (expressed in radians) relative to the x-axis.
+			\param LargeArc if G_TRUE the ellipse arc has to go from start point to end point spanning the
+			longest chord, else G_FALSE.
+			\param CCW if G_TRUE the ellipse arc has to go from start point to end point in counter clockwise
+			direction, else G_FALSE (clockwise direction).
+		*/
+		inline void DrawEllipseArc(const GReal X0, const GReal Y0, const GReal X1, const GReal Y1, const GReal XSemiAxisLength, const GReal YSemiAxisLength,
+								   const GReal OffsetRotation = 0, const GBool LargeArc = G_TRUE, const GBool CCW = G_FALSE) {
+			DrawEllipseArc(GPoint2(X0, Y0), GPoint2(X1, Y1), XSemiAxisLength, YSemiAxisLength, OffsetRotation, LargeArc, CCW);
+		}
+
 		/*!
 			Draw a polygon.
 
@@ -706,29 +782,21 @@ namespace Amanith {
 		/*!
 			Draw a rectangle.
 
-			\param Center the center of rectangle.
-			\param Width the width of rectangle, must be greater than 0.
-			\param Height the height of rectangle, must be greater than 0.
-		*/
-		void DrawRectangle(const GPoint2& Center, const GReal Width, const GReal Height);
-		/*!
-			Draw a rectangle.
-
 			\param P0 a corner of the rectangle.
 			\param P1 the opposite (to P0) corner of the rectangle.
 		*/
 		void DrawRectangle(const GPoint2& P0, const GPoint2& P1);
 		/*!
-			Draw a rounded rectangle.
+			Draw a rectangle.
 
-			\param Center the center of rectangle.
-			\param Width the width of rectangle, must be greater than 0.
-			\param Height the height of rectangle, must be greater than 0.
-			\param ArcWidth the x-axis radius of the ellipse used to round off the corners of the rectangle. It must be positive.
-			\param ArcHeight the y-axis radius of the ellipse used to round off the corners of the rectangle. It must be positive.
+			\param X0 a corner abscissa of the rectangle.
+			\param Y0 a corner ordinate of the rectangle.
+			\param X1 the opposite (to X0) corner abscissa of the rectangle.
+			\param Y1 the opposite (to Y0) corner ordinate of the rectangle.
 		*/
-		void DrawRoundRectangle(const GPoint2& Center, const GReal Width, const GReal Height,
-								const GReal ArcWidth, const GReal ArcHeight);
+		inline void DrawRectangle(const GReal X0, const GReal Y0, const GReal X1, const GReal Y1) {
+			DrawRectangle(GPoint2(X0, Y0), GPoint2(X1, Y1));
+		}
 		/*!
 			Draw a rounded rectangle.
 
@@ -737,8 +805,21 @@ namespace Amanith {
 			\param ArcWidth the x-axis radius of the ellipse used to round off the corners of the rectangle. It must be positive.
 			\param ArcHeight the y-axis radius of the ellipse used to round off the corners of the rectangle. It must be positive.
 		*/
-		void DrawRoundRectangle(const GPoint2& P0, const GPoint2& P1,
-								const GReal ArcWidth, const GReal ArcHeight);
+		void DrawRoundRectangle(const GPoint2& P0, const GPoint2& P1, const GReal ArcWidth, const GReal ArcHeight);
+		/*!
+			Draw a rounded rectangle.
+
+			\param X0 a corner abscissa of the rectangle.
+			\param Y0 a corner ordinate of the rectangle.
+			\param X1 the opposite (to X0) corner abscissa of the rectangle.
+			\param Y1 the opposite (to Y0) corner ordinate of the rectangle.
+			\param ArcWidth the x-axis radius of the ellipse used to round off the corners of the rectangle. It must be positive.
+			\param ArcHeight the y-axis radius of the ellipse used to round off the corners of the rectangle. It must be positive.
+		*/
+		inline void DrawRoundRectangle(const GReal X0, const GReal Y0, const GReal X1, const GReal Y1,
+									   const GReal ArcWidth, const GReal ArcHeight) {
+			DrawRoundRectangle(GPoint2(X0, Y0), GPoint2(X1, Y1), ArcWidth, ArcHeight);
+		}
 		/*!
 			Draw an ellipse.
 
@@ -748,12 +829,33 @@ namespace Amanith {
 		*/
 		void DrawEllipse(const GPoint2& Center, const GReal XSemiAxisLength, const GReal YSemiAxisLength);
 		/*!
+			Draw an ellipse.
+
+			\param X the center abscissa of the ellipse.
+			\param Y the center ordinate of the ellipse.
+			\param XSemiAxisLength the radius of the ellipse along x-axis. It must be greater than 0.
+			\param YSemiAxisLength the radius of the ellipse along y-axis. It must be greater than 0.
+		*/
+		inline void DrawEllipse(const GReal X, const GReal Y, const GReal XSemiAxisLength, const GReal YSemiAxisLength) {
+			DrawEllipse(GPoint2(X, Y), XSemiAxisLength, YSemiAxisLength);
+		}
+		/*!
 			Draw a circle.
 
 			\param Center the center of the circle.
 			\param Radius the radius of the circle, it must be positive.
 		*/
 		void DrawCircle(const GPoint2& Center, const GReal Radius);
+		/*!
+			Draw a circle.
+
+			\param X the center abscissa of the circle.
+			\param Y the center ordinate of the circle.
+			\param Radius the radius of the circle, it must be positive.
+		*/
+		inline void DrawCircle(const GReal X, const GReal Y, const GReal Radius) {
+			DrawCircle(GPoint2(X, Y), Radius);
+		}
 		/*!
 			Draw a single curve/path.
 
@@ -774,8 +876,9 @@ namespace Amanith {
 
 			\param SVGPathDescription an non-empty string, describing the path in the classic SVG form (the well
 			known 'd' attribute. For example "M 406,74 C 257,67 305,163 359,313 Q 406,361 454,314 C 496,164 544,67 406,74 z".
+			\param AnglesMeasureUnits the system units into which angles are expressed inside the string.
 		*/
-		void DrawPaths(const GString& SVGPathDescription);
+		void DrawPaths(const GString& SVGPathDescription, const GAnglesMeasureUnit AnglesMeasureUnits = G_DEGREE_UNIT);
 		/*!
 			Draw a (multi)path, specifying an SVG description.
 
@@ -1132,6 +1235,47 @@ namespace Amanith {
 			\return the same point expressed inside the logical window.
 		*/
 		GPoint2 PhysicalToLogical(const GPoint<GInt32, 2>& PhysicalPoint);
+		/*!
+			Take a screenshot.
+
+			This function permits to grab a rectangular portion of the framebuffer, and put it into
+			a bitmap.
+
+			\param Output the output image, where grabbed portion will be copied into.
+			\param P0 a corner of the rectangle portion to grab.
+			\param P1 the opposite (to P0) corner of the rectangle.
+			\return G_NO_ERROR if the operation succeeds, else an error code.
+		*/
+		GError ScreenShot(GPixelMap& Output, const GVectBase<GUInt32, 2>& P0, const GVectBase<GUInt32, 2>& P1) const;
+		/*!
+			Take a screenshot.
+
+			This function permits to grab a rectangular portion of the framebuffer, and put it into
+			a bitmap.
+
+			\param Output the output image, where grabbed portion will be copied into.
+			\param X0 a corner abscissa of the rectangle portion to grab.
+			\param Y0 a corner ordinate of the rectangle portion to grab.
+			\param X1 the opposite (to X0) corner abscissa of the rectangle.
+			\param Y1 the opposite (to Y0) corner ordinate of the rectangle.
+			\return G_NO_ERROR if the operation succeeds, else an error code.
+		*/
+		inline GError ScreenShot(GPixelMap& Output, const GUInt32 X0, const GUInt32 Y0,
+								 const GUInt32 X1, const GUInt32 Y1) const {
+			return ScreenShot(Output, GVectBase<GUInt32, 2>(X0, Y0), GVectBase<GUInt32, 2>(X1, Y1));
+		}
+		/*!
+			Take a screenshot.
+
+			This function permits to grab the whole screen framebuffer, and put it into a bitmap.
+
+			\param Output the output image, where grabbed portion will be copied into.
+			\return G_NO_ERROR if the operation succeeds, else an error code.
+		*/
+		inline GError ScreenShot(GPixelMap& Output) const {
+			return ScreenShot(Output, GPoint<GUInt32, 2>(gViewport[G_X], gViewport[G_Y]),
+							  GVectBase<GUInt32, 2>(gViewport[G_X] + gViewport[G_Z] - 1, gViewport[G_Y] + gViewport[G_W] - 1));
+		}
 		/*!
 			Get a matrix that transforms a physical point to its logical representation.
 		*/

@@ -48,6 +48,7 @@ private:
 	GPatternDesc *gPattern;
 	GPatternDesc *gBackGround;
 	GString gDataPath;
+	GString gScreenShotFileName;
 
 	// 0 = color
 	// 1 = linear gradient

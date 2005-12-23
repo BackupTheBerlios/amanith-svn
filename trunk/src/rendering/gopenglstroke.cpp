@@ -209,19 +209,23 @@ void GOpenGLBoard::DrawGLJoinLine(const GJoinStyle JoinStyle, const GReal MiterL
 		if (intFound) {
 
 			GPoint2 intPoint = prevRay.Origin() + (prevRay.Direction() * intParam[0]);
+
+			// this is an alternative behaviour
+			// if (intDirLen > MiterLimitMulThickness)
+			//	  intPoint = P0 + MiterLimitMulThickness * intDir;
+
 			GVector2 intDir = intPoint - P0;
 			GReal intDirLen = intDir.Normalize();
 
-			if (intDirLen > MiterLimitMulThickness)
-				intPoint = P0 + MiterLimitMulThickness * intDir;
-
 			#ifdef DOUBLE_REAL_TYPE
 				glVertex2dv(j0.Data());
-				glVertex2dv(intPoint.Data());
+				if (intDirLen <= MiterLimitMulThickness)
+					glVertex2dv(intPoint.Data());
 				glVertex2dv(j1.Data());
 			#else
 				glVertex2fv(j0.Data());
-				glVertex2fv(intPoint.Data());
+				if (intDirLen <= MiterLimitMulThickness)
+					glVertex2fv(intPoint.Data());
 				glVertex2fv(j1.Data());
 			#endif
 		}
@@ -309,19 +313,23 @@ void GOpenGLBoard::DrawGLJoinLineCap(const GJoinStyle JoinStyle, const GReal Mit
 		if (intFound) {
 
 			GPoint2 intPoint = prevRay.Origin() + (prevRay.Direction() * intParam[0]);
+
+			// this is an alternative behavior
+			// if (intDirLen > MiterLimitMulThickness)
+			//	  intPoint = P0 + MiterLimitMulThickness * intDir;
+
 			GVector2 intDir = intPoint - P0;
 			GReal intDirLen = intDir.Normalize();
 
-			if (intDirLen > MiterLimitMulThickness)
-				intPoint = P0 + MiterLimitMulThickness * intDir;
-
 			#ifdef DOUBLE_REAL_TYPE
 				glVertex2dv(j0.Data());
-				glVertex2dv(intPoint.Data());
+				if (intDirLen <= MiterLimitMulThickness)
+					glVertex2dv(intPoint.Data());
 				glVertex2dv(j1.Data());
 			#else
 				glVertex2fv(j0.Data());
-				glVertex2fv(intPoint.Data());
+				if (intDirLen <= MiterLimitMulThickness)
+					glVertex2fv(intPoint.Data());
 				glVertex2fv(j1.Data());
 			#endif
 		}
@@ -539,7 +547,8 @@ void GOpenGLBoard::DrawGLJoin(const GPoint2& JoinCenter, const GVector2& InDirec
 		GReal intDirLen = intDir.Normalize();
 
 		if (intDirLen > MiterLimitMulThickness)
-			jc = JoinCenter + MiterLimitMulThickness * intDir;
+			//jc = JoinCenter + MiterLimitMulThickness * intDir;
+			jc = (j0 + j1) * (GReal)0.5;
 
 		#ifdef DOUBLE_REAL_TYPE
 			glVertex2dv(j0.Data());

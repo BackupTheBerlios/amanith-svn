@@ -76,6 +76,8 @@ namespace Amanith {
 		GBool IsCubemapSupported() const;
 		//! Check if underlying OpenGL device supports rectangle textures
 		GBool IsRectTextureSupported();
+		//! Check if underlying OpenGL device supports mirrored repeat UV texture coordinates.
+		GBool IsMirroredRepeatSupported() const;
 		//! Check if underlying OpenGL device supports ARB shaders
 		GBool IsArbShadersSupported() const;
 		//! Check if underlying OpenGL device supports ARB programs

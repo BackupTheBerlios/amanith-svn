@@ -1060,6 +1060,239 @@ namespace Amanith {
 			return GDouble(RadValue * (GDouble)(180.0 / G_PI));
 		}
 
+		/*!
+			Converts an angle from one measurement system into another system.
+
+			\param InputValue the angle to convert.
+			\param InputSystem the system units in which InputValue is expressed.
+			\param OutputSystem the system units into which to convert InputValue.
+			\return the converted angle.
+		*/
+		inline GFloat AngleConversion(const GFloat InputValue, const GAnglesMeasureUnit InputSystem, const GAnglesMeasureUnit OutputSystem) {
+
+			GFloat tmpValue(InputValue);
+
+			// transform into circle measure unit
+			switch (InputSystem) {
+
+				case G_DEGREE_UNIT:
+					tmpValue *= 0.0027777777777778f;
+					break;
+
+				case G_GRAD_UNIT:
+					tmpValue *= 0.0025f;
+					break;
+
+				case G_MIL_UNIT:
+					tmpValue *= 0.00015625f;
+					break;
+
+				case G_MINUTE_UNIT:
+					tmpValue *= 4.6296296296296e-005f;
+					break;
+
+				case G_OCTANT_UNIT:
+					tmpValue *= 0.125f;
+					break;
+
+				case G_QUADRANT_UNIT:
+				case G_RIGHTANGLE_UNIT:
+					tmpValue *= 0.25f;
+					break;
+
+				case G_RADIAN_UNIT:
+					tmpValue *= 0.1591549430919f;
+					break;
+
+				case G_SECOND_UNIT:
+					tmpValue *= 7.716049382716e-007f;
+					break;
+
+				case G_SEXTANT_UNIT:
+					tmpValue *= 0.16666666666667f;
+					break;
+
+				case G_SIGN_UNIT:
+					tmpValue *= 0.083333333333333f;
+					break;
+
+				case G_CIRCLE_UNIT:
+				case G_TURN_UNIT:
+				case G_REVOLUTION_UNIT:
+					break;
+			}
+
+			// transform into target measure unit
+			switch (OutputSystem) {
+
+				case G_DEGREE_UNIT:
+					return (tmpValue * 360.0f);
+					break;
+
+				case G_GRAD_UNIT:
+					return (tmpValue * 400.0f);
+					break;
+
+				case G_MIL_UNIT:
+					return (tmpValue * 6400.0f);
+					break;
+
+				case G_MINUTE_UNIT:
+					return (tmpValue * 21600.0f);
+					break;
+
+				case G_OCTANT_UNIT:
+					return (tmpValue * 8.0f);
+					break;
+
+				case G_QUADRANT_UNIT:
+				case G_RIGHTANGLE_UNIT:
+					return (tmpValue * 4.0f);
+					break;
+
+				case G_RADIAN_UNIT:
+					return (tmpValue * 6.28318530717958f);
+					break;
+
+				case G_SECOND_UNIT:
+					return (tmpValue * 1296000.0f);
+					break;
+
+				case G_SEXTANT_UNIT:
+					return (tmpValue * 6.0f);
+					break;
+
+				case G_SIGN_UNIT:
+					return (tmpValue * 12.0f);
+					break;
+
+				case G_CIRCLE_UNIT:
+				case G_TURN_UNIT:
+				case G_REVOLUTION_UNIT:
+					return tmpValue;
+					break;
+
+				default:
+					return tmpValue;
+			}
+		}
+
+		/*!
+			Converts an angle from one measurement system into another system.
+
+			\param InputValue the angle to convert.
+			\param InputSystem the system units in which InputValue is expressed.
+			\param OutputSystem the system units into which to convert InputValue.
+			\return the converted angle.
+		*/
+		inline GDouble AngleConversion(const GDouble InputValue, const GAnglesMeasureUnit InputSystem, const GAnglesMeasureUnit OutputSystem) {
+
+			GDouble tmpValue(InputValue);
+
+			// transform into circle measure unit
+			switch (InputSystem) {
+
+				case G_DEGREE_UNIT:
+					tmpValue *= 0.0027777777777778;
+					break;
+
+				case G_GRAD_UNIT:
+					tmpValue *= 0.0025;
+					break;
+
+				case G_MIL_UNIT:
+					tmpValue *= 0.00015625;
+					break;
+
+				case G_MINUTE_UNIT:
+					tmpValue *= 4.6296296296296e-005;
+					break;
+
+				case G_OCTANT_UNIT:
+					tmpValue *= 0.125;
+					break;
+
+				case G_QUADRANT_UNIT:
+				case G_RIGHTANGLE_UNIT:
+					tmpValue *= 0.25;
+					break;
+
+				case G_RADIAN_UNIT:
+					tmpValue *= 0.1591549430919;
+					break;
+
+				case G_SECOND_UNIT:
+					tmpValue *= 7.716049382716e-007;
+					break;
+
+				case G_SEXTANT_UNIT:
+					tmpValue *= 0.16666666666667;
+					break;
+
+				case G_SIGN_UNIT:
+					tmpValue *= 0.083333333333333;
+					break;
+
+				case G_CIRCLE_UNIT:
+				case G_TURN_UNIT:
+				case G_REVOLUTION_UNIT:
+					break;
+			}
+
+			// transform into target measure unit
+			switch (OutputSystem) {
+
+				case G_DEGREE_UNIT:
+					return (tmpValue * 360.0);
+					break;
+
+				case G_GRAD_UNIT:
+					return (tmpValue * 400.0);
+					break;
+
+				case G_MIL_UNIT:
+					return (tmpValue * 6400.0);
+					break;
+
+				case G_MINUTE_UNIT:
+					return (tmpValue * 21600.0);
+					break;
+
+				case G_OCTANT_UNIT:
+					return (tmpValue * 8.0);
+					break;
+
+				case G_QUADRANT_UNIT:
+				case G_RIGHTANGLE_UNIT:
+					return (tmpValue * 4.0);
+					break;
+
+				case G_RADIAN_UNIT:
+					return (tmpValue * 6.28318530717958);
+					break;
+
+				case G_SECOND_UNIT:
+					return (tmpValue * 1296000.0);
+					break;
+
+				case G_SEXTANT_UNIT:
+					return (tmpValue * 6.0);
+					break;
+
+				case G_SIGN_UNIT:
+					return (tmpValue * 12.0);
+					break;
+
+				case G_CIRCLE_UNIT:
+				case G_TURN_UNIT:
+				case G_REVOLUTION_UNIT:
+					return tmpValue;
+					break;
+
+				default:
+					return tmpValue;
+			}
+		}
 
 		/*!
 			Test for equality within some Tolerance.

@@ -175,6 +175,24 @@ void QGLWidgetTest::initializeGL() {
 	colKeys.push_back(GKeyValue((GReal)0.00, GVector4((GReal)1.0, (GReal)1.0, (GReal)1.0, (GReal)1.0)));
 	colKeys.push_back(GKeyValue((GReal)1.00, GVector4((GReal)1.0, (GReal)1.0, (GReal)1.0, (GReal)0.0)));
 	gLinGradLogo3 = gDrawBoard->CreateLinearGradient(GPoint2(300, 460), GPoint2(417, 330), colKeys, G_LINEAR_COLOR_INTERPOLATION, G_PAD_COLOR_RAMP_SPREAD);
+
+	// now lets see if some bitmap file formats are present for load/save
+	GDynArray<GImpExpFeature> features;
+	err = gKernel->ImpExpFeatures(G_PIXELMAP_CLASSID, features);
+	if (err == G_NO_ERROR) {
+		// look for PNG support
+		for (GUInt32 i = 0; i < (GUInt32)features.size(); i++) {
+			if (features[i].FormatSupported("png", G_FALSE, G_TRUE))
+				gScreenShotFileName = "./shot.png";
+		}
+		// look for JPEG support, if PNG format is not present
+		if (gScreenShotFileName.length() <= 0) {
+			for (GUInt32 i = 0; i < (GUInt32)features.size(); i++) {
+				if (features[i].FormatSupported("jpeg", G_FALSE, G_TRUE))
+					gScreenShotFileName = "./shot.jpg";
+			}
+		}
+	}
 }
 
 //----- paintGL ----------------------------------------------
@@ -255,6 +273,7 @@ void QGLWidgetTest::keyPressEvent(QKeyEvent *e) {
 			s += "B: Toggle background\n";
 			s += "R: Switch rendering quality (low/normal/high)\n";
 			s += "S: Enable/Disable shaders (for gradients) if supported\n";
+			s += "T: Take a screenshot\n";
 			s += "Space: Change matrix (valid for gradient and pattern tests)\n";
 			QMessageBox::information(this, "Command keys", s);
 			break;
@@ -487,8 +506,15 @@ void QGLWidgetTest::keyPressEvent(QKeyEvent *e) {
 				gUseShaders = G_TRUE;
 				gDrawBoard->DisableShaders(G_FALSE);
 			}
-			
 			updateGL();
+			break;
+
+		case Qt::Key_T:
+			if (gScreenShotFileName.length() > 0) {
+				GPixelMap p(gKernel);
+				gDrawBoard->ScreenShot(p);
+				p.Save(StrUtils::ToAscii(gScreenShotFileName));
+			}
 			break;
 
 		case Qt::Key_Space:

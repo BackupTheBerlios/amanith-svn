@@ -454,10 +454,10 @@
 					RelativePath="..\..\include\amanith\support\gavltree.h">
 				</File>
 				<File
-					RelativePath="..\..\include\amanith\support\gblowfish.h">
+					RelativePath="..\..\include\amanith\support\gmetaprogramming.h">
 				</File>
 				<File
-					RelativePath="..\..\include\amanith\support\gmetaprogramming.h">
+					RelativePath="..\..\include\amanith\support\gsvgpathtokenizer.h">
 				</File>
 				<File
 					RelativePath="..\..\include\amanith\support\gutilities.h">

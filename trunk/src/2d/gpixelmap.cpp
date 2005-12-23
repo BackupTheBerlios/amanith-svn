@@ -1629,7 +1629,7 @@ GError GPixelMap::ResizeCanvasMirror(const GInt32 Top, const GInt32 Bottom,
 }
 
 GError GPixelMap::ResizeCanvasMirror(const GInt32 Top, const GInt32 Bottom, const GInt32 Left, const GInt32 Right,
-									GPixelMap& ResizedPixelMap) {
+									GPixelMap& ResizedPixelMap) const {
 
 	GInt32 newWidth, newHeight, i, ii, iii, j, k, l, lineBytes, rowsCount, colsCount;
 	GInt32 xSrc, ySrc, ofsSrc, xDst, yDst, ofsDst;

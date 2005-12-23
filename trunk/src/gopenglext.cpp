@@ -324,6 +324,16 @@ GBool GOpenglExt::IsRectTextureSupported() {
 }
 
 /*!
+	\return G_TRUE if GL_ARB_texture_cube_map or GL_IBM_texture_mirrored_repeat extension is supported, G_FALSE otherwise.
+*/
+GBool GOpenglExt::IsMirroredRepeatSupported() const {
+
+	if (glewGetExtension("GL_ARB_texture_mirrored_repeat") || glewGetExtension("GL_IBM_texture_mirrored_repeat"))
+		return G_TRUE;
+	return G_FALSE;
+}
+
+/*!
 	\return G_TRUE if both GL_ARB_vertex_program and GL_ARB_fragment_program extensions are supported, G_FALSE otherwise.
 */
 GBool GOpenglExt::IsArbProgramsSupported() const {

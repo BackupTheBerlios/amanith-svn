@@ -482,7 +482,7 @@ namespace Amanith {
 			code is returned.
 		*/
 		GError ResizeCanvasMirror(const GInt32 Top, const GInt32 Bottom, const GInt32 Left, const GInt32 Right,
-								  GPixelMap& ResizedPixelMap);
+								  GPixelMap& ResizedPixelMap) const;
 		/*!
 			Reset the image, setting new dimensions and pixel format. All pixels (and eventually the
 			new palette) will be filled in black (zeros).

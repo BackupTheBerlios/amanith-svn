@@ -54,6 +54,7 @@ GGradientDesc *gConGrad1 = NULL, *gConGrad2 = NULL, *gConGrad3 = NULL, *gConGrad
 GPatternDesc *gPattern = NULL;
 GPatternDesc *gBackGround = NULL;
 GString gDataPath;
+GString gScreenShotFileName;
 
 // 0 = color
 // 1 = linear gradient
@@ -201,6 +202,9 @@ int InitGL(GLvoid) {
 	colKeys.push_back(GKeyValue((GReal)1.00, GVector4((GReal)0.4, (GReal)0.0, (GReal)0.5, (GReal)1.00)));
 	gLinGrad2 = gDrawBoard->CreateLinearGradient(GPoint2(80, 48), GPoint2(160, 128), colKeys, G_HERMITE_COLOR_INTERPOLATION, G_PAD_COLOR_RAMP_SPREAD);
 
+	GDouble kd = GMath::AngleConversion(1.0, G_RADIAN_UNIT, G_DEGREE_UNIT);
+	GFloat kf = GMath::AngleConversion(0.5f, G_RADIAN_UNIT, G_DEGREE_UNIT);
+
 	colKeys.clear();
 	colKeys.push_back(GKeyValue((GReal)0.00, GVector4((GReal)0.171, (GReal)0.680, (GReal)0.800, (GReal)1.0)));
 	colKeys.push_back(GKeyValue((GReal)0.30, GVector4((GReal)0.540, (GReal)0.138, (GReal)0.757, (GReal)0.7)));
@@ -211,7 +215,6 @@ int InitGL(GLvoid) {
 	gRadGrad4 = gDrawBoard->CreateRadialGradient(GPoint2(-90, -70), GPoint2(-130, -130), 100, colKeys, G_HERMITE_COLOR_INTERPOLATION, G_PAD_COLOR_RAMP_SPREAD);
 	gConGrad2 = gDrawBoard->CreateConicalGradient(GPoint2(120, 88), GPoint2(180, 88), colKeys, G_HERMITE_COLOR_INTERPOLATION);
 	gConGrad4 = gDrawBoard->CreateConicalGradient(GPoint2(0, 0), GPoint2(20, 0), colKeys, G_HERMITE_COLOR_INTERPOLATION);
-
 
 	colKeys.clear();
 	colKeys.push_back(GKeyValue((GReal)0.00, GVector4((GReal)0.0, (GReal)0.0, (GReal)0.0, (GReal)1.0)));
@@ -263,6 +266,23 @@ int InitGL(GLvoid) {
 	colKeys.push_back(GKeyValue((GReal)1.00, GVector4((GReal)1.0, (GReal)1.0, (GReal)1.0, (GReal)0.0)));
 	gLinGradLogo3 = gDrawBoard->CreateLinearGradient(GPoint2(300, 460), GPoint2(417, 330), colKeys, G_LINEAR_COLOR_INTERPOLATION, G_PAD_COLOR_RAMP_SPREAD);
 
+	// now lets see if some bitmap file formats are present for load/save
+	GDynArray<GImpExpFeature> features;
+	err = gKernel->ImpExpFeatures(G_PIXELMAP_CLASSID, features);
+	if (err == G_NO_ERROR) {
+		// look for PNG support
+		for (GUInt32 i = 0; i < (GUInt32)features.size(); i++) {
+			if (features[i].FormatSupported("png", G_FALSE, G_TRUE))
+				gScreenShotFileName = "./shot.png";
+		}
+		// look for JPEG support, if PNG format is not present
+		if (gScreenShotFileName.length() <= 0) {
+			for (GUInt32 i = 0; i < (GUInt32)features.size(); i++) {
+				if (features[i].FormatSupported("jpeg", G_FALSE, G_TRUE))
+					gScreenShotFileName = "./shot.jpg";
+			}
+		}
+	}
 	return TRUE;
 }
 
@@ -612,6 +632,7 @@ int WINAPI WinMain(	HINSTANCE	hInstance,			// Instance
 				s += "B: Toggle background\n";
 				s += "R: Switch rendering quality (low/normal/high)\n";
 				s += "S: Enable/Disable shaders (for gradients) if supported\n";
+				s += "T: Take a screenshot\n";
 				s += "Space: Change matrix (valid for gradient and pattern tests)\n";
 				MessageBox(NULL, StrUtils::ToAscii(s), "Command keys", MB_OK | MB_ICONINFORMATION | MB_APPLMODAL);
 			}
@@ -859,6 +880,16 @@ int WINAPI WinMain(	HINSTANCE	hInstance,			// Instance
 				}
 				doDraw = TRUE;
 			}
+			// T key (take a screenshot)
+			if (keys[84]) {
+				keys[84] = FALSE;
+				if (gScreenShotFileName.length() > 0) {
+					GPixelMap p(gKernel);
+					gDrawBoard->ScreenShot(p);
+					p.Save(StrUtils::ToAscii(gScreenShotFileName));
+				}
+			}
+
 			// PageUp
 			if (keys[VK_PRIOR]) {
 				keys[VK_PRIOR] = FALSE;

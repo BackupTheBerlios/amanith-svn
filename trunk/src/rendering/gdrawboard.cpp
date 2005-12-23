@@ -595,22 +595,6 @@ void GDrawBoard::DrawPolygon(const GDynArray<GPoint2>& Points, const GBool Close
 		DoDrawPolygon(*s, Points, Closed);
 }
 
-// High level drawing functions
-void GDrawBoard::DrawRectangle(const GPoint2& Center, const GReal Width, const GReal Height) {
-
-	GReal halfW = Width * (GReal)0.5;
-	GReal halfH = Height * (GReal)0.5;
-
-	GPoint2 p0(Center[G_X] - halfW, Center[G_Y] - halfH);
-	GPoint2 p1(Center[G_X] + halfW, Center[G_Y] + halfH);
-
-	GAABox2 box(p0, p1);
-	GDrawStyle *s = gCurrentContext.gDrawStyle;
-
-	if (s->StrokeEnabled() || s->FillEnabled())
-		DoDrawRectangle(*s, box.Min(), box.Max());
-}
-
 void GDrawBoard::DrawRectangle(const GPoint2& P0, const GPoint2& P1) {
 
 	GAABox2 box(P0, P1);
@@ -618,28 +602,6 @@ void GDrawBoard::DrawRectangle(const GPoint2& P0, const GPoint2& P1) {
 
 	if (s->StrokeEnabled() || s->FillEnabled())
 		DoDrawRectangle(*s, box.Min(), box.Max());
-}
-
-void GDrawBoard::DrawRoundRectangle(const GPoint2& Center, const GReal Width, const GReal Height,
-									const GReal ArcWidth, const GReal ArcHeight) {
-
-	GReal halfW = Width * (GReal)0.5;
-	GReal halfH = Height * (GReal)0.5;
-
-	GPoint2 p0(Center[G_X] - halfW, Center[G_Y] - halfH);
-	GPoint2 p1(Center[G_X] + halfW, Center[G_Y] + halfH);
-
-	GAABox2 box(p0, p1);
-	GDrawStyle *s = gCurrentContext.gDrawStyle;
-
-	if ((s->StrokeEnabled() || s->FillEnabled()) && ArcWidth > 0 && ArcHeight > 0) {
-		// arc dimensions cannot be larger than box half-dimensions
-		if (ArcWidth >= halfW)
-			halfW *= (GReal)0.999;
-		if (ArcHeight >= halfH)
-			halfH *= (GReal)0.999;
-		DoDrawRoundRectangle(*s, box.Min(), box.Max(), halfW, halfH);
-	}
 }
 
 void GDrawBoard::DrawRoundRectangle(const GPoint2& P0, const GPoint2& P1, const GReal ArcWidth, const GReal ArcHeight) {
@@ -695,7 +657,7 @@ void GDrawBoard::DrawPaths(const GDynArray<GCurve2D *>& Curves) {
 		DoDrawPaths(*s, Curves);
 }
 
-void GDrawBoard::DrawPaths(const GString& SVGPathDescription) {
+void GDrawBoard::DrawPaths(const GString& SVGPathDescription, const GAnglesMeasureUnit AnglesMeasureUnits) {
 
 	if (SVGPathDescription.length() < 2)
 		return;
@@ -794,7 +756,8 @@ void GDrawBoard::DrawPaths(const GString& SVGPathDescription) {
 				sweep = tokenizer.NextTknAsBool(cmd);
 				arg[3] = tokenizer.NextTknAsReal(cmd);
 				arg[4] = tokenizer.NextTknAsReal(cmd);
-				EllipticalArcTo(arg[0], arg[1], GMath::Deg2Rad(arg[2]), largeArc, sweep, arg[3], arg[4], cmd == 'a');
+				EllipticalArcTo(arg[0], arg[1], GMath::AngleConversion(arg[2], AnglesMeasureUnits, G_RADIAN_UNIT),
+								largeArc, sweep, arg[3], arg[4], cmd == 'a');
 				break;
 
 			case 'Z':
@@ -808,6 +771,21 @@ void GDrawBoard::DrawPaths(const GString& SVGPathDescription) {
 	}
 
 	EndPaths();
+}
+
+GError GDrawBoard::ScreenShot(GPixelMap& Output, const GVectBase<GUInt32, 2>& P0, const GVectBase<GUInt32, 2>& P1) const {
+
+	GGenericAABox<GUInt32, 2> box(P0, P1);
+
+	GPoint<GUInt32, 2> q0 = box.Min();
+	GPoint<GUInt32, 2> q1 = box.Max();
+
+	q0[G_X] = GMath::Clamp(q0[G_X], (GUInt32)0, gViewport[G_Z]);
+	q0[G_Y] = GMath::Clamp(q0[G_Y], (GUInt32)0, gViewport[G_W]);
+	q1[G_X] = GMath::Clamp(q1[G_X], (GUInt32)0, gViewport[G_Z]);
+	q1[G_Y] = GMath::Clamp(q1[G_Y], (GUInt32)0, gViewport[G_W]);
+	box.SetMinMax(q0, q1);
+	return DoScreenShot(Output, box.Min(), box.Max());
 }
 
 };  // end namespace Amanith

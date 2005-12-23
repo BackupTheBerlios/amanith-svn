@@ -161,13 +161,17 @@ void TestMasks(const GUInt32 TestIndex) {
 		// ------------------------------------------------------------------------
 		gDrawBoard->SetFillPaintType(G_COLOR_PAINT_TYPE);
 		gDrawBoard->SetStrokeEnabled(G_FALSE);
-		gDrawBoard->SetFillColor(GVector4((GReal)0.0, (GReal)0.0, (GReal)0.0, (GReal)0.4));
+		gDrawBoard->SetFillColor(GVector4((GReal)0.6, (GReal)0.6, (GReal)0.6, (GReal)1.0));
 		gDrawBoard->DrawRoundRectangle(GPoint2(50+260, 40+194), GPoint2(195+260, 132+194), GReal(20), GReal(20));
 		gDrawBoard->DrawRoundRectangle(GPoint2(85+260, 80+194), GPoint2(230+260, 172+194), GReal(20), GReal(20));
 		// ------------------------------------------------------------------------
 		gDrawBoard->SetTargetMode(G_CLIP_MODE);
+
+		gDrawBoard->GroupBegin();
 		gDrawBoard->DrawRoundRectangle(GPoint2(50+520, 40+194), GPoint2(195+520, 132+194), GReal(20), GReal(20));
 		gDrawBoard->DrawRoundRectangle(GPoint2(85+520, 80+194), GPoint2(230+520, 172+194), GReal(20), GReal(20));
+		gDrawBoard->GroupEnd();
+
 		TranslationToMatrix(m, GVector2(+520,+194));
 		gDrawBoard->SetStrokeEnabled(G_TRUE);
 		gDrawBoard->SetTargetMode(G_COLOR_MODE);
@@ -202,7 +206,6 @@ void TestMasks(const GUInt32 TestIndex) {
 		gDrawBoard->SetFillPattern(gPattern);
 		gDrawBoard->SetStrokePattern(gPattern);
 		gDrawBoard->DrawRectangle(GPoint2(160+520, 127+194), GPoint2(230+520, 165+194));
-		gDrawBoard->PopClipMask();
 		gDrawBoard->PopClipMask();
 		//------------------------------------------------------------------------------------
 		//------------------------------------------------------------------------------------
@@ -241,12 +244,10 @@ void TestMasks(const GUInt32 TestIndex) {
 		gDrawBoard->SetFillColor(GVector4((GReal)0.0, (GReal)0.0, (GReal)0.0, (GReal)0.4));
 		gDrawBoard->DrawRoundRectangle(GPoint2(50+260, 40+388), GPoint2(195+260, 132+388), GReal(20), GReal(20));
 		gDrawBoard->DrawRoundRectangle(GPoint2(85+260, 80+388), GPoint2(230+260, 172+388), GReal(20), GReal(20));
-		gDrawBoard->DrawRoundRectangle(GPoint2(95+260, 50+388), GPoint2(185+260, 162+388), GReal(20), GReal(20));
 		// ------------------------------------------------------------------------
 		gDrawBoard->SetTargetMode(G_CLIP_MODE);
 		gDrawBoard->DrawRoundRectangle(GPoint2(50+520, 40+388), GPoint2(195+520, 132+388), GReal(20), GReal(20));
 		gDrawBoard->DrawRoundRectangle(GPoint2(85+520, 80+388), GPoint2(230+520, 172+388), GReal(20), GReal(20));
-		gDrawBoard->DrawRoundRectangle(GPoint2(95+520, 50+388), GPoint2(185+520, 162+388), GReal(20), GReal(20));
 		TranslationToMatrix(m, GVector2(+520,+388));
 		gDrawBoard->SetStrokeEnabled(G_TRUE);
 		gDrawBoard->SetTargetMode(G_COLOR_MODE);
@@ -281,7 +282,6 @@ void TestMasks(const GUInt32 TestIndex) {
 		gDrawBoard->SetFillPattern(gPattern);
 		gDrawBoard->SetStrokePattern(gPattern);
 		gDrawBoard->DrawRectangle(GPoint2(160+520, 127+388), GPoint2(230+520, 165+388));
-		gDrawBoard->PopClipMask();
 		gDrawBoard->PopClipMask();
 		gDrawBoard->PopClipMask();
 	}

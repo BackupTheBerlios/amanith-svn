@@ -73,7 +73,7 @@ void GOpenGLGradientDesc::SetGLGradientQuality(const GRenderingQuality Quality) 
 	}
 }
 
-void GOpenGLGradientDesc::GenerateTexture1D(const GInt32 Size, GPixelMap& Bitmap) {
+void GOpenGLGradientDesc::GenerateTexture1D(const GInt32 Size, GPixelMap& Bitmap, const GBool ReflectKeys) {
 
 	Bitmap.Create(Size, 1, G_A8R8G8B8);
 	GUChar8 *pixels = Bitmap.Pixels();
@@ -95,6 +95,24 @@ void GOpenGLGradientDesc::GenerateTexture1D(const GInt32 Size, GPixelMap& Bitmap
 			blueKeys.push_back(GHermiteKey1D(keys[i].TimePosition(), v[G_Z]));
 			alphaKeys.push_back(GHermiteKey1D(keys[i].TimePosition(), v[G_W]));
 		}
+
+		// reflect keys, is specified
+		if (ReflectKeys) {
+
+			GReal maxTime = redKeys.back().Parameter;
+			for (i = j - 2; i >= 0; i--) {
+
+				redKeys.push_back(redKeys[i]);
+				redKeys.back().Parameter = ((GReal)2 * maxTime - redKeys.back().Parameter);
+				greenKeys.push_back(greenKeys[i]);
+				greenKeys.back().Parameter = ((GReal)2 * maxTime - greenKeys.back().Parameter);
+				blueKeys.push_back(blueKeys[i]);
+				blueKeys.back().Parameter = ((GReal)2 * maxTime - blueKeys.back().Parameter);
+				alphaKeys.push_back(alphaKeys[i]);
+				alphaKeys.back().Parameter = ((GReal)2 * maxTime - alphaKeys.back().Parameter);
+			}
+		}
+
 		redCurve.SetKeys(redKeys);
 		greenCurve.SetKeys(greenKeys);
 		blueCurve.SetKeys(blueKeys);
@@ -133,6 +151,25 @@ void GOpenGLGradientDesc::GenerateTexture1D(const GInt32 Size, GPixelMap& Bitmap
 			blueKeys.push_back(GPolyLineKey1D(keys[i].TimePosition(), v[G_Z]));
 			alphaKeys.push_back(GPolyLineKey1D(keys[i].TimePosition(), v[G_W]));
 		}
+
+		// reflect keys, is specified
+		if (ReflectKeys) {
+
+			GReal maxTime = redKeys.back().Parameter;
+		
+			for (i = j - 2; i >= 0; i--) {
+
+				redKeys.push_back(redKeys[i]);
+				redKeys.back().Parameter = ((GReal)2 * maxTime - redKeys.back().Parameter);
+				greenKeys.push_back(greenKeys[i]);
+				greenKeys.back().Parameter = ((GReal)2 * maxTime - greenKeys.back().Parameter);
+				blueKeys.push_back(blueKeys[i]);
+				blueKeys.back().Parameter = ((GReal)2 * maxTime - blueKeys.back().Parameter);
+				alphaKeys.push_back(alphaKeys[i]);
+				alphaKeys.back().Parameter = ((GReal)2 * maxTime - alphaKeys.back().Parameter);
+			}
+		}
+
 		redCurve.SetKeys(redKeys);
 		greenCurve.SetKeys(greenKeys);
 		blueCurve.SetKeys(blueKeys);
@@ -160,7 +197,6 @@ void GOpenGLGradientDesc::GenerateTexture1D(const GInt32 Size, GPixelMap& Bitmap
 		GConstantProperty1D redCurve, greenCurve, blueCurve, alphaCurve;
 		GDynArray<GKeyValue> redKeys, greenKeys, blueKeys, alphaKeys;
 		GKeyValue val;
-		GInt32 realSize = Size;
 		GTimeInterval valid;
 		GReal u, step;
 		GUChar8 r8, g8, b8, a8;
@@ -173,7 +209,9 @@ void GOpenGLGradientDesc::GenerateTexture1D(const GInt32 Size, GPixelMap& Bitmap
 			alphaKeys.push_back(GKeyValue(keys[i].TimePosition(), v[G_W]));
 		}
 
-		if (SpreadMode() == G_REFLECT_COLOR_RAMP_SPREAD) {
+		//if (SpreadMode() == G_REFLECT_COLOR_RAMP_SPREAD) {
+		// reflect keys, is specified
+		if (ReflectKeys) {
 
 			GReal maxTime = redKeys.back().TimePosition();
 		
@@ -195,10 +233,10 @@ void GOpenGLGradientDesc::GenerateTexture1D(const GInt32 Size, GPixelMap& Bitmap
 		blueCurve.SetKeys(blueKeys);
 		alphaCurve.SetKeys(alphaKeys);
 
-		step = redCurve.Domain().Length() / (GReal)(realSize - 1);
+		step = redCurve.Domain().Length() / (GReal)(Size - 1);
 		u = redCurve.Domain().Start();
 		pixelOfs = 0;
-		for (i = 0; i < realSize; i++) {
+		for (i = 0; i < Size; i++) {
 			redCurve.Value(val, valid, u, G_ABSOLUTE_VALUE);
 			r8 = (GUChar8)(val.RealValue() * (GReal)255);
 			greenCurve.Value(val, valid, u, G_ABSOLUTE_VALUE);
@@ -226,14 +264,11 @@ void GOpenGLGradientDesc::GenerateTexture1D(const GInt32 Size, GPixelMap& Bitmap
 			pixels[pixelOfs - 2] = b8;
 			pixels[pixelOfs - 1] = a8;
 		}
-		else
-		if (SpreadMode() == G_REFLECT_COLOR_RAMP_SPREAD) {
-		}
-
 	}
 }
 
-void GOpenGLGradientDesc::UpdateOpenGLTextureLinRad(const GRenderingQuality Quality, const GUInt32 MaxTextureSize) {
+void GOpenGLGradientDesc::UpdateOpenGLTextureLinRad(const GRenderingQuality Quality, const GUInt32 MaxTextureSize,
+													const GBool MirroredRepeatSupported) {
 
 	GInt32 size = 512;
 
@@ -255,7 +290,16 @@ void GOpenGLGradientDesc::UpdateOpenGLTextureLinRad(const GRenderingQuality Qual
 	// create pixelmap
 	GPixelMap pixMap;
 
-	GenerateTexture1D(size, pixMap);
+	if (SpreadMode() == G_REFLECT_COLOR_RAMP_SPREAD) {
+
+		if (ColorInterpolation() == G_CONSTANT_COLOR_INTERPOLATION || !MirroredRepeatSupported)
+			GenerateTexture1D(size, pixMap, G_TRUE);
+		else
+			GenerateTexture1D(size, pixMap, G_FALSE);
+	}
+	else
+		GenerateTexture1D(size, pixMap, G_FALSE);
+
 	GUChar8 *pixels = pixMap.Pixels();
 
 	// generate OpenGL texture
@@ -292,7 +336,7 @@ void GOpenGLGradientDesc::UpdateOpenGLTextureCon(const GRenderingQuality Quality
 	// create pixelmap
 	GPixelMap pixMap, texture;
 
-	GenerateTexture1D(size, pixMap);
+	GenerateTexture1D(size, pixMap, G_FALSE);
 	GUInt32 *pixelsSrc = (GUInt32 *)pixMap.Pixels();
 
 	texture.Create(Atan2LookupTableSize, Atan2LookupTableSize, G_A8R8G8B8);
@@ -413,6 +457,7 @@ void GOpenGLGradientDesc::SetColorKeys(const GDynArray<GKeyValue>& ColorKeys) {
 GOpenGLPatternDesc::GOpenGLPatternDesc() {
 
 	gPatternTexture = 0;
+	gPatternMirroredTexture = 0;
 }
 
 // destructor
@@ -448,7 +493,7 @@ void GOpenGLPatternDesc::SetImage(const GPixelMap *Image, const GImageQuality Qu
 	GInt32 w = (GInt32)GOpenglExt::PowerOfTwo((GUInt32)Image->Width());
 	GInt32 h = (GInt32)GOpenglExt::PowerOfTwo((GUInt32)Image->Height());
 
-	GPixelMap tmpImage;
+	GPixelMap tmpImage, mirroredImage;
 	const GPixelMap *img = Image;
 
 	// resize picture to the closest power of two dimensions
@@ -472,12 +517,33 @@ void GOpenGLPatternDesc::SetImage(const GPixelMap *Image, const GImageQuality Qu
 		img = (const GPixelMap *)&tmpImage;
 	}
 
+	// if mirrored repeat is not supported we must create a mirrored image by hand
+	if (!gMirroredRepeatSupport) {
+		img->ResizeCanvasMirror(0, img->Height(), 0, img->Width(), mirroredImage);
+		if (mirroredImage.Width() > (GInt32)gMaxTextureSize || mirroredImage.Height() > (GInt32)gMaxTextureSize) {
+			if (!mirroredImage.IsTrueColor())
+				mirroredImage.SetPixelFormat(G_A8R8G8B8);
+			mirroredImage.Resize(img->Width(), img->Height(), G_RESIZE_CATMULLROM);
+		}
+	}
+
 	if (img->IsTrueColor() && (Quality == G_LOW_IMAGE_QUALITY || Quality == G_NORMAL_IMAGE_QUALITY)) {
-		glGenTextures(1, &gPatternTexture);
+		// generate "normal" OpenGL texture
+		if (gPatternTexture == 0)
+			glGenTextures(1, &gPatternTexture);
 		glBindTexture(GL_TEXTURE_2D, gPatternTexture);
 		SetGLImageQuality(Quality);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, (GLsizei)img->Width(), (GLsizei)img->Height(),
 					 0, GL_BGRA, GL_UNSIGNED_BYTE, (GLvoid *)img->Pixels());
+		// generate mirrored OpenGL texture
+		if (!gMirroredRepeatSupport) {
+			if (gPatternMirroredTexture == 0)
+				glGenTextures(1, &gPatternMirroredTexture);
+			glBindTexture(GL_TEXTURE_2D, gPatternMirroredTexture);
+			SetGLImageQuality(Quality);
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, (GLsizei)mirroredImage.Width(), (GLsizei)mirroredImage.Height(),
+				0, GL_BGRA, GL_UNSIGNED_BYTE, (GLvoid *)mirroredImage.Pixels());
+		}
 		return;
 	}
 
@@ -520,9 +586,54 @@ void GOpenGLPatternDesc::SetImage(const GPixelMap *Image, const GImageQuality Qu
 			if (newH == 0)
 				newH = 1;
 
-			tmpImage.Resize((GUInt32)newW, (GUInt32)newH, G_RESIZE_BOX);
+			tmpImage.Resize((GUInt32)newW, (GUInt32)newH, G_RESIZE_QUADRATIC);
 		}
 
+		size /= 2;
+		level++;
+	} while(size >= 1);
+
+
+	// now repeat all steps for mirrored texture, if needed
+	if (gMirroredRepeatSupport)
+		return;
+
+	if (!mirroredImage.IsTrueColor())
+		mirroredImage.SetPixelFormat(G_A8R8G8B8);
+
+	// generate texture handle for mirrored image
+	if (gPatternMirroredTexture == 0) {
+		glGenTextures(1, &gPatternMirroredTexture);
+		G_ASSERT(gPatternTexture > 0);
+	}
+	glBindTexture(GL_TEXTURE_2D, gPatternMirroredTexture);
+	SetGLImageQuality(Quality);
+
+	// for low and normal quality levels, we can upload texture directly
+	if (Quality == G_LOW_IMAGE_QUALITY || Quality == G_NORMAL_IMAGE_QUALITY) {
+
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, (GLsizei)mirroredImage.Width(), (GLsizei)mirroredImage.Height(),
+			0, GL_BGRA, GL_UNSIGNED_BYTE, (GLvoid *)mirroredImage.Pixels());
+		return;
+	}
+
+	// generate mipmaps
+	size = GMath::Max(mirroredImage.Width(), mirroredImage.Height());
+	level = 0;
+
+	do {
+		glTexImage2D(GL_TEXTURE_2D, level, GL_RGBA8, (GLsizei)mirroredImage.Width(), (GLsizei)mirroredImage.Height(),
+			0, GL_BGRA, GL_UNSIGNED_BYTE, (GLvoid *)mirroredImage.Pixels());
+
+		if (size > 1) {
+			GInt32 newW = mirroredImage.Width() / 2;
+			GInt32 newH = mirroredImage.Height() / 2;
+			if (newW == 0)
+				newW = 1;
+			if (newH == 0)
+				newH = 1;
+			mirroredImage.Resize((GUInt32)newW, (GUInt32)newH, G_RESIZE_QUADRATIC);
+		}
 		size /= 2;
 		level++;
 	} while(size >= 1);
@@ -546,6 +657,31 @@ void GOpenGLDrawStyle::SetStrokeWidth(const GReal Width) {
 
 	GDrawStyle::SetStrokeWidth(Width);
 	gMiterMulThickness = StrokeMiterLimit() * StrokeThickness();
+}
+
+
+void GOpenGLDrawStyle::SetStrokeColor(const GVectBase<GReal, 4>& Color) {
+
+	GVector4 c(Color);
+
+	c[G_X] = GMath::Clamp(c[G_X], (GReal)0, (GReal)1);
+	c[G_Y] = GMath::Clamp(c[G_Y], (GReal)0, (GReal)1);
+	c[G_Z] = GMath::Clamp(c[G_Z], (GReal)0, (GReal)1);
+	c[G_W] = GMath::Clamp(c[G_W], (GReal)0, (GReal)1);
+
+	GDrawStyle::SetStrokeColor(c);
+}
+
+void GOpenGLDrawStyle::SetFillColor(const GVectBase<GReal, 4>& Color) {
+
+	GVector4 c(Color);
+
+	c[G_X] = GMath::Clamp(c[G_X], (GReal)0, (GReal)1);
+	c[G_Y] = GMath::Clamp(c[G_Y], (GReal)0, (GReal)1);
+	c[G_Z] = GMath::Clamp(c[G_Z], (GReal)0, (GReal)1);
+	c[G_W] = GMath::Clamp(c[G_W], (GReal)0, (GReal)1);
+
+	GDrawStyle::SetFillColor(c);
 }
 
 // *********************************************************************
@@ -655,7 +791,9 @@ GPatternDesc *GOpenGLBoard::CreatePattern(const GPixelMap *Image, const GImageQu
 			tmpBox.SetMinMax(GPoint2(left, bottom), GPoint2(left + newLogWidth, bottom + newLogHeight));
 			p->SetLogicalWindow(tmpBox.Min(), tmpBox.Max());
 		}
+		// write internal data, useful to make decisions in independent way
 		p->gMaxTextureSize = gExtManager->MaxTextureSize();
+		p->gMirroredRepeatSupport = this->gMirroredRepeatSupport;
 		p->SetImage(Image, Quality);
 		gPatterns.push_back(p);
 	}
@@ -735,7 +873,7 @@ void GOpenGLBoard::UpdateStyle(GOpenGLDrawStyle& Style) {
 
 					if (g->ColorKeysModified() || g->ColorInterpolationModified() || g->SpreadModeModified())
 						// for linear gradients (or radial ones with fragment programs support) we must update texture
-						g->UpdateOpenGLTextureLinRad(this->RenderingQuality(), this->MaxImageWidth());
+						g->UpdateOpenGLTextureLinRad(RenderingQuality(), MaxImageWidth(), gMirroredRepeatSupport);
 				}
 				else
 				if (g->Type() == G_CONICAL_GRADIENT) {
@@ -745,7 +883,7 @@ void GOpenGLBoard::UpdateStyle(GOpenGLDrawStyle& Style) {
 						g->UpdateHermiteTangents();
 						// for shader version we must generate lookup texture
 						if (gFragmentProgramsSupport)
-							g->UpdateOpenGLTextureCon(this->RenderingQuality(), this->MaxImageWidth(),
+							g->UpdateOpenGLTextureCon(RenderingQuality(), MaxImageWidth(),
 													  gAtan2LookupTableSize, gAtan2LookupTable);
 					}
 				}
@@ -773,7 +911,7 @@ void GOpenGLBoard::UpdateStyle(GOpenGLDrawStyle& Style) {
 
 					if (g->ColorKeysModified() || g->ColorInterpolationModified() || g->SpreadModeModified())
 						// for linear gradients (or radial ones with fragment programs support) we must update texture
-						g->UpdateOpenGLTextureLinRad(this->RenderingQuality(), this->MaxImageWidth());
+						g->UpdateOpenGLTextureLinRad(RenderingQuality(), MaxImageWidth(), gMirroredRepeatSupport);
 				}
 				else
 				if (g->Type() == G_CONICAL_GRADIENT) {
@@ -902,8 +1040,10 @@ GBool GOpenGLBoard::UseStyle(const GPaintType PaintType, const GVector4& Color,
 			// calculate direction
 			GVector2 n = ePoint - sPoint;
 			n /= n.LengthSquared();
-			if (Gradient->SpreadMode() == G_REFLECT_COLOR_RAMP_SPREAD && Gradient->ColorInterpolation() == G_CONSTANT_COLOR_INTERPOLATION)
-				n /= 2;
+			if (Gradient->SpreadMode() == G_REFLECT_COLOR_RAMP_SPREAD) {
+				if (Gradient->ColorInterpolation() == G_CONSTANT_COLOR_INTERPOLATION || !gMirroredRepeatSupport)
+					n /= 2;
+			}
 			// calculate translation factor
 			GReal q = -Dot(n, static_cast< const GVect<GReal, 2>& >(sPoint));
 
@@ -946,10 +1086,18 @@ GBool GOpenGLBoard::UseStyle(const GPaintType PaintType, const GVector4& Color,
 					glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 					break;
 				case G_REFLECT_COLOR_RAMP_SPREAD:
-					if (Gradient->ColorInterpolation() != G_CONSTANT_COLOR_INTERPOLATION)
-						glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT_ARB);
+					/*if (Gradient->ColorInterpolation() != G_CONSTANT_COLOR_INTERPOLATION) {
+						if (gMirroredRepeatSupport)
+							glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT_ARB);
+						else
+							glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+					}
 					else
+						glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_REPEAT);*/
+					if (Gradient->ColorInterpolation() == G_CONSTANT_COLOR_INTERPOLATION || !gMirroredRepeatSupport)
 						glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+					else
+						glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT_ARB);
 					break;
 			}
 		}
@@ -1051,10 +1199,16 @@ GBool GOpenGLBoard::UseStyle(const GPaintType PaintType, const GVector4& Color,
 					GVect<float, 4> col(1, 1, 1, (float)Color[G_W]);
 					glProgramLocalParameter4fvARB(GL_FRAGMENT_PROGRAM_ARB, 4, (const float *)col.Data());
 
-					// u coordinate scaling
+					// u coordinate scaling (to support correct constant color interpolation and devices where
+					// mirrored textures are not supported)
 					float texMul[4];
-					if (Gradient->SpreadMode() == G_REFLECT_COLOR_RAMP_SPREAD && Gradient->ColorInterpolation() == G_CONSTANT_COLOR_INTERPOLATION)
-						texMul[0] = texMul[1] = texMul[2] = texMul[3] = 0.5f;
+					if (Gradient->SpreadMode() == G_REFLECT_COLOR_RAMP_SPREAD) {
+						
+						if (Gradient->ColorInterpolation() == G_CONSTANT_COLOR_INTERPOLATION || !gMirroredRepeatSupport)
+							texMul[0] = texMul[1] = texMul[2] = texMul[3] = 0.5f;
+						else
+							texMul[0] = texMul[1] = texMul[2] = texMul[3] = 1.0f;
+					}
 					else
 						texMul[0] = texMul[1] = texMul[2] = texMul[3] = 1.0f;
 					// 5 = texture u coordinate scaling
@@ -1082,10 +1236,20 @@ GBool GOpenGLBoard::UseStyle(const GPaintType PaintType, const GVector4& Color,
 							glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 							break;
 						case G_REFLECT_COLOR_RAMP_SPREAD:
-							if (Gradient->ColorInterpolation() != G_CONSTANT_COLOR_INTERPOLATION)
-								glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT_ARB);
-							else
+
+							if (Gradient->ColorInterpolation() == G_CONSTANT_COLOR_INTERPOLATION || !gMirroredRepeatSupport)
 								glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+							else
+								glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT_ARB);
+							/*if (Gradient->ColorInterpolation() != G_CONSTANT_COLOR_INTERPOLATION) {
+								// just to be sure, if shaders are supported, it would be so for repeat mode too
+								if (gMirroredRepeatSupport)
+									glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT_ARB);
+								else
+									glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+							}
+							else
+								glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_REPEAT);*/
 							break;
 					}
 				}
@@ -1191,7 +1355,17 @@ GBool GOpenGLBoard::UseStyle(const GPaintType PaintType, const GVector4& Color,
 		ScaleToMatrix(scale, GVector2(1 / xAxisLen, -1 / yAxisLen));
 		TranslationToMatrix(postTrans, GPoint2(0, 1));
 
-		m = (postTrans * (scale * (postTrans2 * Pattern->InverseMatrix())));
+		if (Pattern->TilingMode() == G_REFLECT_TILE) {
+			if (gMirroredRepeatSupport)
+				m = (postTrans * (scale * (postTrans2 * Pattern->InverseMatrix())));
+			else {
+				GMatrix33 reflectFactors;
+				ScaleToMatrix(reflectFactors, GVector3((GReal)0.5, (GReal)0.5, 1));
+				m = (reflectFactors * (postTrans * (scale * (postTrans2 * Pattern->InverseMatrix()))));
+			}
+		}
+		else
+			m = (postTrans * (scale * (postTrans2 * Pattern->InverseMatrix())));
 
 		// load texture matrix
 		glMatrixMode(GL_TEXTURE);
@@ -1204,7 +1378,14 @@ GBool GOpenGLBoard::UseStyle(const GPaintType PaintType, const GVector4& Color,
 		glEnable(GL_TEXTURE_GEN_T);
 
 		// bind gradient texture
-		glBindTexture(GL_TEXTURE_2D, Pattern->PatternTexture());
+		if (Pattern->TilingMode() == G_REFLECT_TILE) {
+			if (gMirroredRepeatSupport)
+				glBindTexture(GL_TEXTURE_2D, Pattern->PatternTexture());
+			else
+				glBindTexture(GL_TEXTURE_2D, Pattern->gPatternMirroredTexture);
+		}
+		else
+			glBindTexture(GL_TEXTURE_2D, Pattern->PatternTexture());
 
 		// set tiling mode
 		switch (Pattern->TilingMode()) {
@@ -1217,13 +1398,18 @@ GBool GOpenGLBoard::UseStyle(const GPaintType PaintType, const GVector4& Color,
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 				break;
 			case G_REFLECT_TILE:
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT_ARB);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT_ARB);
+				if (gMirroredRepeatSupport) {
+					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT_ARB);
+					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT_ARB);
+				}
+				else {
+					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+				}
 				break;
 		}
 
 	}
-
 	return useDepthBuffer;
 }
 

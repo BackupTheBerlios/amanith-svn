@@ -50,8 +50,9 @@ void GOpenGLBoard::StencilPush() {
 	}
 	else {
 		glStencilFunc(GL_EQUAL, gTopStencilValue, gStencilMask);
+		if (!InsideGroup())
+			gTopStencilValue++;
 		glStencilOp(GL_KEEP, GL_KEEP, GL_INCR);
-		gTopStencilValue++;
 	}
 }
 
@@ -80,7 +81,10 @@ void GOpenGLBoard::StencilReplace() {
 	glEnable(GL_STENCIL_TEST);
 
 	if (gTopStencilValue <= gMaxTopStencilValue) {
-		gTopStencilValue++;
+
+		if (!InsideGroup() || gIsFirstGroupDrawing)
+			gTopStencilValue++;
+
 		glStencilFunc(GL_ALWAYS, gTopStencilValue, gStencilMask);
 		glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
 	}
@@ -127,6 +131,7 @@ void GOpenGLBoard::DoPopClipMask() {
 		GPoint2 p1(p0[G_X], p2[G_Y]);
 		GPoint2 p3(p2[G_X], p0[G_Y]);
 
+		glEnable(GL_STENCIL_TEST);
 		glStencilFunc(GL_EQUAL, gTopStencilValue, gStencilMask);
 		if (gTopStencilValue > 0) {
 			gTopStencilValue--;
@@ -156,6 +161,8 @@ void GOpenGLBoard::UpdateClipMasksState() {
 
 	if (ClipOperation() == G_REPLACE_CLIP) {
 		gClipMasksBoxes.clear();
+		// sign the flag, so popping a mask written using replace operation will be done as a clear of the entire
+		// stencil buffer
 		gFirstClipMaskReplace = G_TRUE;
 	}
 	else {
@@ -164,7 +171,9 @@ void GOpenGLBoard::UpdateClipMasksState() {
 	}
 }
 
-void GOpenGLBoard::ClipReplaceOverflowFix() {
+/*void GOpenGLBoard::ClipReplaceOverflowFix() {
+
+	G_ASSERT(TargetMode() == G_CLIP_MODE);
 
 	if (ClipOperation() == G_REPLACE_CLIP && gTopStencilValue > gMaxTopStencilValue) {
 
@@ -174,6 +183,6 @@ void GOpenGLBoard::ClipReplaceOverflowFix() {
 		glStencilFunc(GL_ALWAYS, gTopStencilValue, gStencilMask);
 		glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
 	}
-}
+}*/
 
 };	// end namespace Amanith

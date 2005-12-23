@@ -603,7 +603,7 @@ namespace Amanith {
 		inline const GVectBase<GReal, 4>& StrokeColor() const {
 			return gStrokeColor;
 		}
-		//! Set stroke color. Default implementation clamps each entry in the range [0; 1].
+		//! Set stroke color. Default implementation takes care of 'modified' bit flag.
 		virtual void SetStrokeColor(const GVectBase<GReal, 4>& Color);
 		//! Get stroke gradient descriptor (pointer), NULL if a stroke gradient has not been set.
 		inline GGradientDesc* StrokeGradient() const {
@@ -661,7 +661,7 @@ namespace Amanith {
 		inline const GVectBase<GReal, 4>& FillColor() const {
 			return gFillColor;
 		}
-		//! Set fill color. Default implementation clamps each entry in the range [0; 1].
+		//! Set fill color. Default implementation takes care of 'modified' bit flag.
 		virtual void SetFillColor(const GVectBase<GReal, 4>& Color);
 		//! Get fill gradient descriptor (pointer), NULL if a fill gradient has not been set.
 		inline GGradientDesc* FillGradient() const {

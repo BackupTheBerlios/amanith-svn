@@ -98,7 +98,6 @@ void GSVGPathTokenizer::InitCharMask(GChar8* Mask, const GChar8* CharSet) {
     }
 }
 
-
 GBool GSVGPathTokenizer::NextTkn() {
 
     if (gCurrentPath == NULL)

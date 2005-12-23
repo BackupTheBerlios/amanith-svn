@@ -919,7 +919,7 @@ GError GBezierCurve2D::Flatten3(GDynArray<GPoint2>& Contour, const GReal MaxDevi
 			tmpBez.ParabolicApproxBezierPointsNoInflPts(flatness, Contour);
 		}
 		else { // (ip1Minus > 0) and (ip1Minus < 1)
-			tmpBez.Cut(ip1Minus, (GBezierCurve2D *)NULL, &bez1);
+			tmpBez.DoCut(ip1Minus, (GCurve2D *)NULL, &bez1);
 			bez1.ParabolicApproxBezierPointsNoInflPts(flatness, Contour);
 			Contour.push_back(tmpBez.Evaluate(ip1Minus));
 
@@ -928,7 +928,7 @@ GError GBezierCurve2D::Flatten3(GDynArray<GPoint2>& Contour, const GReal MaxDevi
 					Contour.push_back(tmpBez.Evaluate(cusp));
 				}
 				if (ip2Plus < 1) {
-					tmpBez.Cut(ip2Plus, &bez2, (GBezierCurve2D *)NULL);
+					tmpBez.DoCut(ip2Plus, &bez2, (GCurve2D *)NULL);
 					bez2.ParabolicApproxBezierPointsNoInflPts(flatness, Contour);
 				}
 			} 
@@ -943,12 +943,12 @@ GError GBezierCurve2D::Flatten3(GDynArray<GPoint2>& Contour, const GReal MaxDevi
 					Contour.push_back(tmpBez.Evaluate(ip2Minus));
 
 					if (ip2Plus < 1) {
-						tmpBez.Cut(ip2Plus, &bez2, (GBezierCurve2D *)NULL);
+						tmpBez.DoCut(ip2Plus, &bez2, (GCurve2D *)NULL);
 						bez2.ParabolicApproxBezierPointsNoInflPts(flatness, Contour);
 					}
 				}
 				else { //(ip2Minus >= 1)
-					tmpBez.Cut(ip1Plus, &bez2, (GBezierCurve2D *)NULL);
+					tmpBez.DoCut(ip1Plus, &bez2, (GCurve2D *)NULL);
 					bez2.ParabolicApproxBezierPointsNoInflPts(flatness, Contour);
 				}
 			}
@@ -962,14 +962,13 @@ GError GBezierCurve2D::Flatten3(GDynArray<GPoint2>& Contour, const GReal MaxDevi
 				Contour.push_back(tmpBez.Evaluate(cusp));
 			}
 			if (ip2Plus < 1) {
-				tmpBez.Cut(ip2Plus, &bez2, (GBezierCurve2D *)NULL);
+				tmpBez.DoCut(ip2Plus, &bez2, (GCurve2D *)NULL);
 				bez2.ParabolicApproxBezierPointsNoInflPts(flatness, Contour);
 			}
 		} 
 		else
 		if (ip1Plus < 1) {
 			if (ip2Minus < 1) {
-				//tmpBez.Cut(ip1Plus, ip2Minus, &bez2);
 				tmpBez.DoCut(ip2Minus, (GCurve2D *)NULL, &bez3);
 				bez3.DoCut(ip1Plus, &bez2, (GCurve2D *)NULL);
 
@@ -977,12 +976,12 @@ GError GBezierCurve2D::Flatten3(GDynArray<GPoint2>& Contour, const GReal MaxDevi
 
 				Contour.push_back(tmpBez.Evaluate(ip2Minus));
 				if (ip2Plus < 1) {
-					tmpBez.Cut(ip2Plus, &bez2, (GBezierCurve2D *)NULL);
+					tmpBez.DoCut(ip2Plus, &bez2, (GCurve2D *)NULL);
 					bez2.ParabolicApproxBezierPointsNoInflPts(flatness, Contour);
 				}
 			}
 			else { //(ip2Minus >= 1)
-				tmpBez.Cut(ip1Plus, &bez2, (GBezierCurve2D *)NULL);
+				tmpBez.DoCut(ip1Plus, &bez2, (GCurve2D *)NULL);
 				bez2.ParabolicApproxBezierPointsNoInflPts(flatness, Contour);
 			}
 		}
@@ -990,12 +989,12 @@ GError GBezierCurve2D::Flatten3(GDynArray<GPoint2>& Contour, const GReal MaxDevi
 	else
 	if (ip2Minus > 0) {
 		if (ip2Minus < 1) {
-			tmpBez.Cut(ip2Minus, (GBezierCurve2D *)NULL, &bez1);
+			tmpBez.DoCut(ip2Minus, (GCurve2D *)NULL, &bez1);
 			bez1.ParabolicApproxBezierPointsNoInflPts(flatness, Contour);
 			Contour.push_back(tmpBez.Evaluate(ip2Minus));
 
 			if (ip2Plus < 1) {
-				tmpBez.Cut(ip2Plus, &bez2, (GBezierCurve2D *)NULL);
+				tmpBez.DoCut(ip2Plus, &bez2, (GCurve2D *)NULL);
 				bez2.ParabolicApproxBezierPointsNoInflPts(flatness, Contour);
 			}
 		}
@@ -1011,7 +1010,7 @@ GError GBezierCurve2D::Flatten3(GDynArray<GPoint2>& Contour, const GReal MaxDevi
 	if (ip2Plus > 0) {
 		Contour.push_back(p1);
 		if (ip2Plus < 1) {
-			tmpBez.Cut(ip2Plus, &bez2, (GBezierCurve2D *)NULL);
+			tmpBez.DoCut(ip2Plus, &bez2, (GCurve2D *)NULL);
 			bez2.ParabolicApproxBezierPointsNoInflPts(flatness, Contour);
 		}
 	}

@@ -146,9 +146,6 @@ void GOpenGLBoard::DrawGLPolygon(const GOpenGLDrawStyle& Style, const GBool Clos
 		if (!gClipMasksSupport)
 			return;
 
-		// take care of replace operation (overflow)
-		ClipReplaceOverflowFix();
-
 		// draw fill
 		if (ClosedFill) {
 			#ifdef DOUBLE_REAL_TYPE
@@ -164,7 +161,9 @@ void GOpenGLBoard::DrawGLPolygon(const GOpenGLDrawStyle& Style, const GBool Clos
 		}
 
 		// take care of replace operation
-		UpdateClipMasksState();
+		if (!InsideGroup())
+			UpdateClipMasksState();
+
 		// calculate bound box of the drawn clip mask
 		GPoint2 pMin(box.Min());
 		GPoint2 pMax(box.Max());
@@ -175,7 +174,19 @@ void GOpenGLBoard::DrawGLPolygon(const GOpenGLDrawStyle& Style, const GBool Clos
 			pMax[G_Y] += Style.StrokeThickness();
 			box.SetMinMax(pMin, pMax);
 		}
-		gClipMasksBoxes.push_back(box);
+		if (!InsideGroup())
+			gClipMasksBoxes.push_back(box);
+		else {
+			// build initial group box
+			if (gIsFirstGroupDrawing)
+				gGroupBox = box;
+			else {
+				// expand group box
+				gGroupBox.ExtendToInclude(box.Min());
+				gGroupBox.ExtendToInclude(box.Max());
+			}
+		}
+		gIsFirstGroupDrawing = G_FALSE;
 		return;
 	}
 
@@ -312,9 +323,6 @@ void GOpenGLBoard::DrawGLPolygons(const GDynArray<GPoint2>& Points, const GDynAr
 		if (!gClipMasksSupport)
 			return;
 
-		// take care of replace operation (overflow)
-		ClipReplaceOverflowFix();
-
 		// draw fill
 		if (Style.FillEnabled()) {
 			DRAW_FILL
@@ -324,7 +332,8 @@ void GOpenGLBoard::DrawGLPolygons(const GDynArray<GPoint2>& Points, const GDynAr
 			DRAW_STROKE
 		}
 		// take care of replace operation
-		UpdateClipMasksState();
+		if (!InsideGroup())
+			UpdateClipMasksState();
 		// calculate bound box of the drawn clip mask
 		GPoint2 pMin(box.Min());
 		GPoint2 pMax(box.Max());
@@ -335,7 +344,20 @@ void GOpenGLBoard::DrawGLPolygons(const GDynArray<GPoint2>& Points, const GDynAr
 			pMax[G_Y] += Style.StrokeThickness();
 			box.SetMinMax(pMin, pMax);
 		}
-		gClipMasksBoxes.push_back(box);
+
+		if (!InsideGroup())
+			gClipMasksBoxes.push_back(box);
+		else {
+			// build initial group box
+			if (gIsFirstGroupDrawing)
+				gGroupBox = box;
+			else {
+				// expand group box
+				gGroupBox.ExtendToInclude(box.Min());
+				gGroupBox.ExtendToInclude(box.Max());
+			}
+		}
+		gIsFirstGroupDrawing = G_FALSE;
 		return;
 	}
 
@@ -412,9 +434,6 @@ void GOpenGLBoard::DoDrawLine(GDrawStyle& Style, const GPoint2& P0, const GPoint
 		if (!gClipMasksSupport)
 			return;
 
-		// take care of replace operation (overflow)
-		ClipReplaceOverflowFix();
-
 		// draw line segment
 		if (Style.StrokeStyle() == G_SOLID_STROKE)
 			DrawGLCapsLine(G_TRUE, s.StrokeStartCapStyle(), G_TRUE, s.StrokeEndCapStyle(), P0, P1, s.StrokeThickness(), s.gRoundJoinAuxCoef);
@@ -425,7 +444,8 @@ void GOpenGLBoard::DoDrawLine(GDrawStyle& Style, const GPoint2& P0, const GPoint
 			DrawDashedStroke(s, pts.begin(), pts.end(), G_FALSE, s.StrokeThickness(), s.gRoundJoinAuxCoef);
 		}
 		// take care of replace operation
-		UpdateClipMasksState();
+		if (!InsideGroup())
+			UpdateClipMasksState();
 
 		// calculate bound box of the drawn clip mask
 		GAABox2 tmpBox(P0, P1);
@@ -437,7 +457,20 @@ void GOpenGLBoard::DoDrawLine(GDrawStyle& Style, const GPoint2& P0, const GPoint
 		pMax[G_X] += s.StrokeThickness();
 		pMax[G_Y] += s.StrokeThickness();
 		tmpBox.SetMinMax(pMin, pMax);
-		gClipMasksBoxes.push_back(tmpBox);
+
+		if (!InsideGroup())
+			gClipMasksBoxes.push_back(tmpBox);
+		else {
+			// build initial group box
+			if (gIsFirstGroupDrawing)
+				gGroupBox = tmpBox;
+			else {
+				// expand group box
+				gGroupBox.ExtendToInclude(tmpBox.Min());
+				gGroupBox.ExtendToInclude(tmpBox.Max());
+			}
+		}
+		gIsFirstGroupDrawing = G_FALSE;
 		return;
 	}
 

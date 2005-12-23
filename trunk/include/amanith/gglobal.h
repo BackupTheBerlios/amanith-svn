@@ -66,45 +66,45 @@
 */
 namespace Amanith {
 
-	// G_VERSION is (major << 24) + (minor << 16) + (patch << 8) + build
+	// G_VERSION is (major << 24) + (minor << 16) + (patch << 8) + build.
 	#define G_AMANITH_VERSION 0x00020000
 	#define G_VERSION_STR "0.2.0.0"
 
-	//! English language option
+	//! English language option.
 	#define G_LANG_EN     0
-	//! Italian language option
+	//! Italian language option.
 	#define G_LANG_IT     1
-	//! German language option
+	//! German language option.
 	#define G_LANG_DE     2
-	//! French language option
+	//! French language option.
 	#define G_LANG_FR     3
-	//! Spanish language option
+	//! Spanish language option.
 	#define G_LANG_ES     4
-	//! Chinese language option
+	//! Chinese language option.
 	#define G_LANG_CN     5
-	//! Japanese language option
+	//! Japanese language option.
 	#define G_LANG_JP     6
-	//! Russian language option
+	//! Russian language option.
 	#define G_LANG_RU     7
-	//! Suomi language option
+	//! Suomi language option.
 	#define G_LANG_FI     8
-	//! Used language for error codes and strings
+	//! Used language for error codes and strings.
 	#define G_USED_LANG   G_LANG_EN
 
 
-    //! Indexes enumeration for single component access
+    //! Indexes enumeration for single component access.
 	enum GVectorIndex {
-		//! X component
+		//! X component.
 		G_X = 0,
-		//! Y component
+		//! Y component.
 		G_Y = 1,
-		//! Z component
+		//! Z component.
 		G_Z = 2,
-		//! W component
+		//! W component.
 		G_W = 3
 	};
 
-	//! Type used to specify in which order Euler transforms will be applied (ex: rotations)
+	//! Type used to specify in which order Euler transforms will be applied (ex: rotations).
 	enum GEulerOrder {
 		G_XYX = 0,
 		G_XYZ = 1,
@@ -118,6 +118,38 @@ namespace Amanith {
 		G_ZXZ = 9,
 		G_ZYX = 10,
 		G_ZYZ = 11
+	};
+
+	//! Angles measurement systems.
+	enum GAnglesMeasureUnit {
+		//! Degree measure unit.
+		G_DEGREE_UNIT = 0,
+		//! Grade measure unit.
+		G_GRAD_UNIT = 1,
+		//! Mil measure unit.
+		G_MIL_UNIT = 2,
+		//! Minute measure unit.
+		G_MINUTE_UNIT = 3,
+		//! Octant measure unit.
+		G_OCTANT_UNIT = 4,
+		//! Quadrant measure unit.
+		G_QUADRANT_UNIT = 5,
+		//! Radian measure unit.
+		G_RADIAN_UNIT = 6,
+		//! Second measure unit.
+		G_SECOND_UNIT = 7,
+		//! Sextant measure unit.
+		G_SEXTANT_UNIT = 8,
+		//! Sign measure unit.
+		G_SIGN_UNIT = 9,
+		//! Circle measure unit.
+		G_CIRCLE_UNIT = 10,
+		//! Turn measure unit.
+		G_TURN_UNIT = 11,
+		//! Revolution measure unit.
+		G_REVOLUTION_UNIT = 12,
+		//! Right angle measure unit.
+		G_RIGHTANGLE_UNIT = 13
 	};
 
 	//! Sort options
