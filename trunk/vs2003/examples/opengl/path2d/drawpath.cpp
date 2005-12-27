@@ -128,6 +128,10 @@ void BuildFlatContour(const GPath2D* Path) {
 
 void InitApp() {
 
+#ifdef _DEBUG
+	SysUtils::RedirectIOToConsole();
+#endif
+
 	gKernel = new GKernel();
 	gPath = (GPath2D *)gKernel->CreateNew(G_PATH2D_CLASSID);
 

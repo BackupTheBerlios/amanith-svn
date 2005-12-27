@@ -128,6 +128,10 @@ void BuildNewMesh() {
 
 void InitApp() {
 
+#ifdef _DEBUG
+	SysUtils::RedirectIOToConsole();
+#endif
+
 	gMesh = new GMesh2D<GReal>();
 
 	GMath::SeedRandom();

@@ -125,6 +125,10 @@ void BuildFlatContour(const GPolyLineCurve2D* Curve) {
 
 void InitApp() {
 
+#ifdef _DEBUG
+	SysUtils::RedirectIOToConsole();
+#endif
+
 	GDynArray<GPoint2> points;
 
 	gKernel = new GKernel();

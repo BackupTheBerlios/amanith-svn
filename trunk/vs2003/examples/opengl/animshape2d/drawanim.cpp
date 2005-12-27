@@ -696,6 +696,10 @@ void LoadBackGraoundAndLogo(const GString& FileName) {
 
 void InitApp() {
 
+#ifdef _DEBUG
+	SysUtils::RedirectIOToConsole();
+#endif
+
 	GError err;
 
 	// create a new kernel

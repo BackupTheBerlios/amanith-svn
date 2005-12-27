@@ -125,6 +125,10 @@ void BuildFlatContour(const GBezierCurve2D* Curve) {
 
 void InitApp() {
 
+#ifdef _DEBUG
+	SysUtils::RedirectIOToConsole();
+#endif
+
 	gKernel = new GKernel();
 	gBezCurve = (GBezierCurve2D *)gKernel->CreateNew(G_BEZIERCURVE2D_CLASSID);
 

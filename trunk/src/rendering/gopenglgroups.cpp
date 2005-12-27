@@ -164,13 +164,6 @@ void GOpenGLBoard::DoGroupEnd() {
 			glVertex2i(gGLGroupRect.X + gGLGroupRect.Width, gGLGroupRect.Y + gGLGroupRect.Height);
 			glVertex2i(gGLGroupRect.X + gGLGroupRect.Width, gGLGroupRect.Y);
 		glEnd();
-		StencilPop();
-		glBegin(GL_POLYGON);
-			glVertex2i(gGLGroupRect.X, gGLGroupRect.Y);
-			glVertex2i(gGLGroupRect.X, gGLGroupRect.Y + gGLGroupRect.Height);
-			glVertex2i(gGLGroupRect.X + gGLGroupRect.Width, gGLGroupRect.Y + gGLGroupRect.Height);
-			glVertex2i(gGLGroupRect.X + gGLGroupRect.Width, gGLGroupRect.Y);
-		glEnd();
 	}
 	else {
 		glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);

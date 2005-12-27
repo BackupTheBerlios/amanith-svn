@@ -103,6 +103,5 @@ void TestGeometries(const GUInt32 TestIndex) {
 		gDrawBoard->SetStrokeEnabled(G_FALSE);
 		gDrawBoard->SetFillGradient(gLinGradLogo3);
 		gDrawBoard->DrawPaths("M 250,266 C 250,326 336,482 406,482 C 455,482 478,422 478,422 C 478,374 263,218 250,266 z");
-
 	}
 }

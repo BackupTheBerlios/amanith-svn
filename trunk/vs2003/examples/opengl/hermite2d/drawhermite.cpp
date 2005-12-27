@@ -126,6 +126,10 @@ void BuildFlatContour(const GHermiteCurve2D* Curve) {
 
 void InitApp() {
 
+#ifdef _DEBUG
+	SysUtils::RedirectIOToConsole();
+#endif
+
 	GDynArray<GPoint2> points;
 	GDynArray<GHermiteKey2D> keys;
 

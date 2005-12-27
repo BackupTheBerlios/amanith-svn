@@ -157,6 +157,10 @@ void KillApp() {
 
 int InitGL(GLvoid) {
 
+#ifdef _DEBUG
+	SysUtils::RedirectIOToConsole();
+#endif
+
 	gKernel = new GKernel();
 	gImage = (GPixelMap *)gKernel->CreateNew(G_PIXELMAP_CLASSID);
 

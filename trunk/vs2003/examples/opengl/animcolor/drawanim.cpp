@@ -160,6 +160,10 @@ void RemoveKey() {
 
 void InitApp() {
 
+#ifdef _DEBUG
+	SysUtils::RedirectIOToConsole();
+#endif
+
 	gKernel = new GKernel();
 	gRedAnimH = (GHermiteProperty1D *)gKernel->CreateNew(G_HERMITEPROPERTY1D_CLASSID);
 	gGreenAnimH = (GHermiteProperty1D *)gKernel->CreateNew(G_HERMITEPROPERTY1D_CLASSID);

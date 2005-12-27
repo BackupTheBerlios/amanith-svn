@@ -41,6 +41,10 @@ QGLWidgetTest::QGLWidgetTest(const QGLFormat& Format, QWidget *parent) : QGLWidg
 QGLWidgetTest::QGLWidgetTest(QWidget * parent) : QGLWidget(parent) {
 #endif
 
+#ifdef _DEBUG
+	SysUtils::RedirectIOToConsole();
+#endif
+
 	gKernel = new GKernel();
 	gBSplineCurve = (GBSplineCurve2D *)gKernel->CreateNew(G_BSPLINECURVE2D_CLASSID);
 

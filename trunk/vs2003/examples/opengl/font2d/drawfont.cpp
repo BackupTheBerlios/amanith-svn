@@ -255,6 +255,10 @@ void GenerateTessellation(const GFontChar2D* Char, const GReal Deviation) {
 
 void InitApp() {
 
+#ifdef _DEBUG
+	SysUtils::RedirectIOToConsole();
+#endif
+
 	GString s;
 
 	gKernel = new GKernel();

@@ -423,7 +423,38 @@ void GOpenGLBoard::DoDrawLine(GDrawStyle& Style, const GPoint2& P0, const GPoint
 	if (Distance(P0, P1) <= G_EPSILON)
 		return;
 
+	GOpenGLCacheEntry cacheEntry;
+	GOpenGLCachedDrawing *cacheSlot = (GOpenGLCachedDrawing *)CacheSlot();
 	GOpenGLDrawStyle &s = (GOpenGLDrawStyle &)Style;
+
+	// calculate bound box
+	GAABox2 tmpBox(P0, P1);
+	GPoint2 pMin(tmpBox.Min());
+	GPoint2 pMax(tmpBox.Max());
+	pMin[G_X] -= s.StrokeThickness();
+	pMin[G_Y] -= s.StrokeThickness();
+	pMax[G_X] += s.StrokeThickness();
+	pMax[G_Y] += s.StrokeThickness();
+	tmpBox.SetMinMax(pMin, pMax);
+
+	// cache the primitive, if needed
+	if (CachingEnabled()) {
+		cacheEntry.Box = tmpBox;
+		cacheEntry.FillDisplayList = 0;
+		cacheEntry.StrokeDisplayList = glGenLists(1);
+		glNewList(cacheEntry.StrokeDisplayList, GL_COMPILE);
+		// draw line segment inside cache slot
+		if (Style.StrokeStyle() == G_SOLID_STROKE)
+			DrawGLCapsLine(G_TRUE, s.StrokeStartCapStyle(), G_TRUE, s.StrokeEndCapStyle(), P0, P1, s.StrokeThickness(), s.gRoundJoinAuxCoef);
+		else {
+			GDynArray<GPoint2> pts(2);
+			pts[0] = P0;
+			pts[1] = P1;
+			DrawDashedStroke(s, pts.begin(), pts.end(), G_FALSE, s.StrokeThickness(), s.gRoundJoinAuxCoef);
+		}
+		glEndList();
+		cacheSlot->gEntries.push_back(cacheEntry);
+	}
 
 	// update style
 	UpdateStyle(s);
@@ -431,7 +462,7 @@ void GOpenGLBoard::DoDrawLine(GDrawStyle& Style, const GPoint2& P0, const GPoint
 
 	if (TargetMode() == G_CLIP_MODE) {
 
-		if (!gClipMasksSupport)
+		if (!gClipMasksSupport || !Style.StrokeEnabled() || (CachingEnabled() && !CachingWriteOnTarget()))
 			return;
 
 		// draw line segment
@@ -443,20 +474,10 @@ void GOpenGLBoard::DoDrawLine(GDrawStyle& Style, const GPoint2& P0, const GPoint
 			pts[1] = P1;
 			DrawDashedStroke(s, pts.begin(), pts.end(), G_FALSE, s.StrokeThickness(), s.gRoundJoinAuxCoef);
 		}
+
 		// take care of replace operation
 		if (!InsideGroup())
 			UpdateClipMasksState();
-
-		// calculate bound box of the drawn clip mask
-		GAABox2 tmpBox(P0, P1);
-		GPoint2 pMin(tmpBox.Min());
-		GPoint2 pMax(tmpBox.Max());
-
-		pMin[G_X] -= s.StrokeThickness();
-		pMin[G_Y] -= s.StrokeThickness();
-		pMax[G_X] += s.StrokeThickness();
-		pMax[G_Y] += s.StrokeThickness();
-		tmpBox.SetMinMax(pMin, pMax);
 
 		if (!InsideGroup())
 			gClipMasksBoxes.push_back(tmpBox);
@@ -477,6 +498,8 @@ void GOpenGLBoard::DoDrawLine(GDrawStyle& Style, const GPoint2& P0, const GPoint
 	// in color mode, if we are inside a GroupBegin() / GroupEnd() constructor and group opacity is 0
 	// do not draw anything
 	if (InsideGroup() && GroupOpacity() <= 0 && gGroupOpacitySupport)
+		return;
+	if (!Style.StrokeEnabled() || (CachingEnabled() && !CachingWriteOnTarget()))
 		return;
 
 	// set stroke style using OpenGL
@@ -512,19 +535,8 @@ void GOpenGLBoard::DoDrawLine(GDrawStyle& Style, const GPoint2& P0, const GPoint
 	}
 
 	// geometric radial/conical gradient and transparent entities uses depth clip, so we must pop off clip mask
-	if (useDepth) {
-
-		GAABox2 tmpBox(P0, P1);
-		GPoint2 pMin(tmpBox.Min());
-		GPoint2 pMax(tmpBox.Max());
-
-		pMin[G_X] -= s.StrokeThickness();
-		pMin[G_Y] -= s.StrokeThickness();
-		pMax[G_X] += s.StrokeThickness();
-		pMax[G_Y] += s.StrokeThickness();
-		tmpBox.SetMinMax(pMin, pMax);
+	if (useDepth)
 		DrawAndPopDepthMask(tmpBox, s, G_FALSE);
-	}
 }
 
 void GOpenGLBoard::DoDrawRectangle(GDrawStyle& Style, const GPoint2& MinCorner, const GPoint2& MaxCorner) {

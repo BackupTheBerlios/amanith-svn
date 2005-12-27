@@ -41,6 +41,10 @@ QGLWidgetTest::QGLWidgetTest(const QGLFormat& Format, QWidget *parent) : QGLWidg
 QGLWidgetTest::QGLWidgetTest(QWidget * parent) : QGLWidget(parent) {
 #endif
 
+#ifdef _DEBUG
+	SysUtils::RedirectIOToConsole();
+#endif
+
 	gKernel = new GKernel();
 
 	gRedAnimH = (GHermiteProperty1D *)gKernel->CreateNew(G_HERMITEPROPERTY1D_CLASSID);

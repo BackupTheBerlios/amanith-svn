@@ -41,6 +41,10 @@ QGLWidgetTest::QGLWidgetTest(const QGLFormat& Format, QWidget *parent) : QGLWidg
 QGLWidgetTest::QGLWidgetTest(QWidget * parent) : QGLWidget(parent) {
 #endif
 
+#ifdef _DEBUG
+	SysUtils::RedirectIOToConsole();
+#endif
+
 	GString s;
 
 	gKernel = new GKernel();

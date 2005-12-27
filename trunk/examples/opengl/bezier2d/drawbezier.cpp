@@ -40,6 +40,11 @@ QGLWidgetTest::QGLWidgetTest(const QGLFormat& Format, QWidget *parent) : QGLWidg
 #else
 QGLWidgetTest::QGLWidgetTest(QWidget * parent) : QGLWidget(parent) {
 #endif
+
+#ifdef _DEBUG
+	SysUtils::RedirectIOToConsole();
+#endif
+
 	gKernel = new GKernel();
 	gBezCurve = (GBezierCurve2D *)gKernel->CreateNew(G_BEZIERCURVE2D_CLASSID);
 

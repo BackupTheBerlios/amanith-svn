@@ -145,6 +145,10 @@ void FlattenContours() {
 
 void InitApp() {
 
+#ifdef _DEBUG
+	SysUtils::RedirectIOToConsole();
+#endif
+
 	GString s;
 	GError err;
 

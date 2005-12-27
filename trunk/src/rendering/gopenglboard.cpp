@@ -73,6 +73,43 @@ void GOpenGLBoard::DumpStencilBuffer(const GChar8 *FileName) {
 #endif
 
 // *********************************************************************
+//                        GOpenGLCachedDrawing
+// *********************************************************************
+
+// invalidate the cache, freeing associated (video) memory
+void GOpenGLCachedDrawing::Invalidate() {
+
+	GOpenGLCacheEntry entry;
+	GUInt32 i, j = (GUInt32)gEntries.size();
+
+	for (i = 0; i < j; ++i) {
+		entry = gEntries[i];
+		if (entry.FillDisplayList != 0)
+			glDeleteLists(entry.FillDisplayList, 1);
+		if (entry.StrokeDisplayList != 0)
+			glDeleteLists(entry.StrokeDisplayList, 1);
+	}
+	gEntries.clear();
+}
+
+// constructor, it build an empty cache slot
+GOpenGLCachedDrawing::GOpenGLCachedDrawing() {
+}
+
+// destructor, it invalidates cached shapes and frees memory
+GOpenGLCachedDrawing::~GOpenGLCachedDrawing() {
+
+	Invalidate();
+}
+
+// get the number of cached shapes
+GUInt32 GOpenGLCachedDrawing::CacheEntriesCount() const {
+
+	return ((GUInt32)gEntries.size());
+}
+
+
+// *********************************************************************
 //                             GOpenGLBoard
 // *********************************************************************
 
@@ -232,7 +269,6 @@ static const GNamedSVGcolor SVGColors[147] = {
 	{ "whitesmoke", GVector4(0.961, 0.961, 0.961, 1.000) },
 	{ "yellow", GVector4(1.000, 1.000, 0.000, 1.000) },
 	{ "yellowgreen", GVector4(0.604, 0.804, 0.196, 1.000) }
-	//{ "zzzzzzzzzzz", GVector4(0.000, 0.000, 0.000, 0.000) }
 };
 
 #else
@@ -386,7 +422,6 @@ static const GNamedSVGcolor SVGColors[147] = {
 	{ "whitesmoke", GVector4(0.961f, 0.961f, 0.961f, 1.000f) },
 	{ "yellow", GVector4(1.000f, 1.000f, 0.000f, 1.000f) },
 	{ "yellowgreen", GVector4(0.604f, 0.804f, 0.196f, 1.000f) }
-	//{ "zzzzzzzzzzz", GVector4(0.000f, 0.000f, 0.000f, 0.000f) }
 };
 #endif
 
@@ -537,6 +572,9 @@ GOpenGLBoard::GOpenGLBoard(const GUInt32 LowLeftCornerX, const GUInt32 LowLeftCo
 	// extract mirrored repeat support
 	gMirroredRepeatSupport = gExtManager->IsMirroredRepeatSupported();
 
+	// set current cache slot to NULL
+	gCacheSlot = NULL;
+
 	// ask for number of multisamples
 	if (gExtManager->MultiSamples() > 0)
 		gMultiSamplePresent = G_TRUE;
@@ -587,8 +625,10 @@ GOpenGLBoard::GOpenGLBoard(const GUInt32 LowLeftCornerX, const GUInt32 LowLeftCo
 	// build HTML validator mask (for color characters)
 	BuildHTMLMask();
 
+	// set logical and physical viewports
 	SetViewport(LowLeftCornerX, LowLeftCornerY, Width, Height);
 	SetProjection((GReal)LowLeftCornerX, (GReal)(LowLeftCornerX + Width), (GReal)LowLeftCornerY, (GReal)(LowLeftCornerY + Height)); 
+	// set rendering quality to normal, as default
 	SetRenderingQuality(G_NORMAL_RENDERING_QUALITY);
 
 	glDisable(GL_LIGHTING);
@@ -608,6 +648,7 @@ GOpenGLBoard::GOpenGLBoard(const GUInt32 LowLeftCornerX, const GUInt32 LowLeftCo
 	glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB, GL_REPLACE);
 	glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_ALPHA, GL_REPLACE);
 
+	// useful fields for SVG-like drawing functions
 	gOldPointsSize = 0;
 	gInsideSVGPath = G_FALSE;
 	gInsideSVGPath = G_FALSE;
@@ -622,6 +663,37 @@ GOpenGLBoard::~GOpenGLBoard() {
 	if (gExtManager)
 		delete gExtManager;
 }
+//----------------------------- CACHE
+void GOpenGLBoard::DoDrawCacheEntries(GDrawStyle& Style, const GUInt32 FirstEntryIndex, const GUInt32 LastEntryIndex) {
+
+
+	// update style
+	UpdateStyle((GOpenGLDrawStyle&)Style);
+
+	GOpenGLCachedDrawing *slot = (GOpenGLCachedDrawing *)CacheSlot();
+	G_ASSERT(slot != NULL);
+
+	for (GUInt32 i = FirstEntryIndex; i < LastEntryIndex; ++i) {
+		//DrawCacheEntry(slot->gEntries[i]);
+	}
+}
+
+GCachedDrawing *GOpenGLBoard::CreateCacheSlot() {
+
+	GOpenGLCachedDrawing *slot = new(std::nothrow) GOpenGLCachedDrawing();
+	return (GCachedDrawing *)slot;
+}
+
+GCachedDrawing *GOpenGLBoard::CacheSlot() const {
+
+	return (GCachedDrawing *)gCacheSlot;
+}
+
+void GOpenGLBoard::SetCacheSlot(GCachedDrawing *Slot) {
+
+	gCacheSlot = (GOpenGLCachedDrawing *)Slot;
+}
+//----------------------------- CACHE
 
 void GOpenGLBoard::DeleteGradients() {
 

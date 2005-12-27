@@ -83,6 +83,37 @@ namespace Amanith {
 		GRenderingContext();
 	};
 
+
+	// forward declaration
+	class GDrawBoard;
+
+	/*!
+		\class GCachedDrawing
+		\brief This virtual class represents a cache slot, intended as a set of cached shapes (that have been
+		already drawn).
+		
+		A cache slot, after being filled, can be reused to draw cached shapes. The slot can be invalidated using
+		the function Invalidate().
+	*/
+	class G_EXPORT GCachedDrawing {
+
+		friend class GDrawBoard;
+
+	protected:
+		//! Invalidate the cache, freeing associated memory.
+		virtual void Invalidate() = 0;
+
+	public:
+		//! Constructor, it build an empty cache slot.
+		GCachedDrawing() {
+		}
+		//! Destructor, it invalidates cached shapes and frees memory.
+		virtual ~GCachedDrawing() {
+		}
+		//! Get the number of cached shapes.
+		virtual GUInt32 CacheEntriesCount() const = 0;
+	};
+
 	// *********************************************************************
 	//                             GDrawBoard
 	// *********************************************************************
@@ -142,6 +173,10 @@ namespace Amanith {
 		GPoint<GUInt32, 4> gViewport;  // (x, y) = low-left corner; z = width; w = height
 		//! Current logical window.
 		GPoint4 gProjection; // x = left; y = right; z = bottom; w = top
+		//! Cache writing enabled/disabled flag.
+		GBool gCachingEnabled;
+		//! Write on target buffer (during caching) enabled/disabled flag.
+		GBool gCachingWriteOnTarget;
 
 		/*!
 			Do the effective set of rendering quality settings.
@@ -418,6 +453,16 @@ namespace Amanith {
 		*/
 		virtual void DoDrawPaths(GDrawStyle& Style, const GDynArray<GCurve2D *>& Curves) = 0;
 		/*!
+			Draw the current cache slot entries. Here it's ensured that current cache slot is non-NULL and
+			valid and that that FirstEntryIndex <= LastEntryIndex.
+
+			\param Style the drawstyle to use.
+			\param FirstEntryIndex first cache entry (index) to draw. It's ensured to be inside the valid range.
+			\param LastEntryIndex last cache entry (index) to draw. It's ensured to be inside the valid range.
+			\note this method <b>MUST</b> be implemented by all derived classes.
+		*/
+		virtual void DoDrawCacheEntries(GDrawStyle& Style, const GUInt32 FirstEntryIndex, const GUInt32 LastEntryIndex) = 0;
+		/*!
 			Do the effective screenshot.
 
 			This function permits to grab a rectangular portion of the framebuffer, and put it into
@@ -556,6 +601,69 @@ namespace Amanith {
 											const GTilingMode TilingMode = G_REPEAT_TILE,
 											const GAABox2 *LogicalWindow = NULL,
 											const GMatrix33& Matrix = G_MATRIX_IDENTITY33) = 0;
+		/*!
+			Create a cache slot.
+
+			\return the created cache slot if operation succeeds, else a NULL pointer.
+			\note this method <b>MUST</b> be implemented by all derived classes. The user <b>MUST NOT</b> delete the
+			returned pointer (the drawboard will care of it).
+		*/
+		virtual GCachedDrawing *CreateCacheSlot() = 0;
+		/*!
+			Invalidate a cache slot, all cached shapes will be freed.
+		*/
+		inline void InvalidateCacheSlot(GCachedDrawing *Slot) {
+			if (Slot)
+				Slot->Invalidate();
+		}
+		/*!
+			Get if caching is enabled (G_TRUE value) or disabled (G_FALSE value).
+			When caching is enabled, and a valid cache slot has been set using SetCacheSlot() function, all
+			drawing operation will output their results also on the cache.
+		*/
+		inline GBool CachingEnabled() const {
+			return gCachingEnabled;
+		}
+		/*!
+			Set cache writing status.
+			When caching is enabled, and a valid cache slot has been set using SetCacheSlot() function, all
+			drawing operation will output (append) their results also on the cache.
+
+			\param Enabled G_TRUE enables cache writing, G_FALSE disables caching.
+		*/
+		inline void SetCachingEnabled(const GBool Enabled) {
+			gCachingEnabled = Enabled;
+		}
+		/*!
+			Get if caching operations will affect also the current target buffer (that could be color buffer
+			or clip buffer, see SetTargetMode() reference).
+		*/
+		inline GBool CachingWriteOnTarget() const {
+			return gCachingWriteOnTarget;
+		}
+		/*!
+			Set if caching operations will affect also the current target buffer (that could be color buffer
+			or clip buffer, see SetTargetMode() reference).
+
+			\param Enabled if G_TRUE, all subsequent drawing functions will output their result also on
+			target buffer.
+		*/
+		inline void SetCachingWriteOnTarget(const GBool Enabled) {
+			gCachingWriteOnTarget = Enabled;
+		}
+		/*!
+			Get current cache slot. NULL if a cache slot hasn't already been set.
+
+			\note this method <b>MUST</b> be implemented by all derived classes.
+		*/
+		virtual GCachedDrawing *CacheSlot() const = 0;
+		/*!
+			Set current cache slot, a NULL value is valid.
+
+			\note this method <b>MUST</b> be implemented by all derived classes.
+		*/
+		virtual void SetCacheSlot(GCachedDrawing *Slot) = 0;
+
 
 		//---------------------------------------------------------------------------
 		//                             RENDERING CONTEXT
@@ -1128,6 +1236,29 @@ namespace Amanith {
 			\note this method <b>MUST</b> be implemented by all derived classes.
 		*/
 		virtual void EndPaths() = 0;
+		/*!
+			Draw a range of cache entries, taken from the current cache slot.
+
+			\param FirstEntryIndex first cache entry (index) to draw. It must be valid.
+			\param LastEntryIndex last cache entry (index) to draw. It must be valid.
+		*/
+		void DrawCacheEntries(const GUInt32 FirstEntryIndex, const GUInt32 LastEntryIndex);
+		/*!
+			Draw the entire current cache slot.
+		*/
+		inline void DrawCacheSlot() {
+			if (CacheSlot() && CacheSlot()->CacheEntriesCount() > 0)
+				DrawCacheEntries(0, CacheSlot()->CacheEntriesCount() - 1);
+		}
+		/*!
+			Draw a single entry of the current cache slot.
+
+			\param EntryIndex cache entry (index) to draw. It must be valid.
+		*/
+		inline void DrawCacheEntry(const GUInt32 EntryIndex) {
+			if (CacheSlot() && EntryIndex < CacheSlot()->CacheEntriesCount())
+				DrawCacheEntries(EntryIndex, EntryIndex);
+		}
 		/*!
 			Clear the drawboard.
 

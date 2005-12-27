@@ -61,6 +61,10 @@ GDrawBoard::GDrawBoard() {
 	gInsideGroup = G_FALSE;
 	gViewport.Set(0, 0, 1, 1);
 	gProjection.Set(0, 1, 0, 1);
+	// cache writing enabled/disabled flag
+	gCachingEnabled = G_FALSE;
+	// write on target buffer (during caching) enabled/disabled flag
+	gCachingWriteOnTarget = G_TRUE;
 }
 
 GDrawBoard::~GDrawBoard() {
@@ -549,8 +553,8 @@ void GDrawBoard::DrawLine(const GPoint2& P0, const GPoint2& P1) {
 
 	GDrawStyle *s = gCurrentContext.gDrawStyle;
 
-	if (s->StrokeEnabled())
-		DoDrawLine(*s, P0, P1);
+	//if (s->StrokeEnabled() || CachingEnabled())
+	DoDrawLine(*s, P0, P1);
 }
 
 void GDrawBoard::DrawBezier(const GPoint2& P0, const GPoint2& P1, const GPoint2& P2) {
@@ -773,6 +777,34 @@ void GDrawBoard::DrawPaths(const GString& SVGPathDescription, const GAnglesMeasu
 	EndPaths();
 }
 
+void GDrawBoard::DrawCacheEntries(const GUInt32 FirstEntryIndex, const GUInt32 LastEntryIndex) {
+
+	if (!CacheSlot())
+		return;
+
+	GUInt32 i = CacheSlot()->CacheEntriesCount();
+	if (i <= 0)
+		return;
+
+	GUInt32 j0 = FirstEntryIndex, j1 = LastEntryIndex;
+
+	// clamp indexes
+	if (j0 >= i)
+		j0 = i - 1;
+	if (j1 >= i)
+		j1 = i - 1;
+
+	GDrawStyle *s = gCurrentContext.gDrawStyle;
+
+	if ((s->StrokeEnabled() || s->FillEnabled()) && CacheSlot()->CacheEntriesCount() > 0) {
+		// pass indexes in the right order (ascending)
+		if (j0 <= j1)
+			DoDrawCacheEntries(*s, j0, j1);
+		else
+			DoDrawCacheEntries(*s, j1, j0);
+	}
+}
+
 GError GDrawBoard::ScreenShot(GPixelMap& Output, const GVectBase<GUInt32, 2>& P0, const GVectBase<GUInt32, 2>& P1) const {
 
 	GGenericAABox<GUInt32, 2> box(P0, P1);
@@ -787,5 +819,6 @@ GError GDrawBoard::ScreenShot(GPixelMap& Output, const GVectBase<GUInt32, 2>& P0
 	box.SetMinMax(q0, q1);
 	return DoScreenShot(Output, box.Min(), box.Max());
 }
+
 
 };  // end namespace Amanith

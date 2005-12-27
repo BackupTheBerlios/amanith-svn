@@ -127,6 +127,10 @@ void BuildFlatContour(const GBSplineCurve2D* Curve) {
 
 void InitApp() {
 
+#ifdef _DEBUG
+	SysUtils::RedirectIOToConsole();
+#endif
+
 	gKernel = new GKernel();
 	gBSplineCurve = (GBSplineCurve2D *)gKernel->CreateNew(G_BSPLINECURVE2D_CLASSID);
 

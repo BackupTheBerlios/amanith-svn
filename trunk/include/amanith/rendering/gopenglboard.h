@@ -32,6 +32,7 @@
 #include "amanith/rendering/gdrawboard.h"
 #include "amanith/2d/gtesselator2d.h"
 #include "amanith/gopenglext.h"
+#include <utility>
 
 /*!
 	\file gopenglboard.h
@@ -171,6 +172,52 @@ namespace Amanith {
 		}
 	};
 
+	struct GOpenGLCacheEntry {
+		// display list for fill
+		GLuint FillDisplayList;
+		// display list for stroke
+		GLuint StrokeDisplayList;
+		// bounding box of the primitive, ALWAYS including stroke
+		GAABox2 Box;
+
+		GOpenGLCacheEntry() {
+			FillDisplayList = 0;
+			StrokeDisplayList = 0;
+		}
+	};
+
+	// *********************************************************************
+	//                         GOpenGLCachedDrawing
+	// *********************************************************************
+	/*!
+		\class GOpenGLCachedDrawing
+		\brief This is the OpenGL implementation of a cache slot class, intended as a set of cached shapes (that have been
+		already drawn).
+		
+		A cache slot, after being filled, can be reused to draw cached shapes. The slot can be invalidated using
+		the function Invalidate(). This implementation uses OpenGL display lists.
+	*/
+	class G_EXPORT GOpenGLCachedDrawing {
+
+		friend class GOpenGLBoard;
+
+	private:
+		//! Cache entries.
+		GDynArray< GOpenGLCacheEntry > gEntries;
+
+	protected:
+		//! Invalidate the cache, freeing associated (video) memory.
+		void Invalidate();
+
+	public:
+		//! Constructor, it build an empty cache slot.
+		GOpenGLCachedDrawing();
+		//! Destructor, it invalidates cached shapes and frees memory.
+		~GOpenGLCachedDrawing();
+		//! Get the number of cached shapes.
+		GUInt32 CacheEntriesCount() const;
+	};
+
 	// internal structure used to grab a portion of the framebuffer
 	struct GLGrabbedRect {
 		
@@ -227,6 +274,8 @@ namespace Amanith {
 		GLuint gStencilMask;
 		//! Bitwise dual stencil mask to pass to stencil functions.
 		GLuint gStencilDualMask;
+		//! Current cache slot.
+		GOpenGLCachedDrawing *gCacheSlot;
 
 		GBool gFirstClipMaskReplace;
 		GList<GAABox2> gClipMasksBoxes;
@@ -646,6 +695,15 @@ namespace Amanith {
 		*/
 		void DoDrawPaths(GDrawStyle& Style, const GDynArray<GCurve2D *>& Curves);
 		/*!
+			Draw the current cache slot entries. Here it's ensured that current cache slot is non-NULL and
+			valid and that that FirstEntryIndex <= LastEntryIndex.
+
+			\param Style the drawstyle to use.
+			\param FirstEntryIndex first cache entry (index) to draw. It's ensured to be inside the valid range.
+			\param LastEntryIndex last cache entry (index) to draw. It's ensured to be inside the valid range.
+		*/
+		void DoDrawCacheEntries(GDrawStyle& Style, const GUInt32 FirstEntryIndex, const GUInt32 LastEntryIndex);
+		/*!
 			Do the effective screenshot.
 
 			This function permits to grab a rectangular portion of the framebuffer, and put it into
@@ -779,6 +837,21 @@ namespace Amanith {
 									const GTilingMode TilingMode = G_REPEAT_TILE,
 									const GAABox2 *LogicalWindow = NULL,
 									const GMatrix33& Matrix = G_MATRIX_IDENTITY33);
+		/*!
+			Create a cache slot.
+
+			\return the created cache slot if operation succeeds, else a NULL pointer.
+			\note the user <b>MUST NOT</b> delete the returned pointer (the drawboard will care of it).
+		*/
+		GCachedDrawing *CreateCacheSlot();
+		/*!
+			Get current cache slot. NULL if a cache slot hasn't already been set.
+		*/
+		GCachedDrawing *CacheSlot() const;
+		/*!
+			Set current cache slot, a NULL value is valid.
+		*/
+		void SetCacheSlot(GCachedDrawing *Slot);
 		/*!
 			Convert a color from a string format to its numerical representation (where each component is in
 			the range [0; 1]. Implementation supports color in these forms:\n\n

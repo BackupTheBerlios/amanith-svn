@@ -64,6 +64,8 @@ namespace Amanith {
 		static GString AmanithPluginsPath();
 		//! Get a unique machine identifier.
 		static GError MachineGUID(GString& Identifier);
+		//! Redirect I/O text to console, for Win32 applications.
+		static void RedirectIOToConsole();
 	};
 
 

@@ -309,6 +309,7 @@ void QGLWidgetTest::TestMasks(const GUInt32 TestIndex) {
 		gDrawBoard->SetFillColor(GVector4((GReal)1.0, (GReal)0.0, (GReal)0.0, (GReal)1.0));
 		gDrawBoard->DrawRectangle(GPoint2(90+260, 60+18), GPoint2(195+260, 112+18));
 		gDrawBoard->GroupEnd();
+
 		gDrawBoard->SetStrokeEnabled(G_FALSE);
 		gDrawBoard->SetFillPaintType(G_GRADIENT_PAINT_TYPE);
 		gDrawBoard->SetFillColor(GVector4((GReal)0.0, (GReal)0.0, (GReal)0.0, (GReal)1.0));
