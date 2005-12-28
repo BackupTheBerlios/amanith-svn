@@ -89,6 +89,19 @@ namespace Amanith {
 		static GString Left(const GString& Str, const GUInt32 HowMany);
 		//! Replace every 'Before' char occurrence with 'After' char.
 		static GString Replace(const GString& Str, const GChar8 Before, const GChar8 After);
+		/*!
+			Searches a string in a forward direction for the first occurrence of a substring that
+			matches a specified sequence of characters.
+
+			\param Source the source string, where to search for StrToFind.
+			\param StrToFind the string for which the member function is to search.
+			\param CaseInsensitive G_TRUE if comparison must be done case-insensitive, else G_FALSE.
+			\param StartOffset index of the position at which the search is to begin.
+			\param PosFound the index of the first character of the substring searched for when successful.
+			\return G_TRUE if substring has been found, else G_FALSE.
+		*/
+		static GBool Find(const GString& Source, const GString& StrToFind, const GBool CaseInsensitive = G_TRUE,
+						  const GUInt32 StartOffset = 0, GUInt32 *PosFound = NULL);
 		//! Extract the path portion of specified parameter.
 		static GString ExtractFilePath(const GString& FullFileName);
 		/*!

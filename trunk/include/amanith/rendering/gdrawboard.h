@@ -292,8 +292,7 @@ namespace Amanith {
 		/*!
 			Do the effective drawing of a rectangle.
 
-			When this method is called, it's ensured that corners are opposite and ordered, in addition stroke or
-			fill are enabled.
+			When this method is called, it's ensured that corners are opposite and ordered.
 
 			\param Style the drawstyle to use.
 			\param MinCorner a corner of the rectangle.
@@ -304,8 +303,7 @@ namespace Amanith {
 		/*!
 			Do the effective drawing of a round rectangle.
 
-			When this method is called, it's ensured that corners are opposite and ordered, in addition stroke or
-			fill are enabled.
+			When this method is called, it's ensured that corners are opposite and ordered.
 
 			\param Style the drawstyle to use.
 			\param MinCorner a corner of the rectangle.
@@ -321,8 +319,6 @@ namespace Amanith {
 		/*!
 			Do the effective drawing of a line.
 
-			When this method is called it's ensured that stroke is enabled.
-
 			\param Style the drawstyle to use.
 			\param P0 the line start point.
 			\param P1 the line end point.
@@ -332,8 +328,6 @@ namespace Amanith {
 		/*!
 			Do the effective drawing of a quadratic Bezier curve, going form P0 to
 			P2 and having P1 as central control point.
-
-			When this method is called it's ensured that stroke or fill are enabled.
 
 			\param Style the drawstyle to use.
 			\param P0 the curve start point.
@@ -346,8 +340,6 @@ namespace Amanith {
 			Do the effective drawing of a cubic Bezier curve, going form P0 to P4 and
 			having P1 and P2 as control points.
 
-			When this method is called it's ensured that stroke or fill are enabled.
-
 			\param Style the drawstyle to use.
 			\param P0 the curve start point.
 			\param P1 the curve first control point (associated with P0).
@@ -358,8 +350,6 @@ namespace Amanith {
 		virtual void DoDrawBezier(GDrawStyle& Style, const GPoint2& P0, const GPoint2& P1, const GPoint2& P2, const GPoint2& P3) = 0;
 		/*!
 			Do the effective drawing of an ellipse arc.
-
-			When this method is called it's ensured that stroke or fill are enabled.
 
 			\param Style the drawstyle to use.
 			\param Center the center of the ellipse.
@@ -378,8 +368,6 @@ namespace Amanith {
 		/*!
 			Do the effective drawing of an ellipse arc.
 
-			When this method is called it's ensured that stroke or fill are enabled.
-
 			\param Style the drawstyle to use.
 			\param P0 the start point of the arc.
 			\param P1 the end point of the arc.
@@ -397,8 +385,6 @@ namespace Amanith {
 		/*!
 			Do the effective drawing of a whole ellipse.
 
-			When this method is called it's ensured that stroke or fill are enabled.
-
 			\param Style the drawstyle to use.
 			\param Center the center of the ellipse.
 			\param XSemiAxisLength the radius of the ellipse along x-axis. It's ensured to be greater than 0.
@@ -410,8 +396,6 @@ namespace Amanith {
 		/*!
 			Do the effective drawing of a circle.
 
-			When this method is called it's ensured that stroke or fill are enabled.
-
 			\param Style the drawstyle to use.
 			\param Center the center of the circle.
 			\param Radius the radius of the circle, it's ensured to be positive.
@@ -420,8 +404,6 @@ namespace Amanith {
 		virtual void DoDrawCircle(GDrawStyle& Style, const GPoint2& Center, const GReal Radius) = 0;
 		/*!
 			Draw the effective drawing of a polygon.
-
-			When this method is called it's ensured that stroke or fill are enabled.
 
 			\param Style the drawstyle to use.
 			\param Points the set of consecutive points that define the polygon, it's ensured that at least 2 points
@@ -434,8 +416,6 @@ namespace Amanith {
 		/*!
 			Do the effective drawing of curve/path.
 
-			When this method is called it's ensured that stroke or fill are enabled.
-
 			\param Style the drawstyle to use.
 			\param Curve the curve to draw, it consists of at least 2 points.
 			\note this method <b>MUST</b> be implemented by all derived classes.
@@ -445,7 +425,7 @@ namespace Amanith {
 			Do the effective drawing of a set of curves and paths.
 
 			This method permits to draw complex shapes, made of more than 1 curve/path, using the currently set
-			fill rule. When this method is called it's ensured that stroke or fill are enabled.
+			fill rule.
 
 			\param Style the drawstyle to use.
 			\param Curves an array of curves pointers. Each pointer must be valid.
@@ -992,9 +972,10 @@ namespace Amanith {
 
 			\param SVGPathDescription an non-empty string, describing the path in the classic SVG form (the well
 			known 'd' attribute. For example "M 406,74 C 257,67 305,163 359,313 Q 406,361 454,314 C 496,164 544,67 406,74 z".
+			\param AnglesMeasureUnits the system units into which angles are expressed inside the string.
 		*/
-		inline void DrawPaths(const GChar8 *SVGPathDescription) {
-			DrawPaths(GString(SVGPathDescription));
+		inline void DrawPaths(const GChar8 *SVGPathDescription, const GAnglesMeasureUnit AnglesMeasureUnits = G_DEGREE_UNIT) {
+			DrawPaths(GString(SVGPathDescription), AnglesMeasureUnits);
 		}
 		/*!
 			Start an SVG-like path block.

@@ -45,8 +45,8 @@ private:
 	GGradientDesc *gLinGrad1, *gLinGrad2, *gLinGrad3, *gLinGradLogo1, *gLinGradLogo2, *gLinGradLogo3;
 	GGradientDesc *gRadGrad1, *gRadGrad2, *gRadGrad3, *gRadGrad4;
 	GGradientDesc *gConGrad1, *gConGrad2, *gConGrad3, *gConGrad4;
-	GPatternDesc *gPattern;
-	GPatternDesc *gBackGround;
+	GPatternDesc *gPattern, *gBackGround;
+	GCachedDrawing *gCacheSlot;
 	GString gDataPath;
 	GString gScreenShotFileName;
 
@@ -85,6 +85,7 @@ protected:
 	void TestStroke(const GUInt32 TestIndex);
 	void TestMasks(const GUInt32 TestIndex);
 	void TestGeometries(const GUInt32 TestIndex);
+	void TestCache(const GUInt32 TestIndex);
 
 public:
 	// constructor

@@ -180,6 +180,9 @@ void QGLWidgetTest::initializeGL() {
 	colKeys.push_back(GKeyValue((GReal)1.00, GVector4((GReal)1.0, (GReal)1.0, (GReal)1.0, (GReal)0.0)));
 	gLinGradLogo3 = gDrawBoard->CreateLinearGradient(GPoint2(300, 460), GPoint2(417, 330), colKeys, G_LINEAR_COLOR_INTERPOLATION, G_PAD_COLOR_RAMP_SPREAD);
 
+	// create a cache slot
+	gCacheSlot = gDrawBoard->CreateCacheSlot();
+
 	// now lets see if some bitmap file formats are present for load/save
 	GDynArray<GImpExpFeature> features;
 	err = gKernel->ImpExpFeatures(G_PIXELMAP_CLASSID, features);
@@ -246,6 +249,9 @@ void QGLWidgetTest::paintGL() {
 		case 9:
 			TestGeometries(gTestIndex);
 			break;
+		case 10:
+			TestCache(gTestIndex);
+			break;
 		default:
 			TestColor(gTestIndex);
 	}
@@ -270,6 +276,7 @@ void QGLWidgetTest::keyPressEvent(QKeyEvent *e) {
 	QString s;
 
 	switch(e->key()) {
+
 		case Qt::Key_F1:
 			s = "F2: contextual example description\n";
 			s += "0..9: Toggle draw test\n";
@@ -470,6 +477,12 @@ void QGLWidgetTest::keyPressEvent(QKeyEvent *e) {
 			updateGL();
 			break;
 
+		case Qt::Key_C:
+			gTestSuite = 10;
+			gTestIndex = 0;
+			updateGL();
+			break;
+
 		case Qt::Key_B:
 			if (gDrawBackGround)
 				gDrawBackGround = G_FALSE;
@@ -504,11 +517,11 @@ void QGLWidgetTest::keyPressEvent(QKeyEvent *e) {
 		case Qt::Key_S:
 			if (gUseShaders) {
 				gUseShaders = G_FALSE;
-				gDrawBoard->DisableShaders(G_TRUE);
+				gDrawBoard->SetShadersEnabled(G_FALSE);
 			}
 			else {
 				gUseShaders = G_TRUE;
-				gDrawBoard->DisableShaders(G_FALSE);
+				gDrawBoard->SetShadersEnabled(G_TRUE);
 			}
 			updateGL();
 			break;

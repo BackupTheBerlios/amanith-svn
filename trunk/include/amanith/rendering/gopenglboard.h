@@ -197,7 +197,7 @@ namespace Amanith {
 		A cache slot, after being filled, can be reused to draw cached shapes. The slot can be invalidated using
 		the function Invalidate(). This implementation uses OpenGL display lists.
 	*/
-	class G_EXPORT GOpenGLCachedDrawing {
+	class G_EXPORT GOpenGLCachedDrawing : public GCachedDrawing {
 
 		friend class GOpenGLBoard;
 
@@ -256,10 +256,14 @@ namespace Amanith {
 		GDynArray<GOpenGLGradientDesc *> gGradients;
 		//! List of all created patterns.
 		GDynArray<GOpenGLPatternDesc *> gPatterns;
+		//! List of all created cache slots.
+		GDynArray<GOpenGLCachedDrawing *> gCacheSlots;
 		//! G_TRUE if clip paths are supported by the graphics device, else G_FALSE.
 		GBool gClipMasksSupport;
 		//! G_TRUE if fragment programs are supported by the graphics device, else G_FALSE.
 		GBool gFragmentProgramsSupport;
+		//! G_TRUE if rectangular texture could be used for group opacity, else G_FALSE.
+		GBool gRectTexturesSupport;
 		//! G_TRUE if group opacity is supported by the graphics device, else G_FALSE.
 		GBool gGroupOpacitySupport;
 		//! G_TRUE if OpenGL context has been opened with multi samples (FSAA), else G_FALSE.
@@ -344,6 +348,8 @@ namespace Amanith {
 		void DeleteGradients();
 		//! Delete all user-generated patterns.
 		void DeletePatterns();
+		//! Delete all user-generated cache slots.
+		void DeleteCacheSlots();
 
 		// OpenGL low level drawings
 		static void SetGLColor(const GVectBase<GReal, 4>& Color);
@@ -694,6 +700,14 @@ namespace Amanith {
 			\param Curves an array of curves pointers. Each pointer must be valid.
 		*/
 		void DoDrawPaths(GDrawStyle& Style, const GDynArray<GCurve2D *>& Curves);
+
+		/*!
+			Draw a single cache entry, using specified style.
+
+			\param Style the drawstyle to use.
+			\param CacheEntry the cache entry to draw.
+		*/
+		void DoDrawCacheEntry(const GDrawStyle& Style, const GOpenGLCacheEntry& CacheEntry);
 		/*!
 			Draw the current cache slot entries. Here it's ensured that current cache slot is non-NULL and
 			valid and that that FirstEntryIndex <= LastEntryIndex.
@@ -753,7 +767,6 @@ namespace Amanith {
 			Get the maximum supported pattern memory size (in bytes).
 		*/
 		GUInt32 MaxImageBytes() const;
-
 		/*!
 			Enable or disable fragment programs for radial and conical gradients.
 
@@ -763,8 +776,16 @@ namespace Amanith {
 			pipelines (radial and conical gradients). Using this function the user can force the OpenGL drawboard
 			to use always the geometric-based pipelines.
 		*/
-		void DisableShaders(const GBool Disable);
+		void SetShadersEnabled(const GBool Enabled);
+		/*!
+			Enable or disable the use of rectangular textures to do group opacity.
 
+			As default, OpenGL drawboard disables the use of rectangular texture. This is due to the fact that on
+			some graphics board (especially ATI ones) there could be memory leaks inside the driver, making the
+			application crash. Enabling rectangular texture could speed up a little the use of group opacity and
+			it uses less memory.
+		*/
+		void SetRectTextureEnabled(const GBool Enabled);
 		/*!
 			Create a linear gradient.
 

@@ -30,6 +30,7 @@ void QGLWidgetTest::TestMasks(const GUInt32 TestIndex) {
 	GUInt32 idx = TestIndex % 2;
 	GMatrix33 m;
 
+	gDrawBoard->SetCachingEnabled(G_FALSE);
 	gDrawBoard->SetTargetMode(G_COLOR_MODE);
 	gDrawBoard->SetStrokeStyle(G_SOLID_STROKE);
 	gDrawBoard->SetStrokeJoinStyle(G_MITER_JOIN);
@@ -303,6 +304,7 @@ void QGLWidgetTest::TestMasks(const GUInt32 TestIndex) {
 		gDrawBoard->SetFillPaintType(G_COLOR_PAINT_TYPE);
 		gDrawBoard->SetStrokePaintType(G_COLOR_PAINT_TYPE);
 		gDrawBoard->SetStrokeJoinStyle(G_ROUND_JOIN);
+
 		gDrawBoard->SetGroupOpacity((GReal)0.5);
 		gDrawBoard->GroupBegin(GAABox2(GPoint2(90+200, 40), GPoint2(195+300, 112+40)));
 		gDrawBoard->SetStrokeColor(GVector4((GReal)1.0, (GReal)0.0, (GReal)0.0, (GReal)1.0));

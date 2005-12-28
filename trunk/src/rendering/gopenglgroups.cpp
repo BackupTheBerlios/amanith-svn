@@ -152,6 +152,7 @@ void GOpenGLBoard::DoGroupEnd() {
 	#else
 		glColor4f(1.0f, 1.0f, 1.0f, GroupOpacity());
 	#endif
+
 	ReplaceFrameBuffer(gGLGroupRect);
 	glDisable(GL_BLEND);
 
@@ -199,7 +200,7 @@ void GOpenGLBoard::GroupFirstPass() {
 void GOpenGLBoard::GrabFrameBuffer(const GPoint<GInt32, 2>& LowLeft, const GUInt32 Width, const GUInt32 Height,
 								   GLGrabbedRect& Shot) {
 
-	if (gExtManager->IsRectTextureSupported()) {
+	if (gRectTexturesSupport) {
 		Shot.Target = GL_TEXTURE_RECTANGLE_EXT;
 		Shot.TexWidth = Width;
 		Shot.TexHeight = Height;
@@ -216,22 +217,30 @@ void GOpenGLBoard::GrabFrameBuffer(const GPoint<GInt32, 2>& LowLeft, const GUInt
 	if (Shot.TexHeight > maxTexSize)
 		Shot.TexHeight = maxTexSize;
 
+	glDisable(GL_TEXTURE_RECTANGLE_EXT);
+	glDisable(GL_TEXTURE_1D);
+	glDisable(GL_TEXTURE_2D);
+	glDisable(GL_TEXTURE_GEN_S);
+	glDisable(GL_TEXTURE_GEN_T);
+	glEnable(Shot.Target);
+
+	glPixelStorei(GL_PACK_ALIGNMENT, 1);
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
 	glGenTextures(1, &Shot.TexName);
 	glBindTexture(Shot.Target, Shot.TexName);
-	glPixelStorei(GL_UNPACK_ALIGNMENT, 8);
 	glTexParameteri(Shot.Target, GL_TEXTURE_MAG_FILTER, GL_NEAREST); 
 	glTexParameteri(Shot.Target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+	//glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 	glTexParameteri(Shot.Target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(Shot.Target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-	glCopyTexImage2D(Shot.Target, 0, GL_RGB, LowLeft[G_X], LowLeft[G_Y], Shot.TexWidth, Shot.TexHeight, 0);
+	glCopyTexImage2D(Shot.Target, 0, GL_RGBA, LowLeft[G_X], LowLeft[G_Y], Shot.TexWidth, Shot.TexHeight, 0);
 
 	Shot.X = LowLeft[G_X];
 	Shot.Y = LowLeft[G_Y];
 	Shot.Width = Width;
 	Shot.Height = Height;
-
 }
 
 void GOpenGLBoard::ReplaceFrameBuffer(const GLGrabbedRect& Shot) {
@@ -245,7 +254,6 @@ void GOpenGLBoard::ReplaceFrameBuffer(const GLGrabbedRect& Shot) {
 	glMatrixMode(GL_TEXTURE);
 	glPushMatrix();
 	glLoadIdentity();
-
 
 	glEnable(Shot.Target);
 	glBindTexture(Shot.Target, Shot.TexName);

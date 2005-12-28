@@ -17,7 +17,8 @@ SOURCES = main.cpp \
           test_pattern.cpp \
           test_stroking.cpp \
           test_geometries.cpp \
-          test_masks.cpp
+          test_masks.cpp \
+          test_cache.cpp
 
 win32: RC_FILE = example.rc
 

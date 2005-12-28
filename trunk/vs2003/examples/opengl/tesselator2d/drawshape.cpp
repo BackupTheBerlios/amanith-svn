@@ -184,7 +184,7 @@ void BuildShape(const GFloat RadAngle1, const GFloat RadAngle2, const GFloat Rad
 	gContoursIndexes.clear();
 
 	// little cross
-	RotationToMatrix(rot, RadAngle1);
+	RotationToMatrix(rot, (GReal)RadAngle1);
 	finalMatrix = (postTrans * rot) * preTrans;
 	gContoursPoints.push_back(finalMatrix * GPoint2(6, 7));
 	gContoursPoints.push_back(finalMatrix * GPoint2(7, 8));
@@ -201,7 +201,7 @@ void BuildShape(const GFloat RadAngle1, const GFloat RadAngle2, const GFloat Rad
 	gContoursIndexes.push_back(12);
 
 	// big cross
-	RotationToMatrix(rot, RadAngle2);
+	RotationToMatrix(rot, (GReal)RadAngle2);
 	finalMatrix = (postTrans * rot) * preTrans;
 
 	gContoursPoints.push_back(finalMatrix * GPoint2(2, 6));
@@ -219,7 +219,7 @@ void BuildShape(const GFloat RadAngle1, const GFloat RadAngle2, const GFloat Rad
 	gContoursIndexes.push_back(12);
 
 	// star
-	RotationToMatrix(rot, RadAngle3);
+	RotationToMatrix(rot, (GReal)RadAngle3);
 	finalMatrix = (postTrans * rot) * preTrans;
 	gContoursPoints.push_back(finalMatrix * GPoint2(2, 2));
 	gContoursPoints.push_back(finalMatrix * GPoint2(5, 8));

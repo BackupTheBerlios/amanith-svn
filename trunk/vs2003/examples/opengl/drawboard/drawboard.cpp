@@ -876,11 +876,11 @@ int WINAPI WinMain(	HINSTANCE	hInstance,			// Instance
 				keys[83] = FALSE;
 				if (gUseShaders) {
 					gUseShaders = G_FALSE;
-					gDrawBoard->DisableShaders(G_TRUE);
+					gDrawBoard->SetShadersEnabled(G_FALSE);
 				}
 				else {
 					gUseShaders = G_TRUE;
-					gDrawBoard->DisableShaders(G_FALSE);
+					gDrawBoard->SetShadersEnabled(G_TRUE);
 				}
 				doDraw = TRUE;
 			}

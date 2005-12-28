@@ -46,9 +46,10 @@ void GOpenGLBoard::DumpStencilBuffer(const GChar8 *FileName) {
 	GLubyte *buf;
 	std::FILE *f = NULL;
 
-	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+	//glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+	glPixelStorei(GL_PACK_ALIGNMENT, 1);
 
-	buf = new GLubyte[w * h * 2];
+	buf = new GLubyte[w * h];
 	std::memset(buf, 0, w * h);
 	glReadPixels(0, 0, w, h, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, buf);
 
@@ -519,14 +520,14 @@ void GOpenGLBoard::GenerateAtan2LookupTable() {
 	}
 }
 
-void GOpenGLBoard::DisableShaders(const GBool Disable) {
+void GOpenGLBoard::SetShadersEnabled(const GBool Enabled) {
 
-	if (!gExtManager->IsArbProgramsSupported() || (!Disable == gFragmentProgramsSupport))
+	if (!gExtManager->IsArbProgramsSupported() || (Enabled == gFragmentProgramsSupport))
 		return;
 
-	gFragmentProgramsSupport = !Disable;
+	gFragmentProgramsSupport = Enabled;
 	// we have to mark all gradients as modified
-	if (Disable == G_FALSE) {
+	if (Enabled == G_TRUE) {
 
 		GUInt32 i, j = (GUInt32)gGradients.size();
 		for (i = 0; i < j; i++) {
@@ -535,6 +536,18 @@ void GOpenGLBoard::DisableShaders(const GBool Disable) {
 		}
 	}
 
+}
+
+void GOpenGLBoard::SetRectTextureEnabled(const GBool Enabled) {
+
+	// we can't change it inside group (during a group drawing)
+	if (InsideGroup() && TargetMode() == G_COLOR_MODE)
+		return;
+
+	if (!gExtManager->IsRectTextureSupported() || (Enabled == gRectTexturesSupport))
+		return;
+
+	gRectTexturesSupport = Enabled;
 }
 
 GOpenGLBoard::GOpenGLBoard(const GUInt32 LowLeftCornerX, const GUInt32 LowLeftCornerY,
@@ -583,6 +596,16 @@ GOpenGLBoard::GOpenGLBoard(const GUInt32 LowLeftCornerX, const GUInt32 LowLeftCo
 
 	// fragment programs support
 	gFragmentProgramsSupport = gExtManager->IsArbProgramsSupported();
+	// rectangular textures support
+	gRectTexturesSupport = G_FALSE;
+	const GChar8 *vendorStr = NULL;
+	vendorStr = (const GChar8 *)glGetString(GL_VENDOR);
+	if (vendorStr) {
+		// from our tests, it seems that NVidia cards have good rectangular textures support
+		if (StrUtils::Find(vendorStr, "NVIDIA"))
+			gRectTexturesSupport = gExtManager->IsRectTextureSupported();
+	}
+
 	gAtan2LookupTable = NULL;
 	gAtan2LookupTableSize = 256;
 	gRadGradGLProgram = 0;
@@ -658,14 +681,117 @@ GOpenGLBoard::~GOpenGLBoard() {
 
 	DeleteGradients();
 	DeletePatterns();
+	DeleteCacheSlots();
+
 	if (gAtan2LookupTable)
 		delete [] gAtan2LookupTable;
 	if (gExtManager)
 		delete gExtManager;
 }
 //----------------------------- CACHE
+
+void GOpenGLBoard::DoDrawCacheEntry(const GDrawStyle& Style, const GOpenGLCacheEntry& CacheEntry) {
+
+	if (CacheEntry.FillDisplayList == 0 && CacheEntry.StrokeDisplayList == 0)
+		return;
+
+	#define DRAW_STROKE \
+		G_ASSERT(CacheEntry.StrokeDisplayList != 0); \
+		glCallList(CacheEntry.StrokeDisplayList);
+
+	#define DRAW_FILL \
+		if (CacheEntry.FillDisplayList != 0) \
+			glCallList(CacheEntry.FillDisplayList);
+
+	// calculate bound box
+	GAABox2 tmpBox(CacheEntry.Box);
+
+	GBool doublePass = SetGLClipEnabled(TargetMode(), ClipOperation());
+
+	if (TargetMode() == G_CLIP_MODE) {
+
+		// draw fill
+		if (Style.FillEnabled()) {
+			DRAW_FILL
+		}
+		// draw stroke
+		if (Style.StrokeEnabled()) {
+			DRAW_STROKE
+		}
+		// take care of replace operation
+		if (!InsideGroup())
+			UpdateClipMasksState();
+
+		if (!InsideGroup())
+			gClipMasksBoxes.push_back(tmpBox);
+		else {
+			// build initial group box
+			if (gIsFirstGroupDrawing)
+				gGroupBox = tmpBox;
+			else {
+				// expand group box
+				gGroupBox.ExtendToInclude(tmpBox.Min());
+				gGroupBox.ExtendToInclude(tmpBox.Max());
+			}
+		}
+		gIsFirstGroupDrawing = G_FALSE;
+		return;
+	}
+
+	// in color mode, if we are inside a GroupBegin() / GroupEnd() constructor and group opacity is 0
+	// do not draw anything
+	if (InsideGroup() && GroupOpacity() <= 0 && gGroupOpacitySupport)
+		return;
+
+	if (Style.FillEnabled()) {
+		// set fill style using OpenGL
+		GBool useDepth = UseFillStyle(Style);
+		// take care of group opacity, first we have to write into stencil buffer
+		if (doublePass) {
+			GroupFirstPass();
+			// draw fill
+			DRAW_FILL
+			StencilEnableTop();
+		}
+		if (useDepth)
+			PushDepthMask();
+		// draw fill
+		DRAW_FILL
+		// geometric radial gradient and transparent entities uses depth clip, so we must pop off clip mask
+		if (useDepth)
+			DrawAndPopDepthMask(tmpBox, Style, G_TRUE);
+	}
+
+	// take care to enable stencil test if necessary
+	SetGLClipEnabled(TargetMode(), ClipOperation());
+
+	if (Style.StrokeEnabled()) {
+		// set stroke style using OpenGL
+		GBool useDepth = UseStrokeStyle(Style);
+		// take care of group opacity, first we have to write into stencil buffer
+		if (doublePass) {
+			GroupFirstPass();
+			// draw stroke
+			DRAW_STROKE
+			StencilEnableTop();
+		}
+		if (useDepth)
+			PushDepthMask();
+		// draw stroke
+		DRAW_STROKE
+		// geometric radial gradient and transparent entities uses depth clip, so we must pop off clip mask
+		if (useDepth)
+			DrawAndPopDepthMask(tmpBox, Style, G_FALSE);
+	}
+
+	#undef DRAW_STROKE
+	#undef DRAW_FILL
+}
+
 void GOpenGLBoard::DoDrawCacheEntries(GDrawStyle& Style, const GUInt32 FirstEntryIndex, const GUInt32 LastEntryIndex) {
 
+	if (!Style.StrokeEnabled() && !Style.FillEnabled())
+		return;
 
 	// update style
 	UpdateStyle((GOpenGLDrawStyle&)Style);
@@ -673,14 +799,15 @@ void GOpenGLBoard::DoDrawCacheEntries(GDrawStyle& Style, const GUInt32 FirstEntr
 	GOpenGLCachedDrawing *slot = (GOpenGLCachedDrawing *)CacheSlot();
 	G_ASSERT(slot != NULL);
 
-	for (GUInt32 i = FirstEntryIndex; i < LastEntryIndex; ++i) {
-		//DrawCacheEntry(slot->gEntries[i]);
-	}
+	for (GUInt32 i = FirstEntryIndex; i <= LastEntryIndex; ++i)
+		DoDrawCacheEntry(Style, slot->gEntries[i]);
 }
 
 GCachedDrawing *GOpenGLBoard::CreateCacheSlot() {
 
 	GOpenGLCachedDrawing *slot = new(std::nothrow) GOpenGLCachedDrawing();
+	if (slot)
+		gCacheSlots.push_back(slot);
 	return (GCachedDrawing *)slot;
 }
 
@@ -722,6 +849,18 @@ void GOpenGLBoard::DeletePatterns() {
 		delete pattern;
 	}
 	gPatterns.clear();
+}
+
+void GOpenGLBoard::DeleteCacheSlots() {
+
+	GDynArray<GOpenGLCachedDrawing *>::iterator it = gCacheSlots.begin();
+
+	for (; it != gCacheSlots.end(); ++it) {
+		GOpenGLCachedDrawing *slot = *it;
+		G_ASSERT(slot);
+		delete slot;
+	}
+	gCacheSlots.clear();
 }
 
 // read only parameters
@@ -1085,7 +1224,9 @@ GError GOpenGLBoard::DoScreenShot(GPixelMap& Output, const GVectBase<GUInt32, 2>
 
 	GError err = Output.Create((GInt32)w, (GInt32)h, G_A8R8G8B8);
 	if (err == G_NO_ERROR) {
-		glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+		//glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+		glPixelStorei(GL_PACK_ALIGNMENT, 4);
+
 		glReadPixels((GLint)P0[G_X], (GLint)P0[G_Y], (GLsizei)w, (GLsizei)h, GL_BGRA_EXT, GL_UNSIGNED_BYTE, (GLvoid *)Output.Pixels()); 
     	err = Output.Flip(G_FALSE, G_TRUE);
 	}

@@ -63,13 +63,12 @@ void GOpenGLBoard::DrawGLPolygon(const GOpenGLDrawStyle& Style, const GBool Clos
 	if (Points.size() < 2)
 		return;
 
-	GBool doublePass = SetGLClipEnabled(TargetMode(), ClipOperation());
 	GDynArray< GPoint<GDouble, 2> > triangles;
 	GDynArray<GInt32> ptsPerContour;
 	GDynArray< GPoint<GDouble, 2> >::const_iterator it;
 	GDynArray<GPoint2>::const_iterator it2;
 	GUInt32 j = 0;
-	GAABox2 box;
+	GAABox2 tmpBox;
 
 	#define DRAW_FILL_DOUBLE \
 		if (!Convex) { \
@@ -124,22 +123,61 @@ void GOpenGLBoard::DrawGLPolygon(const GOpenGLDrawStyle& Style, const GBool Clos
 			DrawDashedStroke(Style, Points.begin(), Points.end(), ClosedStroke, Style.StrokeThickness(), Style.gRoundJoinAuxCoef);
 
 
-	if (ClosedFill) {
+	if (ClosedFill || CachingEnabled()) {
 		// if not convex or have some degenerations (intersection, overlapping edges, etc) use tesselator
 		if (!Convex) {
 			ptsPerContour.push_back((GInt32)Points.size());
-			gTesselator.Tesselate(Points, ptsPerContour, triangles, box, FillRuleToBehavior(Style.FillRule()));
+			gTesselator.Tesselate(Points, ptsPerContour, triangles, tmpBox, FillRuleToBehavior(Style.FillRule()));
 			j = (GUInt32)triangles.size() / 3;
 			G_ASSERT((triangles.size() % 3) == 0);
 			if (j == 0)
-				box.SetMinMax(Points);
+				tmpBox.SetMinMax(Points);
 		}
 		// else we must compute box directly
 		else
-			box.SetMinMax(Points);
+			tmpBox.SetMinMax(Points);
 	}
 	else
-		box.SetMinMax(Points);
+		tmpBox.SetMinMax(Points);
+
+	GOpenGLCacheEntry cacheEntry;
+	GOpenGLCachedDrawing *cacheSlot = (GOpenGLCachedDrawing *)CacheSlot();
+
+	// cache the primitive, if needed
+	if (CachingEnabled()) {
+		// expand box to have always the stroke included
+		cacheEntry.Box = tmpBox;
+		GPoint2 pMin(cacheEntry.Box.Min());
+		GPoint2 pMax(cacheEntry.Box.Max());
+		pMin[G_X] -= Style.StrokeThickness();
+		pMin[G_Y] -= Style.StrokeThickness();
+		pMax[G_X] += Style.StrokeThickness();
+		pMax[G_Y] += Style.StrokeThickness();
+		cacheEntry.Box.SetMinMax(pMin, pMax);
+		// draw fill
+		cacheEntry.FillDisplayList = glGenLists(1);
+		glNewList(cacheEntry.FillDisplayList, GL_COMPILE);
+		#ifdef DOUBLE_REAL_TYPE
+			DRAW_FILL_DOUBLE
+		#else
+			DRAW_FILL_FLOAT
+		#endif
+		glEndList();
+		// draw stroke
+		cacheEntry.StrokeDisplayList = glGenLists(1);
+		glNewList(cacheEntry.StrokeDisplayList, GL_COMPILE);
+		DRAW_STROKE
+		glEndList();
+		cacheSlot->gEntries.push_back(cacheEntry);
+	}
+
+	// if we had to draw nothing, just exit
+	if (!Style.StrokeEnabled() && !Style.FillEnabled())
+		return;
+	if (CachingEnabled() && !CachingWriteOnTarget())
+		return;
+
+	GBool doublePass = SetGLClipEnabled(TargetMode(), ClipOperation());
 
 	if (TargetMode() == G_CLIP_MODE) {
 
@@ -165,25 +203,25 @@ void GOpenGLBoard::DrawGLPolygon(const GOpenGLDrawStyle& Style, const GBool Clos
 			UpdateClipMasksState();
 
 		// calculate bound box of the drawn clip mask
-		GPoint2 pMin(box.Min());
-		GPoint2 pMax(box.Max());
+		GPoint2 pMin(tmpBox.Min());
+		GPoint2 pMax(tmpBox.Max());
 		if (Style.StrokeEnabled()) {
 			pMin[G_X] -= Style.StrokeThickness();
 			pMin[G_Y] -= Style.StrokeThickness();
 			pMax[G_X] += Style.StrokeThickness();
 			pMax[G_Y] += Style.StrokeThickness();
-			box.SetMinMax(pMin, pMax);
+			tmpBox.SetMinMax(pMin, pMax);
 		}
 		if (!InsideGroup())
-			gClipMasksBoxes.push_back(box);
+			gClipMasksBoxes.push_back(tmpBox);
 		else {
 			// build initial group box
 			if (gIsFirstGroupDrawing)
-				gGroupBox = box;
+				gGroupBox = tmpBox;
 			else {
 				// expand group box
-				gGroupBox.ExtendToInclude(box.Min());
-				gGroupBox.ExtendToInclude(box.Max());
+				gGroupBox.ExtendToInclude(tmpBox.Min());
+				gGroupBox.ExtendToInclude(tmpBox.Max());
 			}
 		}
 		gIsFirstGroupDrawing = G_FALSE;
@@ -219,7 +257,7 @@ void GOpenGLBoard::DrawGLPolygon(const GOpenGLDrawStyle& Style, const GBool Clos
 		#endif
 		// geometric radial gradient and transparent entities uses depth clip, so we must pop off clip mask
 		if (useDepth)
-			DrawAndPopDepthMask(box, Style, G_TRUE);
+			DrawAndPopDepthMask(tmpBox, Style, G_TRUE);
 	}
 
 	// take care to enable stencil test if necessary
@@ -241,14 +279,14 @@ void GOpenGLBoard::DrawGLPolygon(const GOpenGLDrawStyle& Style, const GBool Clos
 		DRAW_STROKE
 		// geometric radial gradient and transparent entities uses depth clip, so we must pop off clip mask
 		if (useDepth) {
-			GPoint2 pMin(box.Min());
-			GPoint2 pMax(box.Max());
+			GPoint2 pMin(tmpBox.Min());
+			GPoint2 pMax(tmpBox.Max());
 			pMin[G_X] -= Style.StrokeThickness();
 			pMin[G_Y] -= Style.StrokeThickness();
 			pMax[G_X] += Style.StrokeThickness();
 			pMax[G_Y] += Style.StrokeThickness();
-			box.SetMinMax(pMin, pMax);
-			DrawAndPopDepthMask(box, Style, G_FALSE);
+			tmpBox.SetMinMax(pMin, pMax);
+			DrawAndPopDepthMask(tmpBox, Style, G_FALSE);
 		}
 	}
 	#undef DRAW_FILL_FLOAT
@@ -263,12 +301,11 @@ void GOpenGLBoard::DrawGLPolygons(const GDynArray<GPoint2>& Points, const GDynAr
 	G_ASSERT(PointsPerContour.size() > 0);
 	G_ASSERT(Points.size() > 0);
 
-	GBool doublePass = SetGLClipEnabled(TargetMode(), ClipOperation());
 	GDynArray< GPoint<GDouble, 2> > triangles;
 	GDynArray< GPoint<GDouble, 2> >::const_iterator itTriangles;
 	GUInt32 i, j;
 	Point2ConstIt itPts0, itPts1;
-	GAABox2 box;
+	GAABox2 tmpBox;
 
 	#define DRAW_FILL \
 		j = (GUInt32)triangles.size() / 3; \
@@ -291,8 +328,8 @@ void GOpenGLBoard::DrawGLPolygons(const GDynArray<GPoint2>& Points, const GDynAr
 			for (i = 0; i < j; ++i) { \
 				itPts1 += PointsPerContour[i]; \
 				if (PointsPerContour[i] == 2) { \
-					box.ExtendToInclude(*itPts0); \
-					box.ExtendToInclude(*(itPts0 + 1)); \
+					tmpBox.ExtendToInclude(*itPts0); \
+					tmpBox.ExtendToInclude(*(itPts0 + 1)); \
 				} \
 				DrawSolidStroke(Style.StrokeStartCapStyle(), Style.StrokeEndCapStyle(), \
 								Style.StrokeJoinStyle(), Style.StrokeMiterLimitMulThickness(), \
@@ -304,19 +341,55 @@ void GOpenGLBoard::DrawGLPolygons(const GDynArray<GPoint2>& Points, const GDynAr
 			for (i = 0; i < j; ++i) { \
 				itPts1 += PointsPerContour[i]; \
 				if (PointsPerContour[i] == 2) { \
-					box.ExtendToInclude(*itPts0); \
-					box.ExtendToInclude(*(itPts0 + 1)); \
+					tmpBox.ExtendToInclude(*itPts0); \
+					tmpBox.ExtendToInclude(*(itPts0 + 1)); \
 				} \
 				DrawDashedStroke(Style, itPts0, itPts1, ClosedStrokes[i], Style.StrokeThickness(), Style.gRoundJoinAuxCoef); \
 				itPts0 = itPts1; \
 			} \
 		} \
 
-	if (Style.FillEnabled())
+	if (Style.FillEnabled() || CachingEnabled())
 		// if not convex or have some degenerations (intersection, overlapping edges, etc) use tesselator
-		gTesselator.Tesselate(Points, PointsPerContour, triangles, box, FillRuleToBehavior(Style.FillRule()));
+		gTesselator.Tesselate(Points, PointsPerContour, triangles, tmpBox, FillRuleToBehavior(Style.FillRule()));
 	else
-		box.SetMinMax(Points);
+		tmpBox.SetMinMax(Points);
+
+	// caching management
+	GOpenGLCacheEntry cacheEntry;
+	GOpenGLCachedDrawing *cacheSlot = (GOpenGLCachedDrawing *)CacheSlot();
+
+	// cache the primitive, if needed
+	if (CachingEnabled()) {
+		// draw fill
+		cacheEntry.FillDisplayList = glGenLists(1);
+		glNewList(cacheEntry.FillDisplayList, GL_COMPILE);
+		DRAW_FILL
+		glEndList();
+		// draw stroke
+		cacheEntry.StrokeDisplayList = glGenLists(1);
+		glNewList(cacheEntry.StrokeDisplayList, GL_COMPILE);
+		DRAW_STROKE
+		glEndList();
+		// expand box to have always the stroke included
+		cacheEntry.Box = tmpBox;
+		GPoint2 pMin(cacheEntry.Box.Min());
+		GPoint2 pMax(cacheEntry.Box.Max());
+		pMin[G_X] -= Style.StrokeThickness();
+		pMin[G_Y] -= Style.StrokeThickness();
+		pMax[G_X] += Style.StrokeThickness();
+		pMax[G_Y] += Style.StrokeThickness();
+		cacheEntry.Box.SetMinMax(pMin, pMax);
+		cacheSlot->gEntries.push_back(cacheEntry);
+	}
+
+	// if we had to draw nothing, just exit
+	if (!Style.StrokeEnabled() && !Style.FillEnabled())
+		return;
+	if (CachingEnabled() && !CachingWriteOnTarget())
+		return;
+
+	GBool doublePass = SetGLClipEnabled(TargetMode(), ClipOperation());
 
 	if (TargetMode() == G_CLIP_MODE) {
 
@@ -335,26 +408,26 @@ void GOpenGLBoard::DrawGLPolygons(const GDynArray<GPoint2>& Points, const GDynAr
 		if (!InsideGroup())
 			UpdateClipMasksState();
 		// calculate bound box of the drawn clip mask
-		GPoint2 pMin(box.Min());
-		GPoint2 pMax(box.Max());
+		GPoint2 pMin(tmpBox.Min());
+		GPoint2 pMax(tmpBox.Max());
 		if (Style.StrokeEnabled()) {
 			pMin[G_X] -= Style.StrokeThickness();
 			pMin[G_Y] -= Style.StrokeThickness();
 			pMax[G_X] += Style.StrokeThickness();
 			pMax[G_Y] += Style.StrokeThickness();
-			box.SetMinMax(pMin, pMax);
+			tmpBox.SetMinMax(pMin, pMax);
 		}
 
 		if (!InsideGroup())
-			gClipMasksBoxes.push_back(box);
+			gClipMasksBoxes.push_back(tmpBox);
 		else {
 			// build initial group box
 			if (gIsFirstGroupDrawing)
-				gGroupBox = box;
+				gGroupBox = tmpBox;
 			else {
 				// expand group box
-				gGroupBox.ExtendToInclude(box.Min());
-				gGroupBox.ExtendToInclude(box.Max());
+				gGroupBox.ExtendToInclude(tmpBox.Min());
+				gGroupBox.ExtendToInclude(tmpBox.Max());
 			}
 		}
 		gIsFirstGroupDrawing = G_FALSE;
@@ -382,7 +455,7 @@ void GOpenGLBoard::DrawGLPolygons(const GDynArray<GPoint2>& Points, const GDynAr
 		DRAW_FILL
 		// geometric radial gradient and transparent entities uses depth clip, so we must pop off clip mask
 		if (useDepth)
-			DrawAndPopDepthMask(box, Style, G_TRUE);
+			DrawAndPopDepthMask(tmpBox, Style, G_TRUE);
 	}
 
 	// take care to enable stencil test if necessary
@@ -404,14 +477,14 @@ void GOpenGLBoard::DrawGLPolygons(const GDynArray<GPoint2>& Points, const GDynAr
 		DRAW_STROKE
 		// geometric radial gradient and transparent entities uses depth clip, so we must pop off clip mask
 		if (useDepth) {
-			GPoint2 pMin(box.Min());
-			GPoint2 pMax(box.Max());
+			GPoint2 pMin(tmpBox.Min());
+			GPoint2 pMax(tmpBox.Max());
 			pMin[G_X] -= Style.StrokeThickness();
 			pMin[G_Y] -= Style.StrokeThickness();
 			pMax[G_X] += Style.StrokeThickness();
 			pMax[G_Y] += Style.StrokeThickness();
-			box.SetMinMax(pMin, pMax);
-			DrawAndPopDepthMask(box, Style, G_FALSE);
+			tmpBox.SetMinMax(pMin, pMax);
+			DrawAndPopDepthMask(tmpBox, Style, G_FALSE);
 		}
 	}
 	#undef DRAW_FILL
@@ -423,9 +496,22 @@ void GOpenGLBoard::DoDrawLine(GDrawStyle& Style, const GPoint2& P0, const GPoint
 	if (Distance(P0, P1) <= G_EPSILON)
 		return;
 
+	#define DRAW_STROKE \
+		if (Style.StrokeStyle() == G_SOLID_STROKE) \
+			DrawGLCapsLine(G_TRUE, s.StrokeStartCapStyle(), G_TRUE, s.StrokeEndCapStyle(), P0, P1, s.StrokeThickness(), s.gRoundJoinAuxCoef); \
+		else { \
+			GDynArray<GPoint2> pts(2); \
+			pts[0] = P0; \
+			pts[1] = P1; \
+			DrawDashedStroke(s, pts.begin(), pts.end(), G_FALSE, s.StrokeThickness(), s.gRoundJoinAuxCoef); \
+		}
+
 	GOpenGLCacheEntry cacheEntry;
 	GOpenGLCachedDrawing *cacheSlot = (GOpenGLCachedDrawing *)CacheSlot();
 	GOpenGLDrawStyle &s = (GOpenGLDrawStyle &)Style;
+
+	// update style
+	UpdateStyle(s);
 
 	// calculate bound box
 	GAABox2 tmpBox(P0, P1);
@@ -444,36 +530,26 @@ void GOpenGLBoard::DoDrawLine(GDrawStyle& Style, const GPoint2& P0, const GPoint
 		cacheEntry.StrokeDisplayList = glGenLists(1);
 		glNewList(cacheEntry.StrokeDisplayList, GL_COMPILE);
 		// draw line segment inside cache slot
-		if (Style.StrokeStyle() == G_SOLID_STROKE)
-			DrawGLCapsLine(G_TRUE, s.StrokeStartCapStyle(), G_TRUE, s.StrokeEndCapStyle(), P0, P1, s.StrokeThickness(), s.gRoundJoinAuxCoef);
-		else {
-			GDynArray<GPoint2> pts(2);
-			pts[0] = P0;
-			pts[1] = P1;
-			DrawDashedStroke(s, pts.begin(), pts.end(), G_FALSE, s.StrokeThickness(), s.gRoundJoinAuxCoef);
-		}
+		DRAW_STROKE
 		glEndList();
 		cacheSlot->gEntries.push_back(cacheEntry);
 	}
 
-	// update style
-	UpdateStyle(s);
+	// if we had to draw nothing, just exit
+	if (!Style.StrokeEnabled())
+		return;
+	if (CachingEnabled() && !CachingWriteOnTarget())
+		return;
+
 	GBool doublePass = SetGLClipEnabled(TargetMode(), ClipOperation());
 
 	if (TargetMode() == G_CLIP_MODE) {
 
-		if (!gClipMasksSupport || !Style.StrokeEnabled() || (CachingEnabled() && !CachingWriteOnTarget()))
+		if (!gClipMasksSupport)
 			return;
 
 		// draw line segment
-		if (Style.StrokeStyle() == G_SOLID_STROKE)
-			DrawGLCapsLine(G_TRUE, s.StrokeStartCapStyle(), G_TRUE, s.StrokeEndCapStyle(), P0, P1, s.StrokeThickness(), s.gRoundJoinAuxCoef);
-		else {
-			GDynArray<GPoint2> pts(2);
-			pts[0] = P0;
-			pts[1] = P1;
-			DrawDashedStroke(s, pts.begin(), pts.end(), G_FALSE, s.StrokeThickness(), s.gRoundJoinAuxCoef);
-		}
+		DRAW_STROKE
 
 		// take care of replace operation
 		if (!InsideGroup())
@@ -499,8 +575,6 @@ void GOpenGLBoard::DoDrawLine(GDrawStyle& Style, const GPoint2& P0, const GPoint
 	// do not draw anything
 	if (InsideGroup() && GroupOpacity() <= 0 && gGroupOpacitySupport)
 		return;
-	if (!Style.StrokeEnabled() || (CachingEnabled() && !CachingWriteOnTarget()))
-		return;
 
 	// set stroke style using OpenGL
 	GBool useDepth = UseStrokeStyle(s);
@@ -509,15 +583,7 @@ void GOpenGLBoard::DoDrawLine(GDrawStyle& Style, const GPoint2& P0, const GPoint
 	if (doublePass) {
 
 		GroupFirstPass();
-
-		if (Style.StrokeStyle() == G_SOLID_STROKE)
-			DrawGLCapsLine(G_TRUE, s.StrokeStartCapStyle(), G_TRUE, s.StrokeEndCapStyle(), P0, P1, s.StrokeThickness(), s.gRoundJoinAuxCoef);
-		else {
-			GDynArray<GPoint2> pts(2);
-			pts[0] = P0;
-			pts[1] = P1;
-			DrawDashedStroke(s, pts.begin(), pts.end(), G_FALSE, s.StrokeThickness(), s.gRoundJoinAuxCoef);
-		}
+		DRAW_STROKE
 		StencilEnableTop();
 	}
 
@@ -525,18 +591,13 @@ void GOpenGLBoard::DoDrawLine(GDrawStyle& Style, const GPoint2& P0, const GPoint
 		PushDepthMask();
 
 	// draw line segment
-	if (Style.StrokeStyle() == G_SOLID_STROKE)
-		DrawGLCapsLine(G_TRUE, s.StrokeStartCapStyle(), G_TRUE, s.StrokeEndCapStyle(), P0, P1, s.StrokeThickness(), s.gRoundJoinAuxCoef);
-	else {
-		GDynArray<GPoint2> pts(2);
-		pts[0] = P0;
-		pts[1] = P1;
-		DrawDashedStroke(s, pts.begin(), pts.end(), G_FALSE, s.StrokeThickness(), s.gRoundJoinAuxCoef);
-	}
+	DRAW_STROKE
 
 	// geometric radial/conical gradient and transparent entities uses depth clip, so we must pop off clip mask
 	if (useDepth)
 		DrawAndPopDepthMask(tmpBox, s, G_FALSE);
+
+	#undef DRAW_STROKE
 }
 
 void GOpenGLBoard::DoDrawRectangle(GDrawStyle& Style, const GPoint2& MinCorner, const GPoint2& MaxCorner) {

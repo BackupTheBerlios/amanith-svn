@@ -75,7 +75,7 @@ namespace Amanith {
 	*/
 	template <typename DATA_TYPE, GUInt32 ROWS, GUInt32 COLS>
 	void RotationToMatrix(GMatrix<DATA_TYPE, ROWS, COLS>& Result,
-						  const GReal RadAngle1, const GReal RadAngle2, const GReal RadAngle3,
+						  const DATA_TYPE RadAngle1, const DATA_TYPE RadAngle2, const DATA_TYPE RadAngle3,
 						  const GEulerOrder ApplicationOrder = G_ZYX,
 						  const GBool RightOrder = G_TRUE) {
 
@@ -226,7 +226,7 @@ namespace Amanith {
 
 	//! Build a 2D rotation matrix, specifying the ccw rotation amount (in radians).
 	template <typename DATA_TYPE, GUInt32 ROWS, GUInt32 COLS>
-	void RotationToMatrix(GMatrix<DATA_TYPE, ROWS, COLS>& Result, const GReal RadAngle) {
+	void RotationToMatrix(GMatrix<DATA_TYPE, ROWS, COLS>& Result, const DATA_TYPE RadAngle) {
 
 		G_ASSERT((ROWS >= 2) && (COLS >= 2));
 		GReal c, s;
@@ -241,19 +241,51 @@ namespace Amanith {
 		Result[1][1] = c;
 	}
 
+	//! Build a 2D rotation matrix, specifying the ccw rotation amount (in radians) and a pivot point (the center of rotation).
+	template <typename DATA_TYPE, GUInt32 ROWS, GUInt32 COLS>
+	void RotationToMatrix(GMatrix<DATA_TYPE, ROWS, COLS>& Result, const DATA_TYPE RadAngle, const GVectBase<DATA_TYPE, 2>& Pivot) {
+
+		G_ASSERT((ROWS >= 2) && (COLS >= 2));
+
+		GMatrix<DATA_TYPE, ROWS, COLS> preTrans;
+		GMatrix<DATA_TYPE, ROWS, COLS> postTrans;
+		GMatrix<DATA_TYPE, ROWS, COLS> rot;
+
+		RotationToMatrix(rot, RadAngle);
+		TranslationToMatrix(preTrans, -Pivot);
+		TranslationToMatrix(postTrans, Pivot);
+		Result = (postTrans * (rot * preTrans));
+	}
+
 	/*!
 		Build a scale matrix, specifying scaling factors.
 
 		\note Each scale factor is inserted respectively into a diagonal matrix position.
 	*/
 	template <typename DATA_TYPE, GUInt32 ROWS, GUInt32 COLS, GUInt32 SIZE>
-	void ScaleToMatrix(GMatrix<DATA_TYPE, ROWS, COLS>& Result,	const GVectBase<DATA_TYPE, SIZE>& ScaleFactors) {
+	void ScaleToMatrix(GMatrix<DATA_TYPE, ROWS, COLS>& Result, const GVectBase<DATA_TYPE, SIZE>& ScaleFactors) {
 
 		GUInt32 i, j = GMath::Min(ROWS, COLS, SIZE);
 
 		Identity(Result);
 		for (i = 0; i < j; ++i)
 			Result[i][i] = ScaleFactors[i];
+	}
+
+	/*!
+		Build a scale matrix, specifying scaling factors and a pivot point (the center of scale).
+	*/
+	template <typename DATA_TYPE, GUInt32 ROWS, GUInt32 COLS, GUInt32 SIZE>
+	void ScaleToMatrix(GMatrix<DATA_TYPE, ROWS, COLS>& Result, const GVectBase<DATA_TYPE, SIZE>& ScaleFactors, const GVectBase<DATA_TYPE, SIZE>& Pivot) {
+
+		GMatrix<DATA_TYPE, ROWS, COLS> preTrans;
+		GMatrix<DATA_TYPE, ROWS, COLS> postTrans;
+		GMatrix<DATA_TYPE, ROWS, COLS> scl;
+
+		ScaleToMatrix(scl, ScaleFactors);
+		TranslationToMatrix(preTrans, -Pivot);
+		TranslationToMatrix(postTrans, Pivot);
+		Result = (postTrans * (scl * preTrans));
 	}
 
 	//! Build a uniform scale matrix.
@@ -265,6 +297,21 @@ namespace Amanith {
 		Identity(Result);
 		for (i = 0; i < j; ++i)
 			Result[i][i] = ScaleFactor;
+	}
+
+
+	//! Build a uniform scale matrix, specifying a pivot (the center of scaling).
+	template <typename DATA_TYPE, GUInt32 ROWS, GUInt32 COLS, GUInt32 SIZE>
+	void ScaleToMatrix(GMatrix<DATA_TYPE, ROWS, COLS>& Result, const DATA_TYPE ScaleFactor, const GVectBase<DATA_TYPE, SIZE>& Pivot) {
+
+		GMatrix<DATA_TYPE, ROWS, COLS> preTrans;
+		GMatrix<DATA_TYPE, ROWS, COLS> postTrans;
+		GMatrix<DATA_TYPE, ROWS, COLS> scl;
+
+		ScaleToMatrix(scl, ScaleFactor);
+		TranslationToMatrix(preTrans, -Pivot);
+		TranslationToMatrix(postTrans, Pivot);
+		Result = (postTrans * (scl * preTrans));
 	}
 
 	/*!

@@ -507,6 +507,29 @@ GString StrUtils::Replace(const GString& Str, const GChar8 Before, const GChar8 
 	return s;
 }
 
+GBool StrUtils::Find(const GString& Source, const GString& StrToFind, const GBool CaseInsensitive,
+					 const GUInt32 StartOffset, GUInt32 *PosFound) {
+
+	GInt32 pos;
+
+	if (CaseInsensitive) {
+
+		GString src = StrUtils::Lower(Source);
+		GString toFind = StrUtils::Lower(StrToFind);
+		pos = (GInt32)src.find(toFind, StartOffset);
+	}
+	else
+		pos = (GInt32)Source.find(StrToFind, StartOffset);
+
+	if (pos < 0)
+		return G_FALSE;
+	else {
+		if (PosFound)
+			*PosFound = (GUInt32)pos;
+		return G_TRUE;
+	}
+}
+
 /*!
 	Every slash present in the path, will be set according to the current OS type ('\' for Windows, '/' for *nix). Example:
 \code

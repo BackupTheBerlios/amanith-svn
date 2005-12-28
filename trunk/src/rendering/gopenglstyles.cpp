@@ -307,6 +307,7 @@ void GOpenGLGradientDesc::UpdateOpenGLTextureLinRad(const GRenderingQuality Qual
 		glGenTextures(1, &gGradientTexture);
 		G_ASSERT(gGradientTexture > 0);
 	}
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 	glBindTexture(GL_TEXTURE_1D, gGradientTexture);
 	SetGLGradientQuality(Quality);
 	glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA8, (GLsizei)size, 0, GL_RGBA, GL_UNSIGNED_BYTE, (GLvoid *)pixels);
@@ -361,6 +362,7 @@ void GOpenGLGradientDesc::UpdateOpenGLTextureCon(const GRenderingQuality Quality
 		G_ASSERT(gGradientTexture > 0);
 	}
 
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 	glBindTexture(GL_TEXTURE_2D, gGradientTexture);
 	// set texture min/mag filters
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -489,6 +491,8 @@ void GOpenGLPatternDesc::SetImage(const GPixelMap *Image, const GImageQuality Qu
 
 	if (!Image)
 		return;
+
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
 	GInt32 w = (GInt32)GOpenglExt::PowerOfTwo((GUInt32)Image->Width());
 	GInt32 h = (GInt32)GOpenglExt::PowerOfTwo((GUInt32)Image->Height());

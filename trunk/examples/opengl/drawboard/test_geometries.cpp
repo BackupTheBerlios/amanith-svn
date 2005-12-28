@@ -31,6 +31,7 @@ void QGLWidgetTest::TestGeometries(const GUInt32 TestIndex) {
 	
 	GDynArray<GPoint2> pts;
 
+	gDrawBoard->SetCachingEnabled(G_FALSE);
 	gDrawBoard->SetTargetMode(G_COLOR_MODE);
 	gDrawBoard->SetStrokeStyle(G_SOLID_STROKE);
 	gDrawBoard->SetStrokeJoinStyle(G_MITER_JOIN);

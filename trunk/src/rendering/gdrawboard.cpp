@@ -553,7 +553,6 @@ void GDrawBoard::DrawLine(const GPoint2& P0, const GPoint2& P1) {
 
 	GDrawStyle *s = gCurrentContext.gDrawStyle;
 
-	//if (s->StrokeEnabled() || CachingEnabled())
 	DoDrawLine(*s, P0, P1);
 }
 
@@ -561,16 +560,14 @@ void GDrawBoard::DrawBezier(const GPoint2& P0, const GPoint2& P1, const GPoint2&
 
 	GDrawStyle *s = gCurrentContext.gDrawStyle;
 
-	if (s->StrokeEnabled() || s->FillEnabled())
-		DoDrawBezier(*s, P0, P1, P2);
+	DoDrawBezier(*s, P0, P1, P2);
 }
 
 void GDrawBoard::DrawBezier(const GPoint2& P0, const GPoint2& P1, const GPoint2& P2, const GPoint2& P3) {
 
 	GDrawStyle *s = gCurrentContext.gDrawStyle;
 
-	if (s->StrokeEnabled() || s->FillEnabled())
-		DoDrawBezier(*s, P0, P1, P2, P3);
+	DoDrawBezier(*s, P0, P1, P2, P3);
 }
 
 void GDrawBoard::DrawEllipseArc(const GPoint2& Center, const GReal XSemiAxisLength, const GReal YSemiAxisLength,
@@ -578,7 +575,7 @@ void GDrawBoard::DrawEllipseArc(const GPoint2& Center, const GReal XSemiAxisLeng
 
 	GDrawStyle *s = gCurrentContext.gDrawStyle;
 
-	if ((s->StrokeEnabled() || s->FillEnabled()) && XSemiAxisLength > 0 && YSemiAxisLength > 0)
+	if (XSemiAxisLength > 0 && YSemiAxisLength > 0)
 		DoDrawEllipseArc(*s, Center, XSemiAxisLength, YSemiAxisLength, OffsetRotation, StartAngle, EndAngle, CCW);
 }
 
@@ -587,7 +584,7 @@ void GDrawBoard::DrawEllipseArc(const GPoint2& P0, const GPoint2& P1, const GRea
 
 	GDrawStyle *s = gCurrentContext.gDrawStyle;
 
-	if ((s->StrokeEnabled() || s->FillEnabled()) && XSemiAxisLength > 0 && YSemiAxisLength > 0)
+	if (XSemiAxisLength > 0 && YSemiAxisLength > 0)
 		DoDrawEllipseArc(*s, P0, P1, XSemiAxisLength, YSemiAxisLength, OffsetRotation, LargeArc, CCW);
 }
 
@@ -595,8 +592,7 @@ void GDrawBoard::DrawPolygon(const GDynArray<GPoint2>& Points, const GBool Close
 
 	GDrawStyle *s = gCurrentContext.gDrawStyle;
 
-	if (s->StrokeEnabled() || s->FillEnabled())
-		DoDrawPolygon(*s, Points, Closed);
+	DoDrawPolygon(*s, Points, Closed);
 }
 
 void GDrawBoard::DrawRectangle(const GPoint2& P0, const GPoint2& P1) {
@@ -604,8 +600,7 @@ void GDrawBoard::DrawRectangle(const GPoint2& P0, const GPoint2& P1) {
 	GAABox2 box(P0, P1);
 	GDrawStyle *s = gCurrentContext.gDrawStyle;
 
-	if (s->StrokeEnabled() || s->FillEnabled())
-		DoDrawRectangle(*s, box.Min(), box.Max());
+	DoDrawRectangle(*s, box.Min(), box.Max());
 }
 
 void GDrawBoard::DrawRoundRectangle(const GPoint2& P0, const GPoint2& P1, const GReal ArcWidth, const GReal ArcHeight) {
@@ -613,7 +608,7 @@ void GDrawBoard::DrawRoundRectangle(const GPoint2& P0, const GPoint2& P1, const 
 	GDrawStyle *s = gCurrentContext.gDrawStyle;
 	GAABox2 box(P0, P1);
 
-	if ((s->StrokeEnabled() || s->FillEnabled()) && ArcWidth > 0 && ArcHeight > 0) {
+	if (ArcWidth > 0 && ArcHeight > 0) {
 		// arc dimensions cannot be larger than box half-dimensions
 		GReal aw = ArcWidth;
 		GReal ah = ArcHeight;
@@ -627,13 +622,15 @@ void GDrawBoard::DrawRoundRectangle(const GPoint2& P0, const GPoint2& P1, const 
 
 		DoDrawRoundRectangle(*s, box.Min(), box.Max(), aw, ah);
 	}
+	else
+		DoDrawRectangle(*s, box.Min(), box.Max());
 }
 
 void GDrawBoard::DrawEllipse(const GPoint2& Center, const GReal XSemiAxisLength, const GReal YSemiAxisLength) {
 
 	GDrawStyle *s = gCurrentContext.gDrawStyle;
 
-	if ((s->StrokeEnabled() || s->FillEnabled()) && XSemiAxisLength > 0 && YSemiAxisLength > 0)
+	if (XSemiAxisLength > 0 && YSemiAxisLength > 0)
 		DoDrawEllipse(*s, Center, XSemiAxisLength, YSemiAxisLength);
 }
 
@@ -641,7 +638,7 @@ void GDrawBoard::DrawCircle(const GPoint2& Center, const GReal Radius) {
 
 	GDrawStyle *s = gCurrentContext.gDrawStyle;
 
-	if ((s->StrokeEnabled() || s->FillEnabled()) && Radius > 0)
+	if (Radius > 0)
 		DoDrawCircle(*s, Center, Radius);
 }
 
@@ -649,7 +646,7 @@ void GDrawBoard::DrawPath(const GCurve2D& Curve) {
 
 	GDrawStyle *s = gCurrentContext.gDrawStyle;
 
-	if ((s->StrokeEnabled() || s->FillEnabled()) && Curve.PointsCount() > 1)
+	if (Curve.PointsCount() > 1)
 		DoDrawPath(*s, Curve);
 }
 
@@ -657,7 +654,7 @@ void GDrawBoard::DrawPaths(const GDynArray<GCurve2D *>& Curves) {
 
 	GDrawStyle *s = gCurrentContext.gDrawStyle;
 
-	if ((s->StrokeEnabled() || s->FillEnabled()) && Curves.size() > 0)
+	if (Curves.size() > 0)
 		DoDrawPaths(*s, Curves);
 }
 
@@ -796,7 +793,7 @@ void GDrawBoard::DrawCacheEntries(const GUInt32 FirstEntryIndex, const GUInt32 L
 
 	GDrawStyle *s = gCurrentContext.gDrawStyle;
 
-	if ((s->StrokeEnabled() || s->FillEnabled()) && CacheSlot()->CacheEntriesCount() > 0) {
+	if (CacheSlot()->CacheEntriesCount() > 0) {
 		// pass indexes in the right order (ascending)
 		if (j0 <= j1)
 			DoDrawCacheEntries(*s, j0, j1);
