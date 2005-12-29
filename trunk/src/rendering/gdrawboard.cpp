@@ -61,10 +61,6 @@ GDrawBoard::GDrawBoard() {
 	gInsideGroup = G_FALSE;
 	gViewport.Set(0, 0, 1, 1);
 	gProjection.Set(0, 1, 0, 1);
-	// cache writing enabled/disabled flag
-	gCachingEnabled = G_FALSE;
-	// write on target buffer (during caching) enabled/disabled flag
-	gCachingWriteOnTarget = G_TRUE;
 }
 
 GDrawBoard::~GDrawBoard() {
@@ -549,61 +545,69 @@ void GDrawBoard::SetFillEnabled(const GBool Enabled) {
 //                           PRIMITIVES & COMMANDS
 //---------------------------------------------------------------------------
 // Low level drawing functions
-void GDrawBoard::DrawLine(const GPoint2& P0, const GPoint2& P1) {
+GInt32 GDrawBoard::DrawLine(const GPoint2& P0, const GPoint2& P1) {
 
 	GDrawStyle *s = gCurrentContext.gDrawStyle;
 
-	DoDrawLine(*s, P0, P1);
+	return DoDrawLine(*s, P0, P1);
 }
 
-void GDrawBoard::DrawBezier(const GPoint2& P0, const GPoint2& P1, const GPoint2& P2) {
+GInt32 GDrawBoard::DrawBezier(const GPoint2& P0, const GPoint2& P1, const GPoint2& P2) {
 
 	GDrawStyle *s = gCurrentContext.gDrawStyle;
 
-	DoDrawBezier(*s, P0, P1, P2);
+	return DoDrawBezier(*s, P0, P1, P2);
 }
 
-void GDrawBoard::DrawBezier(const GPoint2& P0, const GPoint2& P1, const GPoint2& P2, const GPoint2& P3) {
+GInt32 GDrawBoard::DrawBezier(const GPoint2& P0, const GPoint2& P1, const GPoint2& P2, const GPoint2& P3) {
 
 	GDrawStyle *s = gCurrentContext.gDrawStyle;
 
-	DoDrawBezier(*s, P0, P1, P2, P3);
+	return DoDrawBezier(*s, P0, P1, P2, P3);
 }
 
-void GDrawBoard::DrawEllipseArc(const GPoint2& Center, const GReal XSemiAxisLength, const GReal YSemiAxisLength,
-								const GReal OffsetRotation, const GReal StartAngle, const GReal EndAngle, const GBool CCW) {
-
-	GDrawStyle *s = gCurrentContext.gDrawStyle;
-
-	if (XSemiAxisLength > 0 && YSemiAxisLength > 0)
-		DoDrawEllipseArc(*s, Center, XSemiAxisLength, YSemiAxisLength, OffsetRotation, StartAngle, EndAngle, CCW);
-}
-
-void GDrawBoard::DrawEllipseArc(const GPoint2& P0, const GPoint2& P1, const GReal XSemiAxisLength, const GReal YSemiAxisLength,
-								const GReal OffsetRotation, const GBool LargeArc, const GBool CCW) {
+GInt32 GDrawBoard::DrawEllipseArc(const GPoint2& Center, const GReal XSemiAxisLength, const GReal YSemiAxisLength,
+								  const GReal OffsetRotation, const GReal StartAngle, const GReal EndAngle, const GBool CCW) {
 
 	GDrawStyle *s = gCurrentContext.gDrawStyle;
 
 	if (XSemiAxisLength > 0 && YSemiAxisLength > 0)
-		DoDrawEllipseArc(*s, P0, P1, XSemiAxisLength, YSemiAxisLength, OffsetRotation, LargeArc, CCW);
+		return DoDrawEllipseArc(*s, Center, XSemiAxisLength, YSemiAxisLength, OffsetRotation, StartAngle, EndAngle, CCW);
+	else {
+		G_DEBUG("DrawEllipseArc, negative semi-axes");
+		return G_INVALID_PARAMETER;
+	}
 }
 
-void GDrawBoard::DrawPolygon(const GDynArray<GPoint2>& Points, const GBool Closed) {
+GInt32 GDrawBoard::DrawEllipseArc(const GPoint2& P0, const GPoint2& P1, const GReal XSemiAxisLength, const GReal YSemiAxisLength,
+								  const GReal OffsetRotation, const GBool LargeArc, const GBool CCW) {
 
 	GDrawStyle *s = gCurrentContext.gDrawStyle;
 
-	DoDrawPolygon(*s, Points, Closed);
+	if (XSemiAxisLength > 0 && YSemiAxisLength > 0)
+		return DoDrawEllipseArc(*s, P0, P1, XSemiAxisLength, YSemiAxisLength, OffsetRotation, LargeArc, CCW);
+	else {
+		G_DEBUG("DrawEllipseArc, negative semi-axes");
+		return G_INVALID_PARAMETER;
+	}
 }
 
-void GDrawBoard::DrawRectangle(const GPoint2& P0, const GPoint2& P1) {
+GInt32 GDrawBoard::DrawPolygon(const GDynArray<GPoint2>& Points, const GBool Closed) {
+
+	GDrawStyle *s = gCurrentContext.gDrawStyle;
+
+	return DoDrawPolygon(*s, Points, Closed);
+}
+
+GInt32 GDrawBoard::DrawRectangle(const GPoint2& P0, const GPoint2& P1) {
 
 	GAABox2 box(P0, P1);
 	GDrawStyle *s = gCurrentContext.gDrawStyle;
 
-	DoDrawRectangle(*s, box.Min(), box.Max());
+	return DoDrawRectangle(*s, box.Min(), box.Max());
 }
 
-void GDrawBoard::DrawRoundRectangle(const GPoint2& P0, const GPoint2& P1, const GReal ArcWidth, const GReal ArcHeight) {
+GInt32 GDrawBoard::DrawRoundRectangle(const GPoint2& P0, const GPoint2& P1, const GReal ArcWidth, const GReal ArcHeight) {
 
 	GDrawStyle *s = gCurrentContext.gDrawStyle;
 	GAABox2 box(P0, P1);
@@ -620,48 +624,68 @@ void GDrawBoard::DrawRoundRectangle(const GPoint2& P0, const GPoint2& P1, const 
 		if (ah >= halfH)
 			ah = halfH * (GReal)0.999;
 
-		DoDrawRoundRectangle(*s, box.Min(), box.Max(), aw, ah);
+		return DoDrawRoundRectangle(*s, box.Min(), box.Max(), aw, ah);
 	}
-	else
-		DoDrawRectangle(*s, box.Min(), box.Max());
+	else {
+		G_DEBUG("DrawRoundRectangle, negative arc-radii, a simple rectangle will be drawn");
+		return DoDrawRectangle(*s, box.Min(), box.Max());
+	}
 }
 
-void GDrawBoard::DrawEllipse(const GPoint2& Center, const GReal XSemiAxisLength, const GReal YSemiAxisLength) {
+GInt32 GDrawBoard::DrawEllipse(const GPoint2& Center, const GReal XSemiAxisLength, const GReal YSemiAxisLength) {
 
 	GDrawStyle *s = gCurrentContext.gDrawStyle;
 
 	if (XSemiAxisLength > 0 && YSemiAxisLength > 0)
-		DoDrawEllipse(*s, Center, XSemiAxisLength, YSemiAxisLength);
+		return DoDrawEllipse(*s, Center, XSemiAxisLength, YSemiAxisLength);
+	else {
+		G_DEBUG("DrawEllipse, negative semi-axes");
+		return G_INVALID_PARAMETER;
+	}
 }
 
-void GDrawBoard::DrawCircle(const GPoint2& Center, const GReal Radius) {
+GInt32 GDrawBoard::DrawCircle(const GPoint2& Center, const GReal Radius) {
 
 	GDrawStyle *s = gCurrentContext.gDrawStyle;
 
 	if (Radius > 0)
-		DoDrawCircle(*s, Center, Radius);
+		return DoDrawCircle(*s, Center, Radius);
+	else {
+		G_DEBUG("DrawCircle, negative radius");
+		return G_INVALID_PARAMETER;
+	}
 }
 
-void GDrawBoard::DrawPath(const GCurve2D& Curve) {
+GInt32 GDrawBoard::DrawPath(const GCurve2D& Curve) {
 
 	GDrawStyle *s = gCurrentContext.gDrawStyle;
 
 	if (Curve.PointsCount() > 1)
-		DoDrawPath(*s, Curve);
+		return DoDrawPath(*s, Curve);
+	else {
+		G_DEBUG("DrawPath, curve has no points");
+		return G_INVALID_PARAMETER;
+	}
 }
 
-void GDrawBoard::DrawPaths(const GDynArray<GCurve2D *>& Curves) {
+GInt32 GDrawBoard::DrawPaths(const GDynArray<GCurve2D *>& Curves) {
 
 	GDrawStyle *s = gCurrentContext.gDrawStyle;
 
 	if (Curves.size() > 0)
-		DoDrawPaths(*s, Curves);
+		return DoDrawPaths(*s, Curves);
+	else {
+		G_DEBUG("DrawPaths, no curves specified (empty array)");
+		return G_INVALID_PARAMETER;
+	}
 }
 
-void GDrawBoard::DrawPaths(const GString& SVGPathDescription, const GAnglesMeasureUnit AnglesMeasureUnits) {
+GInt32 GDrawBoard::DrawPaths(const GString& SVGPathDescription, const GAnglesMeasureUnit AnglesMeasureUnits) {
 
-	if (SVGPathDescription.length() < 2)
-		return;
+	if (SVGPathDescription.length() < 2) {
+		G_DEBUG("DrawPaths, empty SVG string");
+		return G_INVALID_PARAMETER;
+	}
 
 	GReal arg[6];
 	GBool largeArc, sweep;
@@ -771,19 +795,21 @@ void GDrawBoard::DrawPaths(const GString& SVGPathDescription, const GAnglesMeasu
 		}
 	}
 
-	EndPaths();
+	return EndPaths();
 }
 
-void GDrawBoard::DrawCacheEntries(const GUInt32 FirstEntryIndex, const GUInt32 LastEntryIndex) {
+void GDrawBoard::DrawCacheSlots(const GUInt32 FirstSlotIndex, const GUInt32 LastSlotIndex) {
 
-	if (!CacheSlot())
+	if (!CacheBank()) {
+		G_DEBUG("DrawCacheSlots, cache bank NULL (not set)");
 		return;
+	}
 
-	GUInt32 i = CacheSlot()->CacheEntriesCount();
+	GUInt32 i = CacheBank()->SlotsCount();
 	if (i <= 0)
 		return;
 
-	GUInt32 j0 = FirstEntryIndex, j1 = LastEntryIndex;
+	GUInt32 j0 = FirstSlotIndex, j1 = LastSlotIndex;
 
 	// clamp indexes
 	if (j0 >= i)
@@ -793,12 +819,12 @@ void GDrawBoard::DrawCacheEntries(const GUInt32 FirstEntryIndex, const GUInt32 L
 
 	GDrawStyle *s = gCurrentContext.gDrawStyle;
 
-	if (CacheSlot()->CacheEntriesCount() > 0) {
+	if (CacheBank()->SlotsCount() > 0) {
 		// pass indexes in the right order (ascending)
 		if (j0 <= j1)
-			DoDrawCacheEntries(*s, j0, j1);
+			DoDrawCacheSlots(*s, j0, j1);
 		else
-			DoDrawCacheEntries(*s, j1, j0);
+			DoDrawCacheSlots(*s, j1, j0);
 	}
 }
 

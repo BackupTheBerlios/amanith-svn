@@ -38,7 +38,6 @@ void QGLWidgetTest::TestRadialGradientOut(const GUInt32 TestIndex, const GReal R
 	ScaleToMatrix(scl, GVector2(ScaleX, ScaleY));
 	ofsTransf = (postTrans * (rot * (scl * preTrans)));
 
-	gDrawBoard->SetCachingEnabled(G_FALSE);
 	gDrawBoard->SetTargetMode(G_COLOR_MODE);
 	gDrawBoard->SetStrokePaintType(G_COLOR_PAINT_TYPE);
 	gDrawBoard->SetStrokeStyle(G_SOLID_STROKE);

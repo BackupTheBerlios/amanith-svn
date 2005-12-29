@@ -285,8 +285,7 @@ GPoint2 GAnimTRSNode2D::Position(const GTimeValue TimePos, const GSpaceSystem Sp
 		ValidInterval &= tmpValid;
 		return retValue;
 	}
-	else
-		return GPoint2(xValue.RealValue(), yValue.RealValue());
+	return GPoint2(xValue.RealValue(), yValue.RealValue());
 }
 
 GReal GAnimTRSNode2D::Rotation(const GTimeValue TimePos, const GSpaceSystem Space, GTimeInterval& ValidInterval) const {
@@ -313,8 +312,7 @@ GReal GAnimTRSNode2D::Rotation(const GTimeValue TimePos, const GSpaceSystem Spac
 		ValidInterval &= tmpValid;
 		return retValue;
 	}
-	else
-		return tmpValue.RealValue();
+	return tmpValue.RealValue();
 }
 
 GVectBase<GReal, 2> GAnimTRSNode2D::Scale(const GTimeValue TimePos, const GSpaceSystem Space, GTimeInterval& ValidInterval) const {
@@ -347,8 +345,7 @@ GVectBase<GReal, 2> GAnimTRSNode2D::Scale(const GTimeValue TimePos, const GSpace
 		ValidInterval &= tmpValid;
 		return retValue;
 	}
-	else
-		return GVectBase<GReal, 2>(xValue.RealValue(), yValue.RealValue());
+	return GVectBase<GReal, 2>(xValue.RealValue(), yValue.RealValue());
 }
 
 // build pivot TRS transformation matrix
@@ -449,8 +446,7 @@ GMatrix33 GAnimTRSNode2D::Matrix(const GTimeValue TimePos, const GSpaceSystem Sp
 		ValidInterval &= tmpValid;
 		return (fatherMatrix * localMatrix);
 	}
-	else
-		return localMatrix;
+	return localMatrix;
 }
 
 GMatrix33 GAnimTRSNode2D::InverseMatrix(const GTimeValue TimePos, const GSpaceSystem Space, GTimeInterval& ValidInterval) const {
@@ -520,8 +516,7 @@ GMatrix33 GAnimTRSNode2D::InverseMatrix(const GTimeValue TimePos, const GSpaceSy
 		ValidInterval &= tmpValid;
 		return (invLocalMatrix * invFatherMatrix);
 	}
-	else
-		return invLocalMatrix;
+	return invLocalMatrix;
 }
 
 GError GAnimTRSNode2D::SetPosition(const GTimeValue TimePos, const GVectBase<GReal, 2>& RelPosition) {

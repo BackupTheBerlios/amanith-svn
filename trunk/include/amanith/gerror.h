@@ -69,11 +69,11 @@ namespace Amanith {
 	#define G_MEMORY_ERROR				-111
 	//! Class cannot do operation because a missing kernel owner
 	#define G_MISSING_KERNEL			-112
-	//! missed feature
+	//! Missed feature
 	#define G_MISSED_FEATURE			-113
-	//! entry already exists
+	//! Entry already exists
 	#define G_ENTRY_ALREADY_EXISTS		-114
-	//! invalid operation
+	//! Invalid operation
 	#define G_INVALID_OPERATION			-115
 
 	// *********************************************************************
@@ -90,6 +90,13 @@ namespace Amanith {
 	//! Plugin has created some instances, so it can't be unload
 	#define G_PLUGIN_ISTANCED			-205
 
+	// *********************************************************************
+	//                        Drawboard error codes
+	// *********************************************************************
+	//! Invalid cache bank.
+	#define G_DRAWBOARD_INVALID_CACHEBANK	-301
+	//! Cache not written
+	#define G_DRAWBOARD_CACHE_NOT_WRITTEN	-302
 
 	// *********************************************************************
 	//                           SMTP error codes

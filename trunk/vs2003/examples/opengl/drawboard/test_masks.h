@@ -27,7 +27,6 @@ void TestMasks(const GUInt32 TestIndex) {
 	GUInt32 idx = TestIndex % 2;
 	GMatrix33 m;
 
-	gDrawBoard->SetCachingEnabled(G_FALSE);
 	gDrawBoard->SetTargetMode(G_COLOR_MODE);
 	gDrawBoard->SetStrokeStyle(G_SOLID_STROKE);
 	gDrawBoard->SetStrokeJoinStyle(G_MITER_JOIN);

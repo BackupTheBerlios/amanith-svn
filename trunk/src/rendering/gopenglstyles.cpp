@@ -946,7 +946,8 @@ GBool GOpenGLBoard::UseStyle(const GPaintType PaintType, const GVector4& Color,
 
 	glDisable(GL_FRAGMENT_PROGRAM_ARB);
 
-	if (TargetMode() == G_CLIP_MODE)
+	// graphic style has sense only for color buffer
+	if (TargetMode() == G_CLIP_MODE || TargetMode() == G_CLIP_AND_CACHE_MODE || TargetMode() == G_CACHE_MODE)
 		return G_FALSE;
 
 	glMatrixMode(GL_MODELVIEW);

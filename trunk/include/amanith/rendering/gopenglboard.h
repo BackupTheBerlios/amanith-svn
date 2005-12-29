@@ -172,50 +172,52 @@ namespace Amanith {
 		}
 	};
 
-	struct GOpenGLCacheEntry {
+	// *********************************************************************
+	//                           GOpenGLCacheSlot
+	// *********************************************************************
+	struct GOpenGLCacheSlot {
 		// display list for fill
 		GLuint FillDisplayList;
 		// display list for stroke
 		GLuint StrokeDisplayList;
 		// bounding box of the primitive, ALWAYS including stroke
 		GAABox2 Box;
-
-		GOpenGLCacheEntry() {
+		// constructor
+		GOpenGLCacheSlot() {
 			FillDisplayList = 0;
 			StrokeDisplayList = 0;
 		}
 	};
 
 	// *********************************************************************
-	//                         GOpenGLCachedDrawing
+	//                           GOpenGLCacheBank
 	// *********************************************************************
 	/*!
-		\class GOpenGLCachedDrawing
-		\brief This is the OpenGL implementation of a cache slot class, intended as a set of cached shapes (that have been
-		already drawn).
+		\class GOpenGLCacheBank
+		\brief This is the OpenGL implementation of a cache bank class, intended as a set of contiguous cache slots (each slot
+		is in unique correspondence to a single drawn primitive on the current target buffer).
 		
-		A cache slot, after being filled, can be reused to draw cached shapes. The slot can be invalidated using
-		the function Invalidate(). This implementation uses OpenGL display lists.
+		A cache bank, after being filled, can be reused to draw cached shapes. The bank can be invalidated using
+		the function Invalidate(). This implementation uses OpenGL display lists, and stroke and fill parts are
+		always cached independently of StrokeEnabled() and FillEnabled() style flags.
 	*/
-	class G_EXPORT GOpenGLCachedDrawing : public GCachedDrawing {
+	class G_EXPORT GOpenGLCacheBank : public GCacheBank {
 
 		friend class GOpenGLBoard;
 
 	private:
-		//! Cache entries.
-		GDynArray< GOpenGLCacheEntry > gEntries;
-
-	protected:
-		//! Invalidate the cache, freeing associated (video) memory.
-		void Invalidate();
+		//! Cache slots.
+		GDynArray< GOpenGLCacheSlot > gSlots;
 
 	public:
-		//! Constructor, it build an empty cache slot.
-		GOpenGLCachedDrawing();
+		//! Constructor, it build an empty cache bank.
+		GOpenGLCacheBank();
 		//! Destructor, it invalidates cached shapes and frees memory.
-		~GOpenGLCachedDrawing();
-		//! Get the number of cached shapes.
-		GUInt32 CacheEntriesCount() const;
+		~GOpenGLCacheBank();
+		//! Get the number of slots (cached shapes).
+		GUInt32 SlotsCount() const;
+		//! Invalidate the cache, freeing associated (video) memory.
+		void Invalidate();
 	};
 
 	// internal structure used to grab a portion of the framebuffer
@@ -256,8 +258,8 @@ namespace Amanith {
 		GDynArray<GOpenGLGradientDesc *> gGradients;
 		//! List of all created patterns.
 		GDynArray<GOpenGLPatternDesc *> gPatterns;
-		//! List of all created cache slots.
-		GDynArray<GOpenGLCachedDrawing *> gCacheSlots;
+		//! List of all created cache banks.
+		GDynArray<GOpenGLCacheBank *> gCacheBanks;
 		//! G_TRUE if clip paths are supported by the graphics device, else G_FALSE.
 		GBool gClipMasksSupport;
 		//! G_TRUE if fragment programs are supported by the graphics device, else G_FALSE.
@@ -278,8 +280,8 @@ namespace Amanith {
 		GLuint gStencilMask;
 		//! Bitwise dual stencil mask to pass to stencil functions.
 		GLuint gStencilDualMask;
-		//! Current cache slot.
-		GOpenGLCachedDrawing *gCacheSlot;
+		//! Current cache bank.
+		GOpenGLCacheBank *gCacheBank;
 
 		GBool gFirstClipMaskReplace;
 		GList<GAABox2> gClipMasksBoxes;
@@ -348,8 +350,8 @@ namespace Amanith {
 		void DeleteGradients();
 		//! Delete all user-generated patterns.
 		void DeletePatterns();
-		//! Delete all user-generated cache slots.
-		void DeleteCacheSlots();
+		//! Delete all user-generated cache banks.
+		void DeleteCacheBanks();
 
 		// OpenGL low level drawings
 		static void SetGLColor(const GVectBase<GReal, 4>& Color);
@@ -442,6 +444,14 @@ namespace Amanith {
 		GBool UseStrokeStyle(const GDrawStyle& Style);
 		GBool UseFillStyle(const GDrawStyle& Style);
 		void UpdateDeviation(const GRenderingQuality Quality);
+		/*
+			Get if caching is enabled (G_TRUE value) or disabled (G_FALSE value).
+		*/
+		inline GBool CachingEnabled() const {
+			if (TargetMode() != G_COLOR_MODE && TargetMode() != G_CLIP_MODE)
+				return G_TRUE;
+			return G_FALSE;
+		}
 
 		/*!
 			Do the effective set of rendering quality settings.
@@ -544,11 +554,10 @@ namespace Amanith {
 
 
 		// draw primitives
-		void DrawGLPolygon(const GOpenGLDrawStyle& Style, const GBool ClosedFill, const GBool ClosedStroke,
+		GInt32 DrawGLPolygon(const GOpenGLDrawStyle& Style, const GBool ClosedFill, const GBool ClosedStroke,
 							const GJoinStyle FlattenJoinStyle, const GDynArray<GPoint2>& Points, const GBool Convex);
-
-		void DrawGLPolygons(const GDynArray<GPoint2>& Points, const GDynArray<GInt32>& PointsPerContour,
-							const GDynArray<GBool>& ClosedStrokes, const GOpenGLDrawStyle& Style);
+		GInt32 DrawGLPolygons(const GDynArray<GPoint2>& Points, const GDynArray<GInt32>& PointsPerContour,
+							  const GDynArray<GBool>& ClosedStrokes, const GOpenGLDrawStyle& Style);
 
 		/*!
 			Do the effective drawing of a rectangle.
@@ -559,8 +568,11 @@ namespace Amanith {
 			\param Style the drawstyle to use.
 			\param MinCorner a corner of the rectangle.
 			\param MaxCorner the opposite (to MinCorner) corner of the rectangle.
+			\return if caching is enabled (G_CACHE_MODE, G_CLIP_AND_CACHE_MODE and G_COLOR_AND_CACHE_MODE target modes)
+			and a valid cache bank is currently set, it returns the slot index (where the primitive has been inserted)
+			in the active cache bank, else an error code.
 		*/
-		void DoDrawRectangle(GDrawStyle& Style, const GPoint2& MinCorner, const GPoint2& MaxCorner);
+		GInt32 DoDrawRectangle(GDrawStyle& Style, const GPoint2& MinCorner, const GPoint2& MaxCorner);
 		/*!
 			Do the effective drawing of a round rectangle.
 
@@ -574,9 +586,12 @@ namespace Amanith {
 			It's ensured to be positive.
 			\param ArcHeight the y-axis radius of the ellipse used to round off the corners of the rectangle.
 			It's ensured to be positive.
+			\return if caching is enabled (G_CACHE_MODE, G_CLIP_AND_CACHE_MODE and G_COLOR_AND_CACHE_MODE target modes)
+			and a valid cache bank is currently set, it returns the slot index (where the primitive has been inserted)
+			in the active cache bank, else an error code.
 		*/
-		void DoDrawRoundRectangle(GDrawStyle& Style, const GPoint2& MinCorner, const GPoint2& MaxCorner,
-								  const GReal ArcWidth, const GReal ArcHeight);
+		GInt32 DoDrawRoundRectangle(GDrawStyle& Style, const GPoint2& MinCorner, const GPoint2& MaxCorner,
+									const GReal ArcWidth, const GReal ArcHeight);
 		/*!
 			Do the effective drawing of a line.
 
@@ -585,8 +600,11 @@ namespace Amanith {
 			\param Style the drawstyle to use.
 			\param P0 the line start point.
 			\param P1 the line end point.
+			\return if caching is enabled (G_CACHE_MODE, G_CLIP_AND_CACHE_MODE and G_COLOR_AND_CACHE_MODE target modes)
+			and a valid cache bank is currently set, it returns the slot index (where the primitive has been inserted)
+			in the active cache bank, else an error code.
 		*/
-		void DoDrawLine(GDrawStyle& Style, const GPoint2& P0, const GPoint2& P1);
+		GInt32 DoDrawLine(GDrawStyle& Style, const GPoint2& P0, const GPoint2& P1);
 		/*!
 			Do the effective drawing of a quadratic Bezier curve, going form P0 to
 			P2 and having P1 as central control point.
@@ -597,8 +615,11 @@ namespace Amanith {
 			\param P0 the curve start point.
 			\param P1 the curve control point.
 			\param P2 the curve end point.
+			\return if caching is enabled (G_CACHE_MODE, G_CLIP_AND_CACHE_MODE and G_COLOR_AND_CACHE_MODE target modes)
+			and a valid cache bank is currently set, it returns the slot index (where the primitive has been inserted)
+			in the active cache bank, else an error code.
 		*/
-		void DoDrawBezier(GDrawStyle& Style, const GPoint2& P0, const GPoint2& P1, const GPoint2& P2);
+		GInt32 DoDrawBezier(GDrawStyle& Style, const GPoint2& P0, const GPoint2& P1, const GPoint2& P2);
 		/*!
 			Do the effective drawing of a cubic Bezier curve, going form P0 to P4 and
 			having P1 and P2 as control points.
@@ -610,8 +631,11 @@ namespace Amanith {
 			\param P1 the curve first control point (associated with P0).
 			\param P2 the curve second control point (associated with P3).
 			\param P3 the curve end point.
+			\return if caching is enabled (G_CACHE_MODE, G_CLIP_AND_CACHE_MODE and G_COLOR_AND_CACHE_MODE target modes)
+			and a valid cache bank is currently set, it returns the slot index (where the primitive has been inserted)
+			in the active cache bank, else an error code.
 		*/
-		void DoDrawBezier(GDrawStyle& Style, const GPoint2& P0, const GPoint2& P1, const GPoint2& P2, const GPoint2& P3);
+		GInt32 DoDrawBezier(GDrawStyle& Style, const GPoint2& P0, const GPoint2& P1, const GPoint2& P2, const GPoint2& P3);
 		/*!
 			Do the effective drawing of an ellipse arc.
 
@@ -626,10 +650,13 @@ namespace Amanith {
 			\param EndAngle an angle (in radians) that defines the end point of the arc.
 			\param CCW if G_TRUE the ellipse arc has to go from start point to end point in counter clockwise
 			direction, else G_FALSE (clockwise direction).
+			\return if caching is enabled (G_CACHE_MODE, G_CLIP_AND_CACHE_MODE and G_COLOR_AND_CACHE_MODE target modes)
+			and a valid cache bank is currently set, it returns the slot index (where the primitive has been inserted)
+			in the active cache bank, else an error code.
 		*/
-		void DoDrawEllipseArc(GDrawStyle& Style, const GPoint2& Center, const GReal XSemiAxisLength,
-							  const GReal YSemiAxisLength, const GReal OffsetRotation,
-							  const GReal StartAngle, const GReal EndAngle, const GBool CCW);
+		GInt32 DoDrawEllipseArc(GDrawStyle& Style, const GPoint2& Center, const GReal XSemiAxisLength,
+								const GReal YSemiAxisLength, const GReal OffsetRotation,
+								const GReal StartAngle, const GReal EndAngle, const GBool CCW);
 		/*!
 			Do the effective drawing of an ellipse arc.
 
@@ -645,9 +672,12 @@ namespace Amanith {
 			longest chord, else G_FALSE.
 			\param CCW if G_TRUE the ellipse arc has to go from start point to end point in counter clockwise
 			direction, else G_FALSE (clockwise direction).
+			\return if caching is enabled (G_CACHE_MODE, G_CLIP_AND_CACHE_MODE and G_COLOR_AND_CACHE_MODE target modes)
+			and a valid cache bank is currently set, it returns the slot index (where the primitive has been inserted)
+			in the active cache bank, else an error code.
 		*/
-		void DoDrawEllipseArc(GDrawStyle& Style, const GPoint2& P0, const GPoint2& P1, const GReal XSemiAxisLength, const GReal YSemiAxisLength,
-							  const GReal OffsetRotation, const GBool LargeArc, const GBool CCW);
+		GInt32 DoDrawEllipseArc(GDrawStyle& Style, const GPoint2& P0, const GPoint2& P1, const GReal XSemiAxisLength, const GReal YSemiAxisLength,
+								const GReal OffsetRotation, const GBool LargeArc, const GBool CCW);
 		/*!
 			Do the effective drawing of a whole ellipse.
 
@@ -657,8 +687,11 @@ namespace Amanith {
 			\param Center the center of the ellipse.
 			\param XSemiAxisLength the radius of the ellipse along x-axis. It's ensured to be greater than 0.
 			\param YSemiAxisLength the radius of the ellipse along y-axis. It's ensured to be greater than 0.
+			\return if caching is enabled (G_CACHE_MODE, G_CLIP_AND_CACHE_MODE and G_COLOR_AND_CACHE_MODE target modes)
+			and a valid cache bank is currently set, it returns the slot index (where the primitive has been inserted)
+			in the active cache bank, else an error code.
 		*/
-		void DoDrawEllipse(GDrawStyle& Style, const GPoint2& Center, const GReal XSemiAxisLength, const GReal YSemiAxisLength);
+		GInt32 DoDrawEllipse(GDrawStyle& Style, const GPoint2& Center, const GReal XSemiAxisLength, const GReal YSemiAxisLength);
 		/*!
 			Do the effective drawing of a circle.
 
@@ -667,8 +700,11 @@ namespace Amanith {
 			\param Style the drawstyle to use.
 			\param Center the center of the circle.
 			\param Radius the radius of the circle, it's ensured to be positive.
+			\return if caching is enabled (G_CACHE_MODE, G_CLIP_AND_CACHE_MODE and G_COLOR_AND_CACHE_MODE target modes)
+			and a valid cache bank is currently set, it returns the slot index (where the primitive has been inserted)
+			in the active cache bank, else an error code.
 		*/
-		void DoDrawCircle(GDrawStyle& Style, const GPoint2& Center, const GReal Radius);
+		GInt32 DoDrawCircle(GDrawStyle& Style, const GPoint2& Center, const GReal Radius);
 		/*!
 			Draw the effective drawing of a polygon.
 
@@ -679,8 +715,11 @@ namespace Amanith {
 			entries exist.
 			\param Closed if G_TRUE the polygon is considered closed (an imaginary edge goes from last point to
 			the first one).
+			\return if caching is enabled (G_CACHE_MODE, G_CLIP_AND_CACHE_MODE and G_COLOR_AND_CACHE_MODE target modes)
+			and a valid cache bank is currently set, it returns the slot index (where the primitive has been inserted)
+			in the active cache bank, else an error code.
 		*/
-		void DoDrawPolygon(GDrawStyle& Style, const GDynArray<GPoint2>& Points, const GBool Closed);
+		GInt32 DoDrawPolygon(GDrawStyle& Style, const GDynArray<GPoint2>& Points, const GBool Closed);
 		/*!
 			Do the effective drawing of curve/path.
 
@@ -688,8 +727,11 @@ namespace Amanith {
 
 			\param Style the drawstyle to use.
 			\param Curve the curve to draw, it consists of at least 2 points.
+			\return if caching is enabled (G_CACHE_MODE, G_CLIP_AND_CACHE_MODE and G_COLOR_AND_CACHE_MODE target modes)
+			and a valid cache bank is currently set, it returns the slot index (where the primitive has been inserted)
+			in the active cache bank, else an error code.
 		*/
-		void DoDrawPath(GDrawStyle& Style, const GCurve2D& Curve);
+		GInt32 DoDrawPath(GDrawStyle& Style, const GCurve2D& Curve);
 		/*!
 			Do the effective drawing of a set of curves and paths.
 
@@ -698,25 +740,27 @@ namespace Amanith {
 
 			\param Style the drawstyle to use.
 			\param Curves an array of curves pointers. Each pointer must be valid.
+			\return if caching is enabled (G_CACHE_MODE, G_CLIP_AND_CACHE_MODE and G_COLOR_AND_CACHE_MODE target modes)
+			and a valid cache bank is currently set, it returns the slot index (where the primitive has been inserted)
+			in the active cache bank, else an error code.
 		*/
-		void DoDrawPaths(GDrawStyle& Style, const GDynArray<GCurve2D *>& Curves);
-
+		GInt32 DoDrawPaths(GDrawStyle& Style, const GDynArray<GCurve2D *>& Curves);
 		/*!
-			Draw a single cache entry, using specified style.
+			Draw a single cache slot, using specified style.
 
 			\param Style the drawstyle to use.
-			\param CacheEntry the cache entry to draw.
+			\param CacheSlot the cache slot to draw.
 		*/
-		void DoDrawCacheEntry(const GDrawStyle& Style, const GOpenGLCacheEntry& CacheEntry);
+		void DoDrawCacheSlot(const GDrawStyle& Style, const GOpenGLCacheSlot& CacheSlot);
 		/*!
-			Draw the current cache slot entries. Here it's ensured that current cache slot is non-NULL and
-			valid and that that FirstEntryIndex <= LastEntryIndex.
+			Draw the current cache bank slots. Here it's ensured that current cache bank is non-NULL
+			and that that FirstSlotIndex <= LastSlotIndex.
 
 			\param Style the drawstyle to use.
-			\param FirstEntryIndex first cache entry (index) to draw. It's ensured to be inside the valid range.
-			\param LastEntryIndex last cache entry (index) to draw. It's ensured to be inside the valid range.
+			\param FirstSlotIndex first cache slot (index) to draw. It's ensured to be inside the valid range.
+			\param LastSlotIndex last cache slot (index) to draw. It's ensured to be inside the valid range.
 		*/
-		void DoDrawCacheEntries(GDrawStyle& Style, const GUInt32 FirstEntryIndex, const GUInt32 LastEntryIndex);
+		void DoDrawCacheSlots(GDrawStyle& Style, const GUInt32 FirstSlotIndex, const GUInt32 LastSlotIndex);
 		/*!
 			Do the effective screenshot.
 
@@ -859,20 +903,20 @@ namespace Amanith {
 									const GAABox2 *LogicalWindow = NULL,
 									const GMatrix33& Matrix = G_MATRIX_IDENTITY33);
 		/*!
-			Create a cache slot.
+			Create a cache bank.
 
-			\return the created cache slot if operation succeeds, else a NULL pointer.
+			\return the created cache bank if operation succeeds, else a NULL pointer.
 			\note the user <b>MUST NOT</b> delete the returned pointer (the drawboard will care of it).
 		*/
-		GCachedDrawing *CreateCacheSlot();
+		GCacheBank *CreateCacheBank();
 		/*!
-			Get current cache slot. NULL if a cache slot hasn't already been set.
+			Get current cache bank. NULL if a cache bank hasn't already been set.
 		*/
-		GCachedDrawing *CacheSlot() const;
+		GCacheBank *CacheBank() const;
 		/*!
-			Set current cache slot, a NULL value is valid.
+			Set current cache bank, a NULL value is valid.
 		*/
-		void SetCacheSlot(GCachedDrawing *Slot);
+		void SetCacheBank(GCacheBank *Bank);
 		/*!
 			Convert a color from a string format to its numerical representation (where each component is in
 			the range [0; 1]. Implementation supports color in these forms:\n\n
@@ -993,8 +1037,12 @@ namespace Amanith {
 		void ClosePath();
 		/*!
 			Close an SVG-like path block.
+
+			\return if caching is enabled (G_CACHE_MODE, G_CLIP_AND_CACHE_MODE and G_COLOR_AND_CACHE_MODE target modes)
+			and a valid cache bank is currently set, it returns the slot index (where the primitive has been inserted)
+			in the active cache bank, else an error code.
 		*/
-		void EndPaths();
+		GInt32 EndPaths();
 
 		#ifdef _DEBUG
 			void DumpStencilBuffer(const GChar8 *FileName);

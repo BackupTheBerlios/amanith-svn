@@ -171,18 +171,4 @@ void GOpenGLBoard::UpdateClipMasksState() {
 	}
 }
 
-/*void GOpenGLBoard::ClipReplaceOverflowFix() {
-
-	G_ASSERT(TargetMode() == G_CLIP_MODE);
-
-	if (ClipOperation() == G_REPLACE_CLIP && gTopStencilValue > gMaxTopStencilValue) {
-
-		glClearStencil((GLint)0);
-		glClear(GL_STENCIL_BUFFER_BIT);
-		gTopStencilValue = 1;
-		glStencilFunc(GL_ALWAYS, gTopStencilValue, gStencilMask);
-		glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
-	}
-}*/
-
 };	// end namespace Amanith

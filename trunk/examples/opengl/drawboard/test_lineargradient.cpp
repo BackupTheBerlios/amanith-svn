@@ -38,7 +38,6 @@ void QGLWidgetTest::TestLinearGradient(const GUInt32 TestIndex, const GReal RotA
 	ScaleToMatrix(scl, GVector2(Scale, Scale));
 	ofsTransf = (postTrans * (rot * (scl * preTrans)));
 
-	gDrawBoard->SetCachingEnabled(G_FALSE);
 	gDrawBoard->SetTargetMode(G_COLOR_MODE);
 	gDrawBoard->SetStrokePaintType(G_COLOR_PAINT_TYPE);
 	gDrawBoard->SetStrokeStyle(G_SOLID_STROKE);

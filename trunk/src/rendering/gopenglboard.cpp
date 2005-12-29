@@ -73,42 +73,6 @@ void GOpenGLBoard::DumpStencilBuffer(const GChar8 *FileName) {
 }
 #endif
 
-// *********************************************************************
-//                        GOpenGLCachedDrawing
-// *********************************************************************
-
-// invalidate the cache, freeing associated (video) memory
-void GOpenGLCachedDrawing::Invalidate() {
-
-	GOpenGLCacheEntry entry;
-	GUInt32 i, j = (GUInt32)gEntries.size();
-
-	for (i = 0; i < j; ++i) {
-		entry = gEntries[i];
-		if (entry.FillDisplayList != 0)
-			glDeleteLists(entry.FillDisplayList, 1);
-		if (entry.StrokeDisplayList != 0)
-			glDeleteLists(entry.StrokeDisplayList, 1);
-	}
-	gEntries.clear();
-}
-
-// constructor, it build an empty cache slot
-GOpenGLCachedDrawing::GOpenGLCachedDrawing() {
-}
-
-// destructor, it invalidates cached shapes and frees memory
-GOpenGLCachedDrawing::~GOpenGLCachedDrawing() {
-
-	Invalidate();
-}
-
-// get the number of cached shapes
-GUInt32 GOpenGLCachedDrawing::CacheEntriesCount() const {
-
-	return ((GUInt32)gEntries.size());
-}
-
 
 // *********************************************************************
 //                             GOpenGLBoard
@@ -541,7 +505,7 @@ void GOpenGLBoard::SetShadersEnabled(const GBool Enabled) {
 void GOpenGLBoard::SetRectTextureEnabled(const GBool Enabled) {
 
 	// we can't change it inside group (during a group drawing)
-	if (InsideGroup() && TargetMode() == G_COLOR_MODE)
+	if (InsideGroup() && (TargetMode() == G_COLOR_MODE || TargetMode() == G_COLOR_AND_CACHE_MODE))
 		return;
 
 	if (!gExtManager->IsRectTextureSupported() || (Enabled == gRectTexturesSupport))
@@ -585,8 +549,8 @@ GOpenGLBoard::GOpenGLBoard(const GUInt32 LowLeftCornerX, const GUInt32 LowLeftCo
 	// extract mirrored repeat support
 	gMirroredRepeatSupport = gExtManager->IsMirroredRepeatSupported();
 
-	// set current cache slot to NULL
-	gCacheSlot = NULL;
+	// set current cache bank to NULL
+	gCacheBank = NULL;
 
 	// ask for number of multisamples
 	if (gExtManager->MultiSamples() > 0)
@@ -681,146 +645,13 @@ GOpenGLBoard::~GOpenGLBoard() {
 
 	DeleteGradients();
 	DeletePatterns();
-	DeleteCacheSlots();
+	DeleteCacheBanks();
 
 	if (gAtan2LookupTable)
 		delete [] gAtan2LookupTable;
 	if (gExtManager)
 		delete gExtManager;
 }
-//----------------------------- CACHE
-
-void GOpenGLBoard::DoDrawCacheEntry(const GDrawStyle& Style, const GOpenGLCacheEntry& CacheEntry) {
-
-	if (CacheEntry.FillDisplayList == 0 && CacheEntry.StrokeDisplayList == 0)
-		return;
-
-	#define DRAW_STROKE \
-		G_ASSERT(CacheEntry.StrokeDisplayList != 0); \
-		glCallList(CacheEntry.StrokeDisplayList);
-
-	#define DRAW_FILL \
-		if (CacheEntry.FillDisplayList != 0) \
-			glCallList(CacheEntry.FillDisplayList);
-
-	// calculate bound box
-	GAABox2 tmpBox(CacheEntry.Box);
-
-	GBool doublePass = SetGLClipEnabled(TargetMode(), ClipOperation());
-
-	if (TargetMode() == G_CLIP_MODE) {
-
-		// draw fill
-		if (Style.FillEnabled()) {
-			DRAW_FILL
-		}
-		// draw stroke
-		if (Style.StrokeEnabled()) {
-			DRAW_STROKE
-		}
-		// take care of replace operation
-		if (!InsideGroup())
-			UpdateClipMasksState();
-
-		if (!InsideGroup())
-			gClipMasksBoxes.push_back(tmpBox);
-		else {
-			// build initial group box
-			if (gIsFirstGroupDrawing)
-				gGroupBox = tmpBox;
-			else {
-				// expand group box
-				gGroupBox.ExtendToInclude(tmpBox.Min());
-				gGroupBox.ExtendToInclude(tmpBox.Max());
-			}
-		}
-		gIsFirstGroupDrawing = G_FALSE;
-		return;
-	}
-
-	// in color mode, if we are inside a GroupBegin() / GroupEnd() constructor and group opacity is 0
-	// do not draw anything
-	if (InsideGroup() && GroupOpacity() <= 0 && gGroupOpacitySupport)
-		return;
-
-	if (Style.FillEnabled()) {
-		// set fill style using OpenGL
-		GBool useDepth = UseFillStyle(Style);
-		// take care of group opacity, first we have to write into stencil buffer
-		if (doublePass) {
-			GroupFirstPass();
-			// draw fill
-			DRAW_FILL
-			StencilEnableTop();
-		}
-		if (useDepth)
-			PushDepthMask();
-		// draw fill
-		DRAW_FILL
-		// geometric radial gradient and transparent entities uses depth clip, so we must pop off clip mask
-		if (useDepth)
-			DrawAndPopDepthMask(tmpBox, Style, G_TRUE);
-	}
-
-	// take care to enable stencil test if necessary
-	SetGLClipEnabled(TargetMode(), ClipOperation());
-
-	if (Style.StrokeEnabled()) {
-		// set stroke style using OpenGL
-		GBool useDepth = UseStrokeStyle(Style);
-		// take care of group opacity, first we have to write into stencil buffer
-		if (doublePass) {
-			GroupFirstPass();
-			// draw stroke
-			DRAW_STROKE
-			StencilEnableTop();
-		}
-		if (useDepth)
-			PushDepthMask();
-		// draw stroke
-		DRAW_STROKE
-		// geometric radial gradient and transparent entities uses depth clip, so we must pop off clip mask
-		if (useDepth)
-			DrawAndPopDepthMask(tmpBox, Style, G_FALSE);
-	}
-
-	#undef DRAW_STROKE
-	#undef DRAW_FILL
-}
-
-void GOpenGLBoard::DoDrawCacheEntries(GDrawStyle& Style, const GUInt32 FirstEntryIndex, const GUInt32 LastEntryIndex) {
-
-	if (!Style.StrokeEnabled() && !Style.FillEnabled())
-		return;
-
-	// update style
-	UpdateStyle((GOpenGLDrawStyle&)Style);
-
-	GOpenGLCachedDrawing *slot = (GOpenGLCachedDrawing *)CacheSlot();
-	G_ASSERT(slot != NULL);
-
-	for (GUInt32 i = FirstEntryIndex; i <= LastEntryIndex; ++i)
-		DoDrawCacheEntry(Style, slot->gEntries[i]);
-}
-
-GCachedDrawing *GOpenGLBoard::CreateCacheSlot() {
-
-	GOpenGLCachedDrawing *slot = new(std::nothrow) GOpenGLCachedDrawing();
-	if (slot)
-		gCacheSlots.push_back(slot);
-	return (GCachedDrawing *)slot;
-}
-
-GCachedDrawing *GOpenGLBoard::CacheSlot() const {
-
-	return (GCachedDrawing *)gCacheSlot;
-}
-
-void GOpenGLBoard::SetCacheSlot(GCachedDrawing *Slot) {
-
-	gCacheSlot = (GOpenGLCachedDrawing *)Slot;
-}
-//----------------------------- CACHE
 
 void GOpenGLBoard::DeleteGradients() {
 
@@ -851,16 +682,16 @@ void GOpenGLBoard::DeletePatterns() {
 	gPatterns.clear();
 }
 
-void GOpenGLBoard::DeleteCacheSlots() {
+void GOpenGLBoard::DeleteCacheBanks() {
 
-	GDynArray<GOpenGLCachedDrawing *>::iterator it = gCacheSlots.begin();
+	GDynArray<GOpenGLCacheBank *>::iterator it = gCacheBanks.begin();
 
-	for (; it != gCacheSlots.end(); ++it) {
-		GOpenGLCachedDrawing *slot = *it;
-		G_ASSERT(slot);
-		delete slot;
+	for (; it != gCacheBanks.end(); ++it) {
+		GOpenGLCacheBank *bank = *it;
+		G_ASSERT(bank);
+		delete bank;
 	}
-	gCacheSlots.clear();
+	gCacheBanks.clear();
 }
 
 // read only parameters
@@ -1010,10 +841,13 @@ void GOpenGLBoard::DoClear(const GReal Red, const GReal Green, const GReal Blue,
 
 GBool GOpenGLBoard::SetGLClipEnabled(const GTargetMode Mode, const GClipOperation Operation) {
 
+	if (Mode == G_CACHE_MODE)
+		return G_FALSE;
+
 	if (gClipMasksSupport) {
 
 		// write to the stencil using current clip operation
-		if (Mode == G_CLIP_MODE) {
+		if (Mode == G_CLIP_MODE || Mode == G_CLIP_AND_CACHE_MODE) {
 
 			switch (Operation) {
 				case G_REPLACE_CLIP:
@@ -1140,6 +974,16 @@ GVector4 GOpenGLBoard::ColorFromString(const GString& Color) {
 		sscanf(strNum, "%x", &intValue); \
 		output = (GReal)intValue / (GReal)255;
 
+	#define HEX1REAL_VS2005(hex, output) \
+		if (IsValidHTMLColorChar(hex)) \
+			strNum[2] = hex; \
+		else \
+			strNum[2] = '0'; \
+		strNum[3] = '0'; \
+		intValue = 0; \
+		sscanf_s(strNum, "%x", &intValue, sizeof(strNum)); \
+		output = (GReal)intValue / (GReal)255;
+
 	#define HEX2REAL(hex1, hex2, output) \
 		if (IsValidHTMLColorChar(hex1)) \
 			strNum[2] = hex1; \
@@ -1151,6 +995,19 @@ GVector4 GOpenGLBoard::ColorFromString(const GString& Color) {
 			strNum[3] = '0'; \
 		intValue = 0; \
 		sscanf(strNum, "%x", &intValue); \
+		output = (GReal)intValue / (GReal)255;
+
+	#define HEX2REAL_VS2005(hex1, hex2, output) \
+		if (IsValidHTMLColorChar(hex1)) \
+			strNum[2] = hex1; \
+		else \
+			strNum[2] = '0'; \
+		if (IsValidHTMLColorChar(hex2)) \
+			strNum[3] = hex2; \
+		else \
+			strNum[3] = '0'; \
+		intValue = 0; \
+		sscanf_s(strNum, "%x", &intValue, sizeof(strNum)); \
 		output = (GReal)intValue / (GReal)255;
 
 
@@ -1167,34 +1024,60 @@ GVector4 GOpenGLBoard::ColorFromString(const GString& Color) {
 		switch (l) {
 			// test for #RRGGBBAA
 			case 9:
-				HEX2REAL(cStr[1], cStr[2], red)
-				HEX2REAL(cStr[3], cStr[4], green)
-				HEX2REAL(cStr[5], cStr[6], blue)
-				HEX2REAL(cStr[7], cStr[8], alpha)
+				#if defined(G_OS_WIN) && _MSC_VER >= 1400
+					HEX2REAL_VS2005(cStr[1], cStr[2], red)
+					HEX2REAL_VS2005(cStr[3], cStr[4], green)
+					HEX2REAL_VS2005(cStr[5], cStr[6], blue)
+					HEX2REAL_VS2005(cStr[7], cStr[8], alpha)
+				#else
+					HEX2REAL(cStr[1], cStr[2], red)
+					HEX2REAL(cStr[3], cStr[4], green)
+					HEX2REAL(cStr[5], cStr[6], blue)
+					HEX2REAL(cStr[7], cStr[8], alpha)
+				#endif
 				return GVector4(red, green, blue, alpha);
 				break;
 
 			// test for #RRGGBB
 			case 7:
-				HEX2REAL(cStr[1], cStr[2], red)
-				HEX2REAL(cStr[3], cStr[4], green)
-				HEX2REAL(cStr[5], cStr[6], blue)
+				#if defined(G_OS_WIN) && _MSC_VER >= 1400
+					HEX2REAL_VS2005(cStr[1], cStr[2], red)
+					HEX2REAL_VS2005(cStr[3], cStr[4], green)
+					HEX2REAL_VS2005(cStr[5], cStr[6], blue)
+				#else
+					HEX2REAL(cStr[1], cStr[2], red)
+					HEX2REAL(cStr[3], cStr[4], green)
+					HEX2REAL(cStr[5], cStr[6], blue)
+				#endif
 				return GVector4(red, green, blue, 1);
 				break;
 			// test for #RGBA
 			case 5:
-				HEX1REAL(cStr[1], red)
-				HEX1REAL(cStr[2], green)
-				HEX1REAL(cStr[3], blue)
-				HEX1REAL(cStr[4], alpha)
+				#if defined(G_OS_WIN) && _MSC_VER >= 1400
+					HEX1REAL_VS2005(cStr[1], red)
+					HEX1REAL_VS2005(cStr[2], green)
+					HEX1REAL_VS2005(cStr[3], blue)
+					HEX1REAL_VS2005(cStr[4], alpha)
+				#else
+					HEX1REAL(cStr[1], red)
+					HEX1REAL(cStr[2], green)
+					HEX1REAL(cStr[3], blue)
+					HEX1REAL(cStr[4], alpha)
+				#endif
 				return GVector4(red, green, blue, alpha);
 				break;
 
 			// test for #RGB
 			case 4:
-				HEX1REAL(cStr[1], red)
-				HEX1REAL(cStr[2], green)
-				HEX1REAL(cStr[3], blue)
+				#if defined(G_OS_WIN) && _MSC_VER >= 1400
+					HEX1REAL_VS2005(cStr[1], red)
+					HEX1REAL_VS2005(cStr[2], green)
+					HEX1REAL_VS2005(cStr[3], blue)
+				#else
+					HEX1REAL(cStr[1], red)
+					HEX1REAL(cStr[2], green)
+					HEX1REAL(cStr[3], blue)
+				#endif
 				return GVector4(red, green, blue, 1);
 				break;
 
@@ -1205,7 +1088,11 @@ GVector4 GOpenGLBoard::ColorFromString(const GString& Color) {
 	// try with SVG keyword
 	else {
 		GNamedSVGcolor col;
-		std::strncpy(col.Name, (const GChar8 *)cStr, 21);
+		#if defined(G_OS_WIN) && _MSC_VER >= 1400
+			strncpy_s(col.Name, 21, (const GChar8 *)cStr, 21);
+		#else
+			std::strncpy(col.Name, (const GChar8 *)cStr, 21);
+		#endif
 		GNamedSVGcolor* foundCol = (GNamedSVGcolor *)std::bsearch(&col, SVGColors, 147, sizeof(GNamedSVGcolor), CompareSVGColor);
 		if (foundCol == NULL)
 			return GVector4(0, 0, 0, 1);
@@ -1215,6 +1102,8 @@ GVector4 GOpenGLBoard::ColorFromString(const GString& Color) {
 	}
 	#undef HEX1REAL
 	#undef HEX2REAL
+	#undef HEX1REAL_VS2005
+	#undef HEX2REAL_VS2005
 }
 
 GError GOpenGLBoard::DoScreenShot(GPixelMap& Output, const GVectBase<GUInt32, 2>& P0, const GVectBase<GUInt32, 2>& P1) const {

@@ -53,6 +53,7 @@ GGradientDesc *gRadGrad1 = NULL, *gRadGrad2 = NULL, *gRadGrad3 = NULL, *gRadGrad
 GGradientDesc *gConGrad1 = NULL, *gConGrad2 = NULL, *gConGrad3 = NULL, *gConGrad4 = NULL;
 GPatternDesc *gPattern = NULL;
 GPatternDesc *gBackGround = NULL;
+GCacheBank *gCacheBank = NULL;
 GString gDataPath;
 GString gScreenShotFileName;
 
@@ -85,6 +86,7 @@ GBool gUseShaders = G_TRUE;
 #include "test_stroking.h"
 #include "test_masks.h"
 #include "test_geometries.h"
+#include "test_cache.h"
 
 bool arbMultisampleSupported = false;
 int arbMultisampleFormat = 0;
@@ -270,6 +272,9 @@ int InitGL(GLvoid) {
 	colKeys.push_back(GKeyValue((GReal)1.00, GVector4((GReal)1.0, (GReal)1.0, (GReal)1.0, (GReal)0.0)));
 	gLinGradLogo3 = gDrawBoard->CreateLinearGradient(GPoint2(300, 460), GPoint2(417, 330), colKeys, G_LINEAR_COLOR_INTERPOLATION, G_PAD_COLOR_RAMP_SPREAD);
 
+	// create a cache bank
+	gCacheBank = gDrawBoard->CreateCacheBank();
+
 	// now lets see if some bitmap file formats are present for load/save
 	GDynArray<GImpExpFeature> features;
 	err = gKernel->ImpExpFeatures(G_PIXELMAP_CLASSID, features);
@@ -339,6 +344,9 @@ int DrawGLScene(GLvoid)	{
 			break;
 		case 9:
 			TestGeometries(gTestIndex);
+			break;
+		case 10:
+			TestCache(gTestIndex);
 			break;
 		default:
 			TestColor(gTestIndex);
@@ -631,7 +639,7 @@ int WINAPI WinMain(	HINSTANCE	hInstance,			// Instance
 			if (keys[VK_F1]) {						// Is F1 Being Pressed?
 				keys[VK_F1] = FALSE;
 				s = "F2: contextual example description\n";
-				s += "0..9: Toggle draw test\n";
+				s += "0..9, C: Toggle draw test\n";
 				s += "PageUp/PageDown: Switch draw sheet\n";
 				s += "B: Toggle background\n";
 				s += "R: Switch rendering quality (low/normal/high)\n";
@@ -849,6 +857,14 @@ int WINAPI WinMain(	HINSTANCE	hInstance,			// Instance
 				gTestIndex = 0;
 				doDraw = TRUE;
 			}
+			// C key
+			if (keys[67]) {
+				keys[67] = FALSE;
+				gTestSuite = 10;
+				gTestIndex = 0;
+				doDraw = TRUE;
+			}
+
 			// B key
 			if (keys[66]) {
 				keys[66] = FALSE;

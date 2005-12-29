@@ -63,7 +63,10 @@ void GOpenGLBoard::DoGroupBegin(const GAABox2& LogicBox) {
 	gIsFirstGroupDrawing = G_TRUE;
 
 	// if group opacity is not supported by hardware or group opacity is 1, ignore group as opaque
-	if (GroupOpacity() >= 1 || GroupOpacity() <= 0 || TargetMode() == G_CLIP_MODE || !gGroupOpacitySupport)
+	if (GroupOpacity() >= 1 || GroupOpacity() <= 0 || !gGroupOpacitySupport)
+		return;
+	// group begin affects only color buffer
+	if (TargetMode() == G_CACHE_MODE || TargetMode() == G_CLIP_MODE || TargetMode() == G_CLIP_AND_CACHE_MODE)
 		return;
 
 	if (LogicBox.Volume() <= G_EPSILON) {
@@ -103,7 +106,10 @@ void GOpenGLBoard::DoGroupBegin(const GAABox2& LogicBox) {
 
 void GOpenGLBoard::DoGroupEnd() {
 
-	if (TargetMode() == G_CLIP_MODE && gIsFirstGroupDrawing == G_FALSE) {
+	if (TargetMode() == G_CACHE_MODE)
+		return;
+
+	if ((TargetMode() == G_CLIP_MODE || TargetMode() == G_CLIP_AND_CACHE_MODE) && gIsFirstGroupDrawing == G_FALSE) {
 		UpdateClipMasksState();
 		gClipMasksBoxes.push_back(gGroupBox);
 		if (gTopStencilValue < gMaxTopStencilValue) {
@@ -119,7 +125,10 @@ void GOpenGLBoard::DoGroupEnd() {
 	gIsFirstGroupDrawing = G_FALSE;
 
 	// if group opacity is not supported by hardware or group opacity is 1, ignore group as opaque
-	if (GroupOpacity() >= 1 || GroupOpacity()<= 0 || gGLGroupRect.IsEmpty || TargetMode() == G_CLIP_MODE || !gGroupOpacitySupport)
+	if (GroupOpacity() >= 1 || GroupOpacity()<= 0 || gGLGroupRect.IsEmpty || !gGroupOpacitySupport)
+		return;
+	// group end affects only color buffer
+	if (TargetMode() == G_CACHE_MODE || TargetMode() == G_CLIP_MODE || TargetMode() == G_CLIP_AND_CACHE_MODE)
 		return;
 
 	PushGLWindowMode();

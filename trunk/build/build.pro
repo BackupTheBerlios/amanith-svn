@@ -56,6 +56,7 @@ SOURCES = gelement.cpp \
           rendering/gopenglconicalgrad.cpp \
           rendering/gopenglstroke.cpp \
           rendering/gopenglgeometries.cpp \
+          rendering/gopenglcache.cpp \
           support/gavltree.cpp \
           support/gutilities.cpp \
           support/gsvgpathtokenizer.cpp

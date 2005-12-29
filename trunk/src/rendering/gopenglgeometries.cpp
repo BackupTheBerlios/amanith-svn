@@ -55,13 +55,15 @@ inline GFillBehavior FillRuleToBehavior(const GFillRule Rule) {
 	}
 }
 
-void GOpenGLBoard::DrawGLPolygon(const GOpenGLDrawStyle& Style, const GBool ClosedFill, const GBool ClosedStroke,
-								 const GJoinStyle FlattenJoinStyle, const GDynArray<GPoint2>& Points,
-								 const GBool Convex) {
+GInt32 GOpenGLBoard::DrawGLPolygon(const GOpenGLDrawStyle& Style, const GBool ClosedFill, const GBool ClosedStroke,
+								   const GJoinStyle FlattenJoinStyle, const GDynArray<GPoint2>& Points,
+								   const GBool Convex) {
 
 	// empty contours, or 1 point contour, lets exit immediately
-	if (Points.size() < 2)
-		return;
+	if (Points.size() < 2) {
+		G_DEBUG("DrawGLPolygon, empty contours, or 1 point contour");
+		return G_INVALID_PARAMETER;
+	}
 
 	GDynArray< GPoint<GDouble, 2> > triangles;
 	GDynArray<GInt32> ptsPerContour;
@@ -140,49 +142,57 @@ void GOpenGLBoard::DrawGLPolygon(const GOpenGLDrawStyle& Style, const GBool Clos
 	else
 		tmpBox.SetMinMax(Points);
 
-	GOpenGLCacheEntry cacheEntry;
-	GOpenGLCachedDrawing *cacheSlot = (GOpenGLCachedDrawing *)CacheSlot();
+	GInt32 slotIndex = G_DRAWBOARD_CACHE_NOT_WRITTEN;
+	GOpenGLCacheSlot cacheSlot;
+	GOpenGLCacheBank *cacheBank = (GOpenGLCacheBank *)CacheBank();
 
 	// cache the primitive, if needed
 	if (CachingEnabled()) {
-		// expand box to have always the stroke included
-		cacheEntry.Box = tmpBox;
-		GPoint2 pMin(cacheEntry.Box.Min());
-		GPoint2 pMax(cacheEntry.Box.Max());
-		pMin[G_X] -= Style.StrokeThickness();
-		pMin[G_Y] -= Style.StrokeThickness();
-		pMax[G_X] += Style.StrokeThickness();
-		pMax[G_Y] += Style.StrokeThickness();
-		cacheEntry.Box.SetMinMax(pMin, pMax);
-		// draw fill
-		cacheEntry.FillDisplayList = glGenLists(1);
-		glNewList(cacheEntry.FillDisplayList, GL_COMPILE);
-		#ifdef DOUBLE_REAL_TYPE
-			DRAW_FILL_DOUBLE
-		#else
-			DRAW_FILL_FLOAT
-		#endif
-		glEndList();
-		// draw stroke
-		cacheEntry.StrokeDisplayList = glGenLists(1);
-		glNewList(cacheEntry.StrokeDisplayList, GL_COMPILE);
-		DRAW_STROKE
-		glEndList();
-		cacheSlot->gEntries.push_back(cacheEntry);
+		if (!cacheBank) {
+			slotIndex = G_DRAWBOARD_INVALID_CACHEBANK;
+			G_DEBUG("DrawGLPolygon, cache bank NULL (not set)");
+		}
+		else {
+			// expand box to have always the stroke included
+			cacheSlot.Box = tmpBox;
+			GPoint2 pMin(cacheSlot.Box.Min());
+			GPoint2 pMax(cacheSlot.Box.Max());
+			pMin[G_X] -= Style.StrokeThickness();
+			pMin[G_Y] -= Style.StrokeThickness();
+			pMax[G_X] += Style.StrokeThickness();
+			pMax[G_Y] += Style.StrokeThickness();
+			cacheSlot.Box.SetMinMax(pMin, pMax);
+			// draw fill
+			cacheSlot.FillDisplayList = glGenLists(1);
+			glNewList(cacheSlot.FillDisplayList, GL_COMPILE);
+			#ifdef DOUBLE_REAL_TYPE
+				DRAW_FILL_DOUBLE
+			#else
+				DRAW_FILL_FLOAT
+			#endif
+			glEndList();
+			// draw stroke
+			cacheSlot.StrokeDisplayList = glGenLists(1);
+			glNewList(cacheSlot.StrokeDisplayList, GL_COMPILE);
+			DRAW_STROKE
+			glEndList();
+			cacheBank->gSlots.push_back(cacheSlot);
+			slotIndex = (GInt32)cacheBank->gSlots.size() - 1;
+		}
 	}
 
 	// if we had to draw nothing, just exit
 	if (!Style.StrokeEnabled() && !Style.FillEnabled())
-		return;
-	if (CachingEnabled() && !CachingWriteOnTarget())
-		return;
+		return slotIndex;
+	if (TargetMode() == G_CACHE_MODE)
+		return slotIndex;
 
 	GBool doublePass = SetGLClipEnabled(TargetMode(), ClipOperation());
 
-	if (TargetMode() == G_CLIP_MODE) {
+	if (TargetMode() == G_CLIP_MODE || TargetMode() == G_CLIP_AND_CACHE_MODE) {
 
 		if (!gClipMasksSupport)
-			return;
+			return slotIndex;
 
 		// draw fill
 		if (ClosedFill) {
@@ -225,13 +235,13 @@ void GOpenGLBoard::DrawGLPolygon(const GOpenGLDrawStyle& Style, const GBool Clos
 			}
 		}
 		gIsFirstGroupDrawing = G_FALSE;
-		return;
+		return slotIndex;
 	}
 
 	// in color mode, if we are inside a GroupBegin() / GroupEnd() constructor and group opacity is 0
 	// do not draw anything
 	if (InsideGroup() && GroupOpacity() <= 0 && gGroupOpacitySupport)
-		return;
+		return slotIndex;
 
 	if (ClosedFill) {
 		// set fill style using OpenGL
@@ -289,13 +299,14 @@ void GOpenGLBoard::DrawGLPolygon(const GOpenGLDrawStyle& Style, const GBool Clos
 			DrawAndPopDepthMask(tmpBox, Style, G_FALSE);
 		}
 	}
+	return slotIndex;
 	#undef DRAW_FILL_FLOAT
 	#undef DRAW_FILL_DOUBLE
 	#undef DRAW_STROKE
 }
 
-void GOpenGLBoard::DrawGLPolygons(const GDynArray<GPoint2>& Points, const GDynArray<GInt32>& PointsPerContour,
-								  const GDynArray<GBool>& ClosedStrokes, const GOpenGLDrawStyle& Style) {
+GInt32 GOpenGLBoard::DrawGLPolygons(const GDynArray<GPoint2>& Points, const GDynArray<GInt32>& PointsPerContour,
+									const GDynArray<GBool>& ClosedStrokes, const GOpenGLDrawStyle& Style) {
 
 	G_ASSERT(PointsPerContour.size() == ClosedStrokes.size());
 	G_ASSERT(PointsPerContour.size() > 0);
@@ -356,45 +367,53 @@ void GOpenGLBoard::DrawGLPolygons(const GDynArray<GPoint2>& Points, const GDynAr
 		tmpBox.SetMinMax(Points);
 
 	// caching management
-	GOpenGLCacheEntry cacheEntry;
-	GOpenGLCachedDrawing *cacheSlot = (GOpenGLCachedDrawing *)CacheSlot();
+	GInt32 slotIndex = G_DRAWBOARD_CACHE_NOT_WRITTEN;
+	GOpenGLCacheSlot cacheSlot;
+	GOpenGLCacheBank *cacheBank = (GOpenGLCacheBank *)CacheBank();
 
 	// cache the primitive, if needed
 	if (CachingEnabled()) {
-		// draw fill
-		cacheEntry.FillDisplayList = glGenLists(1);
-		glNewList(cacheEntry.FillDisplayList, GL_COMPILE);
-		DRAW_FILL
-		glEndList();
-		// draw stroke
-		cacheEntry.StrokeDisplayList = glGenLists(1);
-		glNewList(cacheEntry.StrokeDisplayList, GL_COMPILE);
-		DRAW_STROKE
-		glEndList();
-		// expand box to have always the stroke included
-		cacheEntry.Box = tmpBox;
-		GPoint2 pMin(cacheEntry.Box.Min());
-		GPoint2 pMax(cacheEntry.Box.Max());
-		pMin[G_X] -= Style.StrokeThickness();
-		pMin[G_Y] -= Style.StrokeThickness();
-		pMax[G_X] += Style.StrokeThickness();
-		pMax[G_Y] += Style.StrokeThickness();
-		cacheEntry.Box.SetMinMax(pMin, pMax);
-		cacheSlot->gEntries.push_back(cacheEntry);
+		if (!cacheBank) {
+			slotIndex = G_DRAWBOARD_INVALID_CACHEBANK;
+			G_DEBUG("DrawGLPolygons, cache bank NULL (not set)");
+		}
+		else {
+			// draw fill
+			cacheSlot.FillDisplayList = glGenLists(1);
+			glNewList(cacheSlot.FillDisplayList, GL_COMPILE);
+			DRAW_FILL
+			glEndList();
+			// draw stroke
+			cacheSlot.StrokeDisplayList = glGenLists(1);
+			glNewList(cacheSlot.StrokeDisplayList, GL_COMPILE);
+			DRAW_STROKE
+			glEndList();
+			// expand box to have always the stroke included
+			cacheSlot.Box = tmpBox;
+			GPoint2 pMin(cacheSlot.Box.Min());
+			GPoint2 pMax(cacheSlot.Box.Max());
+			pMin[G_X] -= Style.StrokeThickness();
+			pMin[G_Y] -= Style.StrokeThickness();
+			pMax[G_X] += Style.StrokeThickness();
+			pMax[G_Y] += Style.StrokeThickness();
+			cacheSlot.Box.SetMinMax(pMin, pMax);
+			cacheBank->gSlots.push_back(cacheSlot);
+			slotIndex = (GInt32)cacheBank->gSlots.size() - 1;
+		}
 	}
 
 	// if we had to draw nothing, just exit
 	if (!Style.StrokeEnabled() && !Style.FillEnabled())
-		return;
-	if (CachingEnabled() && !CachingWriteOnTarget())
-		return;
+		return slotIndex;
+	if (TargetMode() == G_CACHE_MODE)
+		return slotIndex;
 
 	GBool doublePass = SetGLClipEnabled(TargetMode(), ClipOperation());
 
-	if (TargetMode() == G_CLIP_MODE) {
+	if (TargetMode() == G_CLIP_MODE || TargetMode() == G_CLIP_AND_CACHE_MODE) {
 
 		if (!gClipMasksSupport)
-			return;
+			return slotIndex;
 
 		// draw fill
 		if (Style.FillEnabled()) {
@@ -431,13 +450,13 @@ void GOpenGLBoard::DrawGLPolygons(const GDynArray<GPoint2>& Points, const GDynAr
 			}
 		}
 		gIsFirstGroupDrawing = G_FALSE;
-		return;
+		return slotIndex;
 	}
 
 	// in color mode, if we are inside a GroupBegin() / GroupEnd() constructor and group opacity is 0
 	// do not draw anything
 	if (InsideGroup() && GroupOpacity() <= 0 && gGroupOpacitySupport)
-		return;
+		return slotIndex;
 
 	if (Style.FillEnabled()) {
 		// set fill style using OpenGL
@@ -487,14 +506,17 @@ void GOpenGLBoard::DrawGLPolygons(const GDynArray<GPoint2>& Points, const GDynAr
 			DrawAndPopDepthMask(tmpBox, Style, G_FALSE);
 		}
 	}
+	return slotIndex;
 	#undef DRAW_FILL
 	#undef DRAW_STROKE
 }
 
-void GOpenGLBoard::DoDrawLine(GDrawStyle& Style, const GPoint2& P0, const GPoint2& P1) {
+GInt32 GOpenGLBoard::DoDrawLine(GDrawStyle& Style, const GPoint2& P0, const GPoint2& P1) {
 
-	if (Distance(P0, P1) <= G_EPSILON)
-		return;
+	if (Distance(P0, P1) <= G_EPSILON) {
+		G_DEBUG("DoDrawLine, P0 and P1 are the same point");
+		return G_INVALID_PARAMETER;
+	}
 
 	#define DRAW_STROKE \
 		if (Style.StrokeStyle() == G_SOLID_STROKE) \
@@ -506,8 +528,9 @@ void GOpenGLBoard::DoDrawLine(GDrawStyle& Style, const GPoint2& P0, const GPoint
 			DrawDashedStroke(s, pts.begin(), pts.end(), G_FALSE, s.StrokeThickness(), s.gRoundJoinAuxCoef); \
 		}
 
-	GOpenGLCacheEntry cacheEntry;
-	GOpenGLCachedDrawing *cacheSlot = (GOpenGLCachedDrawing *)CacheSlot();
+	GInt32 slotIndex = G_DRAWBOARD_CACHE_NOT_WRITTEN;
+	GOpenGLCacheSlot cacheSlot;
+	GOpenGLCacheBank *cacheBank = (GOpenGLCacheBank *)CacheBank();
 	GOpenGLDrawStyle &s = (GOpenGLDrawStyle &)Style;
 
 	// update style
@@ -525,28 +548,35 @@ void GOpenGLBoard::DoDrawLine(GDrawStyle& Style, const GPoint2& P0, const GPoint
 
 	// cache the primitive, if needed
 	if (CachingEnabled()) {
-		cacheEntry.Box = tmpBox;
-		cacheEntry.FillDisplayList = 0;
-		cacheEntry.StrokeDisplayList = glGenLists(1);
-		glNewList(cacheEntry.StrokeDisplayList, GL_COMPILE);
-		// draw line segment inside cache slot
-		DRAW_STROKE
-		glEndList();
-		cacheSlot->gEntries.push_back(cacheEntry);
+		if (!cacheBank) {
+			slotIndex = G_DRAWBOARD_INVALID_CACHEBANK;
+			G_DEBUG("DoDrawLine, cache bank NULL (not set)");
+		}
+		else {
+			cacheSlot.Box = tmpBox;
+			cacheSlot.FillDisplayList = 0;
+			cacheSlot.StrokeDisplayList = glGenLists(1);
+			glNewList(cacheSlot.StrokeDisplayList, GL_COMPILE);
+			// draw line segment inside cache slot
+			DRAW_STROKE
+			glEndList();
+			cacheBank->gSlots.push_back(cacheSlot);
+			slotIndex = (GInt32)cacheBank->gSlots.size() - 1;
+		}
 	}
 
 	// if we had to draw nothing, just exit
 	if (!Style.StrokeEnabled())
-		return;
-	if (CachingEnabled() && !CachingWriteOnTarget())
-		return;
+		return slotIndex;
+	if (TargetMode() == G_CACHE_MODE)
+		return slotIndex;
 
 	GBool doublePass = SetGLClipEnabled(TargetMode(), ClipOperation());
 
-	if (TargetMode() == G_CLIP_MODE) {
+	if (TargetMode() == G_CLIP_MODE || TargetMode() == G_CLIP_AND_CACHE_MODE) {
 
 		if (!gClipMasksSupport)
-			return;
+			return slotIndex;
 
 		// draw line segment
 		DRAW_STROKE
@@ -568,13 +598,13 @@ void GOpenGLBoard::DoDrawLine(GDrawStyle& Style, const GPoint2& P0, const GPoint
 			}
 		}
 		gIsFirstGroupDrawing = G_FALSE;
-		return;
+		return slotIndex;
 	}
 
 	// in color mode, if we are inside a GroupBegin() / GroupEnd() constructor and group opacity is 0
 	// do not draw anything
 	if (InsideGroup() && GroupOpacity() <= 0 && gGroupOpacitySupport)
-		return;
+		return slotIndex;
 
 	// set stroke style using OpenGL
 	GBool useDepth = UseStrokeStyle(s);
@@ -597,13 +627,16 @@ void GOpenGLBoard::DoDrawLine(GDrawStyle& Style, const GPoint2& P0, const GPoint
 	if (useDepth)
 		DrawAndPopDepthMask(tmpBox, s, G_FALSE);
 
+	return slotIndex;
 	#undef DRAW_STROKE
 }
 
-void GOpenGLBoard::DoDrawRectangle(GDrawStyle& Style, const GPoint2& MinCorner, const GPoint2& MaxCorner) {
+GInt32 GOpenGLBoard::DoDrawRectangle(GDrawStyle& Style, const GPoint2& MinCorner, const GPoint2& MaxCorner) {
 
-	if (Distance(MinCorner, MaxCorner) <= G_EPSILON)
-		return;
+	if (Distance(MinCorner, MaxCorner) <= G_EPSILON) {
+		G_DEBUG("DoDrawRectangle, rectangle corners are the same");
+		return G_INVALID_PARAMETER;
+	}
 
 	GDynArray<GPoint2> pts(4);
 	/*
@@ -620,14 +653,16 @@ void GOpenGLBoard::DoDrawRectangle(GDrawStyle& Style, const GPoint2& MinCorner, 
 	// update style
 	UpdateStyle((GOpenGLDrawStyle&)Style);
 	// draw polyline
-	DrawGLPolygon((const GOpenGLDrawStyle&)Style, Style.FillEnabled(), G_TRUE, Style.StrokeJoinStyle(), pts, G_TRUE);
+	return DrawGLPolygon((const GOpenGLDrawStyle&)Style, Style.FillEnabled(), G_TRUE, Style.StrokeJoinStyle(), pts, G_TRUE);
 }
 
-void GOpenGLBoard::DoDrawRoundRectangle(GDrawStyle& Style, const GPoint2& MinCorner, const GPoint2& MaxCorner,
-										const GReal ArcWidth, const GReal ArcHeight) {
+GInt32 GOpenGLBoard::DoDrawRoundRectangle(GDrawStyle& Style, const GPoint2& MinCorner, const GPoint2& MaxCorner,
+										  const GReal ArcWidth, const GReal ArcHeight) {
 
-	if (Distance(MinCorner, MaxCorner) <= G_EPSILON)
-		return;
+	if (Distance(MinCorner, MaxCorner) <= G_EPSILON) {
+		G_DEBUG("DoDrawRectangle, rectangle corners are the same");
+		return G_INVALID_PARAMETER;
+	}
 
 	G_ASSERT(ArcWidth > 0 && ArcHeight > 0);
 
@@ -700,10 +735,10 @@ void GOpenGLBoard::DoDrawRoundRectangle(GDrawStyle& Style, const GPoint2& MinCor
 	// update style
 	UpdateStyle((GOpenGLDrawStyle&)Style);
 	// draw polyline
-	DrawGLPolygon((const GOpenGLDrawStyle&)Style, Style.FillEnabled(), G_TRUE, G_BEVEL_JOIN, pts, G_TRUE);
+	return DrawGLPolygon((const GOpenGLDrawStyle&)Style, Style.FillEnabled(), G_TRUE, G_BEVEL_JOIN, pts, G_TRUE);
 }
 
-void GOpenGLBoard::DoDrawBezier(GDrawStyle& Style, const GPoint2& P0, const GPoint2& P1, const GPoint2& P2) {
+GInt32 GOpenGLBoard::DoDrawBezier(GDrawStyle& Style, const GPoint2& P0, const GPoint2& P1, const GPoint2& P2) {
 
 	GBezierCurve2D bez;
 	GDynArray<GPoint2> pts;
@@ -715,10 +750,10 @@ void GOpenGLBoard::DoDrawBezier(GDrawStyle& Style, const GPoint2& P0, const GPoi
 	// update style
 	UpdateStyle((GOpenGLDrawStyle&)Style);
 	// draw polyline
-	DrawGLPolygon((const GOpenGLDrawStyle&)Style, Style.FillEnabled(), G_FALSE, G_BEVEL_JOIN, pts, G_TRUE);
+	return DrawGLPolygon((const GOpenGLDrawStyle&)Style, Style.FillEnabled(), G_FALSE, G_BEVEL_JOIN, pts, G_TRUE);
 }
 
-void GOpenGLBoard::DoDrawBezier(GDrawStyle& Style, const GPoint2& P0, const GPoint2& P1, const GPoint2& P2, const GPoint2& P3) {
+GInt32 GOpenGLBoard::DoDrawBezier(GDrawStyle& Style, const GPoint2& P0, const GPoint2& P1, const GPoint2& P2, const GPoint2& P3) {
 
 	GBezierCurve2D bez;
 	GDynArray<GPoint2> pts;
@@ -730,12 +765,12 @@ void GOpenGLBoard::DoDrawBezier(GDrawStyle& Style, const GPoint2& P0, const GPoi
 	// update style
 	UpdateStyle((GOpenGLDrawStyle&)Style);
 	// draw polyline
-	DrawGLPolygon((const GOpenGLDrawStyle&)Style, Style.FillEnabled(), G_FALSE, Style.StrokeJoinStyle(), pts, G_FALSE);
+	return DrawGLPolygon((const GOpenGLDrawStyle&)Style, Style.FillEnabled(), G_FALSE, Style.StrokeJoinStyle(), pts, G_FALSE);
 }
 
-void GOpenGLBoard::DoDrawEllipseArc(GDrawStyle& Style, const GPoint2& Center, const GReal XSemiAxisLength,
-									const GReal YSemiAxisLength, const GReal OffsetRotation,
-									const GReal StartAngle, const GReal EndAngle, const GBool CCW) {
+GInt32 GOpenGLBoard::DoDrawEllipseArc(GDrawStyle& Style, const GPoint2& Center, const GReal XSemiAxisLength,
+									  const GReal YSemiAxisLength, const GReal OffsetRotation,
+									  const GReal StartAngle, const GReal EndAngle, const GBool CCW) {
 
 	GEllipseCurve2D ellipse;
 	GDynArray<GPoint2> pts;
@@ -747,11 +782,11 @@ void GOpenGLBoard::DoDrawEllipseArc(GDrawStyle& Style, const GPoint2& Center, co
 	// update style
 	UpdateStyle((GOpenGLDrawStyle&)Style);
 	// draw polyline
-	DrawGLPolygon((const GOpenGLDrawStyle&)Style, Style.FillEnabled(), G_FALSE, G_BEVEL_JOIN, pts, G_TRUE);
+	return DrawGLPolygon((const GOpenGLDrawStyle&)Style, Style.FillEnabled(), G_FALSE, G_BEVEL_JOIN, pts, G_TRUE);
 }
 
-void GOpenGLBoard::DoDrawEllipseArc(GDrawStyle& Style, const GPoint2& P0, const GPoint2& P1, const GReal XSemiAxisLength, const GReal YSemiAxisLength,
-									const GReal OffsetRotation, const GBool LargeArc, const GBool CCW) {
+GInt32 GOpenGLBoard::DoDrawEllipseArc(GDrawStyle& Style, const GPoint2& P0, const GPoint2& P1, const GReal XSemiAxisLength, const GReal YSemiAxisLength,
+									  const GReal OffsetRotation, const GBool LargeArc, const GBool CCW) {
 
 	GEllipseCurve2D ellipse;
 	GDynArray<GPoint2> pts;
@@ -763,11 +798,11 @@ void GOpenGLBoard::DoDrawEllipseArc(GDrawStyle& Style, const GPoint2& P0, const 
 	// update style
 	UpdateStyle((GOpenGLDrawStyle&)Style);
 	// draw polyline
-	DrawGLPolygon((const GOpenGLDrawStyle&)Style, Style.FillEnabled(), G_FALSE, G_BEVEL_JOIN, pts, G_TRUE);
+	return DrawGLPolygon((const GOpenGLDrawStyle&)Style, Style.FillEnabled(), G_FALSE, G_BEVEL_JOIN, pts, G_TRUE);
 }
 
 // here we are sure that semi-axes lengths are greater than 0
-void GOpenGLBoard::DoDrawEllipse(GDrawStyle& Style, const GPoint2& Center, const GReal XSemiAxisLength, const GReal YSemiAxisLength) {
+GInt32 GOpenGLBoard::DoDrawEllipse(GDrawStyle& Style, const GPoint2& Center, const GReal XSemiAxisLength, const GReal YSemiAxisLength) {
 
 	G_ASSERT(XSemiAxisLength > 0 && YSemiAxisLength > 0);
 	GReal radius = GMath::Max(XSemiAxisLength, YSemiAxisLength);
@@ -800,11 +835,11 @@ void GOpenGLBoard::DoDrawEllipse(GDrawStyle& Style, const GPoint2& Center, const
 	// update style
 	UpdateStyle((GOpenGLDrawStyle&)Style);
 	// draw polygon
-	DrawGLPolygon((const GOpenGLDrawStyle&)Style, Style.FillEnabled(), G_TRUE, G_BEVEL_JOIN, pts, G_TRUE);
+	return DrawGLPolygon((const GOpenGLDrawStyle&)Style, Style.FillEnabled(), G_TRUE, G_BEVEL_JOIN, pts, G_TRUE);
 }
 
 // here we are sure that Radius is greater than 0
-void GOpenGLBoard::DoDrawCircle(GDrawStyle& Style, const GPoint2& Center, const GReal Radius) {
+GInt32 GOpenGLBoard::DoDrawCircle(GDrawStyle& Style, const GPoint2& Center, const GReal Radius) {
 
 	GReal dev = GMath::Clamp(gFlateness, G_EPSILON, Radius - (G_EPSILON * Radius));
 	GUInt32 n = 4;
@@ -832,18 +867,18 @@ void GOpenGLBoard::DoDrawCircle(GDrawStyle& Style, const GPoint2& Center, const 
 	// update style
 	UpdateStyle((GOpenGLDrawStyle&)Style);
 	// draw polygon
-	DrawGLPolygon((const GOpenGLDrawStyle&)Style, Style.FillEnabled(), G_TRUE, G_BEVEL_JOIN, pts, G_TRUE);
+	return DrawGLPolygon((const GOpenGLDrawStyle&)Style, Style.FillEnabled(), G_TRUE, G_BEVEL_JOIN, pts, G_TRUE);
 }
 
-void GOpenGLBoard::DoDrawPolygon(GDrawStyle& Style, const GDynArray<GPoint2>& Points, const GBool Closed) {
+GInt32 GOpenGLBoard::DoDrawPolygon(GDrawStyle& Style, const GDynArray<GPoint2>& Points, const GBool Closed) {
 
 	// update style
 	UpdateStyle((GOpenGLDrawStyle&)Style);
 	// draw polygon
-	DrawGLPolygon((const GOpenGLDrawStyle&)Style, Style.FillEnabled(), Closed, Style.StrokeJoinStyle(), Points, G_FALSE);
+	return DrawGLPolygon((const GOpenGLDrawStyle&)Style, Style.FillEnabled(), Closed, Style.StrokeJoinStyle(), Points, G_FALSE);
 }
 
-void GOpenGLBoard::DoDrawPath(GDrawStyle& Style, const GCurve2D& Curve) {
+GInt32 GOpenGLBoard::DoDrawPath(GDrawStyle& Style, const GCurve2D& Curve) {
 
 	GDynArray<GPoint2> pts;
 
@@ -854,19 +889,19 @@ void GOpenGLBoard::DoDrawPath(GDrawStyle& Style, const GCurve2D& Curve) {
 		// flatten the curve
 		Curve.Flatten(pts, gDeviation, G_TRUE);
 		// draw polyline
-		DrawGLPolygon((const GOpenGLDrawStyle&)Style, Style.FillEnabled(), G_FALSE, Style.StrokeJoinStyle(), pts, G_FALSE);
+		return DrawGLPolygon((const GOpenGLDrawStyle&)Style, Style.FillEnabled(), G_FALSE, Style.StrokeJoinStyle(), pts, G_FALSE);
 	}
 	else {
 		const GPath2D& p = (const GPath2D&)Curve;
 		// flatten the curve
 		p.Flatten(pts, gDeviation, G_TRUE);
 		// draw polyline
-		DrawGLPolygon((const GOpenGLDrawStyle&)Style, Style.FillEnabled(), p.IsClosed(), Style.StrokeJoinStyle(), pts, G_FALSE);
+		return DrawGLPolygon((const GOpenGLDrawStyle&)Style, Style.FillEnabled(), p.IsClosed(), Style.StrokeJoinStyle(), pts, G_FALSE);
 	}
 }
 
 // here we are sure that we have at least one curve
-void GOpenGLBoard::DoDrawPaths(GDrawStyle& Style, const GDynArray<GCurve2D *>& Curves) {
+GInt32 GOpenGLBoard::DoDrawPaths(GDrawStyle& Style, const GDynArray<GCurve2D *>& Curves) {
 
 	GOpenGLDrawStyle& s = (GOpenGLDrawStyle&)Style;
 	GDynArray<GPoint2> pts;
@@ -897,13 +932,15 @@ void GOpenGLBoard::DoDrawPaths(GDrawStyle& Style, const GDynArray<GCurve2D *>& C
 	}
 
 	// empty contours, or 1 point contour, lets exit immediately
-	if (pts.size() < 2)
-		return;
+	if (pts.size() < 2) {
+		G_DEBUG("DoDrawPaths, empty contours, or 1 point contour");
+		return G_INVALID_PARAMETER;
+	}
 
 	// update style
 	UpdateStyle(s);
 	// draw polygons
-	DrawGLPolygons(pts, ptsPerContour, closedStroke, s);
+	return DrawGLPolygons(pts, ptsPerContour, closedStroke, s);
 }
 
 
@@ -1119,10 +1156,12 @@ void GOpenGLBoard::ClosePath() {
 	gInsideSVGPath = G_FALSE;
 }
 
-void GOpenGLBoard::EndPaths() {
+GInt32 GOpenGLBoard::EndPaths() {
 
-	if (!gInsideSVGPaths)
-		return;
+	if (!gInsideSVGPaths) {
+		G_DEBUG("EndPaths, BeginPaths has not been called before");
+		return G_INVALID_OPERATION;
+	}
 
 	gInsideSVGPaths = G_FALSE;
 	GInt32 newSize = (GInt32)gSVGPathPoints.size();
@@ -1139,14 +1178,16 @@ void GOpenGLBoard::EndPaths() {
 	}
 
 	// empty contours, or 1 point contour, lets exit immediately
-	if (gSVGPathPoints.size() < 2)
-		return;
+	if (gSVGPathPoints.size() < 2) {
+		G_DEBUG("EndPaths, empty contours, or 1 point contour");
+		return G_INVALID_PARAMETER;
+	}
 
 	GOpenGLDrawStyle *s = (GOpenGLDrawStyle *)CurrentStyle();
 	// update style
 	UpdateStyle(*s);
 	// draw polygons
-	DrawGLPolygons(gSVGPathPoints, gSVGPathPointsPerContour, gSVGPathClosedStrokes, *s);
+	return DrawGLPolygons(gSVGPathPoints, gSVGPathPointsPerContour, gSVGPathClosedStrokes, *s);
 }
 
 

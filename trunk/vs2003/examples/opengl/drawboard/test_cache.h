@@ -22,10 +22,7 @@
 ** not clear to you.
 **********************************************************************/
 
-#include "drawboard.h"
-#include "amanith/geometry/gxformconv.h"
-
-void QGLWidgetTest::TestCache(const GUInt32 TestIndex) {
+void TestCache(const GUInt32 TestIndex) {
 
 	//GUInt32 idx = TestIndex % 2;
 	GUInt32 idx = TestIndex & 0;
@@ -83,8 +80,6 @@ void QGLWidgetTest::TestCache(const GUInt32 TestIndex) {
 		gDrawBoard->SetFillPaintType(G_COLOR_PAINT_TYPE);
 		gDrawBoard->SetFillColor(1, 0, 0, 1);
 		gDrawBoard->DrawCacheBank();
-
-		GInt32 ii;
 
 		// draw on both cache and screen
 		gDrawBoard->SetTargetMode(G_COLOR_AND_CACHE_MODE);

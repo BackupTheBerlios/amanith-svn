@@ -46,7 +46,7 @@ private:
 	GGradientDesc *gRadGrad1, *gRadGrad2, *gRadGrad3, *gRadGrad4;
 	GGradientDesc *gConGrad1, *gConGrad2, *gConGrad3, *gConGrad4;
 	GPatternDesc *gPattern, *gBackGround;
-	GCachedDrawing *gCacheSlot;
+	GCacheBank *gCacheBank;
 	GString gDataPath;
 	GString gScreenShotFileName;
 

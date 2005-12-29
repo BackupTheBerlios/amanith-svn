@@ -36,7 +36,6 @@ void QGLWidgetTest::TestPattern(const GUInt32 TestIndex, const GReal RotAngle, c
 	ScaleToMatrix(scl, GVector2(ScaleX, ScaleY));
 	ofsTransf = (rot * scl);
 
-	gDrawBoard->SetCachingEnabled(G_FALSE);
 	gDrawBoard->SetTargetMode(G_COLOR_MODE);
 	gDrawBoard->SetStrokePaintType(G_COLOR_PAINT_TYPE);
 	gDrawBoard->SetStrokeStyle(G_SOLID_STROKE);

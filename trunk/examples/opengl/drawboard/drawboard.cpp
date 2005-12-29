@@ -180,8 +180,8 @@ void QGLWidgetTest::initializeGL() {
 	colKeys.push_back(GKeyValue((GReal)1.00, GVector4((GReal)1.0, (GReal)1.0, (GReal)1.0, (GReal)0.0)));
 	gLinGradLogo3 = gDrawBoard->CreateLinearGradient(GPoint2(300, 460), GPoint2(417, 330), colKeys, G_LINEAR_COLOR_INTERPOLATION, G_PAD_COLOR_RAMP_SPREAD);
 
-	// create a cache slot
-	gCacheSlot = gDrawBoard->CreateCacheSlot();
+	// create a cache bank
+	gCacheBank = gDrawBoard->CreateCacheBank();
 
 	// now lets see if some bitmap file formats are present for load/save
 	GDynArray<GImpExpFeature> features;
@@ -279,7 +279,7 @@ void QGLWidgetTest::keyPressEvent(QKeyEvent *e) {
 
 		case Qt::Key_F1:
 			s = "F2: contextual example description\n";
-			s += "0..9: Toggle draw test\n";
+			s += "0..9, C: Toggle draw test\n";
 			s += "PageUp/PageDown: Switch draw sheet\n";
 			s += "B: Toggle background\n";
 			s += "R: Switch rendering quality (low/normal/high)\n";
