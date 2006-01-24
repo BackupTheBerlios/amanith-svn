@@ -40,8 +40,7 @@ static int timer_interval = 0;
 
 // constructor
 #ifdef USE_QT4
-QGLWidgetTest::QGLWidgetTest(const QGLFormat& Format, QWidget *parent) : QGLWidget(Format, parent, 0,
-						     Qt::WStyle_Customize | Qt::WStyle_DialogBorder | Qt::WStyle_Title | Qt::WStyle_SysMenu) {
+QGLWidgetTest::QGLWidgetTest(const QGLFormat& Format, QWidget *parent) : QGLWidget(Format, parent, 0, Qt::Dialog) {
 #else
 QGLWidgetTest::QGLWidgetTest(const QGLFormat& Format, QWidget *parent) : QGLWidget(Format, parent, 0, 0,
 							 Qt::WStyle_Customize | Qt::WStyle_DialogBorder | Qt::WStyle_Title | Qt::WStyle_SysMenu) {
@@ -264,7 +263,7 @@ void QGLWidgetTest::mousePressEvent(QMouseEvent * e) {
 
 	GInt32 i;
 
-	if (e->button() == LeftButton) {
+	if (e->button() == Qt::LeftButton) {
 		i = gFillCompOp;
 		i++;
 		if (i > G_EXCLUSION_OP)
@@ -272,7 +271,7 @@ void QGLWidgetTest::mousePressEvent(QMouseEvent * e) {
 		gFillCompOp = (GCompositingOperation)i;
 		DrawTitle();
 	}
-	if (e->button() == RightButton) {
+	if (e->button() == Qt::RightButton) {
 		i = gStrokeCompOp;
 		i++;
 		if (i > G_EXCLUSION_OP)
