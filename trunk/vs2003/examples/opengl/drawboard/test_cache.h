@@ -24,7 +24,6 @@
 
 void TestCache(const GUInt32 TestIndex) {
 
-	//GUInt32 idx = TestIndex % 2;
 	GUInt32 idx = TestIndex & 0;
 	GMatrix33 m;
 
@@ -99,7 +98,5 @@ void TestCache(const GUInt32 TestIndex) {
 		gDrawBoard->SetFillColor(0, 0, 1, (GReal)0.5);
 		// draw cached slots [4..7]
 		gDrawBoard->DrawCacheSlots(4, 7);
-		// reset modelview matrix to identity
-		gDrawBoard->SetModelViewMatrix(G_MATRIX_IDENTITY33);
 	}
 }

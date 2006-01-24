@@ -69,9 +69,9 @@ GOpenGLCacheBank::~GOpenGLCacheBank() {
 }
 
 // get the number of cached shapes
-GUInt32 GOpenGLCacheBank::SlotsCount() const {
+GInt32 GOpenGLCacheBank::SlotsCount() const {
 
-	return ((GUInt32)gSlots.size());
+	return ((GInt32)gSlots.size());
 }
 
 
@@ -81,6 +81,7 @@ GUInt32 GOpenGLCacheBank::SlotsCount() const {
 
 void GOpenGLBoard::DoDrawCacheSlot(const GDrawStyle& Style, const GOpenGLCacheSlot& CacheSlot) {
 
+	// if we had to draw nothing, just exit
 	if (CacheSlot.FillDisplayList == 0 && CacheSlot.StrokeDisplayList == 0)
 		return;
 	// draw cached primitives on cache has no effects
@@ -98,9 +99,12 @@ void GOpenGLBoard::DoDrawCacheSlot(const GDrawStyle& Style, const GOpenGLCacheSl
 	// calculate bound box
 	GAABox2 tmpBox(CacheSlot.Box);
 
-	GBool doublePass = SetGLClipEnabled(TargetMode(), ClipOperation());
+	GBool stencilPass = SetGLClipEnabled(TargetMode(), ClipOperation());
 
 	if (TargetMode() == G_CLIP_MODE || TargetMode() == G_CLIP_AND_CACHE_MODE) {
+
+		glMatrixMode(GL_MODELVIEW);
+		SetGLModelViewMatrix(ModelViewMatrix());
 
 		// draw fill
 		if (Style.FillEnabled()) {
@@ -110,77 +114,201 @@ void GOpenGLBoard::DoDrawCacheSlot(const GDrawStyle& Style, const GOpenGLCacheSl
 		if (Style.StrokeEnabled()) {
 			DRAW_STROKE
 		}
+
 		// take care of replace operation
 		if (!InsideGroup())
 			UpdateClipMasksState();
 
+		// calculate/update the shape box, according to model-view matrix
+		GAABox2 mvBox;
+		UpdateBox(tmpBox, ModelViewMatrix(), mvBox);
+
 		if (!InsideGroup())
-			gClipMasksBoxes.push_back(tmpBox);
+			gClipMasksBoxes.push_back(mvBox);
 		else {
 			// build initial group box
 			if (gIsFirstGroupDrawing)
-				gGroupBox = tmpBox;
+				gGroupBox = mvBox;
 			else {
 				// expand group box
-				gGroupBox.ExtendToInclude(tmpBox.Min());
-				gGroupBox.ExtendToInclude(tmpBox.Max());
+				gGroupBox.ExtendToInclude(mvBox.Min());
+				gGroupBox.ExtendToInclude(mvBox.Max());
 			}
 		}
 		gIsFirstGroupDrawing = G_FALSE;
 		return;
 	}
 
-	// in color mode, if we are inside a GroupBegin() / GroupEnd() constructor and group opacity is 0
-	// do not draw anything
-	if (InsideGroup() && GroupOpacity() <= 0 && gGroupOpacitySupport)
+	// if we are inside a group and the GroupCompOp() is DST_OP we have to draw nothing
+	if (InsideGroup() && GroupCompOp() == G_DST_OP && gGroupOpacitySupport)
 		return;
 
-	if (Style.FillEnabled()) {
+	// calculate/update the shape box, according to model-view matrix
+	GAABox2 mvBox;
+	UpdateBox(tmpBox, ModelViewMatrix(), mvBox);
+
+	if (Style.FillEnabled() && Style.FillCompOp() != G_DST_OP) {
+
+		// now count the number of passes needed by current compositing operation, and see if we have to grab framebuffer
+		GUInt32 stylePassesCount = 0;
+		GUInt32 fbPassesCount = 0;
+		GBool needGrab = CompOpPassesCount(Style.FillCompOp(), stylePassesCount, fbPassesCount);
+
+		// grab frame buffer to do compositing, if needed
+		//GGenericAABox<GInt32, 2> physicBox;
+		if (needGrab) {
+			//physicBox.SetMinMax(LogicalToPhysicalInt(mvBox.Min()), LogicalToPhysicalInt(mvBox.Max()));
+			// we must add a 1pixel of border just to avoid visual artifacts
+			//GrabFrameBuffer(physicBox.Min() + GVect<GInt32, 2>(-1, -1),
+			//				physicBox.Dimension(G_X) + 2, physicBox.Dimension(G_Y) + 2, gCompositingBuffer);
+			GrabFrameBuffer(mvBox, gCompositingBuffer);
+		}
+
 		// set fill style using OpenGL
-		GBool useDepth = UseFillStyle(Style);
-		// take care of group opacity, first we have to write into stencil buffer
-		if (doublePass) {
-			GroupFirstPass();
-			// draw fill
-			DRAW_FILL
+		GBool useDepthForFill = NeedDepthMask((const GOpenGLDrawStyle &)Style, G_TRUE);
+		GBool depthPass = needGrab || useDepthForFill;
+
+		// for those compositing operations that need a grab, we have to do a first pass on zbuffer; here we also
+		// take care of group opacity and some compositing operations, first we have to write into stencil buffer
+		if (stencilPass || depthPass) {
+
+			GLDisableShaders();
+			glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+
+			if (stencilPass && !depthPass) {
+				StencilNoDepthWrite();
+				glMatrixMode(GL_MODELVIEW);
+				SetGLModelViewMatrix(ModelViewMatrix());
+				DRAW_FILL
+			}
+			else
+			if (!stencilPass && depthPass) {
 				StencilEnableTop();
+				DepthNoStencilWrite();
+				// use model-view matrix to draw the mask
+				glMatrixMode(GL_MODELVIEW);
+				SetGLModelViewMatrix(ModelViewMatrix());
+				DRAW_FILL
+			}
+			else {
+				StencilEnableTop();
+				DepthNoStencilWrite();
+				// use model-view matrix to draw the mask
+				glMatrixMode(GL_MODELVIEW);
+				SetGLModelViewMatrix(ModelViewMatrix());
+				DRAW_FILL
+
+				StencilWhereDepthEqual();
+				// use identity to draw the logical box (already transformed with model-view matrix)
+				glMatrixMode(GL_MODELVIEW);
+				glLoadIdentity();
+				DrawGLBox(mvBox);
+			}
 		}
-		if (useDepth)
-			PushDepthMask();
-		// draw fill
-		DRAW_FILL
-			// geometric radial gradient and transparent entities uses depth clip, so we must pop off clip mask
-			if (useDepth)
-				DrawAndPopDepthMask(tmpBox, Style, G_TRUE);
+
+		if (depthPass)
+			// geometric radial/conical gradient and transparent entities uses depth clip, so we must pop off clip mask
+			// here we take into account compositing operations that need to grab framebuffer
+			DrawAndPopDepthMask(mvBox, Style, G_TRUE, stylePassesCount, fbPassesCount, needGrab);		
+		else {
+			G_ASSERT(fbPassesCount == 0);
+			glDisable(GL_DEPTH_TEST);
+			glDepthMask(GL_FALSE);
+			StencilEnableTop();
+
+			glMatrixMode(GL_MODELVIEW);
+			SetGLModelViewMatrix(ModelViewMatrix());
+			for (GUInt32 ii = 0; ii < stylePassesCount; ++ii) {
+				// draw fill, using specified style and model-view matrix
+				UseFillStyle(Style, ii);
+				DRAW_FILL
+			}
+		}
 	}
 
-	// take care to enable stencil test if necessary
-	SetGLClipEnabled(TargetMode(), ClipOperation());
 
-	if (Style.StrokeEnabled()) {
+	if (Style.StrokeEnabled() && Style.StrokeCompOp() != G_DST_OP) {
+
+		// now count the number of passes needed by current compositing operation, and see if we have to grab framebuffer
+		GUInt32 stylePassesCount = 0;
+		GUInt32 fbPassesCount = 0;
+		GBool needGrab = CompOpPassesCount(Style.StrokeCompOp(), stylePassesCount, fbPassesCount);
+
+		// grab frame buffer to do compositing, if needed
+		//GGenericAABox<GInt32, 2> physicBox;
+		if (needGrab) {
+			//physicBox.SetMinMax(LogicalToPhysicalInt(mvBox.Min()), LogicalToPhysicalInt(mvBox.Max()));
+			// we must add a 1pixel of border just to avoid visual artifacts
+			//GrabFrameBuffer(physicBox.Min() + GVect<GInt32, 2>(-1, -1),
+			//				physicBox.Dimension(G_X) + 2, physicBox.Dimension(G_Y) + 2, gCompositingBuffer);
+			GrabFrameBuffer(mvBox, gCompositingBuffer);
+		}
+
 		// set stroke style using OpenGL
-		GBool useDepth = UseStrokeStyle(Style);
-		// take care of group opacity, first we have to write into stencil buffer
-		if (doublePass) {
-			GroupFirstPass();
-			// draw stroke
-			DRAW_STROKE
-				StencilEnableTop();
-		}
-		if (useDepth)
-			PushDepthMask();
-		// draw stroke
-		DRAW_STROKE
-			// geometric radial gradient and transparent entities uses depth clip, so we must pop off clip mask
-			if (useDepth)
-				DrawAndPopDepthMask(tmpBox, Style, G_FALSE);
-	}
+		GBool useDepthForStroke = NeedDepthMask((const GOpenGLDrawStyle &)Style, G_FALSE);
+		GBool depthPass = needGrab || useDepthForStroke;
+		
+		// for those compositing operations that need a grab, we have to do a first pass on zbuffer; here we also
+		// take care of group opacity and some compositing operations, first we have to write into stencil buffer
+		if (stencilPass || depthPass) {
+			GLDisableShaders();
+			glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 
-#undef DRAW_STROKE
-#undef DRAW_FILL
+			if (stencilPass && !depthPass) {
+				StencilNoDepthWrite();
+				glMatrixMode(GL_MODELVIEW);
+				SetGLModelViewMatrix(ModelViewMatrix());
+				DRAW_STROKE
+			}
+			else
+			if (!stencilPass && depthPass) {
+				StencilEnableTop();
+				DepthNoStencilWrite();
+				// use model-view matrix to draw the mask
+				glMatrixMode(GL_MODELVIEW);
+				SetGLModelViewMatrix(ModelViewMatrix());
+				DRAW_STROKE
+			}
+			else {
+				StencilEnableTop();
+				DepthNoStencilWrite();
+				// use model-view matrix to draw the mask
+				glMatrixMode(GL_MODELVIEW);
+				SetGLModelViewMatrix(ModelViewMatrix());
+				DRAW_STROKE
+
+				StencilWhereDepthEqual();
+				// use identity to draw the logical box (already transformed with model-view matrix)
+				glMatrixMode(GL_MODELVIEW);
+				glLoadIdentity();
+				DrawGLBox(mvBox);
+			}
+		}
+
+		if (depthPass)
+			// geometric radial/conical gradient and transparent entities uses depth clip, so we must pop off clip mask
+			// here we take into account compositing operations that need to grab framebuffer
+			DrawAndPopDepthMask(mvBox, Style, G_FALSE, stylePassesCount, fbPassesCount, needGrab);
+		else {
+			G_ASSERT(fbPassesCount == 0);
+			glDisable(GL_DEPTH_TEST);
+			glDepthMask(GL_FALSE);
+			StencilEnableTop();
+
+			glMatrixMode(GL_MODELVIEW);
+			SetGLModelViewMatrix(ModelViewMatrix());
+			for (GUInt32 ii = 0; ii < stylePassesCount; ++ii) {
+				// draw line segment, using specified style and model-view matrix
+				UseStrokeStyle(Style, ii);
+				DRAW_STROKE
+			}
+		}
+	}
+	#undef DRAW_STROKE
+	#undef DRAW_FILL
 }
 
-void GOpenGLBoard::DoDrawCacheSlots(GDrawStyle& Style, const GUInt32 FirstSlotIndex, const GUInt32 LastSlotIndex) {
+void GOpenGLBoard::DoDrawCacheSlots(GDrawStyle& Style, const GInt32 FirstSlotIndex, const GInt32 LastSlotIndex) {
 
 	if (!Style.StrokeEnabled() && !Style.FillEnabled())
 		return;
@@ -191,7 +319,7 @@ void GOpenGLBoard::DoDrawCacheSlots(GDrawStyle& Style, const GUInt32 FirstSlotIn
 	GOpenGLCacheBank *bank = (GOpenGLCacheBank *)CacheBank();
 	G_ASSERT(bank != NULL);
 
-	for (GUInt32 i = FirstSlotIndex; i <= LastSlotIndex; ++i)
+	for (GInt32 i = FirstSlotIndex; i <= LastSlotIndex; ++i)
 		DoDrawCacheSlot(Style, bank->gSlots[i]);
 }
 

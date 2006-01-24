@@ -50,6 +50,7 @@ void GOpenGLBoard::StencilPush() {
 	}
 	else {
 		glStencilFunc(GL_EQUAL, gTopStencilValue, gStencilMask);
+		glStencilMask(gStencilMask);
 		if (!InsideGroup())
 			gTopStencilValue++;
 		glStencilOp(GL_KEEP, GL_KEEP, GL_INCR);
@@ -68,6 +69,7 @@ void GOpenGLBoard::StencilPop() {
 	glEnable(GL_STENCIL_TEST);
 	glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 	glStencilFunc(GL_LEQUAL, gTopStencilValue, gStencilMask);
+	glStencilMask(gStencilMask);
 	glStencilOp(GL_KEEP, GL_KEEP, GL_DECR);
 	gTopStencilValue--;
 }
@@ -86,6 +88,7 @@ void GOpenGLBoard::StencilReplace() {
 			gTopStencilValue++;
 
 		glStencilFunc(GL_ALWAYS, gTopStencilValue, gStencilMask);
+		glStencilMask(gStencilMask);
 		glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
 	}
 }
@@ -95,8 +98,6 @@ void GOpenGLBoard::StencilEnableTop() {
 	if (!gClipMasksSupport)
 		return;
 
-	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE);
-
 	if (gTopStencilValue == 0 || !ClipEnabled())
 		glDisable(GL_STENCIL_TEST);
 	else {
@@ -104,6 +105,63 @@ void GOpenGLBoard::StencilEnableTop() {
 		glStencilFunc(GL_LEQUAL, gTopStencilValue, gStencilMask);
 		// do not change stencil buffer
 		glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+	}
+}
+
+void GOpenGLBoard::DepthNoStencilWrite() {
+
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_ALWAYS);
+	glDepthMask(GL_TRUE);
+
+	GReal left, right, top, bottom;
+	Projection(left, right, bottom, top);
+	GMatrix44 m = GLProjectionMatrix(left, right, bottom, top, (GReal)1e-7);
+	// now all points (that have z = 0 because glVertex2dv/fv) will have a z-window value equal to +epsilon
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+	#ifdef DOUBLE_REAL_TYPE
+		glLoadMatrixd((const GLdouble *)m.Data());
+	#else
+		glLoadMatrixf((const GLfloat *)m.Data());
+	#endif
+}
+
+
+void GOpenGLBoard::StencilNoDepthWrite() {
+
+	glEnable(GL_STENCIL_TEST);
+	if (ClipEnabled()) {
+		glStencilOp(GL_KEEP, GL_INCR, GL_INCR);
+		glStencilFunc(GL_EQUAL, gTopStencilValue, gStencilMask);
+		glStencilMask(gStencilMask);
+	}
+	else {
+		glStencilOp(GL_KEEP, GL_REPLACE, GL_REPLACE);
+		glStencilFunc(GL_ALWAYS, (GLint)(0x7FFFFFFF), gStencilDualMask);
+		glStencilMask(gStencilDualMask);
+	}
+
+	// we are inside a group, write geometry on stencil, without touch zbuffer (and disabling z-test)
+	glDisable(GL_DEPTH_TEST);
+	glDepthMask(GL_FALSE);
+}
+
+void GOpenGLBoard::StencilWhereDepthEqual() {
+
+	glEnable(GL_DEPTH_TEST);
+	glDepthMask(GL_FALSE);
+	glDepthFunc(GL_EQUAL);
+	glEnable(GL_STENCIL_TEST);
+	if (ClipEnabled()) {
+		glStencilOp(GL_KEEP, GL_KEEP, GL_INCR);
+		glStencilFunc(GL_EQUAL, gTopStencilValue, gStencilMask);
+		glStencilMask(gStencilMask);
+	}
+	else {
+		glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+		glStencilFunc(GL_ALWAYS, (GLint)(0x7FFFFFFF), gStencilDualMask);
+		glStencilMask(gStencilDualMask);
 	}
 }
 
@@ -126,13 +184,9 @@ void GOpenGLBoard::DoPopClipMask() {
 		GAABox2 lastClipMaskBox(gClipMasksBoxes.back());
 		gClipMasksBoxes.pop_back();
 
-		GPoint2 p0 = lastClipMaskBox.Min();
-		GPoint2 p2 = lastClipMaskBox.Max();
-		GPoint2 p1(p0[G_X], p2[G_Y]);
-		GPoint2 p3(p2[G_X], p0[G_Y]);
-
 		glEnable(GL_STENCIL_TEST);
 		glStencilFunc(GL_EQUAL, gTopStencilValue, gStencilMask);
+		glStencilMask(gStencilMask);
 		if (gTopStencilValue > 0) {
 			gTopStencilValue--;
 			glStencilOp(GL_KEEP, GL_DECR, GL_DECR);
@@ -141,19 +195,7 @@ void GOpenGLBoard::DoPopClipMask() {
 			glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 
 		// pop the mask, drawing a bounding box
-		glBegin(GL_POLYGON);
-		#ifdef DOUBLE_REAL_TYPE
-			glVertex2dv(p0.Data());
-			glVertex2dv(p1.Data());
-			glVertex2dv(p2.Data());
-			glVertex2dv(p3.Data());
-		#else
-			glVertex2fv(p0.Data());
-			glVertex2fv(p1.Data());
-			glVertex2fv(p2.Data());
-			glVertex2fv(p3.Data());
-		#endif
-		glEnd();
+		DrawGLBox(lastClipMaskBox);
 	}
 }
 

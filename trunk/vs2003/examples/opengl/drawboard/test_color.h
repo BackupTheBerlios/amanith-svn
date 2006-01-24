@@ -37,6 +37,7 @@ void TestColor(const GUInt32 TestIndex) {
 	gDrawBoard->SetStrokePaintType(G_COLOR_PAINT_TYPE);
 
 	if (idx == 0) {
+
 		// --------------------------------------------------------------
 		gDrawBoard->SetFillColor(GVector4((GReal)1.0, (GReal)0.0, (GReal)0.0, (GReal)1.000));
 		gDrawBoard->DrawRectangle(GPoint2(20, 18), GPoint2(260, 194));

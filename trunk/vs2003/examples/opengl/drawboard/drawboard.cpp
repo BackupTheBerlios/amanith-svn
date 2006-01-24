@@ -111,16 +111,16 @@ bool InitMultisample(HINSTANCE hInstance, HWND hWnd, PIXELFORMATDESCRIPTOR pfd) 
 
 	int iAttributes[] =	{
 		WGL_DRAW_TO_WINDOW_ARB, GL_TRUE,
-			WGL_SUPPORT_OPENGL_ARB, GL_TRUE,
-			WGL_ACCELERATION_ARB, WGL_FULL_ACCELERATION_ARB,
-			WGL_COLOR_BITS_ARB, 16,
-			WGL_ALPHA_BITS_ARB, 0,
-			WGL_DEPTH_BITS_ARB, 16,
-			WGL_STENCIL_BITS_ARB, 8,
-			WGL_DOUBLE_BUFFER_ARB, GL_TRUE,
-			WGL_SAMPLE_BUFFERS_ARB, GL_TRUE,
-			WGL_SAMPLES_ARB, 4,
-			0, 0
+		WGL_SUPPORT_OPENGL_ARB, GL_TRUE,
+		WGL_ACCELERATION_ARB, WGL_FULL_ACCELERATION_ARB,
+		WGL_COLOR_BITS_ARB, 16,
+		WGL_ALPHA_BITS_ARB, 8,
+		WGL_DEPTH_BITS_ARB, 16,
+		WGL_STENCIL_BITS_ARB, 8,
+		WGL_DOUBLE_BUFFER_ARB, GL_TRUE,
+		WGL_SAMPLE_BUFFERS_ARB, GL_TRUE,
+		WGL_SAMPLES_ARB, 4,
+		0, 0
 	};
 	// first we check to see if we can get a pixel format for 4 samples
 	valid = wglChoosePixelFormatARB(hDC, iAttributes, fAttributes, 1, &pixelFormat, &numFormats);
@@ -149,12 +149,19 @@ void InitApp() {
 
 void KillApp() {
 
-	if (gKernel)
+	doDraw = FALSE;
+	if (gKernel) {
 		delete gKernel;
-	if (gExtManager)
+		gKernel = NULL;
+	}
+	if (gExtManager) {
 		delete gExtManager;
-	if (gDrawBoard)
+		gExtManager = NULL;
+	}
+	if (gDrawBoard) {
 		delete gDrawBoard;
+		gDrawBoard = NULL;
+	}
 }
 
 int InitGL(GLvoid) {
@@ -295,13 +302,123 @@ int InitGL(GLvoid) {
 	return TRUE;
 }
 
+void TestDebug() {
+
+	//gDrawBoard->SetShadersEnabled(G_FALSE);
+	//gDrawBoard->SetRectTextureEnabled(G_FALSE);
+	GInt32 cacheSlot;
+	GMatrix33 matrix;
+
+	gDrawBoard->SetTargetMode(G_COLOR_MODE);
+	gDrawBoard->SetStrokeStyle(G_SOLID_STROKE);
+	gDrawBoard->SetStrokeJoinStyle(G_ROUND_JOIN);
+	gDrawBoard->SetStrokeStartCapStyle(G_ROUND_CAP);
+	gDrawBoard->SetStrokeEndCapStyle(G_ROUND_CAP);
+	gDrawBoard->SetStrokeEnabled(G_TRUE);
+	gDrawBoard->SetFillEnabled(G_TRUE);
+	gDrawBoard->SetModelViewMatrix(G_MATRIX_IDENTITY33);
+
+
+	gDrawBoard->SetStrokeWidth(20);
+	gDrawBoard->SetStrokeCompOp(G_SRC_OVER_OP);
+	gDrawBoard->SetStrokePaintType(G_COLOR_PAINT_TYPE);
+	gDrawBoard->SetStrokeColor(0.8, 0, 0.3, 0.8);
+
+	gDrawBoard->SetFillCompOp(G_SRC_OVER_OP);
+	gDrawBoard->SetFillPaintType(G_GRADIENT_PAINT_TYPE);
+	gDrawBoard->SetFillOpacity(0.9);
+	gDrawBoard->SetFillGradient(gConGrad1);
+
+	gDrawBoard->SetTargetMode(G_COLOR_AND_CACHE_MODE);
+	gCacheBank->Invalidate();
+	gDrawBoard->SetCacheBank(gCacheBank);
+	gDrawBoard->SetStrokeStyle(G_DASHED_STROKE);
+	cacheSlot = gDrawBoard->DrawPaths("M 200,300 L 300,400 C 400,500 500,500 600,200 Q 450,300 200,300 M 250,150 L 300,250 C 500,800 550,450 250,150 z");
+
+	gDrawBoard->SetTargetMode(G_COLOR_MODE);
+	gDrawBoard->SetStrokeStyle(G_SOLID_STROKE);
+
+	gDrawBoard->SetStrokeWidth(60);
+	gDrawBoard->SetTargetMode(G_CLIP_MODE);
+	gDrawBoard->DrawEllipse(300, 300, 100, 80);
+	gDrawBoard->SetTargetMode(G_COLOR_MODE);
+	gDrawBoard->SetClipEnabled(G_TRUE);
+
+	gDrawBoard->SetStrokeWidth(80);
+	gDrawBoard->SetStrokeCompOp(G_SRC_OP);
+	gDrawBoard->SetStrokePaintType(G_PATTERN_PAINT_TYPE);
+	gPattern->SetTilingMode(G_REFLECT_TILE);
+	gDrawBoard->SetStrokePattern(gPattern);
+	gDrawBoard->SetStrokeOpacity(0.9);
+	gDrawBoard->DrawLine(GPoint2(100, 100), GPoint2(500, 500));
+
+
+	gDrawBoard->SetClipEnabled(G_FALSE);
+
+	gDrawBoard->SetGroupCompOp(G_DST_ATOP_OP);
+	gDrawBoard->SetGroupOpacity(0.7);
+	gDrawBoard->GroupBegin(GAABox2(GPoint2(100, 100), GPoint2(500, 500)));
+
+		gDrawBoard->SetStrokePaintType(G_GRADIENT_PAINT_TYPE);
+		gDrawBoard->SetStrokeGradient(gLinGrad2);
+
+		RotationToMatrix(matrix, G_PI_OVER4);
+		gLinGrad2->SetMatrix(matrix);
+		gLinGrad2->SetSpreadMode(G_REPEAT_COLOR_RAMP_SPREAD);
+		gDrawBoard->SetStrokeWidth(40);
+		gDrawBoard->SetStrokeOpacity(0.8);
+		gDrawBoard->SetStrokeCompOp(G_SRC_OVER_OP);
+		gDrawBoard->DrawLine(GPoint2(200, 200), GPoint2(400, 200));
+
+		// -------------------
+
+		gDrawBoard->SetStrokeWidth(20);
+		gDrawBoard->SetStrokePaintType(G_GRADIENT_PAINT_TYPE);
+
+		TranslationToMatrix(matrix, GVector2(120, 100));
+		gRadGrad2->SetMatrix(matrix);
+
+		gDrawBoard->SetStrokeGradient(gRadGrad2);
+		gRadGrad2->SetSpreadMode(G_REFLECT_COLOR_RAMP_SPREAD);
+		gRadGrad2->SetColorInterpolation(G_LINEAR_COLOR_INTERPOLATION);
+
+		gDrawBoard->SetStrokeOpacity(0.6);
+		gDrawBoard->SetStrokeCompOp(G_XOR_OP);
+		gDrawBoard->DrawLine(GPoint2(300, 150), GPoint2(300, 350));
+
+	gDrawBoard->GroupEnd();
+
+	gDrawBoard->SetStrokeOpacity(0.9);
+	gDrawBoard->SetStrokeWidth(20);
+	gDrawBoard->SetStrokePaintType(G_COLOR_PAINT_TYPE);
+	gDrawBoard->SetStrokeColor(0.0, 0.2, 0.6, 1.0);
+
+	gDrawBoard->SetFillPaintType(G_GRADIENT_PAINT_TYPE);
+	gDrawBoard->SetFillGradient(gConGrad2);
+	gDrawBoard->SetFillOpacity(0.9);
+	gConGrad2->SetColorInterpolation(G_LINEAR_COLOR_INTERPOLATION);
+
+	gDrawBoard->SetStrokeCompOp(G_SCREEN_OP);
+	gDrawBoard->SetFillCompOp(G_EXCLUSION_OP);
+
+	gDrawBoard->DrawCircle(300, 300, 100);
+
+
+	ScaleToMatrix(matrix, 0.5, GPoint2(300, 200));
+	gDrawBoard->SetStrokeCompOp(G_SRC_IN_OP);
+	gDrawBoard->SetFillCompOp(G_PLUS_OP);
+	gDrawBoard->SetStrokePaintType(G_COLOR_PAINT_TYPE);
+	gDrawBoard->SetStrokeColor(0.1, 0.8, 0.4, 0.8);
+	gDrawBoard->SetFillPaintType(G_COLOR_PAINT_TYPE);
+	gDrawBoard->SetFillColor(0.01, 0.4, 0.03, 0.8);
+	gDrawBoard->SetModelViewMatrix(matrix);
+	gDrawBoard->DrawCacheSlot(cacheSlot);
+}
+
 int DrawGLScene(GLvoid)	{
 
-	gDrawBoard->Clear(1.0, 1.0, 1.0, G_TRUE);
-
-	GMatrix33 k;
-	Identity(k);
-	gDrawBoard->SetModelViewMatrix(k);
+	gDrawBoard->Clear(1.0, 1.0, 1.0, 0.0, G_TRUE);
+	gDrawBoard->SetModelViewMatrix(G_MATRIX_IDENTITY33);
 
 	if (gDrawBackGround) {
 
@@ -351,6 +468,8 @@ int DrawGLScene(GLvoid)	{
 		default:
 			TestColor(gTestIndex);
 	}
+
+	//TestDebug();
 
 	gDrawBoard->Flush();
 	return TRUE;
@@ -455,7 +574,7 @@ BOOL CreateGLWindow(char* title, int width, int height, int bits, bool fullscree
 		PFD_TYPE_RGBA,								// Request An RGBA Format
 		bits,										// Select Our Color Depth
 		0, 0, 0, 0, 0, 0,							// Color Bits Ignored
-		0,											// No Alpha Buffer
+		8,											// 8bit Alpha Buffer
 		0,											// Shift Bit Ignored
 		0,											// No Accumulation Buffer
 		0, 0, 0, 0,									// Accumulation Bits Ignored
@@ -561,6 +680,7 @@ LRESULT CALLBACK WndProc(	HWND	hWnd,			// Handle For This Window
 		case WM_CLOSE:								// Did We Receive A Close Message?
 		{
 			PostQuitMessage(0);						// Send A Quit Message
+			doDraw = FALSE;
 			return 0;								// Jump Back
 		}
 
@@ -785,6 +905,13 @@ int WINAPI WinMain(	HINSTANCE	hInstance,			// Instance
 						s += "Here's Amanith mushroom, it's constructed directly with SVG paths.";
 						MessageBox(NULL, StrUtils::ToAscii(s), "Current board description", MB_OK | MB_ICONINFORMATION | MB_APPLMODAL);
 						break;
+					case 10:
+						s = "This board shows Amanith caching system.\n\n";
+						s += "Lower row: first cache bank is filled (G_CACHE_MODE), then cached geometry is drawn (G_COLOR_MODE).\n";
+						s += "Middle row: both cache and color are written at the same time (G_COLOR_AND_CACHE_MODE).\n";
+						s += "Topmost row: cached geometry is drawn with a different paint style.\n\n";
+						MessageBox(NULL, StrUtils::ToAscii(s), "Current board description", MB_OK | MB_ICONINFORMATION | MB_APPLMODAL);
+						break;
 				}
 			}
 			// 1 key
@@ -909,7 +1036,6 @@ int WINAPI WinMain(	HINSTANCE	hInstance,			// Instance
 					p.Save(StrUtils::ToAscii(gScreenShotFileName));
 				}
 			}
-
 			// PageUp
 			if (keys[VK_PRIOR]) {
 				keys[VK_PRIOR] = FALSE;
@@ -940,7 +1066,7 @@ int WINAPI WinMain(	HINSTANCE	hInstance,			// Instance
 		}
 	}
 	// Shutdown
-	KillGLWindow();									// Kill The Window
 	KillApp();
+	KillGLWindow();									// Kill The Window
 	return (int)(msg.wParam);							// Exit The Program
 }

@@ -37,7 +37,8 @@
 
 #define PrintOpenGLError() gExtManager->PrintOglError(__FILE__, __LINE__)
 
-static int timer_interval = 0;			// timer interval (millisec)
+// timer interval (millisec)
+static int timer_interval = 0;
 
 // constructor
 #ifdef USE_QT4

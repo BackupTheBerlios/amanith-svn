@@ -21,10 +21,11 @@
 ** Contact info@mazatech.com if any conditions of this licensing are
 ** not clear to you.
 **********************************************************************/
-#include <windows.h>
 #include <amanith/gkernel.h>
-#include <amanith/gopenglext.h>
-#include <amanith/2d/gbeziercurve2d.h>
+#include <amanith/2d/gpixelmap.h>
+#include <amanith/rendering/gopenglboard.h>
+#include <amanith/geometry/gxformconv.h>
+#include <windows.h>
 #include "resource.h"
 
 using namespace Amanith;
@@ -37,33 +38,44 @@ HINSTANCE	hInstance;		// Holds The Instance Of The Application
 bool keys[256];			// Array Used For The Keyboard Routine
 bool active = TRUE;		// Window Active Flag Set To TRUE By Default
 bool fullscreen = TRUE;	// Fullscreen Flag Set To Fullscreen Mode By Default
-bool arbMultisampleSupported = false;
-int arbMultisampleFormat = 0;
+bool doDraw = TRUE;
 
 LRESULT	CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);	// Declaration For WndProc
 
 // Amanith stuff
 GKernel *gKernel = NULL;
-GOpenglExt *gExtManager = NULL;	// extensions manager
-GBezierCurve2D *gBezCurve = NULL;
-GReal gDeviation;
-GDynArray<GPoint2> gVertices;
-GDynArray<GVector2> gIntersectionPoints;
-GRay2 gIntersectionRay;
-GLfloat	gX, gY, gZ;
+GOpenglExt *gExtManager = NULL;	// OpenGL extensions manager
+GOpenGLBoard *gDrawBoard = NULL;
+GPixelMap *gImage = NULL;
+GGradientDesc *gLinGrad = NULL;
+GPatternDesc *gBackGround = NULL;
+GString gDataPath;
+GReal gRotAngle;
+GReal gRotationVel;
+GReal gStrokeOpacity;
+GReal gFillOpacity;
+GReal gZoomFactor;
+GPoint2 gTranslation;
+GMatrix33 gModelView;
+GMatrix33 gGradientMatrix;
+GBool gAnim;
+GCompositingOperation gStrokeCompOp;
+GCompositingOperation gFillCompOp;
 
-// InitMultisample: Used To Query The Multisample Frequencies
-bool InitMultisample(HINSTANCE hInstance, HWND hWnd, PIXELFORMATDESCRIPTOR pfd)
-{  
+bool arbMultisampleSupported = false;
+int arbMultisampleFormat = 0;
+bool activateFSAA = true;
+
+// InitMultisample: used to query the multisample frequencies
+bool InitMultisample(HINSTANCE hInstance, HWND hWnd, PIXELFORMATDESCRIPTOR pfd) {  
 
 	// using Amanith OpenGL extension manager is just a matter of test function pointer...
-	if (!wglChoosePixelFormatARB) 
-	{
+	if (!wglChoosePixelFormatARB) {
 		arbMultisampleSupported = false;
 		return false;
 	}
 
-	// Get Our Current Device Context
+	// get our current device context
 	HDC hDC = GetDC(hWnd);
 
 	int		pixelFormat;
@@ -72,174 +84,239 @@ bool InitMultisample(HINSTANCE hInstance, HWND hWnd, PIXELFORMATDESCRIPTOR pfd)
 	float	fAttributes[] = {0, 0};
 
 	int iAttributes[] =	{
-			WGL_DRAW_TO_WINDOW_ARB, GL_TRUE,
-			WGL_SUPPORT_OPENGL_ARB, GL_TRUE,
-			WGL_ACCELERATION_ARB, WGL_FULL_ACCELERATION_ARB,
-			WGL_COLOR_BITS_ARB, 16,
-			WGL_ALPHA_BITS_ARB, 0,
-			WGL_DEPTH_BITS_ARB, 16,
-			WGL_STENCIL_BITS_ARB, 0,
-			WGL_DOUBLE_BUFFER_ARB, GL_TRUE,
-			WGL_SAMPLE_BUFFERS_ARB, GL_TRUE,
-			WGL_SAMPLES_ARB, 4,
-			0, 0
+		WGL_DRAW_TO_WINDOW_ARB, GL_TRUE,
+		WGL_SUPPORT_OPENGL_ARB, GL_TRUE,
+		WGL_ACCELERATION_ARB, WGL_FULL_ACCELERATION_ARB,
+		WGL_COLOR_BITS_ARB, 16,
+		WGL_ALPHA_BITS_ARB, 8,
+		WGL_DEPTH_BITS_ARB, 16,
+		WGL_STENCIL_BITS_ARB, 8,
+		WGL_DOUBLE_BUFFER_ARB, GL_TRUE,
+		WGL_SAMPLE_BUFFERS_ARB, GL_TRUE,
+		WGL_SAMPLES_ARB, 4,
+		0, 0
 	};
-	// First We Check To See If We Can Get A Pixel Format For 4 Samples
+	// first we check to see if we can get a pixel format for 4 samples
 	valid = wglChoosePixelFormatARB(hDC, iAttributes, fAttributes, 1, &pixelFormat, &numFormats);
-
-	// If We Returned True, And Our Format Count Is Greater Than 1
 	if (valid && numFormats >= 1) {
 		arbMultisampleSupported = true;
 		arbMultisampleFormat = pixelFormat;	
 		return arbMultisampleSupported;
 	}
-	// Our Pixel Format With 4 Samples Failed, Test For 2 Samples
+
+	// our pixel format with 4 samples failed, test for 2 samples
 	iAttributes[19] = 2;
 	valid = wglChoosePixelFormatARB(hDC, iAttributes, fAttributes, 1, &pixelFormat, &numFormats);
+	// if we returned true, and our format count is greater than 1
 	if (valid && numFormats >= 1) {
 		arbMultisampleSupported = true;
-		arbMultisampleFormat = pixelFormat;	 
+		arbMultisampleFormat = pixelFormat;	
 		return arbMultisampleSupported;
 	}
-	// Return The Valid Format
+
+	// return the valid format
 	return arbMultisampleSupported;
 }
 
-void setLightAndTransform() {
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-	glTranslatef(gX, gY, gZ);
+
+void KillApp() {
+
+	if (gKernel) {
+		delete gKernel;
+		gKernel = NULL;
+	}
+	if (gExtManager) {
+		delete gExtManager;
+		gExtManager = NULL;
+	}
+	if (gDrawBoard) {
+		delete gDrawBoard;
+		gDrawBoard = NULL;
+	}
 }
 
-void setDefaultGlobalStates() {
-	glDisable(GL_LIGHTING);
-	glDisable(GL_BLEND);
-	glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+void BuildMatrices() {
+
+	GMatrix33 scl, rot, trans;
+
+	ScaleToMatrix(scl, gZoomFactor, GPoint2(0, 0));
+	RotationToMatrix(rot, gRotAngle, GPoint2(0, 0));
+	TranslationToMatrix(trans, gTranslation);
+
+	gModelView = trans * (rot * scl);
+	gGradientMatrix = gModelView;
 }
 
-void BuildFlatContour(const GBezierCurve2D* Curve) {
+GString CompOpToString(const GCompositingOperation CompOp) {
 
-	gVertices.clear();
-	Curve->Flatten(gVertices, gDeviation);
+	switch(CompOp) {
+
+		case G_CLEAR_OP:
+			return("Clear");
+		case G_SRC_OP:
+			return("Src");
+		case G_DST_OP:
+			return("Dst");
+		case G_SRC_OVER_OP:
+			return("SrcOver");
+		case G_DST_OVER_OP:
+			return("DstOver");
+		case G_SRC_IN_OP:
+			return("SrcIn");
+		case G_DST_IN_OP:
+			return("DstIn");
+		case G_SRC_OUT_OP:
+			return("SrcOut");
+		case G_DST_OUT_OP:
+			return("DstOut");
+		case G_SRC_ATOP_OP:
+			return("SrcATop");
+		case G_DST_ATOP_OP:
+			return("DstATop");
+		case G_XOR_OP:
+			return("Xor");
+		case G_PLUS_OP:
+			return("Plus");
+		case G_MULTIPLY_OP:
+			return("Multiply");
+		case G_SCREEN_OP:
+			return("Screen");
+		case G_OVERLAY_OP:
+			return("Overlay");
+		case G_DARKEN_OP:
+			return("Darken");
+		case G_LIGHTEN_OP:
+			return("Lighten");
+		case G_COLOR_DODGE_OP:
+			return("ColorDodge");
+		case G_COLOR_BURN_OP:
+			return("ColorBurn");
+		case G_HARD_LIGHT_OP:
+			return("HardLight");
+		case G_SOFT_LIGHT_OP:
+			return("SoftLight");
+		case G_DIFFERENCE_OP:
+			return("Difference");
+		case G_EXCLUSION_OP:
+			return("Exclusion");
+		default:
+			return("SrcOver");
+	}
 }
 
-void InitApp() {
+void DrawTitle() {
+
+	GString s;
+
+	s = "FILL: " + CompOpToString(gFillCompOp) + " (" + StrUtils::ToString(gFillOpacity * 100, "%3.0f") + "%)";
+	s += " - STROKE: " +CompOpToString(gStrokeCompOp) + " (" + StrUtils::ToString(gStrokeOpacity * 100, "%3.0f") + "%)";
+	s += " [F1 help]";
+
+	SetWindowText(hWnd, StrUtils::ToAscii(s));
+}
+
+int InitGL(GLvoid) {
 
 #ifdef _DEBUG
 	SysUtils::RedirectIOToConsole();
 #endif
 
 	gKernel = new GKernel();
-	gBezCurve = (GBezierCurve2D *)gKernel->CreateNew(G_BEZIERCURVE2D_CLASSID);
+	gImage = (GPixelMap *)gKernel->CreateNew(G_PIXELMAP_CLASSID);
 
-	// Depth Into The Screen
-	gX = -5.4f;
-	gY = -6.3f;
-	gZ = -15.0f;
+	// build path for data (textures)
+	gDataPath = SysUtils::AmanithPath();
+	if (gDataPath.length() > 0)
+		gDataPath += "data/";
 
-	gVertices.push_back(GPoint2(1, 6));
-	gVertices.push_back(GPoint2(5, 10));
-	gVertices.push_back(GPoint2(12, 4));
-	gVertices.push_back(GPoint2(5, 1));
-	gVertices.push_back(GPoint2(-2, 4));
-	gVertices.push_back(GPoint2(10, 10));
-	gBezCurve->SetPoints(gVertices);
+	gRotAngle = 0;
+	gRotationVel = (GReal)0.05;
+	gStrokeOpacity = 1;
+	gFillOpacity = 1;
+	gZoomFactor = 2;
+	gAnim = G_FALSE;
+	gTranslation.Set(256, 256);
+	gStrokeCompOp = G_SRC_OVER_OP;
+	gFillCompOp = G_SRC_OVER_OP;
 
-	gIntersectionRay.SetOrigin(GPoint2(0, 0));
-	gIntersectionRay.SetDirection(GPoint2(0, 0));
-	GMath::SeedRandom();
-	gDeviation = (GReal)0.0001;
-	BuildFlatContour(gBezCurve);
+	gDrawBoard->SetRenderingQuality(G_HIGH_RENDERING_QUALITY);
+
+	GString s;
+	GError err;
+	GDynArray<GKeyValue> colKeys;
+
+	// color gradient
+	colKeys.clear();
+	colKeys.push_back(GKeyValue((GReal)0.00, GVector4((GReal)0.95, (GReal)0.92, (GReal)0.0, (GReal)1.0)));
+	colKeys.push_back(GKeyValue((GReal)1.00, GVector4((GReal)0.1, (GReal)0.3, (GReal)0.8, (GReal)0.7)));
+	gLinGrad = gDrawBoard->CreateLinearGradient(GPoint2(-60, -44), GPoint2(60, 44), colKeys, G_HERMITE_COLOR_INTERPOLATION, G_PAD_COLOR_RAMP_SPREAD);
+
+	// background
+	s = gDataPath + "compground.png";
+	err = gImage->Load(StrUtils::ToAscii(s), "expandpalette=true");
+	if (err == G_NO_ERROR) {
+		gBackGround = gDrawBoard->CreatePattern(gImage, G_LOW_IMAGE_QUALITY, G_REPEAT_TILE);
+		gBackGround->SetLogicalWindow(GPoint2(0, 0), GPoint2(512, 512));
+	}
+	else
+		gBackGround = NULL;
+
+	gDrawBoard->SetStrokeWidth(10);
+	gDrawBoard->SetStrokeGradient(gLinGrad);
+	gDrawBoard->SetFillGradient(gLinGrad);
+	gDrawBoard->SetFillPattern(gBackGround);
+	DrawTitle();
+
+	return TRUE;
 }
 
-void KillApp() {
 
-	if (gKernel)
-		delete gKernel;
-	if (gExtManager)
-		delete gExtManager;
-}
+int DrawGLScene(GLvoid)	{
 
-void Draw(const GBezierCurve2D* Curve) {
+	if (gAnim)
+		gRotAngle += gRotationVel;
 
-	GInt32 numSegs, i, j;
-	GPoint2 p1, p2;
+	gDrawBoard->Clear(1.0, 1.0, 1.0, 0.0, G_TRUE);
+	gDrawBoard->SetTargetMode(G_COLOR_MODE);
+	BuildMatrices();
 
-	// draw curve
-	glDisable(GL_LINE_SMOOTH);
-	glLineWidth(2.0f);
-	glColor3f(1.0f, 0.7f, 0.25f);
-	glBegin(GL_LINES);
-	numSegs = (GInt32)gVertices.size() - 1;
-	for (i = 0; i < numSegs; i++) {
-		p1 = gVertices[i];
-		p2 = gVertices[i + 1];
-		glVertex3f((GLfloat)p1[G_X], (GLfloat)p1[G_Y], 1.0f);
-		glVertex3f((GLfloat)p2[G_X], (GLfloat)p2[G_Y], 1.0f);
-	}
-	glEnd();
+	// draw background
+	gDrawBoard->SetModelViewMatrix(G_MATRIX_IDENTITY33);
+	gDrawBoard->SetStrokeEnabled(G_FALSE);
+	gDrawBoard->SetFillEnabled(G_TRUE);
+	gDrawBoard->SetFillPaintType(G_PATTERN_PAINT_TYPE);
+	gDrawBoard->SetFillOpacity(1.0);
+	gDrawBoard->SetFillCompOp(G_SRC_OP);
+	gDrawBoard->DrawRectangle(GPoint2(0, 0), GPoint2(512, 512));
 
-	// draw control polygon
-	glLineWidth(1.0f);
-	glColor3f(0.0f, 0.5f, 1.0f);
-	glBegin(GL_LINES);
-	numSegs = Curve->PointsCount() - 1;
-	for (i = 0; i < numSegs; i++) {
-		p1 = Curve->Point(i);
-		p2 = Curve->Point(i + 1);
-		glVertex3f((GLfloat)p1[G_X], (GLfloat)p1[G_Y], 1.0f);
-		glVertex3f((GLfloat)p2[G_X], (GLfloat)p2[G_Y], 1.0f);
-	}
-	// draw ray used for intersection test
-	glColor3f(1.0f, 0.3f, 0.1f);
-	glVertex3f((GLfloat)gIntersectionRay.Origin()[G_X], (GLfloat)gIntersectionRay.Origin()[G_Y], 1.0f);
-	glVertex3f((GLfloat)gIntersectionRay.Origin()[G_X] + 20.0f * (GLfloat)gIntersectionRay.Direction()[G_X],
-			(GLfloat)gIntersectionRay.Origin()[G_Y] + 20.0f * (GLfloat)gIntersectionRay.Direction()[G_Y], 1.0f);
-	glEnd();
-	// draw intersection points
-	glPointSize(5.0);
-	glColor3f(0.0f, 1.0f, 0.3f);
-	glBegin(GL_POINTS);
-	j = (GInt32)gIntersectionPoints.size();
-	for (i = 0; i < j; i++) {
-		p1 = Curve->Evaluate(gIntersectionPoints[i][G_X]);
-		glVertex3f((GLfloat)p1[G_X], (GLfloat)p1[G_Y], 1.0f);
-	}
-	glEnd();
-	setDefaultGlobalStates();
+	// draw path
+	gDrawBoard->SetStrokeOpacity(gStrokeOpacity);
+	gDrawBoard->SetStrokeEnabled(G_TRUE);
+	gDrawBoard->SetStrokePaintType(G_GRADIENT_PAINT_TYPE);
+
+	gDrawBoard->SetFillOpacity(gFillOpacity);
+	gDrawBoard->SetFillEnabled(G_TRUE);
+	gDrawBoard->SetFillPaintType(G_GRADIENT_PAINT_TYPE);
+
+	gDrawBoard->SetModelViewMatrix(gModelView);
+	gLinGrad->SetMatrix(gGradientMatrix);
+
+	gDrawBoard->SetStrokeCompOp(gStrokeCompOp);
+	gDrawBoard->SetFillCompOp(gFillCompOp);
+
+	gDrawBoard->DrawRoundRectangle(GPoint2(-64, -48), GPoint2(64, 48), 16, 16);
+
+	gDrawBoard->Flush();
+	return TRUE;
 }
 
 GLvoid ReSizeGLScene(GLsizei width, GLsizei height) {
 
-	if (height == 0)
-		height = 1;
-	glViewport(0, 0, width, height);
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	gluPerspective(45.0f, (GLfloat)width/(GLfloat)height, 0.1f, 100.0f);
-	glMatrixMode(GL_MODELVIEW);
-}
+	GUInt32 x, y, w, h;
 
-int InitGL(GLvoid) {
-
-	glShadeModel(GL_SMOOTH);
-	glClearColor(0.0f, 0.0f, 0.0f, 0.5f);
-	glClearDepth(1.0f);
-	glDisable(GL_DEPTH_TEST);
-	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
-	glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
-	glDisable(GL_LIGHTING);
-	setDefaultGlobalStates();
-	return TRUE;
-}
-
-int DrawGLScene(GLvoid)	{
-
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	setLightAndTransform();
-	Draw(gBezCurve);
-	glFlush();
-	return TRUE;
+	gDrawBoard->Viewport(x, y, w, h);
+	gDrawBoard->SetViewport(x, y, width, height);
+	doDraw = TRUE;
 }
 
 GLvoid KillGLWindow(GLvoid)	{
@@ -297,9 +374,9 @@ BOOL CreateGLWindow(char* title, int width, int height, int bits, bool fullscree
 		return FALSE;											// Return FALSE
 	}
 	
-
-	dwExStyle=WS_EX_APPWINDOW | WS_EX_WINDOWEDGE;			// Window Extended Style
-	dwStyle=WS_OVERLAPPEDWINDOW;							// Windows Style
+	// Window Extended Style
+	dwExStyle = WS_EX_APPWINDOW | WS_EX_WINDOWEDGE;
+	dwStyle = WS_OVERLAPPED | WS_SYSMENU;// Windows Style
 
 	AdjustWindowRectEx(&WindowRect, dwStyle, FALSE, dwExStyle);		// Adjust Window To True Requested Size
 
@@ -316,7 +393,7 @@ BOOL CreateGLWindow(char* title, int width, int height, int bits, bool fullscree
 								NULL,								// No Parent Window
 								NULL,								// No Menu
 								hInstance,							// Instance
-								NULL)))								// Dont Pass Anything To WM_CREATE
+								NULL)))								// Don't Pass Anything To WM_CREATE
 	{
 		KillGLWindow();								// Reset The Display
 		MessageBox(NULL, "Window Creation Error.", "ERROR", MB_OK | MB_ICONEXCLAMATION);
@@ -333,12 +410,12 @@ BOOL CreateGLWindow(char* title, int width, int height, int bits, bool fullscree
 		PFD_TYPE_RGBA,								// Request An RGBA Format
 		bits,										// Select Our Color Depth
 		0, 0, 0, 0, 0, 0,							// Color Bits Ignored
-		0,											// No Alpha Buffer
+		8,											// 8bit Alpha Buffer
 		0,											// Shift Bit Ignored
 		0,											// No Accumulation Buffer
 		0, 0, 0, 0,									// Accumulation Bits Ignored
 		16,											// 16Bit Z-Buffer (Depth Buffer)  
-		0,											// No Stencil Buffer
+		8,											// 8 bits Stencil Buffer
 		0,											// No Auxiliary Buffer
 		PFD_MAIN_PLANE,								// Main Drawing Layer
 		0,											// Reserved
@@ -351,7 +428,7 @@ BOOL CreateGLWindow(char* title, int width, int height, int bits, bool fullscree
 		return FALSE;
 	}
 
-	if (!arbMultisampleSupported) {
+	if(!arbMultisampleSupported) {
 		if (!(PixelFormat = ChoosePixelFormat(hDC, &pfd))) {
 			KillGLWindow();
 			MessageBox(NULL, "Can't Find A Suitable PixelFormat.", "ERROR", MB_OK | MB_ICONEXCLAMATION);
@@ -360,6 +437,7 @@ BOOL CreateGLWindow(char* title, int width, int height, int bits, bool fullscree
 	}
 	else
 		PixelFormat = arbMultisampleFormat;
+
 
 	if (!SetPixelFormat(hDC, PixelFormat, &pfd)) {
 		KillGLWindow();
@@ -380,7 +458,6 @@ BOOL CreateGLWindow(char* title, int width, int height, int bits, bool fullscree
 	}
 
 	if (!arbMultisampleSupported) {
-		// create extensions manager
 		if (!gExtManager)
 			gExtManager = new GOpenglExt();
 
@@ -389,6 +466,8 @@ BOOL CreateGLWindow(char* title, int width, int height, int bits, bool fullscree
 			return CreateGLWindow(title, width, height, bits, fullscreenflag);
 		}
 	}
+
+	gDrawBoard = new GOpenGLBoard(0, 0, width, height);
 
 	ShowWindow(hWnd, SW_SHOW);						// Show The Window
 	SetForegroundWindow(hWnd);						// Slightly Higher Priority
@@ -412,10 +491,11 @@ LRESULT CALLBACK WndProc(	HWND	hWnd,			// Handle For This Window
 	{
 		case WM_ACTIVATE:							// Watch For Window Activate Message
 		{
-			if (!HIWORD(wParam))
+			if (!HIWORD(wParam)) {
 				active = TRUE;						// Program Is Active
-			else
-				active = FALSE;						// Program Is No Longer Active
+			}
+			else {
+			}
 			return 0;								// Return To The Message Loop
 		}
 
@@ -453,6 +533,49 @@ LRESULT CALLBACK WndProc(	HWND	hWnd,			// Handle For This Window
 			ReSizeGLScene(LOWORD(lParam), HIWORD(lParam));  // LoWord=Width, HiWord=Height
 			return 0;								// Jump Back
 		}
+		case WM_LBUTTONDOWN: {
+
+			GInt32 i = gFillCompOp;
+			i++;
+			if (i > G_EXCLUSION_OP)
+				i = G_CLEAR_OP;
+			gFillCompOp = (GCompositingOperation)i;
+			DrawTitle();
+			return 0;								// Jump Back
+		}
+		case WM_RBUTTONDOWN: {
+
+			GInt32 i = gStrokeCompOp;
+			i++;
+			if (i > G_EXCLUSION_OP)
+				i = G_CLEAR_OP;
+			gStrokeCompOp = (GCompositingOperation)i;
+			DrawTitle();
+			return 0;								// Jump Back
+		}
+		case WM_MOUSEWHEEL: {
+
+			int zDelta = GET_WHEEL_DELTA_WPARAM(wParam);
+			if (zDelta > 0) {
+				if (gZoomFactor > (GReal)0.1)
+					gZoomFactor *= (GReal)0.95;
+			}
+			else {
+				if (gZoomFactor < (GReal)5.0)
+					gZoomFactor /= (GReal)0.95;
+			}
+			return 0;								// Jump Back
+		}
+		case WM_MOUSEMOVE: {
+
+			int xPos = ((int)(short)LOWORD(lParam)); 
+			int yPos = ((int)(short)HIWORD(lParam)); 
+
+			GPoint<GInt32, 2> p(xPos, 512 - 20 - yPos);
+			gTranslation = gDrawBoard->PhysicalToLogical(p);
+
+			return 0;								// Jump Back
+		}
 	}
 	// Pass All Unhandled Messages To DefWindowProc
 	return DefWindowProc(hWnd,uMsg,wParam,lParam);
@@ -470,11 +593,8 @@ int WINAPI WinMain(	HINSTANCE	hInstance,			// Instance
 	fullscreen = FALSE;							// Windowed Mode
 
 	// Create Our OpenGL Window
-	if (!CreateGLWindow("Bezier curve example - Press F1 for help", 640, 480, 16, fullscreen))
+	if (!CreateGLWindow("Amanith compositing example - Press F1 for help", 512, 512, 16, fullscreen))
 		return 0;									// Quit If Window Was Not Created
-
-	// init application
-	InitApp();
 
 	while(!done)									// Loop That Runs While done=FALSE
 	{
@@ -492,78 +612,73 @@ int WINAPI WinMain(	HINSTANCE	hInstance,			// Instance
 		}
 		else										// If There Are No Messages
 		{
-			// Draw The Scene.  Watch For ESC Key And Quit Messages From DrawGLScene()
-			if ((active && !DrawGLScene()) || keys[VK_ESCAPE])	// Active?  Was There A Quit Received?
-				done = TRUE;							// ESC or DrawGLScene Signalled A Quit
-			else									// Not Time To Quit, Update Screen
-				SwapBuffers(hDC);					// Swap Buffers (Double Buffering)
+			if (keys[VK_ESCAPE])
+				done = TRUE;
+			else
+			if (active) {
+				DrawGLScene();
+				SwapBuffers(hDC);
+			}
 
 			if (keys[VK_F1]) {						// Is F1 Being Pressed?
 				keys[VK_F1] = FALSE;
-				s = "A/Z: Zoom +/-\n";
-				s += "Arrow keys: Move viewport\n";
-				s += "Space: Generate a random ray and intersect the curve\n";
-				s += "M/N: Fine/Rough adaptive flattening\n";
-				s += "PgUp/PgDown: Degree elevation/reduction";
+				s = "B: Toggle rotation.\n";
+				s += "N/M: Decrease/Increation rotation velocity.\n";			
+				s += "F/G: Decrease/Increase global fill opacity.\n";
+				s += "S/D: Decrease/Increase global stroke opacity.\n";
+				s += "Mouse left button: change fill compositing operation.\n";
+				s += "Mouse right button: change stroke compositing operation.\n";
+				s += "Mouse wheel: change zoom factor.\n\n";
+				s += "All 24 compositing operations are fully supported on gfx board with fragment programs.\n";
+				s += "If they are absent, there are 9 unsupported compositing operations:\n";
+				s += "Multiply, Overlay, Darken, Lighten, Color dodge, Color burn, Hard light, Soft light, Difference";
 				MessageBox(NULL, StrUtils::ToAscii(s), "Command keys", MB_OK | MB_ICONINFORMATION | MB_APPLMODAL);
 			}
-			if (keys[VK_PRIOR]) {
-				keys[VK_PRIOR] = FALSE;
-				gBezCurve->HigherDegree(1);
-				BuildFlatContour(gBezCurve);
+			// B key
+			if (keys[66]) {
+				keys[66] = FALSE;
+				if (gAnim)
+					gAnim = G_FALSE;
+				else
+					gAnim = G_TRUE;
 			}
-			if (keys[VK_NEXT]) {
-				keys[VK_NEXT] = FALSE;
-				gBezCurve->LowerDegree();
-				BuildFlatContour(gBezCurve);
+			// S key
+			if (keys[83]) {
+				keys[83] = FALSE;
+				if (gStrokeOpacity > (GReal)0)
+					gStrokeOpacity -= (GReal)0.1;
+				DrawTitle();
 			}
-			// A key
-			if (keys[65]) {
-				keys[65] = FALSE;
-				gZ -= 0.5f;
+			// D key
+			if (keys[68]) {
+				keys[68] = FALSE;
+				if (gStrokeOpacity < (GReal)1.0)
+					gStrokeOpacity += (GReal)0.1;
+				DrawTitle();
 			}
-			// Z key
-			if (keys[90]) {
-				keys[90] = FALSE;
-				gZ += 0.5f;
+			// F key
+			if (keys[70]) {
+				keys[70] = FALSE;
+				if (gFillOpacity > (GReal)0)
+					gFillOpacity -= (GReal)0.1;
+				DrawTitle();
 			}
-			if (keys[VK_UP]) {
-				keys[VK_UP] = FALSE;
-				gY += 0.5f;
-			}
-			if (keys[VK_DOWN]) {
-				keys[VK_DOWN] = FALSE;
-				gY -= 0.5f;
-			}
-			if (keys[VK_RIGHT]) {
-				keys[VK_RIGHT] = FALSE;
-				gX += 0.5f;
-			}
-			if (keys[VK_LEFT]) {
-				keys[VK_LEFT] = FALSE;
-				gX -= 0.5f;
-			}
-			// M key
-			if (keys[77]) {
-				keys[77] = FALSE;
-				gDeviation *= 0.5;
-				BuildFlatContour(gBezCurve);
+			// G key
+			if (keys[71]) {
+				keys[71] = FALSE;
+				if (gFillOpacity < (GReal)1.0)
+					gFillOpacity += (GReal)0.1;
+				DrawTitle();
 			}
 			// N key
 			if (keys[78]) {
 				keys[78] = FALSE;
-				gDeviation *= 2;
-				BuildFlatContour(gBezCurve);
+				gRotationVel /= (GReal)1.2;
 			}
-			if (keys[VK_SPACE]) {
-				keys[VK_SPACE] = FALSE;
-				gIntersectionRay.SetOrigin(GPoint2((GReal)5.5, (GReal)5.5));
-				randomDir[G_X] = GMath::RangeRandom((GReal)-1, (GReal)1);
-				randomDir[G_Y] = GMath::RangeRandom((GReal)-1, (GReal)1);
-				gIntersectionRay.SetDirection(randomDir);
-				gIntersectionRay.Normalize();
-				gIntersectionPoints.clear();
-				gBezCurve->IntersectRay(gIntersectionRay, gIntersectionPoints);
+			// M key
+			if (keys[77]) {
+				keys[77] = FALSE;
+				gRotationVel *= (GReal)1.2;
 			}
 		}
 	}

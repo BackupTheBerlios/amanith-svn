@@ -598,38 +598,25 @@ void GOpenGLBoard::DrawRadialSector(const GPoint2& Center, const GPoint2& Focus,
 									const GDynArray<GKeyValue>& ColorKeys, const GColorRampInterpolation Interpolation,
 									const GColorRampSpreadMode SpreadMode,
 									const GReal MultAlpha, const GMatrix33& GradientMatrix,
-									const GMatrix33& InverseGradientMatrix, const GMatrix33& ModelViewMatrix) const {
+									const GMatrix33& InverseGradientMatrix) const {
 
 
 	GPoint2 transfFocus = Focus;
 	GPoint2 transfCenter = Center;
-	//GPoint2 tmpRadiusPoint(Center[G_X] + Radius, Center[G_Y]);
-	//GPoint2 transfRadiusPoint = GradientMatrix * tmpRadiusPoint;
-	GReal transfRadius = Radius;//Distance(transfCenter, transfRadiusPoint);
+	GReal transfRadius = Radius;
 
 	GPoint2 realFocus(transfFocus);
 	if (Distance(transfFocus, transfCenter) >= transfRadius)
 		realFocus = transfCenter;
 
-	GPoint2 p0 = BoundingBox.Min();
-	GPoint2 p2 = BoundingBox.Max();
+
+	GAABox2 tmpBox;
+	UpdateBox(BoundingBox, InverseGradientMatrix, tmpBox);
+
+	GPoint2 p0 = tmpBox.Min();
+	GPoint2 p2 = tmpBox.Max();
 	GPoint2 p1(p2[G_X], p0[G_Y]);
 	GPoint2 p3(p0[G_X], p2[G_Y]);
-
-	GMatrix33 m = InverseGradientMatrix * ModelViewMatrix;
-	GPoint2 q0 = m * p0;
-	GPoint2 q1 = m * p1;
-	GPoint2 q2 = m * p2;
-	GPoint2 q3 = m * p3;
-
-	// transform the box using model-view matrix
-	GAABox2 tmpBox(q0, q1);
-	tmpBox.ExtendToInclude(q2);
-	tmpBox.ExtendToInclude(q3);
-	p0 = tmpBox.Min();
-	p2 = tmpBox.Max();
-	p1.Set(p2[G_X], p0[G_Y]);
-	p3.Set(p0[G_X], p2[G_Y]);
 
 
 	GPoint2 pMax, pMin;
@@ -823,19 +810,14 @@ void GOpenGLBoard::DrawRadialSector(const GPoint2& Center, const GPoint2& Focus,
 		pMax = (A * pMax) + realFocus;
 	}
 
-	// draw the shaded sector
-	//DrawGLRadialSector(transfCenter, realFocus, transfRadius, tMin, tMax, pMin, pMax, wholeDisk, ColorKeys,
-	//				   Interpolation, SpreadMode, MultAlpha);
-
 	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
+	//glPushMatrix();
 	SetGLModelViewMatrix(GradientMatrix);
 
 	DrawGLRadialSector(transfCenter, realFocus, transfRadius, tMin, tMax, pMin, pMax, wholeDisk, ColorKeys,
 					   Interpolation, SpreadMode, MultAlpha);
 
-	glPopMatrix();
-
+	//glPopMatrix();
 }
 
 };	// end namespace Amanith

@@ -54,6 +54,9 @@ GOpenGLGradientDesc::GOpenGLGradientDesc() {
 
 // destructor
 GOpenGLGradientDesc::~GOpenGLGradientDesc() {
+
+	if (gGradientTexture)
+		glDeleteTextures(1, &gGradientTexture);
 }
 
 void GOpenGLGradientDesc::SetGLGradientQuality(const GRenderingQuality Quality) {
@@ -311,6 +314,7 @@ void GOpenGLGradientDesc::UpdateOpenGLTextureLinRad(const GRenderingQuality Qual
 	glBindTexture(GL_TEXTURE_1D, gGradientTexture);
 	SetGLGradientQuality(Quality);
 	glTexImage1D(GL_TEXTURE_1D, 0, GL_RGBA8, (GLsizei)size, 0, GL_RGBA, GL_UNSIGNED_BYTE, (GLvoid *)pixels);
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 }
 
 void GOpenGLGradientDesc::UpdateOpenGLTextureCon(const GRenderingQuality Quality, const GUInt32 MaxTextureSize,
@@ -369,6 +373,7 @@ void GOpenGLGradientDesc::UpdateOpenGLTextureCon(const GRenderingQuality Quality
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, (GLsizei)Atan2LookupTableSize, (GLsizei)Atan2LookupTableSize,
 				0, GL_RGBA, GL_UNSIGNED_BYTE, (GLvoid *)pixelsDst);
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 }
 
 void GOpenGLGradientDesc::UpdateHermiteTangents() {
@@ -464,6 +469,12 @@ GOpenGLPatternDesc::GOpenGLPatternDesc() {
 
 // destructor
 GOpenGLPatternDesc::~GOpenGLPatternDesc() {
+
+	if (gPatternTexture)
+		glDeleteTextures(1, &gPatternTexture);
+
+	if (gPatternMirroredTexture)
+		glDeleteTextures(1, &gPatternMirroredTexture);
 }
 
 void GOpenGLPatternDesc::SetGLImageQuality(const GImageQuality Quality) {
@@ -546,8 +557,9 @@ void GOpenGLPatternDesc::SetImage(const GPixelMap *Image, const GImageQuality Qu
 			glBindTexture(GL_TEXTURE_2D, gPatternMirroredTexture);
 			SetGLImageQuality(Quality);
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, (GLsizei)mirroredImage.Width(), (GLsizei)mirroredImage.Height(),
-				0, GL_BGRA, GL_UNSIGNED_BYTE, (GLvoid *)mirroredImage.Pixels());
+						0, GL_BGRA, GL_UNSIGNED_BYTE, (GLvoid *)mirroredImage.Pixels());
 		}
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 		return;
 	}
 
@@ -570,6 +582,7 @@ void GOpenGLPatternDesc::SetImage(const GPixelMap *Image, const GImageQuality Qu
 
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, (GLsizei)tmpImage.Width(), (GLsizei)tmpImage.Height(),
 					 0, GL_BGRA, GL_UNSIGNED_BYTE, (GLvoid *)tmpImage.Pixels());
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 		return;
 	}
 
@@ -599,8 +612,10 @@ void GOpenGLPatternDesc::SetImage(const GPixelMap *Image, const GImageQuality Qu
 
 
 	// now repeat all steps for mirrored texture, if needed
-	if (gMirroredRepeatSupport)
+	if (gMirroredRepeatSupport) {
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 		return;
+	}
 
 	if (!mirroredImage.IsTrueColor())
 		mirroredImage.SetPixelFormat(G_A8R8G8B8);
@@ -617,7 +632,8 @@ void GOpenGLPatternDesc::SetImage(const GPixelMap *Image, const GImageQuality Qu
 	if (Quality == G_LOW_IMAGE_QUALITY || Quality == G_NORMAL_IMAGE_QUALITY) {
 
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, (GLsizei)mirroredImage.Width(), (GLsizei)mirroredImage.Height(),
-			0, GL_BGRA, GL_UNSIGNED_BYTE, (GLvoid *)mirroredImage.Pixels());
+					0, GL_BGRA, GL_UNSIGNED_BYTE, (GLvoid *)mirroredImage.Pixels());
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 		return;
 	}
 
@@ -641,6 +657,7 @@ void GOpenGLPatternDesc::SetImage(const GPixelMap *Image, const GImageQuality Qu
 		size /= 2;
 		level++;
 	} while(size >= 1);
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 }
 
 // *********************************************************************
@@ -864,6 +881,33 @@ void GOpenGLBoard::SetGLTextureMatrix(const GMatrix33& Matrix) {
 #endif
 }
 
+void GOpenGLBoard::DrawGLBox(const GAABox2& Box) {
+
+	glBegin(GL_POLYGON);
+	#ifdef DOUBLE_REAL_TYPE
+		glVertex2d(Box.Min()[G_X], Box.Min()[G_Y]);
+		glVertex2d(Box.Min()[G_X], Box.Max()[G_Y]);
+		glVertex2d(Box.Max()[G_X], Box.Max()[G_Y]);
+		glVertex2d(Box.Max()[G_X], Box.Min()[G_Y]);
+	#else
+		glVertex2f(Box.Min()[G_X], Box.Min()[G_Y]);
+		glVertex2f(Box.Min()[G_X], Box.Max()[G_Y]);
+		glVertex2f(Box.Max()[G_X], Box.Max()[G_Y]);
+		glVertex2f(Box.Max()[G_X], Box.Min()[G_Y]);
+	#endif
+	glEnd();
+}
+
+void GOpenGLBoard::DrawGLBox(const GGenericAABox<GInt32, 2>& Box) {
+
+	glBegin(GL_POLYGON);
+		glVertex2i(Box.Min()[G_X], Box.Min()[G_Y]);
+		glVertex2i(Box.Min()[G_X], Box.Max()[G_Y]);
+		glVertex2i(Box.Max()[G_X], Box.Max()[G_Y]);
+		glVertex2i(Box.Max()[G_X], Box.Min()[G_Y]);
+	glEnd();
+}
+
 void GOpenGLBoard::UpdateStyle(GOpenGLDrawStyle& Style) {
 
 	if (Style.StrokeEnabled()) {
@@ -873,7 +917,7 @@ void GOpenGLBoard::UpdateStyle(GOpenGLDrawStyle& Style) {
 			GOpenGLGradientDesc *g = (GOpenGLGradientDesc *)Style.StrokeGradient();
 			if (g->Modified()) {
 				if ((g->Type() == G_LINEAR_GRADIENT) ||
-					(g->Type() == G_RADIAL_GRADIENT && gFragmentProgramsSupport)) {
+					(g->Type() == G_RADIAL_GRADIENT && gFragmentProgramsInUse)) {
 
 					if (g->ColorKeysModified() || g->ColorInterpolationModified() || g->SpreadModeModified())
 						// for linear gradients (or radial ones with fragment programs support) we must update texture
@@ -886,7 +930,7 @@ void GOpenGLBoard::UpdateStyle(GOpenGLDrawStyle& Style) {
 						// for conical gradients we must update color tangents
 						g->UpdateHermiteTangents();
 						// for shader version we must generate lookup texture
-						if (gFragmentProgramsSupport)
+						if (gFragmentProgramsInUse)
 							g->UpdateOpenGLTextureCon(RenderingQuality(), MaxImageWidth(),
 													  gAtan2LookupTableSize, gAtan2LookupTable);
 					}
@@ -911,7 +955,7 @@ void GOpenGLBoard::UpdateStyle(GOpenGLDrawStyle& Style) {
 			GOpenGLGradientDesc *g = (GOpenGLGradientDesc *)Style.FillGradient();
 			if (g->Modified()) {
 				if ((g->Type() == G_LINEAR_GRADIENT) ||
-					(g->Type() == G_RADIAL_GRADIENT && gFragmentProgramsSupport)) {
+					(g->Type() == G_RADIAL_GRADIENT && gFragmentProgramsInUse)) {
 
 					if (g->ColorKeysModified() || g->ColorInterpolationModified() || g->SpreadModeModified())
 						// for linear gradients (or radial ones with fragment programs support) we must update texture
@@ -924,7 +968,7 @@ void GOpenGLBoard::UpdateStyle(GOpenGLDrawStyle& Style) {
 						// for conical gradients we must update color tangents
 						g->UpdateHermiteTangents();
 						// for shader version we must generate lookup texture
-						if (gFragmentProgramsSupport)
+						if (gFragmentProgramsInUse)
 							g->UpdateOpenGLTextureCon(this->RenderingQuality(), this->MaxImageWidth(),
 													  gAtan2LookupTableSize, gAtan2LookupTable);
 					}
@@ -940,180 +984,660 @@ void GOpenGLBoard::UpdateStyle(GOpenGLDrawStyle& Style) {
 	}
 }
 
-GBool GOpenGLBoard::UseStyle(const GPaintType PaintType, const GVector4& Color,
-							 const GOpenGLGradientDesc *Gradient, const GOpenGLPatternDesc *Pattern,
-							 const GMatrix33& ModelView, const GMatrix33& InverseModelView, const GBool UseFill) {
-
-	glDisable(GL_FRAGMENT_PROGRAM_ARB);
+GBool GOpenGLBoard::NeedDepthMask(const GOpenGLDrawStyle& Style, const GBool Fill) const {
 
 	// graphic style has sense only for color buffer
 	if (TargetMode() == G_CLIP_MODE || TargetMode() == G_CLIP_AND_CACHE_MODE || TargetMode() == G_CACHE_MODE)
 		return G_FALSE;
 
-	glMatrixMode(GL_MODELVIEW);
-	SetGLModelViewMatrix(ModelView);
+	GBool useDepthBuffer;
 
-	GBool useDepthBuffer = G_FALSE;
-	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	GPaintType paintType;
+	GReal colorAlpha;
+	GOpenGLGradientDesc *gradient = NULL;
+	GOpenGLPatternDesc *pattern = NULL;
+	GCompositingOperation compOp;
+
+	if (Fill) {
+		paintType = Style.FillPaintType();
+		colorAlpha = Style.FillColor()[G_W];
+		gradient = (GOpenGLGradientDesc *)Style.FillGradient();
+		pattern = (GOpenGLPatternDesc *)Style.FillPattern();
+		compOp = Style.FillCompOp();
+	}
+	else {
+		paintType = Style.StrokePaintType();
+		colorAlpha = Style.StrokeColor()[G_W];
+		gradient = (GOpenGLGradientDesc *)Style.StrokeGradient();
+		pattern = (GOpenGLPatternDesc *)Style.StrokePattern();
+		compOp = Style.StrokeCompOp();
+	}
+
+	switch (compOp) {
+
+		case G_CLEAR_OP:
+		case G_SRC_OP:
+		case G_DST_OP:
+		case G_SRC_OVER_OP:
+		case G_DST_IN_OP:
+		case G_DST_OUT_OP:
+		case G_SRC_ATOP_OP:
+			useDepthBuffer = G_FALSE;
+			break;
+
+		case G_DST_OVER_OP:
+		case G_SRC_IN_OP:
+		case G_SRC_OUT_OP:
+		case G_DST_ATOP_OP:
+		case G_XOR_OP:
+		case G_PLUS_OP:
+		case G_MULTIPLY_OP:
+		case G_SCREEN_OP:
+		case G_EXCLUSION_OP:
+		case G_OVERLAY_OP:
+		case G_DARKEN_OP:
+		case G_LIGHTEN_OP:
+		case G_COLOR_DODGE_OP:
+		case G_COLOR_BURN_OP:
+		case G_HARD_LIGHT_OP:
+		case G_SOFT_LIGHT_OP:
+		case G_DIFFERENCE_OP:
+			useDepthBuffer = G_TRUE;
+			break;
+	}
+
 
 	// color paint
-	if ((PaintType == G_COLOR_PAINT_TYPE) || 
-		(PaintType == G_GRADIENT_PAINT_TYPE && !Gradient) ||
-		(PaintType == G_GRADIENT_PAINT_TYPE && Gradient && Gradient->ColorKeys().size() < 2) ||
-		(PaintType == G_PATTERN_PAINT_TYPE && !Pattern)) {
+	if ((paintType == G_COLOR_PAINT_TYPE) || 
+		(paintType == G_GRADIENT_PAINT_TYPE && !gradient) ||
+		(paintType == G_GRADIENT_PAINT_TYPE && gradient && gradient->ColorKeys().size() < 2) ||
+		(paintType == G_PATTERN_PAINT_TYPE && !pattern)) {
 
-		GVector4 col = Color;
-		if (PaintType == G_GRADIENT_PAINT_TYPE && Gradient && Gradient->ColorKeys().size() == 1) {
-			GKeyValue key = Gradient->ColorKeys().front();
-			col = key.Vect4Value();
-		}
-
-		if (col[G_W] < (GReal)1) {
-			glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_ALPHA, GL_PRIMARY_COLOR);
-			glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_ALPHA, GL_REPLACE);
-			glEnable(GL_BLEND);
-			if (!UseFill)
-				useDepthBuffer = G_TRUE;
-		}
-		else
-			glDisable(GL_BLEND);
-
-		glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_RGB, GL_PRIMARY_COLOR);
-		glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB, GL_REPLACE);
-		glDisable(GL_TEXTURE_1D);
-		glDisable(GL_TEXTURE_2D);
-		glDisable(GL_TEXTURE_GEN_S);
-		glDisable(GL_TEXTURE_GEN_T);
-
-		SetGLColor(col);
+		if (colorAlpha < (GReal)1 && !Fill)
+			useDepthBuffer = G_TRUE;
 	}
 	else
 	// gradient paint
-	if (PaintType == G_GRADIENT_PAINT_TYPE) {
+	if (paintType == G_GRADIENT_PAINT_TYPE) {
 
 		// linear gradient
-		if (Gradient->Type() == G_LINEAR_GRADIENT) {
-
-			GVector4 col(Color);
-			col[G_X] = col[G_Y] = col[G_Z] = (GReal)1;
-
-			// set alpha pipeline, according to stroke and color keys opacity
-			if (Gradient->gAlphaKeys || col[G_W] < (GReal)1) {
-
-				if (Gradient->gAlphaKeys) {
-					// we have both stroke and color keys opacity
-					if (col[G_W] < (GReal)1) {
-						glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_ALPHA, GL_PRIMARY_COLOR);
-						glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE1_ALPHA, GL_TEXTURE);
-						glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_ALPHA, GL_MODULATE);
-						SetGLColor(col);
-					}
-					// we have only color keys opacity
-					else {
-						glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_ALPHA, GL_TEXTURE);
-						glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_ALPHA, GL_REPLACE);
-						// this fix is due to some old hardware
-						col[G_W] = (GReal)1;
-						SetGLColor(col);
-					}
-				}
-				// we have only stroke opacity
-				else {
-					glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_ALPHA, GL_PRIMARY_COLOR);
-					glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_ALPHA, GL_REPLACE);
-					SetGLColor(col);
-				}
-				glEnable(GL_BLEND);
-				if (!UseFill)
-					useDepthBuffer = G_TRUE;
-			}
-			else {
-				glDisable(GL_BLEND);
-				// this fix is due to some old hardware
-				SetGLColor(col);
-			}
-
-			// select gradient texture for RGB channels
-			glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_RGB, GL_TEXTURE);
-
-			GMatrix33 genMatrix = InverseModelView * Gradient->Matrix();
-			// affine transform end points
-			GPoint2 sPoint = genMatrix * Gradient->StartPoint();
-			GPoint2 ePoint = genMatrix * Gradient->AuxPoint();
-
-			// calculate direction
-			GVector2 n = ePoint - sPoint;
-			n /= n.LengthSquared();
-			if (Gradient->SpreadMode() == G_REFLECT_COLOR_RAMP_SPREAD) {
-				if (Gradient->ColorInterpolation() == G_CONSTANT_COLOR_INTERPOLATION || !gMirroredRepeatSupport)
-					n /= 2;
-			}
-			// calculate translation factor
-			GReal q = -Dot(n, static_cast< const GVect<GReal, 2>& >(sPoint));
-
-			// generate the S coordinate using the calculated object plane and place the transformation (in
-			// the direction of the normal) in the texture matrix
-			glMatrixMode(GL_TEXTURE);
-			glLoadIdentity();
-
-			#ifdef DOUBLE_REAL_TYPE
-				glTranslated(q, 0, 0);
-			#else
-				glTranslatef(q, 0, 0);
-			#endif
-
-			GVector4 plane(n[G_X], n[G_Y], 0, 0);
-
-			// lets use texture coordinate generation in eye space which is in canvas coordinates
-			glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_EYE_LINEAR);
-			#ifdef DOUBLE_REAL_TYPE
-				glTexGendv(GL_S, GL_EYE_PLANE, (const GLdouble *)plane.Data());
-			#else
-				glTexGenfv(GL_S, GL_EYE_PLANE, (const GLfloat *)plane.Data());
-			#endif
-
-			// enable texture 1D and automatic texture coordinate generation
-			glEnable(GL_TEXTURE_1D);
-			glDisable(GL_TEXTURE_2D);
-			glEnable(GL_TEXTURE_GEN_S);
-			glDisable(GL_TEXTURE_GEN_T);
-
-			// bind gradient texture
-			glBindTexture(GL_TEXTURE_1D, Gradient->GradientTexture());
-
-			// set spread mode
-			switch (Gradient->SpreadMode()) {
-				case G_PAD_COLOR_RAMP_SPREAD:
-					glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-					break;
-				case G_REPEAT_COLOR_RAMP_SPREAD:
-					glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-					break;
-				case G_REFLECT_COLOR_RAMP_SPREAD:
-					/*if (Gradient->ColorInterpolation() != G_CONSTANT_COLOR_INTERPOLATION) {
-						if (gMirroredRepeatSupport)
-							glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT_ARB);
-						else
-							glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-					}
-					else
-						glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_REPEAT);*/
-					if (Gradient->ColorInterpolation() == G_CONSTANT_COLOR_INTERPOLATION || !gMirroredRepeatSupport)
-						glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-					else
-						glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT_ARB);
-					break;
-			}
+		if (gradient->Type() == G_LINEAR_GRADIENT) {
+			if ((gradient->gAlphaKeys || colorAlpha < (GReal)1) && !Fill)
+				useDepthBuffer = G_TRUE;
 		}
 		// radial/conical gradient
 		else {
 			// geometrical version
-			if (!gFragmentProgramsSupport) {
-				glDisable(GL_TEXTURE_1D);
-				glDisable(GL_TEXTURE_2D);
-				glDisable(GL_TEXTURE_GEN_S);
-				glDisable(GL_TEXTURE_GEN_T);
+			if (!gFragmentProgramsInUse)
+				// for radial gradients we use always depth buffer
+				useDepthBuffer = G_TRUE;
+			// fragment program version (radial and conical)
+			else {
+				// for stroking, we must use zbuffer as mask also for conical and radial gradients (if they
+				// are transparent)
+				if ((gradient->gAlphaKeys || colorAlpha < (GReal)1) && !Fill)
+					useDepthBuffer = G_TRUE;
+			}
+		}
+	}
+	// pattern paint
+	else {
+		if (!Fill)
+			useDepthBuffer = G_TRUE;
+	}
+	return useDepthBuffer;
+}
+
+void GOpenGLBoard::UseStyle(const GPaintType PaintType, const GCompositingOperation CompOp, const GUInt32 PassIndex,
+							 const GVector4& Color,
+							 const GOpenGLGradientDesc *Gradient, const GOpenGLPatternDesc *Pattern,
+							 const GMatrix33& ModelView, const GMatrix33& InverseModelView) {
+
+	#define COLOR_PRG	0
+	#define LINGRAD_PRG	1
+	#define RADGRAD_PRG	2
+	#define CONGRAD_PRG	3
+	#define PATTERN_PRG	4
+	
+	#define TEXTURE_POW2 0
+	#define TEXTURE_RECT 1
+
+	// graphic style has sense only for color buffer
+	if (TargetMode() == G_CLIP_MODE || TargetMode() == G_CLIP_AND_CACHE_MODE || TargetMode() == G_CACHE_MODE)
+		return;
+
+	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE);
+
+	// set compositing operation
+	GBool screenGrabbed = SetGLStyleCompOp(CompOp, PassIndex);
+
+	if (gFragmentProgramsInUse) {
+
+		// enable fragment program
+		glEnable(GL_FRAGMENT_PROGRAM_ARB);
+
+		// color paint
+		if ((PaintType == G_COLOR_PAINT_TYPE) || 
+			(PaintType == G_GRADIENT_PAINT_TYPE && !Gradient) ||
+			(PaintType == G_GRADIENT_PAINT_TYPE && Gradient && Gradient->ColorKeys().size() < 2) ||
+			(PaintType == G_PATTERN_PAINT_TYPE && !Pattern)	||
+			(CompOp == G_CLEAR_OP)) {
+
+			GVector4 col = Color;
+			if (PaintType == G_GRADIENT_PAINT_TYPE && Gradient && Gradient->ColorKeys().size() == 1) {
+				GKeyValue key = Gradient->ColorKeys().front();
+				col = key.Vect4Value();
+			}
+
+			if (CompOp == G_CLEAR_OP)
+				col.Set(0, 0, 0, 0);
+
+			if (gAlphaBufferPresent) {
+				if (gRectTexturesInUse)
+					glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, gCompProgramsRGBA[CompOp][COLOR_PRG][TEXTURE_RECT]);
+				else
+					glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, gCompProgramsRGBA[CompOp][COLOR_PRG][TEXTURE_POW2]);
+			}
+			else {
+				if (gRectTexturesInUse)
+					glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, gCompProgramsRGB[CompOp][COLOR_PRG][TEXTURE_RECT]);
+				else
+					glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, gCompProgramsRGB[CompOp][COLOR_PRG][TEXTURE_POW2]);
+			}
+
+			// select texture unit 0
+			SELECT_AND_DISABLE_TUNIT(0)
+
+			if (screenGrabbed) {
+				glEnable(gCompositingBuffer.Target);
+				G_ASSERT(gCompositingBuffer.TexName > 0);
+				glBindTexture(gCompositingBuffer.Target, gCompositingBuffer.TexName);
+				glTexParameteri(gCompositingBuffer.Target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+				glTexParameteri(gCompositingBuffer.Target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+			}
+			SetGLColor(col);
+		}
+		else
+		// gradient paint
+		if (PaintType == G_GRADIENT_PAINT_TYPE) {
+
+			// linear gradient
+			if (Gradient->Type() == G_LINEAR_GRADIENT) {
+
+				GMatrix33 genMatrix = Gradient->Matrix();
+				GMatrix33 p2lMatrix = PhysicalToLogicalMatrix();
+
+				// affine transform end points
+				GPoint2 sPoint = genMatrix * Gradient->StartPoint();
+				GPoint2 ePoint = genMatrix * Gradient->AuxPoint();
+				// calculate direction
+				GVector2 n = ePoint - sPoint;
+				n /= n.LengthSquared();
+				if (Gradient->SpreadMode() == G_REFLECT_COLOR_RAMP_SPREAD) {
+					if (Gradient->ColorInterpolation() == G_CONSTANT_COLOR_INTERPOLATION || !gMirroredRepeatSupport)
+						n /= 2;
+				}
+				// calculate translation factor
+				GReal q = -Dot(n, static_cast< const GVect<GReal, 2>& >(sPoint));
+
+				// bind the program
+				if (gAlphaBufferPresent) {
+					if (gRectTexturesInUse)
+						glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, gCompProgramsRGBA[CompOp][LINGRAD_PRG][TEXTURE_RECT]);
+					else
+						glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, gCompProgramsRGBA[CompOp][LINGRAD_PRG][TEXTURE_POW2]);
+				}
+				else {
+					if (gRectTexturesInUse)
+						glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, gCompProgramsRGB[CompOp][LINGRAD_PRG][TEXTURE_RECT]);
+					else
+						glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, gCompProgramsRGB[CompOp][LINGRAD_PRG][TEXTURE_POW2]);
+				}
+
+				// pass uv generation-plane to program
+				float c0[4] = { (float)n[G_X], (float)n[G_Y], 0.0f, (float)q};
+				glProgramLocalParameter4fvARB(GL_FRAGMENT_PROGRAM_ARB, 0, c0);	// 0 = [n.x, n.y, 0, q]
+				// pass color alpha to program
+				float c1[4] = { 1.0f, 1.0f, 1.0f, (float)Color[G_W] };
+				glProgramLocalParameter4fvARB(GL_FRAGMENT_PROGRAM_ARB, 1, c1); // 1 = [1, 1, 1, Alpha]
+				// pass physical to logical matrix
+				float c2[4] = { (float)p2lMatrix[0][0], (float)p2lMatrix[0][1], 0.0f, (float)p2lMatrix[0][2]};
+				float c3[4] = { (float)p2lMatrix[1][0], (float)p2lMatrix[1][1], 0.0f, (float)p2lMatrix[1][2]};
+				glProgramLocalParameter4fvARB(GL_FRAGMENT_PROGRAM_ARB, 2, c2); // 2 = [a00, a01, 0, a02]
+				glProgramLocalParameter4fvARB(GL_FRAGMENT_PROGRAM_ARB, 3, c3); // 3 = [a10, a11, 0, a12]
+
+				// select texture unit 0
+				SELECT_AND_DISABLE_TUNIT(1)
+				SELECT_AND_DISABLE_TUNIT(0)
+				glEnable(GL_TEXTURE_1D);
+
+				// bind gradient texture
+				glBindTexture(GL_TEXTURE_1D, Gradient->GradientTexture());
+
+				// set spread mode
+				switch (Gradient->SpreadMode()) {
+					case G_PAD_COLOR_RAMP_SPREAD:
+						glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+						break;
+					case G_REPEAT_COLOR_RAMP_SPREAD:
+						glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+						break;
+					case G_REFLECT_COLOR_RAMP_SPREAD:
+						if (Gradient->ColorInterpolation() == G_CONSTANT_COLOR_INTERPOLATION || !gMirroredRepeatSupport)
+							glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+						else
+							glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT_ARB);
+						break;
+				}
+				// bind the grabbed portion of screen buffer, if needed
+				if (screenGrabbed) {
+					SELECT_AND_DISABLE_TUNIT(1)
+					glEnable(gCompositingBuffer.Target);
+					G_ASSERT(gCompositingBuffer.TexName > 0);
+					glBindTexture(gCompositingBuffer.Target, gCompositingBuffer.TexName);
+					glTexParameteri(gCompositingBuffer.Target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+					glTexParameteri(gCompositingBuffer.Target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+				}
+			}
+			else
+			// radial gradient
+			if (Gradient->Type() == G_RADIAL_GRADIENT) {
+
+				// bind the program
+				if (gAlphaBufferPresent) {
+					if (gRectTexturesInUse)
+						glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, gCompProgramsRGBA[CompOp][RADGRAD_PRG][TEXTURE_RECT]);
+					else
+						glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, gCompProgramsRGBA[CompOp][RADGRAD_PRG][TEXTURE_POW2]);
+				}
+				else {
+					if (gRectTexturesInUse)
+						glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, gCompProgramsRGB[CompOp][RADGRAD_PRG][TEXTURE_RECT]);
+					else
+						glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, gCompProgramsRGB[CompOp][RADGRAD_PRG][TEXTURE_POW2]);
+				}
+
+				GPoint2 pc = Gradient->StartPoint();
+				GPoint2 pf = Gradient->AuxPoint();
+				GReal newRadius = Gradient->Radius();
+
+				// if focus is outside gradient circle, we must reset it
+				if (Distance(pf, pc) > newRadius)
+					pf = pc;
+
+				GVector2 fc = (pf - pc);
+				float focuscenter[4] = { (float)fc[G_X], (float)fc[G_Y], 0.0f, 0.0f };
+
+				// this fix a STRANGE bug on some GeForce boards (we have found it on a 7800GT) where
+				// an x-aligned focus-center makes the fragment program run in an anomalous manner.
+				if (GMath::Abs(focuscenter[0]) <= 1.1920928955078125e-07f)
+					focuscenter[0] = (2.0f * 1.1920928955078125e-07f);
+
+				float qCoef[4] = { (float)(fc.LengthSquared() - GMath::Sqr(newRadius)), 0.0f, 0.0f, 0.0f };
+
+				GMatrix33 m = Gradient->InverseMatrix() * PhysicalToLogicalMatrix();
+				m[0][2] -= (float)pf[G_X];
+				m[1][2] -= (float)pf[G_Y];
+
+				float mrs[4] = { (float)m[0][0], (float)m[0][1], (float)m[1][0], (float)m[1][1]};
+				float mtr[4] = { (float)m[0][2], 0.0f, (float)m[1][2], 0.0f};
+
+				glProgramLocalParameter4fvARB(GL_FRAGMENT_PROGRAM_ARB, 0, focuscenter);	// (Focus - Center).xy, 0, 0
+				glProgramLocalParameter4fvARB(GL_FRAGMENT_PROGRAM_ARB, 1, qCoef);		// (Focus-Center).LengthSquared - Radius^2, 0, 0, 0
+				glProgramLocalParameter4fvARB(GL_FRAGMENT_PROGRAM_ARB, 2, mrs);	// InverseGradMatrix * PhysicalToLogical (affine part)
+				glProgramLocalParameter4fvARB(GL_FRAGMENT_PROGRAM_ARB, 3, mtr); // InverseGradMatrix * PhysicalToLogical (translation part)
+
+				// Color alpha
+				GVect<float, 4> col(1, 1, 1, (float)Color[G_W]);
+				glProgramLocalParameter4fvARB(GL_FRAGMENT_PROGRAM_ARB, 4, (const float *)col.Data());
+
+				// u coordinate scaling (to support correct constant color interpolation and devices where
+				// mirrored textures are not supported)
+				float texMul[4];
+				if (Gradient->SpreadMode() == G_REFLECT_COLOR_RAMP_SPREAD) {
+					if (Gradient->ColorInterpolation() == G_CONSTANT_COLOR_INTERPOLATION || !gMirroredRepeatSupport)
+						texMul[0] = texMul[1] = texMul[2] = texMul[3] = 0.5f;
+					else
+						texMul[0] = texMul[1] = texMul[2] = texMul[3] = 1.0f;
+				}
+				else
+					texMul[0] = texMul[1] = texMul[2] = texMul[3] = 1.0f;
+				// 5 = texture u coordinate scaling
+				glProgramLocalParameter4fvARB(GL_FRAGMENT_PROGRAM_ARB, 5, texMul);
+
+				// select texture unit 0
+				SELECT_AND_DISABLE_TUNIT(1)
+				SELECT_AND_DISABLE_TUNIT(0)
+				glEnable(GL_TEXTURE_1D);
+
+				// bind gradient texture
+				glBindTexture(GL_TEXTURE_1D, Gradient->GradientTexture());
+				// set spread mode
+				switch (Gradient->SpreadMode()) {
+					case G_PAD_COLOR_RAMP_SPREAD:
+						glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+						break;
+					case G_REPEAT_COLOR_RAMP_SPREAD:
+						glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+						break;
+					case G_REFLECT_COLOR_RAMP_SPREAD:
+						if (Gradient->ColorInterpolation() == G_CONSTANT_COLOR_INTERPOLATION || !gMirroredRepeatSupport)
+							glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+						else
+							glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT_ARB);
+						break;
+				}
+				// bind the grabbed portion of screen buffer, if needed
+				if (screenGrabbed) {
+					SELECT_AND_DISABLE_TUNIT(1)
+					glEnable(gCompositingBuffer.Target);
+					G_ASSERT(gCompositingBuffer.TexName > 0);
+					glBindTexture(gCompositingBuffer.Target, gCompositingBuffer.TexName);
+					glTexParameteri(gCompositingBuffer.Target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+					glTexParameteri(gCompositingBuffer.Target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+				}
+			}
+			// conical gradient
+			else {
+				// bind the program
+				if (gAlphaBufferPresent) {
+					if (gRectTexturesInUse)
+						glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, gCompProgramsRGBA[CompOp][CONGRAD_PRG][TEXTURE_RECT]);
+					else
+						glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, gCompProgramsRGBA[CompOp][CONGRAD_PRG][TEXTURE_POW2]);
+				}
+				else {
+					if (gRectTexturesInUse)
+						glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, gCompProgramsRGB[CompOp][CONGRAD_PRG][TEXTURE_RECT]);
+					else
+						glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, gCompProgramsRGB[CompOp][CONGRAD_PRG][TEXTURE_POW2]);
+				}
+
+				const GPoint2& pc = Gradient->StartPoint();
+				const GPoint2& pt = Gradient->AuxPoint();
+
+				GVector2 dir = pt - pc;
+				GReal l = dir.Length();
+
+				if (l <= G_EPSILON)
+					dir.Set(1, 0);
+				else
+					dir /= l;
+
+				float rotM[4] = { (float)dir[G_X], (float)dir[G_Y], (float)(-dir[G_Y]), (float)dir[G_X] };
+				static float texBias[4] = { 0.5f, 0.5f, 0.5f, 0.5f };
+
+				glProgramLocalParameter4fvARB(GL_FRAGMENT_PROGRAM_ARB, 0, rotM);	// 0 = [cos, sin, -sin, cos]
+				glProgramLocalParameter4fvARB(GL_FRAGMENT_PROGRAM_ARB, 1, texBias);	// 1 = [0.5, 0.5, 0.5, 0.5]
+				// Color alpha
+				GVect<float, 4> col(1, 1, 1, (float)Color[G_W]);
+				glProgramLocalParameter4fvARB(GL_FRAGMENT_PROGRAM_ARB, 2, (const float *)col.Data()); // 2 = [1, 1, 1, Alpha]
+				// inverse gradient matrix
+				GMatrix33 m = Gradient->InverseMatrix() * PhysicalToLogicalMatrix();
+
+				float mrs[4] = { (float)m[0][0], (float)m[0][1], (float)m[1][0], (float)m[1][1]};
+				float mtr[4] = { (float)m[0][2], 0.0f, (float)m[1][2], 0.0f};
+				float center[4] = { (float)pc[G_X], (float)pc[G_Y], 0.0f, 0.0f };
+
+				glProgramLocalParameter4fvARB(GL_FRAGMENT_PROGRAM_ARB, 3, mrs); // InverseGradMatrix (affine part)
+				glProgramLocalParameter4fvARB(GL_FRAGMENT_PROGRAM_ARB, 4, mtr); // InverseGradMatrix (translation part)
+				glProgramLocalParameter4fvARB(GL_FRAGMENT_PROGRAM_ARB, 5, center); // center.x, center.y, 0, 0
+
+				// select texture unit 0
+				SELECT_AND_DISABLE_TUNIT(1)
+				SELECT_AND_DISABLE_TUNIT(0)
+				glEnable(GL_TEXTURE_2D);
+
+				// bind gradient texture
+				glBindTexture(GL_TEXTURE_2D, Gradient->GradientTexture());
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+				// bind the grabbed portion of screen buffer, if needed
+				if (screenGrabbed) {
+					SELECT_AND_DISABLE_TUNIT(1)
+					glEnable(gCompositingBuffer.Target);
+					G_ASSERT(gCompositingBuffer.TexName > 0);
+					glBindTexture(gCompositingBuffer.Target, gCompositingBuffer.TexName);
+					glTexParameteri(gCompositingBuffer.Target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+					glTexParameteri(gCompositingBuffer.Target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+				}
+			}
+		}
+		// pattern paint
+		else {
+			// bind the program
+			if (gAlphaBufferPresent) {
+				if (gRectTexturesInUse)
+					glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, gCompProgramsRGBA[CompOp][PATTERN_PRG][TEXTURE_RECT]);
+				else
+					glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, gCompProgramsRGBA[CompOp][PATTERN_PRG][TEXTURE_POW2]);
+			}
+			else {
+				if (gRectTexturesInUse)
+					glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, gCompProgramsRGB[CompOp][PATTERN_PRG][TEXTURE_RECT]);
+				else
+					glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, gCompProgramsRGB[CompOp][PATTERN_PRG][TEXTURE_POW2]);
+			}
+
+			const GAABox2& patWindow = Pattern->LogicalWindow();
+			GReal xAxisLen = patWindow.Dimension(G_X);
+			GReal yAxisLen = patWindow.Dimension(G_Y);
+
+			GMatrix33 m, postTrans, postTrans2, scale;
+
+			TranslationToMatrix(postTrans2, -patWindow.Min());
+			ScaleToMatrix(scale, GVector2(1 / xAxisLen, -1 / yAxisLen));
+			TranslationToMatrix(postTrans, GPoint2(0, 1));
+
+			if (Pattern->TilingMode() == G_REFLECT_TILE) {
+				if (gMirroredRepeatSupport)
+					m = (postTrans * (scale * (postTrans2 * (Pattern->InverseMatrix() * PhysicalToLogicalMatrix()))));
+				else {
+					GMatrix33 reflectFactors;
+					ScaleToMatrix(reflectFactors, GVector3((GReal)0.5, (GReal)0.5, 1));
+					m = reflectFactors * (postTrans * (scale * (postTrans2 * (Pattern->InverseMatrix() * PhysicalToLogicalMatrix()))));
+				}
+			}
+			else
+				m = (postTrans * (scale * (postTrans2 * (Pattern->InverseMatrix() * PhysicalToLogicalMatrix()))));
+
+			float mr0[4] = { (float)m[0][0], (float)m[0][1], 0.0f, (float)m[0][2] };
+			float mt1[4] = { (float)m[1][0], (float)m[1][1], 0.0f, (float)m[1][2] };
+
+			glProgramLocalParameter4fvARB(GL_FRAGMENT_PROGRAM_ARB, 0, mr0); // 0 = [a00, a01, 0, a02]
+			glProgramLocalParameter4fvARB(GL_FRAGMENT_PROGRAM_ARB, 1, mt1); // 1 = [a10, a11, 0, a12]
+
+			// Color alpha
+			GVect<float, 4> col(1, 1, 1, (float)Color[G_W]);
+			glProgramLocalParameter4fvARB(GL_FRAGMENT_PROGRAM_ARB, 2, (const float *)col.Data()); // 2 = [1, 1, 1, Alpha]
+
+			// select texture unit 0
+			SELECT_AND_DISABLE_TUNIT(1)
+			SELECT_AND_DISABLE_TUNIT(0)
+			glEnable(GL_TEXTURE_2D);
+
+			// bind gradient texture
+			if (Pattern->TilingMode() == G_REFLECT_TILE) {
+				if (gMirroredRepeatSupport)
+					glBindTexture(GL_TEXTURE_2D, Pattern->PatternTexture());
+				else
+					glBindTexture(GL_TEXTURE_2D, Pattern->gPatternMirroredTexture);
+			}
+			else
+				glBindTexture(GL_TEXTURE_2D, Pattern->PatternTexture());
+
+			// set tiling mode
+			switch (Pattern->TilingMode()) {
+				case G_PAD_TILE:
+					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+					break;
+				case G_REPEAT_TILE:
+					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+					break;
+				case G_REFLECT_TILE:
+					if (gMirroredRepeatSupport) {
+						glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT_ARB);
+						glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT_ARB);
+					}
+					else {
+						glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+						glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+					}
+					break;
+			}
+			// bind the grabbed portion of screen buffer, if needed
+			if (screenGrabbed) {
+				SELECT_AND_DISABLE_TUNIT(1)
+				glEnable(gCompositingBuffer.Target);
+				G_ASSERT(gCompositingBuffer.TexName > 0);
+				glBindTexture(gCompositingBuffer.Target, gCompositingBuffer.TexName);
+				glTexParameteri(gCompositingBuffer.Target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+				glTexParameteri(gCompositingBuffer.Target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+			}
+		}
+	}
+	else {
+
+		GLDisableShaders();
+
+		// color paint
+		if ((PaintType == G_COLOR_PAINT_TYPE) || 
+			(PaintType == G_GRADIENT_PAINT_TYPE && !Gradient) ||
+			(PaintType == G_GRADIENT_PAINT_TYPE && Gradient && Gradient->ColorKeys().size() < 2) ||
+			(PaintType == G_PATTERN_PAINT_TYPE && !Pattern) ||
+			(CompOp == G_CLEAR_OP)) {
+
+				GVector4 col = Color;
+				if (PaintType == G_GRADIENT_PAINT_TYPE && Gradient && Gradient->ColorKeys().size() == 1) {
+					GKeyValue key = Gradient->ColorKeys().front();
+					col = key.Vect4Value();
+				}
+
+				if (CompOp == G_CLEAR_OP)
+					col.Set(0, 0, 0, 0);
+
+				SELECT_AND_DISABLE_TUNIT(0)
+				glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_ALPHA, GL_PRIMARY_COLOR);
+				glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_ALPHA, GL_REPLACE);
+				glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_RGB, GL_PRIMARY_COLOR);
+				glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB, GL_REPLACE);
+				SetGLColor(col);
+		}
+		else
+		// gradient paint
+		if (PaintType == G_GRADIENT_PAINT_TYPE) {
+
+			// linear gradient
+			if (Gradient->Type() == G_LINEAR_GRADIENT) {
+
+				// enable texture 1D and automatic texture coordinate generation
+				SELECT_AND_DISABLE_TUNIT(1)
+				SELECT_AND_DISABLE_TUNIT(0)
+				glEnable(GL_TEXTURE_1D);
+				glEnable(GL_TEXTURE_GEN_S);
+
+				GVector4 col(Color);
+				col[G_X] = col[G_Y] = col[G_Z] = (GReal)1;
+
+				// set alpha pipeline, according to stroke and color keys opacity
+				if (Gradient->gAlphaKeys || col[G_W] < (GReal)1) {
+
+					if (Gradient->gAlphaKeys) {
+						// we have both stroke and color keys opacity
+						if (col[G_W] < (GReal)1) {
+							glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_ALPHA, GL_PRIMARY_COLOR);
+							glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE1_ALPHA, GL_TEXTURE);
+							glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_ALPHA, GL_MODULATE);
+							SetGLColor(col);
+						}
+						// we have only color keys opacity
+						else {
+							glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_ALPHA, GL_TEXTURE);
+							glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_ALPHA, GL_REPLACE);
+							// this fix is due to some old hardware
+							col[G_W] = (GReal)1;
+							SetGLColor(col);
+						}
+					}
+					// we have only stroke opacity
+					else {
+						glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_ALPHA, GL_PRIMARY_COLOR);
+						glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_ALPHA, GL_REPLACE);
+						SetGLColor(col);
+					}
+				}
+				else {
+					glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_ALPHA, GL_PRIMARY_COLOR);
+					glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE1_ALPHA, GL_TEXTURE);
+					glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_ALPHA, GL_MODULATE);
+					// this fix is due to some old hardware
+					SetGLColor(col);
+				}
+				// select gradient texture for RGB channels
+				glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_RGB, GL_TEXTURE);
+
+				GMatrix33 genMatrix = InverseModelView * Gradient->Matrix();
+
+				// affine transform end points
+				GPoint2 sPoint = genMatrix * Gradient->StartPoint();
+				GPoint2 ePoint = genMatrix * Gradient->AuxPoint();
+
+				// calculate direction
+				GVector2 n = ePoint - sPoint;
+				n /= n.LengthSquared();
+				if (Gradient->SpreadMode() == G_REFLECT_COLOR_RAMP_SPREAD) {
+					if (Gradient->ColorInterpolation() == G_CONSTANT_COLOR_INTERPOLATION || !gMirroredRepeatSupport)
+						n /= 2;
+				}
+				// calculate translation factor
+				GReal q = -Dot(n, static_cast< const GVect<GReal, 2>& >(sPoint));
+
+				// generate the S coordinate using the calculated object plane and place the transformation (in
+				// the direction of the normal) in the texture matrix
+				glMatrixMode(GL_TEXTURE);
+				glLoadIdentity();
+				#ifdef DOUBLE_REAL_TYPE
+					glTranslated(q, 0, 0);
+				#else
+					glTranslatef(q, 0, 0);
+				#endif
+
+				GVector4 plane(n[G_X], n[G_Y], 0, 0);
+
+				glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
+				#ifdef DOUBLE_REAL_TYPE
+					glTexGendv(GL_S, GL_OBJECT_PLANE, (const GLdouble *)plane.Data());
+				#else
+					glTexGenfv(GL_S, GL_OBJECT_PLANE, (const GLfloat *)plane.Data());
+				#endif
+
+				// bind gradient texture
+				glBindTexture(GL_TEXTURE_1D, Gradient->GradientTexture());
+
+				// set spread mode
+				switch (Gradient->SpreadMode()) {
+					case G_PAD_COLOR_RAMP_SPREAD:
+						glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+						break;
+					case G_REPEAT_COLOR_RAMP_SPREAD:
+						glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+						break;
+					case G_REFLECT_COLOR_RAMP_SPREAD:
+						if (Gradient->ColorInterpolation() == G_CONSTANT_COLOR_INTERPOLATION || !gMirroredRepeatSupport)
+							glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+						else
+							glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT_ARB);
+						break;
+				}
+			}
+			// radial/conical gradient
+			else {
+				// geometrical version
+				SELECT_AND_DISABLE_TUNIT(1)
+				SELECT_AND_DISABLE_TUNIT(0)
 				glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_RGB, GL_PRIMARY_COLOR);
 
 				GVector4 col(Color);
@@ -1147,289 +1671,372 @@ GBool GOpenGLBoard::UseStyle(const GPaintType PaintType, const GVector4& Color,
 						glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_ALPHA, GL_PRIMARY_COLOR);
 						glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_ALPHA, GL_REPLACE);
 					}
-					glEnable(GL_BLEND);
 				}
-				else
-					glDisable(GL_BLEND);
-				// for radial gradients we use always depth buffer
-				useDepthBuffer = G_TRUE;
-			}
-			// fragment program version (radial and conical)
-			else {
-				// for stroking, we must use zbuffer as mask also for conical and radial gradients (if they
-				// are transparent)
-				if ((Gradient->gAlphaKeys || Color[G_W] < (GReal)1) && !UseFill)
-					useDepthBuffer = G_TRUE;
-
-				// enable fragment program
-				glEnable(GL_FRAGMENT_PROGRAM_ARB);
-
-				// radial gradient
-				if (Gradient->Type() == G_RADIAL_GRADIENT) {
-
-					glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, gRadGradGLProgram);
-
-					GPoint2 pc = Gradient->StartPoint();
-					GPoint2 pf = Gradient->AuxPoint();
-					GReal newRadius = Gradient->Radius();
-
-					// if focus is outside gradient circle, we must reset it
-					if (Distance(pf, pc) > newRadius)
-						pf = pc;
-
-					GVector2 fc = (pf - pc);
-
-					float focuscenter[4] = { (float)fc[G_X], (float)fc[G_Y], 0.0f, 0.0f };
-
-					// this fix a STRANGE bug on some GeForce boards (we have found it on a 7800GT) where
-					// an x-aligned focus-center makes the fragment program run in an anomalous manner.
-					if (GMath::Abs(focuscenter[0]) <= 1.1920928955078125e-07f)
-						focuscenter[0] = (2.0f * 1.1920928955078125e-07f);
-
-					float qCoef[4] = { (float)(fc.LengthSquared() - GMath::Sqr(newRadius)), 0.0f, 0.0f, 0.0f };
-
-					GMatrix33 m = Gradient->InverseMatrix() * PhysicalToLogicalMatrix();
-					m[0][2] -= (float)pf[G_X];
-					m[1][2] -= (float)pf[G_Y];
-
-					float mrs[4] = { (float)m[0][0], (float)m[0][1], (float)m[1][0], (float)m[1][1]};
-					float mtr[4] = { (float)m[0][2], 0.0f, (float)m[1][2], 0.0f};
-
-					glProgramLocalParameter4fvARB(GL_FRAGMENT_PROGRAM_ARB, 0, focuscenter);	// (Focus - Center).xy, 0, 0
-					glProgramLocalParameter4fvARB(GL_FRAGMENT_PROGRAM_ARB, 1, qCoef);		// (Focus-Center).LengthSquared - Radius^2, 0, 0, 0
-					glProgramLocalParameter4fvARB(GL_FRAGMENT_PROGRAM_ARB, 2, mrs);	// InverseGradMatrix * PhysicalToLogical (affine part)
-					glProgramLocalParameter4fvARB(GL_FRAGMENT_PROGRAM_ARB, 3, mtr); // InverseGradMatrix * PhysicalToLogical (translation part)
-
-					// Color alpha
-					GVect<float, 4> col(1, 1, 1, (float)Color[G_W]);
-					glProgramLocalParameter4fvARB(GL_FRAGMENT_PROGRAM_ARB, 4, (const float *)col.Data());
-
-					// u coordinate scaling (to support correct constant color interpolation and devices where
-					// mirrored textures are not supported)
-					float texMul[4];
-					if (Gradient->SpreadMode() == G_REFLECT_COLOR_RAMP_SPREAD) {
-						
-						if (Gradient->ColorInterpolation() == G_CONSTANT_COLOR_INTERPOLATION || !gMirroredRepeatSupport)
-							texMul[0] = texMul[1] = texMul[2] = texMul[3] = 0.5f;
-						else
-							texMul[0] = texMul[1] = texMul[2] = texMul[3] = 1.0f;
-					}
-					else
-						texMul[0] = texMul[1] = texMul[2] = texMul[3] = 1.0f;
-					// 5 = texture u coordinate scaling
-					glProgramLocalParameter4fvARB(GL_FRAGMENT_PROGRAM_ARB, 5, texMul);
-
-					// set alpha pipeline, according to stroke and color keys opacity
-					if (Gradient->gAlphaKeys || col[G_W] < 1.0f)
-						glEnable(GL_BLEND);
-					else
-						glDisable(GL_BLEND);
-
-					// enable texture 1D and disable automatic texture coordinate generation
-					glEnable(GL_TEXTURE_1D);
-					glDisable(GL_TEXTURE_2D);
-					glDisable(GL_TEXTURE_GEN_S);
-					glDisable(GL_TEXTURE_GEN_T);
-					// bind gradient texture
-					glBindTexture(GL_TEXTURE_1D, Gradient->GradientTexture());
-					// set spread mode
-					switch (Gradient->SpreadMode()) {
-						case G_PAD_COLOR_RAMP_SPREAD:
-							glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-							break;
-						case G_REPEAT_COLOR_RAMP_SPREAD:
-							glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-							break;
-						case G_REFLECT_COLOR_RAMP_SPREAD:
-
-							if (Gradient->ColorInterpolation() == G_CONSTANT_COLOR_INTERPOLATION || !gMirroredRepeatSupport)
-								glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-							else
-								glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT_ARB);
-							/*if (Gradient->ColorInterpolation() != G_CONSTANT_COLOR_INTERPOLATION) {
-								// just to be sure, if shaders are supported, it would be so for repeat mode too
-								if (gMirroredRepeatSupport)
-									glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT_ARB);
-								else
-									glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-							}
-							else
-								glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_REPEAT);*/
-							break;
-					}
-				}
-				// conical gradient
 				else {
-					glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, gConGradGLProgram);
-
-					const GPoint2& pc = Gradient->StartPoint();
-					const GPoint2& pt = Gradient->AuxPoint();
-
-					GVector2 dir = pt - pc;
-					GReal l = dir.Length();
-
-					if (l <= G_EPSILON)
-						dir.Set(1, 0);
-					else
-						dir /= l;
-
-					float rotM[4] = { (float)dir[G_X], (float)dir[G_Y], (float)(-dir[G_Y]), (float)dir[G_X] };
-					float center[4] = { (float)pc[G_X], (float)pc[G_Y], 0.0f, 0.0f };
-					static float texBias[4] = { 0.5f, 0.5f, 0.5f, 0.5f };
-
-					glProgramLocalParameter4fvARB(GL_FRAGMENT_PROGRAM_ARB, 0, rotM);	// 0 = [cos, sin, -sin, cos]
-					glProgramLocalParameter4fvARB(GL_FRAGMENT_PROGRAM_ARB, 1, center);	// 1 = [Center.x, Center.y, 0, 0]
-					glProgramLocalParameter4fvARB(GL_FRAGMENT_PROGRAM_ARB, 2, texBias);	// 2 = [0.5, 0.5, 0.5, 0.5]
-					// Color alpha
-					GVect<float, 4> col(1, 1, 1, (float)Color[G_W]);
-					glProgramLocalParameter4fvARB(GL_FRAGMENT_PROGRAM_ARB, 3, (const float *)col.Data()); // 3 = [1, 1, 1, Alpha]
-					// inverse gradient matrix
-					GMatrix33 m = Gradient->InverseMatrix() * PhysicalToLogicalMatrix();
-
-					float mrs[4] = { (float)m[0][0], (float)m[0][1], (float)m[1][0], (float)m[1][1]};
-					float mtr[4] = { (float)m[0][2], 0.0f, (float)m[1][2], 0.0f};
-					glProgramLocalParameter4fvARB(GL_FRAGMENT_PROGRAM_ARB, 4, mrs); // InverseGradMatrix (affine part)
-					glProgramLocalParameter4fvARB(GL_FRAGMENT_PROGRAM_ARB, 5, mtr); // InverseGradMatrix (translation part)
-
-					// set alpha pipeline, according to stroke and color keys opacity
-					if (Gradient->gAlphaKeys || col[G_W] < 1.0f)
-						glEnable(GL_BLEND);
-					else
-						glDisable(GL_BLEND);
-
-					// enable texture 2D and disable automatic texture coordinate generation
-					glDisable(GL_TEXTURE_1D);
-					glEnable(GL_TEXTURE_2D);
-					glDisable(GL_TEXTURE_GEN_S);
-					glDisable(GL_TEXTURE_GEN_T);
-					// bind gradient texture
-					glBindTexture(GL_TEXTURE_2D, Gradient->GradientTexture());
-					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+					GVect<GLfloat, 4> colf;
+					colf[G_X] = colf[G_Y] = colf[G_Z] = (GLfloat)1;
+					colf[G_W] = (GLfloat)Color[G_W];
+					glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_ALPHA, GL_PRIMARY_COLOR);
+					glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_ALPHA, GL_REPLACE);
 				}
 			}
 		}
-	}
-	// pattern paint
-	else {
-		
-		GVector4 col = Color;
-		col[G_X] = col[G_Y] = col[G_Z] = (GReal)1;
+		// pattern paint
+		else {
+			GVector4 col = Color;
+			col[G_X] = col[G_Y] = col[G_Z] = (GReal)1;
 
-		// suppose we have both color and texture transparency
-		if (col[G_W] < (GReal)1) {
+			// enable texture 2D
+			SELECT_AND_DISABLE_TUNIT(1)
+			SELECT_AND_DISABLE_TUNIT(0)
+			glEnable(GL_TEXTURE_2D);
+			glEnable(GL_TEXTURE_GEN_S);
+			glEnable(GL_TEXTURE_GEN_T);
+
 			glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_ALPHA, GL_PRIMARY_COLOR);
 			glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE1_ALPHA, GL_TEXTURE);
 			glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_ALPHA, GL_MODULATE);
+			SetGLColor(col);
+
+			glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_RGB, GL_TEXTURE);
+			glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB, GL_REPLACE);
+
+			// lets use texture coordinate generation in eye space which is in canvas coordinates
+			glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
+			glTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_OBJECT_LINEAR);
+
+			const GAABox2& patWindow = Pattern->LogicalWindow();
+			GReal xAxisLen = patWindow.Dimension(G_X);
+			GReal yAxisLen = patWindow.Dimension(G_Y);
+
+			GMatrix33 m, postTrans, postTrans2, scale;
+
+			GVector4 planeS(1, 0, 0, 0);
+			GVector4 planeT(0, 1, 0, 0);
+
+			#ifdef DOUBLE_REAL_TYPE
+				glTexGendv(GL_S, GL_OBJECT_PLANE, (const GLdouble *)planeS.Data());
+				glTexGendv(GL_T, GL_OBJECT_PLANE, (const GLdouble *)planeT.Data());
+			#else
+				glTexGenfv(GL_S, GL_OBJECT_PLANE, (const GLfloat *)planeS.Data());
+				glTexGenfv(GL_T, GL_OBJECT_PLANE, (const GLfloat *)planeT.Data());
+			#endif
+
+			TranslationToMatrix(postTrans2, -patWindow.Min());
+			ScaleToMatrix(scale, GVector2(1 / xAxisLen, -1 / yAxisLen));
+			TranslationToMatrix(postTrans, GPoint2(0, 1));
+
+			if (Pattern->TilingMode() == G_REFLECT_TILE) {
+				if (gMirroredRepeatSupport)
+					m = (postTrans * (scale * (postTrans2 * (Pattern->InverseMatrix() * ModelView))));
+				else {
+					GMatrix33 reflectFactors;
+					ScaleToMatrix(reflectFactors, GVector3((GReal)0.5, (GReal)0.5, 1));
+					m = (reflectFactors * (postTrans * (scale * (postTrans2 * (Pattern->InverseMatrix() * ModelView)))));
+				}
+			}
+			else
+				m = (postTrans * (scale * (postTrans2 * (Pattern->InverseMatrix() * ModelView))));
+
+			// load texture matrix
+			glMatrixMode(GL_TEXTURE);
+			SetGLTextureMatrix(m);
+
+			// bind gradient texture
+			if (Pattern->TilingMode() == G_REFLECT_TILE) {
+				if (gMirroredRepeatSupport)
+					glBindTexture(GL_TEXTURE_2D, Pattern->PatternTexture());
+				else
+					glBindTexture(GL_TEXTURE_2D, Pattern->gPatternMirroredTexture);
+			}
+			else
+				glBindTexture(GL_TEXTURE_2D, Pattern->PatternTexture());
+
+			// set tiling mode
+			switch (Pattern->TilingMode()) {
+				case G_PAD_TILE:
+					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+					break;
+				case G_REPEAT_TILE:
+					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+					break;
+				case G_REFLECT_TILE:
+					if (gMirroredRepeatSupport) {
+						glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT_ARB);
+						glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT_ARB);
+					}
+					else {
+						glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+						glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+					}
+					break;
+			}
+		}
+	}
+	#undef COLOR_PRG
+	#undef LINGRAD_PRG
+	#undef RADGRAD_PRG
+	#undef CONGRAD_PRG
+	#undef PATTERN_PRG
+
+	#undef TEXTURE_POW2
+	#undef TEXTURE_RECT
+}
+
+void GOpenGLBoard::UseGroupStyle(const GUInt32 PassIndex, const GLGrabbedRect& GroupColorRect,
+								 const GLGrabbedRect& BackgroundRect) {
+
+	#define TEXTURE_POW2 0
+	#define TEXTURE_RECT 1
+
+	// graphic style has sense only for color buffer
+	if (TargetMode() == G_CLIP_MODE || TargetMode() == G_CLIP_AND_CACHE_MODE || TargetMode() == G_CACHE_MODE)
+		return;
+
+	// set compositing operation
+	GBool screenGrabbed = SetGLStyleCompOp(GroupCompOp(), PassIndex);
+
+	if (gFragmentProgramsInUse) {
+
+		// enable fragment program
+		glEnable(GL_FRAGMENT_PROGRAM_ARB);
+
+		// bind the program
+		if (gAlphaBufferPresent) {
+			if (gRectTexturesInUse)
+				glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, gCompGroupProgramsRGBA[GroupCompOp()][TEXTURE_RECT]);
+			else
+				glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, gCompGroupProgramsRGBA[GroupCompOp()][TEXTURE_POW2]);
 		}
 		else {
-			glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_ALPHA, GL_TEXTURE);
-			glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_ALPHA, GL_REPLACE);
+			if (gRectTexturesInUse)
+				glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, gCompGroupProgramsRGB[GroupCompOp()][TEXTURE_RECT]);
+			else
+				glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, gCompGroupProgramsRGB[GroupCompOp()][TEXTURE_POW2]);
 		}
+
+		// Color alpha
+		GVect<float, 4> col(1, 1, 1, (float)GroupOpacity());
+		glProgramLocalParameter4fvARB(GL_FRAGMENT_PROGRAM_ARB, 0, (const float *)col.Data()); // 0 = [1, 1, 1, Alpha]
+
+		// select texture unit 0
+		SELECT_AND_DISABLE_TUNIT(1)
+		SELECT_AND_DISABLE_TUNIT(0)
+		glEnable(GroupColorRect.Target);
+
+		// bind gradient texture
+		glBindTexture(GroupColorRect.Target, GroupColorRect.TexName);
+
+		// set tiling mode
+		glTexParameteri(GroupColorRect.Target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GroupColorRect.Target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+		// bind the grabbed portion of screen buffer, if needed
+		if (screenGrabbed) {
+			SELECT_AND_DISABLE_TUNIT(1)
+			glEnable(BackgroundRect.Target);
+			G_ASSERT(BackgroundRect.TexName > 0);
+			glBindTexture(BackgroundRect.Target, BackgroundRect.TexName);
+			glTexParameteri(BackgroundRect.Target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			glTexParameteri(BackgroundRect.Target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		}
+	}
+	else {
+
+		GLDisableShaders();
+
+		GVector4 col(1, 1, 1, GroupOpacity());
+
+		// enable texture 2D
+		SELECT_AND_DISABLE_TUNIT(1)
+		SELECT_AND_DISABLE_TUNIT(0)
+		glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE);
+		glEnable(GroupColorRect.Target);
+
 		SetGLColor(col);
 
-		glEnable(GL_BLEND);
-		if (!UseFill)
-			useDepthBuffer = G_TRUE;
+		// bind gradient texture
+		glBindTexture(GroupColorRect.Target, GroupColorRect.TexName);
+
+		glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_ALPHA, GL_PRIMARY_COLOR);
+		glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE1_ALPHA, GL_TEXTURE);
+		glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_ALPHA, GL_MODULATE);
 
 		glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_RGB, GL_TEXTURE);
 		glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB, GL_REPLACE);
 
-		// lets use texture coordinate generation in eye space which is in canvas coordinates
-		glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_EYE_LINEAR);
-		glTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_EYE_LINEAR);
-
-		const GAABox2& patWindow = Pattern->LogicalWindow();
-		GReal xAxisLen = patWindow.Dimension(G_X);
-		GReal yAxisLen = patWindow.Dimension(G_Y);
-
-		GMatrix33 m, postTrans, postTrans2, scale;
-
-		GVector4 planeS(InverseModelView[0][0], InverseModelView[1][0], 0, InverseModelView[0][2]);
-		GVector4 planeT(InverseModelView[0][1], InverseModelView[1][1], 0, InverseModelView[1][2]);
-
-	#ifdef DOUBLE_REAL_TYPE
-		glTexGendv(GL_S, GL_EYE_PLANE, (const GLdouble *)planeS.Data());
-		glTexGendv(GL_T, GL_EYE_PLANE, (const GLdouble *)planeT.Data());
-	#else
-		glTexGenfv(GL_S, GL_EYE_PLANE, (const GLfloat *)planeS.Data());
-		glTexGenfv(GL_T, GL_EYE_PLANE, (const GLfloat *)planeT.Data());
-	#endif
-
-		TranslationToMatrix(postTrans2, -patWindow.Min());
-		ScaleToMatrix(scale, GVector2(1 / xAxisLen, -1 / yAxisLen));
-		TranslationToMatrix(postTrans, GPoint2(0, 1));
-
-		if (Pattern->TilingMode() == G_REFLECT_TILE) {
-			if (gMirroredRepeatSupport)
-				m = (postTrans * (scale * (postTrans2 * Pattern->InverseMatrix())));
-			else {
-				GMatrix33 reflectFactors;
-				ScaleToMatrix(reflectFactors, GVector3((GReal)0.5, (GReal)0.5, 1));
-				m = (reflectFactors * (postTrans * (scale * (postTrans2 * Pattern->InverseMatrix()))));
-			}
-		}
-		else
-			m = (postTrans * (scale * (postTrans2 * Pattern->InverseMatrix())));
-
 		// load texture matrix
 		glMatrixMode(GL_TEXTURE);
-		SetGLTextureMatrix(m);
-
-		// enable texture 2D
-		glDisable(GL_TEXTURE_1D);
-		glEnable(GL_TEXTURE_2D);
-		glEnable(GL_TEXTURE_GEN_S);
-		glEnable(GL_TEXTURE_GEN_T);
-
-		// bind gradient texture
-		if (Pattern->TilingMode() == G_REFLECT_TILE) {
-			if (gMirroredRepeatSupport)
-				glBindTexture(GL_TEXTURE_2D, Pattern->PatternTexture());
-			else
-				glBindTexture(GL_TEXTURE_2D, Pattern->gPatternMirroredTexture);
-		}
-		else
-			glBindTexture(GL_TEXTURE_2D, Pattern->PatternTexture());
+		glLoadIdentity();
 
 		// set tiling mode
-		switch (Pattern->TilingMode()) {
-			case G_PAD_TILE:
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-				break;
-			case G_REPEAT_TILE:
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-				break;
-			case G_REFLECT_TILE:
-				if (gMirroredRepeatSupport) {
-					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT_ARB);
-					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT_ARB);
+		glTexParameteri(GroupColorRect.Target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GroupColorRect.Target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	}
+	#undef TEXTURE_POW2
+	#undef TEXTURE_RECT
+}
+
+void GOpenGLBoard::UseStrokeStyle(const GDrawStyle& Style, const GUInt32 PassIndex) {
+
+	UseStyle(Style.StrokePaintType(), Style.StrokeCompOp(), PassIndex,
+			 Style.StrokeColor(), (const GOpenGLGradientDesc *)Style.StrokeGradient(),
+			 (const GOpenGLPatternDesc *)Style.StrokePattern(), Style.ModelView(), Style.InverseModelView());
+}
+
+void GOpenGLBoard::UseFillStyle(const GDrawStyle& Style, const GUInt32 PassIndex) {
+
+	UseStyle(Style.FillPaintType(), Style.FillCompOp(), PassIndex,
+			Style.FillColor(), (const GOpenGLGradientDesc *)Style.FillGradient(),
+			(const GOpenGLPatternDesc *)Style.FillPattern(), Style.ModelView(), Style.InverseModelView());
+}
+
+void GOpenGLBoard::ReplaceFrameBuffer(const GLGrabbedRect& GrabbedRect, const GCompositingOperation CompOp,
+									  const GUInt32 PassIndex) {
+
+	GLDisableShaders();
+	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE);
+
+	SELECT_AND_DISABLE_TUNIT(1)
+	SELECT_AND_DISABLE_TUNIT(0)
+	glEnable(GrabbedRect.Target);
+	glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_RGB, GL_TEXTURE);
+	glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB, GL_REPLACE);
+	glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_ALPHA, GL_TEXTURE);
+	glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_ALPHA, GL_REPLACE);
+
+	// fixes old hardware issues (irix for example)
+	SetGLColor(GVector4(1, 1, 1, 1));
+
+	glMatrixMode(GL_TEXTURE);
+	glLoadIdentity();
+
+	glBindTexture(GrabbedRect.Target, GrabbedRect.TexName);
+
+	switch (CompOp) {
+
+		case G_CLEAR_OP:
+		case G_SRC_OP:
+		case G_DST_OP:
+		case G_SRC_OVER_OP:
+		case G_DST_IN_OP:
+		case G_DST_OUT_OP:
+		case G_PLUS_OP:
+			glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+			glDisable(GL_BLEND);
+			break;
+
+		case G_DST_OVER_OP:
+			G_ASSERT(PassIndex == 0);
+			glEnable(GL_BLEND);
+			glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+			glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+			break;
+		case G_SRC_IN_OP:
+			G_ASSERT(PassIndex == 0);
+			glEnable(GL_BLEND);
+			glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+			glBlendFunc(GL_ZERO, GL_SRC_ALPHA);
+			break;
+		case G_SRC_OUT_OP:
+			G_ASSERT(PassIndex == 0);
+			glEnable(GL_BLEND);
+			glBlendFunc(GL_ZERO, GL_ONE_MINUS_SRC_ALPHA);
+			glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+			break;
+		case G_SRC_ATOP_OP:
+			G_ASSERT(PassIndex == 0 || PassIndex == 1);
+			if (PassIndex == 0) {
+				glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE);
+				glBlendFunc(GL_ONE_MINUS_DST_ALPHA, GL_SRC_ALPHA);
+				glEnable(GL_BLEND);
+			}
+			else {
+				glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_TRUE);
+				glDisable(GL_BLEND);
+			}
+			break;
+		case G_DST_ATOP_OP:
+			G_ASSERT(PassIndex == 0);
+			glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE);
+			glBlendFunc(GL_DST_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+			glEnable(GL_BLEND);
+			break;
+		case G_XOR_OP:
+			glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+			glEnable(GL_BLEND);
+			glBlendFunc(GL_ONE_MINUS_DST_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+			break;
+		case G_SCREEN_OP:
+			if (gAlphaBufferPresent) {
+				G_ASSERT(PassIndex == 0 || PassIndex == 1);
+				if (PassIndex == 0) {
+					glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE);
+					glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_COLOR);
+					glEnable(GL_BLEND);
 				}
 				else {
-					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+					glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_TRUE);
+					glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+					glEnable(GL_BLEND);
 				}
-				break;
-		}
+			}
+			else {
+				G_ASSERT(PassIndex == 0);
+				glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE);
+				glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_COLOR);
+				glEnable(GL_BLEND);
+			}
+			break;
+		case G_EXCLUSION_OP:
+			if (gAlphaBufferPresent) {
+				G_ASSERT(PassIndex == 0 || PassIndex == 1);
+				if (PassIndex == 0) {
+					glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE);
+					glBlendFunc(GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_COLOR);
+					glEnable(GL_BLEND);
+				}
+				else {
+					glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_TRUE);
+					glBlendFunc(GL_ONE_MINUS_DST_ALPHA, GL_ONE);
+					glEnable(GL_BLEND);
+				}
+			}
+			else {
+				G_ASSERT(PassIndex == 0);
+				glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE);
+				glBlendFunc(GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_COLOR);
+				glEnable(GL_BLEND);
+			}
+			break;
 
+		case G_MULTIPLY_OP:
+		case G_OVERLAY_OP:
+		case G_DARKEN_OP:
+		case G_LIGHTEN_OP:
+		case G_COLOR_DODGE_OP:
+		case G_COLOR_BURN_OP:
+		case G_HARD_LIGHT_OP:
+		case G_SOFT_LIGHT_OP:
+		case G_DIFFERENCE_OP:
+			glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+			glDisable(GL_BLEND);
+			break;
+
+		default:
+			glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+			glDisable(GL_BLEND);
+			break;
 	}
-	return useDepthBuffer;
-}
 
-GBool GOpenGLBoard::UseStrokeStyle(const GDrawStyle& Style) {
+	glTexParameteri(GrabbedRect.Target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GrabbedRect.Target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
-	return UseStyle(Style.StrokePaintType(), Style.StrokeColor(), (const GOpenGLGradientDesc *)Style.StrokeGradient(),
-					(const GOpenGLPatternDesc *)Style.StrokePattern(), Style.ModelView(), Style.InverseModelView(),
-					G_FALSE);
-}
+	DrawGrabbedRect(GrabbedRect, G_TRUE, G_FALSE, G_FALSE, G_FALSE);
 
-GBool GOpenGLBoard::UseFillStyle(const GDrawStyle& Style) {
-
-	return UseStyle(Style.FillPaintType(), Style.FillColor(), (const GOpenGLGradientDesc *)Style.FillGradient(),
-					(const GOpenGLPatternDesc *)Style.FillPattern(), Style.ModelView(), Style.InverseModelView(),
-					G_TRUE);
+	glDisable(GrabbedRect.Target);
 }
 
 void GOpenGLBoard::PushDepthMask() {
@@ -1452,7 +2059,7 @@ void GOpenGLBoard::PushDepthMask() {
 
 	m[2][3] = (GReal)2e-7 - (GReal)1;
 
-	// now all points (that have z = 0 because glVertex2dv/fv) will have a z-window value equal to 0.5
+	// now all points (that have z = 0 because glVertex2dv/fv) will have a z-window value equal to +epsilon
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
 	#ifdef DOUBLE_REAL_TYPE
@@ -1462,107 +2069,243 @@ void GOpenGLBoard::PushDepthMask() {
 	#endif
 }
 
-void GOpenGLBoard::DrawAndPopDepthMask(const GAABox2& Box, const GDrawStyle& Style, const GBool DrawFill) {
+void GOpenGLBoard::SelectTextureUnit(const GLint Unit) {
 
+	if (!gMultiTextureSupport)
+		return;
+
+	switch (Unit) {
+		case 0:
+			glActiveTextureARB(GL_TEXTURE0_ARB);
+			break;
+		case 1:
+			glActiveTextureARB(GL_TEXTURE1_ARB);
+			break;
+		default:
+			glActiveTextureARB(GL_TEXTURE0_ARB);
+			break;
+	}
+}
+
+void GOpenGLBoard::SetTextureVertex(const GUInt32 TextureIndex, const GReal u, const GReal v) {
+
+	if (!gMultiTextureSupport) {
+		#ifdef DOUBLE_REAL_TYPE
+			glTexCoord2d(u, v);
+		#else
+			glTexCoord2f(u, v);
+		#endif
+	}
+	else {
+		switch (TextureIndex) {
+
+			case 0:
+				#ifdef DOUBLE_REAL_TYPE
+					glMultiTexCoord2dARB(GL_TEXTURE0_ARB, u, v);
+				#else
+					glMultiTexCoord2fARB(GL_TEXTURE0_ARB, u, v);
+				#endif
+				break;
+
+			case 1:
+				#ifdef DOUBLE_REAL_TYPE
+					glMultiTexCoord2dARB(GL_TEXTURE1_ARB, u, v);
+				#else
+					glMultiTexCoord2fARB(GL_TEXTURE1_ARB, u, v);
+				#endif
+				break;
+
+			default:
+				G_DEBUG("SetTextureVertex, TextureIndex greater than 1");
+				break;
+		}
+	}
+}
+
+void GOpenGLBoard::DrawAndPopDepthMask(const GAABox2& Box, const GDrawStyle& Style, const GBool DrawFill,
+									   const GUInt32 StylePassesCount, const GUInt32 FrameBufferPassesCount,
+									   const GBool ScreenGrabbed) {
+
+	// do not touch stencil buffer
 	glDisable(GL_STENCIL_TEST);
 	glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
-
+	// enable depth test (onto zbuffer there is a "geometry mask", we are going to pop it using this test)
 	glEnable(GL_DEPTH_TEST);
-	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE);
+	// enable color writing only for those pixels inside "geometry mask"
 	glDepthFunc(GL_EQUAL);
+	// disable zwrite
 	glDepthMask(GL_FALSE);
 
-	GPoint2 p0 = Box.Min();
-	GPoint2 p2 = Box.Max();
-	GPoint2 p1(p0[G_X], p2[G_Y]);
-	GPoint2 p3(p2[G_X], p0[G_Y]);
-
-	GBool drawRadGrad = G_FALSE;
-	GBool drawConGrad = G_FALSE;
+	GMatrix44 m;
+	GReal ll, rr, bb, tt;
+	GBool drawGeometricRadGrad = G_FALSE;
+	GBool drawGeometricConGrad = G_FALSE;
 	GOpenGLGradientDesc *g = NULL;
+	GUInt32 tUnit;
 
 	if (DrawFill) {
 		if (Style.FillPaintType() == G_GRADIENT_PAINT_TYPE && Style.FillGradient()) {
 			g = (GOpenGLGradientDesc *)Style.FillGradient();
-			if (g->Type() == G_RADIAL_GRADIENT && g->ColorKeys().size() > 1)
-				drawRadGrad = G_TRUE;
+			if (g->Type() == G_RADIAL_GRADIENT && g->ColorKeys().size() > 1 && !gFragmentProgramsInUse)
+				drawGeometricRadGrad = G_TRUE;
 			else
-			if (g->Type() == G_CONICAL_GRADIENT && g->ColorKeys().size() > 1)
-				drawConGrad = G_TRUE;
+			if (g->Type() == G_CONICAL_GRADIENT && g->ColorKeys().size() > 1 && !gFragmentProgramsInUse)
+				drawGeometricConGrad = G_TRUE;
 		}
 	}
 	else {
 		if (Style.StrokePaintType() == G_GRADIENT_PAINT_TYPE && Style.StrokeGradient()) {
 			g = (GOpenGLGradientDesc *)Style.StrokeGradient();
-			if (g->Type() == G_RADIAL_GRADIENT && g->ColorKeys().size() > 1)
-				drawRadGrad = G_TRUE;
+			if (g->Type() == G_RADIAL_GRADIENT && g->ColorKeys().size() > 1 && !gFragmentProgramsInUse)
+				drawGeometricRadGrad = G_TRUE;
 			else
-			if (g->Type() == G_CONICAL_GRADIENT && g->ColorKeys().size() > 1)
-				drawConGrad = G_TRUE;
+			if (g->Type() == G_CONICAL_GRADIENT && g->ColorKeys().size() > 1 && !gFragmentProgramsInUse)
+				drawGeometricConGrad = G_TRUE;
 		}
 	}
 
+	if (drawGeometricRadGrad) {
 
-	if (drawRadGrad) {
-		if (DrawFill)
-			DrawRadialSector(g->StartPoint(), g->AuxPoint(), g->Radius(), Box, g->ColorKeys(),
-							 g->ColorInterpolation(), g->SpreadMode(), Style.FillColor()[G_W],
-							 g->Matrix(), g->InverseMatrix(), Style.ModelView());
-		else
-			DrawRadialSector(g->StartPoint(), g->AuxPoint(), g->Radius(), Box, g->ColorKeys(),
-							 g->ColorInterpolation(), g->SpreadMode(), Style.StrokeColor()[G_W],
-							 g->Matrix(), g->InverseMatrix(), Style.ModelView());
+		if (DrawFill) {
+			// repeat color drawing according to number of steps required by current compositing operation
+			for (GUInt32 ii = 0; ii < StylePassesCount; ++ii) {
+				UseFillStyle(Style, ii);
+				DrawRadialSector(g->StartPoint(), g->AuxPoint(), g->Radius(), Box, g->ColorKeys(),
+								 g->ColorInterpolation(), g->SpreadMode(), Style.FillColor()[G_W],
+								 g->Matrix(), g->InverseMatrix());
+			}
+		}
+		else {
+			// repeat color drawing according to number of steps required by current compositing operation
+			for (GUInt32 ii = 0; ii < StylePassesCount; ++ii) {
+				UseStrokeStyle(Style, ii);
+				DrawRadialSector(g->StartPoint(), g->AuxPoint(), g->Radius(), Box, g->ColorKeys(),
+								 g->ColorInterpolation(), g->SpreadMode(), Style.StrokeColor()[G_W],
+								 g->Matrix(), g->InverseMatrix());
+			}
+		}
 	}
 	else
-	if (drawConGrad) {
-		if (DrawFill)
-			DrawConicalSector(g->StartPoint(), g->AuxPoint(), Box, g->ColorKeys(), g->gInTangents, g->gOutTangents,
-							  g->ColorInterpolation(), Style.FillColor()[G_W],
-							  g->Matrix(), g->InverseMatrix(), Style.ModelView());
-		else
-			DrawConicalSector(g->StartPoint(), g->AuxPoint(), Box, g->ColorKeys(), g->gInTangents, g->gOutTangents,
-							  g->ColorInterpolation(), Style.StrokeColor()[G_W],
-							  g->Matrix(), g->InverseMatrix(), Style.ModelView());
+	if (drawGeometricConGrad) {
+		if (DrawFill) {
+			// repeat color drawing according to number of steps required by current compositing operation
+			for (GUInt32 ii = 0; ii < StylePassesCount; ++ii) {
+				UseFillStyle(Style, ii);
+				DrawConicalSector(g->StartPoint(), g->AuxPoint(), Box, g->ColorKeys(), g->gInTangents, g->gOutTangents,
+								  g->ColorInterpolation(), Style.FillColor()[G_W],
+								  g->Matrix(), g->InverseMatrix());
+			}
+		}
+		else {
+			// repeat color drawing according to number of steps required by current compositing operation
+			for (GUInt32 ii = 0; ii < StylePassesCount; ++ii) {
+				UseStrokeStyle(Style, ii);
+				DrawConicalSector(g->StartPoint(), g->AuxPoint(), Box, g->ColorKeys(), g->gInTangents, g->gOutTangents,
+								  g->ColorInterpolation(), Style.StrokeColor()[G_W],
+								  g->Matrix(), g->InverseMatrix());
+			}
+		}
 	}
 	else {
-		// draw into color buffer
-		glBegin(GL_POLYGON);
-		#ifdef DOUBLE_REAL_TYPE
-			glVertex2dv(p0.Data());
-			glVertex2dv(p1.Data());
-			glVertex2dv(p2.Data());
-			glVertex2dv(p3.Data());
-		#else
-			glVertex2fv(p0.Data());
-			glVertex2fv(p1.Data());
-			glVertex2fv(p2.Data());
-			glVertex2fv(p3.Data());
-		#endif
-		glEnd();
+
+		glMatrixMode(GL_MODELVIEW);
+		glLoadIdentity();
+
+		// here we are in one of these cases:
+		// no pixel shaders (color, lingrad, pattern)
+		// pixel shaders (color, lingrad, radgrad, congrad, pattern)
+		for (GUInt32 ii = 0; ii < StylePassesCount; ++ii) {
+			if (DrawFill)
+				UseFillStyle(Style, ii);
+			else
+				UseStrokeStyle(Style, ii);
+
+			if (!ScreenGrabbed) {
+				DrawGLBox(Box);
+			}
+			else {
+				tUnit = 1;
+				if ((DrawFill && Style.FillPaintType() == G_COLOR_PAINT_TYPE) ||
+					(!DrawFill && Style.StrokePaintType() == G_COLOR_PAINT_TYPE))
+					tUnit = 0;
+
+				// to place grabbed screen portion we have to enter in window-mode
+				//m = GLWindowModeMatrix((GReal)1e-7);
+
+				Projection(ll, rr, bb, tt);
+				m = GLProjectionMatrix(ll, rr, bb, tt, (GReal)1e-7);
+				glMatrixMode(GL_PROJECTION);
+				#ifdef DOUBLE_REAL_TYPE
+					glLoadMatrixd((const GLdouble *)m.Data());
+				#else
+					glLoadMatrixf((const GLfloat *)m.Data());
+				#endif
+
+				if (tUnit == 0)
+					DrawGrabbedRect(gCompositingBuffer, G_TRUE, G_FALSE, G_FALSE, G_FALSE);
+				else
+					DrawGrabbedRect(gCompositingBuffer, G_FALSE, G_FALSE, G_TRUE, G_FALSE);
+			}
+		}
 	}
 
+	// unbind texture on tUnit (tUnit is always used to store grabbed rect for compositing)
+	if (gFragmentProgramsInUse) {
+		G_ASSERT(FrameBufferPassesCount == 0);
+		if (ScreenGrabbed) {
+			SELECT_AND_DISABLE_TUNIT(tUnit);
+			glBindTexture(gCompositingBuffer.Target, 0);
+		}
+	}
+
+	GCompositingOperation compOp;
+	if (DrawFill)
+		compOp = Style.FillCompOp();
+	else
+		compOp = Style.StrokeCompOp();
+
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+
+	// put grabbed frame buffer onto screen to complete compositing operation
+	if (FrameBufferPassesCount > 0) {
+
+		Projection(ll, rr, bb, tt);
+		m = GLProjectionMatrix(ll, rr, bb, tt, (GReal)1e-7);
+		glMatrixMode(GL_PROJECTION);
+		#ifdef DOUBLE_REAL_TYPE
+			glLoadMatrixd((const GLdouble *)m.Data());
+		#else
+			glLoadMatrixf((const GLfloat *)m.Data());
+		#endif
+
+		// do the drawing
+		for (GUInt32 ii = 0; ii < FrameBufferPassesCount; ++ii)
+			ReplaceFrameBuffer(gCompositingBuffer, compOp, ii);
+	}
+
+	// pop "geometry mask" out of zbuffer
 	glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 	glDepthFunc(GL_ALWAYS);
+	glEnable(GL_DEPTH_TEST);
 	glDepthMask(GL_TRUE);
 
+	Projection(ll, rr, bb, tt);
+	m = GLProjectionMatrix(ll, rr, bb, tt, 1);
+	glMatrixMode(GL_PROJECTION);
+	#ifdef DOUBLE_REAL_TYPE
+		glLoadMatrixd((GLdouble *)m.Data());
+	#else
+		glLoadMatrixf((GLfloat *)m.Data());
+	#endif
+
+	// draw into depth buffer a rectangle
+	DrawGLBox(Box);
+
+	glDepthMask(GL_FALSE);
+	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 	glMatrixMode(GL_PROJECTION);
 	glPopMatrix();
-
-	// draw into depth buffer
-	glBegin(GL_POLYGON);
-	#ifdef DOUBLE_REAL_TYPE
-		glVertex2dv(p0.Data());
-		glVertex2dv(p1.Data());
-		glVertex2dv(p2.Data());
-		glVertex2dv(p3.Data());
-	#else
-		glVertex2fv(p0.Data());
-		glVertex2fv(p1.Data());
-		glVertex2fv(p2.Data());
-		glVertex2fv(p3.Data());
-	#endif
-	glEnd();
-	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE);
 }
 
 };	// end namespace Amanith

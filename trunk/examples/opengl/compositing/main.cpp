@@ -23,7 +23,7 @@
 **********************************************************************/
 
 #include <qapplication.h>
-#include "drawboard.h"
+#include "compositing.h"
 
 int main(int argc, char ** argv) {
 
@@ -49,11 +49,11 @@ int main(int argc, char ** argv) {
 	// test.setWindowState(test.windowState() ^ Qt::WindowFullScreen);
 	test.show();
 	test.setFocus();
-#ifdef USE_QT4
-	test.setWindowTitle("OpenGL drawboard example - Press F1 for help");
+/*#ifdef USE_QT4
+	test.setWindowTitle("OpenGL compositing - Press F1 for help");
 #else
-	test.setCaption("OpenGL drawboard example - Press F1 for help");
-#endif
+	test.setCaption("OpenGL compositing - Press F1 for help");
+#endif*/
     app.connect(&app, SIGNAL(lastWindowClosed()), &app, SLOT(quit()));
     return app.exec();
 }

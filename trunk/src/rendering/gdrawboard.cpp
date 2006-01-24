@@ -43,7 +43,8 @@ namespace Amanith {
 // *********************************************************************
 GRenderingContext::GRenderingContext() {
 
-	gOpacity = 1;
+	gGroupOpacity = 1;
+	gGroupCompOp = G_SRC_OVER_OP;
 	gRenderingQuality = G_NORMAL_RENDERING_QUALITY;
 	gTargetMode = G_COLOR_MODE;
 	// clip parameters
@@ -88,11 +89,10 @@ void GDrawBoard::Finish() {
 		DoFinish();
 }
 
-void GDrawBoard::Clear(const GReal Red, const GReal Green, const GReal Blue, const GBool ClearClipMasks) {
+void GDrawBoard::Clear(const GReal Red, const GReal Green, const GReal Blue, const GReal Alpha, const GBool ClearClipMasks) {
 
 	if (!gInsideGroup)
-		DoClear(GMath::Clamp(Red, (GReal)0, (GReal)1), GMath::Clamp(Green, (GReal)0, (GReal)1),
-				GMath::Clamp(Blue, (GReal)0, (GReal)1), ClearClipMasks);
+		DoClear(Red, Green, Blue, Alpha, ClearClipMasks);
 }
 
 // group begin
@@ -235,6 +235,20 @@ GMatrix33 GDrawBoard::PhysicalToLogicalMatrix() const {
 	return (postTrans * (scale * preTrans));
 }
 
+// logical to physical matrix
+GMatrix33 GDrawBoard::LogicalToPhysicalMatrix() const {
+
+	GMatrix33 preTrans, scale, postTrans;
+
+	TranslationToMatrix(preTrans, GVector2(-gProjection[G_X], -gProjection[G_Z]));
+	ScaleToMatrix(scale, GVector2((GReal)gViewport[G_Z] / (gProjection[G_Y] - gProjection[G_X]),
+								  (GReal)gViewport[G_W] / (gProjection[G_W] - gProjection[G_Z])));
+	TranslationToMatrix(postTrans, GVector2((GReal)gViewport[G_X], (GReal)gViewport[G_X]));
+
+	// build final matrix
+	return (postTrans * (scale * preTrans));
+}
+
 //---------------------------------------------------------------------------
 //                             RENDERING CONTEXT
 //---------------------------------------------------------------------------
@@ -302,17 +316,30 @@ void GDrawBoard::PopClipMask() {
 		DoPopClipMask();
 }
 
-// opacity
+// group opacity
 GReal GDrawBoard::GroupOpacity() const {
 
-	return gCurrentContext.gOpacity;
+	return gCurrentContext.gGroupOpacity;
 }
 
 void GDrawBoard::SetGroupOpacity(const GReal Opacity) {
 
 	if (!gInsideGroup) {
-		gCurrentContext.gOpacity = GMath::Clamp(Opacity, (GReal)0, (GReal)1);
-		DoSetGroupOpacity(gCurrentContext.gOpacity);
+		DoSetGroupOpacity(Opacity);
+	}
+}
+
+// group compositing operation
+GCompositingOperation GDrawBoard::GroupCompOp() const {
+
+	return gCurrentContext.gGroupCompOp;
+}
+
+void GDrawBoard::SetGroupCompOp(const GCompositingOperation CompOp) {
+
+	if (!gInsideGroup) {
+		gCurrentContext.gGroupCompOp = CompOp;
+		DoSetGroupCompOp(gCurrentContext.gGroupCompOp);
 	}
 }
 
@@ -442,6 +469,22 @@ void GDrawBoard::SetStrokeColor(const GVectBase<GReal, 4>& Color) {
 	gCurrentContext.gDrawStyle->SetStrokeColor(Color);
 }
 
+void GDrawBoard::SetStrokeColor(const GVectBase<GReal, 3>& Color) {
+
+	GVector4 c = gCurrentContext.gDrawStyle->StrokeColor();
+	c[G_X] = Color[G_X];
+	c[G_Y] = Color[G_Y];
+	c[G_Z] = Color[G_Z];
+	SetStrokeColor(c);
+}
+
+void GDrawBoard::SetStrokeOpacity(const GReal Opacity) {
+
+	GVector4 c = gCurrentContext.gDrawStyle->StrokeColor();
+	c[G_W] = Opacity;
+	SetStrokeColor(c);
+}
+
 // stroke gradient
 GGradientDesc *GDrawBoard::StrokeGradient() const {
 
@@ -462,6 +505,17 @@ GPatternDesc *GDrawBoard::StrokePattern() const {
 void GDrawBoard::SetStrokePattern(GPatternDesc *Pattern) {
 
 	gCurrentContext.gDrawStyle->SetStrokePattern(Pattern);
+}
+
+// stroke compositing operation
+GCompositingOperation GDrawBoard::StrokeCompOp() const {
+
+	return gCurrentContext.gDrawStyle->StrokeCompOp();
+}
+
+void GDrawBoard::SetStrokeCompOp(const GCompositingOperation CompOp) {
+
+	gCurrentContext.gDrawStyle->SetStrokeCompOp(CompOp);
 }
 
 // stroke enable/disable
@@ -508,6 +562,22 @@ void GDrawBoard::SetFillColor(const GVectBase<GReal, 4>& Color) {
 	gCurrentContext.gDrawStyle->SetFillColor(Color);
 }
 
+void GDrawBoard::SetFillColor(const GVectBase<GReal, 3>& Color) {
+
+	GVector4 c = gCurrentContext.gDrawStyle->FillColor();
+	c[G_X] = Color[G_X];
+	c[G_Y] = Color[G_Y];
+	c[G_Z] = Color[G_Z];
+	SetFillColor(c);
+}
+
+void GDrawBoard::SetFillOpacity(const GReal Opacity) {
+
+	GVector4 c = gCurrentContext.gDrawStyle->FillColor();
+	c[G_W] = Opacity;
+	SetFillColor(c);
+}
+
 // fill gradient
 GGradientDesc *GDrawBoard::FillGradient() const {
 
@@ -528,6 +598,17 @@ GPatternDesc *GDrawBoard::FillPattern() const {
 void GDrawBoard::SetFillPattern(GPatternDesc *Pattern) {
 
 	gCurrentContext.gDrawStyle->SetFillPattern(Pattern);
+}
+
+// fill compositing operation
+GCompositingOperation GDrawBoard::FillCompOp() const {
+
+	return gCurrentContext.gDrawStyle->FillCompOp();
+}
+
+void GDrawBoard::SetFillCompOp(const GCompositingOperation CompOp) {
+
+	gCurrentContext.gDrawStyle->SetFillCompOp(CompOp);
 }
 
 // fill enable/disable
@@ -798,18 +879,18 @@ GInt32 GDrawBoard::DrawPaths(const GString& SVGPathDescription, const GAnglesMea
 	return EndPaths();
 }
 
-void GDrawBoard::DrawCacheSlots(const GUInt32 FirstSlotIndex, const GUInt32 LastSlotIndex) {
+void GDrawBoard::DrawCacheSlots(const GInt32 FirstSlotIndex, const GInt32 LastSlotIndex) {
 
 	if (!CacheBank()) {
 		G_DEBUG("DrawCacheSlots, cache bank NULL (not set)");
 		return;
 	}
 
-	GUInt32 i = CacheBank()->SlotsCount();
+	GInt32 i = CacheBank()->SlotsCount();
 	if (i <= 0)
 		return;
 
-	GUInt32 j0 = FirstSlotIndex, j1 = LastSlotIndex;
+	GInt32 j0 = FirstSlotIndex, j1 = LastSlotIndex;
 
 	// clamp indexes
 	if (j0 >= i)
@@ -819,7 +900,7 @@ void GDrawBoard::DrawCacheSlots(const GUInt32 FirstSlotIndex, const GUInt32 Last
 
 	GDrawStyle *s = gCurrentContext.gDrawStyle;
 
-	if (CacheBank()->SlotsCount() > 0) {
+	if (i > 0) {
 		// pass indexes in the right order (ascending)
 		if (j0 <= j1)
 			DoDrawCacheSlots(*s, j0, j1);

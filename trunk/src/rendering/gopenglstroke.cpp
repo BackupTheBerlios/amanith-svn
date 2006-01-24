@@ -763,8 +763,12 @@ void GOpenGLBoard::DrawDashedStroke(const GOpenGLDrawStyle& Style,
 							lw = w.Normalize();
 							DrawGLJoin(*it1, v, tmpLen, w, 0, Style.StrokeJoinStyle(), Style.StrokeMiterLimitMulThickness(),
 										tmpStyle, G_BUTT_CAP, Thickness, RoundAuxCoeff);
+
+							/* this optimization leads to some bug when the angle is too acute
 							if (tmpLen != 0)
 								tmpStyle = G_BUTT_CAP;
+							*/
+
 							tmpLen = lw;
 							lvOld = lv;
 							lv += lw;
@@ -877,8 +881,10 @@ recycleLabel:
 							DrawGLJoin(*it1, v, tmpLen, w, 0, Style.StrokeJoinStyle(), Style.StrokeMiterLimitMulThickness(),
 										tmpStyle, G_BUTT_CAP, Thickness, RoundAuxCoeff);
 
+							/* this optimization leads to some bug when the angle is too acute
 							if (tmpLen != 0)
-								tmpStyle = G_BUTT_CAP;
+							tmpStyle = G_BUTT_CAP;
+							*/
 
 							tmpLen = lw;
 							lvOld = lv;

@@ -46,7 +46,6 @@ void GOpenGLBoard::DumpStencilBuffer(const GChar8 *FileName) {
 	GLubyte *buf;
 	std::FILE *f = NULL;
 
-	//glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 	glPixelStorei(GL_PACK_ALIGNMENT, 1);
 
 	buf = new GLubyte[w * h];
@@ -70,7 +69,51 @@ void GOpenGLBoard::DumpStencilBuffer(const GChar8 *FileName) {
 	}
 #endif
 	delete [] buf;
+	glPixelStorei(GL_PACK_ALIGNMENT, 4);
 }
+
+void GOpenGLBoard::DumpZBuffer(const GChar8 *FileName) {
+
+	GUInt32 x, y, w, h;
+	Viewport(x, y, w, h);
+
+	GLfloat *buf = NULL;
+	GLubyte *bufCol = NULL;
+	std::FILE *f = NULL;
+
+	glPixelStorei(GL_PACK_ALIGNMENT, 1);
+
+	buf = new GLfloat[w * h];
+	std::memset(buf, 0, w * h);
+	bufCol = new GLubyte[w * h];
+	std::memset(bufCol, 0, w * h);
+
+	glReadPixels(0, 0, w, h, GL_DEPTH_COMPONENT , GL_FLOAT, buf);
+
+	for (GUInt32 i = 0; i < w * h; i++)
+		bufCol[i] = (GLubyte)(buf[i] * 255.0f);
+
+	// open the file
+#if defined(G_OS_WIN) && _MSC_VER >= 1400
+	errno_t openErr = fopen_s(&f, FileName, "wb");
+	if (f && !openErr) {
+		std::fwrite(bufCol, 1, w * h, f);
+		std::fflush(f);
+		std::fclose(f);
+	}
+#else
+	f = std::fopen(FileName, "wb");
+	if (f) {
+		std::fwrite(bufCol, 1, w*h, f);
+		std::fflush(f);
+		std::fclose(f);
+	}
+#endif
+	delete [] buf;
+	delete [] bufCol;
+	glPixelStorei(GL_PACK_ALIGNMENT, 4);
+}
+
 #endif
 
 
@@ -390,72 +433,6 @@ static const GNamedSVGcolor SVGColors[147] = {
 };
 #endif
 
-/*
-Radial fragment program
-Parameters:	0 = [(Focus - Center).x, (Focus - Center).y, 0, 0]
-			1 = [(F-C).LengthSquared - Radius^2, 0, 0, 0]
-			2 = [a00, a01, a10, a11]
-			3 = [a02, 0, a12, 0]
-			4 = [1, 1, 1, Alpha]
-			5 = texture u coordinate scaling
-*/
-static const char *const RadialProgram =
-    "!!ARBfp1.0"
-	"OPTION ARB_precision_hint_nicest;"
-	"PARAM c[6] = { program.local[0..5] };"
-    "TEMP R0;"
-	"MAD R0, fragment.position.xyxy, c[2], c[3];"
-	"ADD R0.x, R0.x, R0.y;"
-	"ADD R0.y, R0.z, R0.w;"
-	"MOV R0.zw, R0.xyxy;"
-    "MUL R0.xy, R0, R0;"
-    "MUL R0.zw, R0, c[0].xyxy;"
-    "ADD R0.x, R0, R0.y;"
-    "ADD R0.z, R0, R0.w;"
-    "MOV R0.w, R0.z;"
-    "MUL R0.w, R0, R0.w;"
-	"MAD R0.w, -R0.x, c[1].x, R0.w;"
-    "RSQ R0.w, R0.w;"
-    "RCP R0.w, R0.w;"
-	"ADD R0.z, -R0.z, R0.w;"
-	"RCP R0.z, R0.z;"
-	"MUL R0.x, R0, R0.z;"
-	"MUL R0.x, R0, c[5];"
-	"TEX R0, R0, texture[0], 1D;"
-	"MUL result.color, R0, c[4];"
-    "END"
-    "\0";
-
-/*
-Conical fragment program
-Parameters:	0 = [cos, sin, -sin, cos]
-			1 = [Center.x, Center.y, 0, 0]
-			2 = [0.5, 0.5, 0.5, 0.5]
-			3 = [1, 1, 1, Alpha]
-			4 = [a00, a01, a10, a11]
-			5 = [a02, 0, a12, 0]
-*/
-static const char *const ConicalProgram =
-    "!!ARBfp1.0"
-	"OPTION ARB_precision_hint_nicest;"
-	"PARAM c[6] = { program.local[0..5] };"
-    "TEMP R0;"
-	"MAD R0, fragment.position.xyxy, c[4], c[5];"
-	"ADD R0.x, R0.x, R0.y;"
-	"ADD R0.y, R0.z, R0.w;"
-	"SUB R0, R0.xyxy, c[1].xyxy;"
-	"MUL R0, R0, c[0];"
-	"ADD R0.xy, R0.x, R0.y;"
-	"ADD R0.zw, R0.z, R0.w;"
-	"MUL R0.x, R0.x, R0.x;"
-	"MAD R0.z, R0.z, R0.z, R0.x;"
-	"RSQ R0.z, R0.z;"
-	"MUL R0, R0, R0.z;"
-	"MAD R0, R0, c[2], c[2];"
-	"TEX R0, R0.ywyw, texture[0], 2D;"
-	"MUL result.color, R0, c[3];"
-    "END"
-    "\0";
 
 static const char HTMLColorMask[] = "0123456789abcdef";
 
@@ -486,10 +463,13 @@ void GOpenGLBoard::GenerateAtan2LookupTable() {
 
 void GOpenGLBoard::SetShadersEnabled(const GBool Enabled) {
 
-	if (!gExtManager->IsArbProgramsSupported() || (Enabled == gFragmentProgramsSupport))
+	if (!gFragmentProgramsSupport && Enabled)
+		G_DEBUG("SetShadersEnabled: your device doesn't support fragment programs.");
+
+	if (!gFragmentProgramsSupport || (Enabled == gFragmentProgramsInUse))
 		return;
 
-	gFragmentProgramsSupport = Enabled;
+	gFragmentProgramsInUse = Enabled;
 	// we have to mark all gradients as modified
 	if (Enabled == G_TRUE) {
 
@@ -504,14 +484,41 @@ void GOpenGLBoard::SetShadersEnabled(const GBool Enabled) {
 
 void GOpenGLBoard::SetRectTextureEnabled(const GBool Enabled) {
 
+	if (!gRectTexturesSupport && Enabled)
+		G_DEBUG("SetRectTextureEnabled: your device doesn't support rectangular texture.");
+
 	// we can't change it inside group (during a group drawing)
 	if (InsideGroup() && (TargetMode() == G_COLOR_MODE || TargetMode() == G_COLOR_AND_CACHE_MODE))
 		return;
 
-	if (!gExtManager->IsRectTextureSupported() || (Enabled == gRectTexturesSupport))
+	if (!gRectTexturesSupport || (Enabled == gRectTexturesInUse))
 		return;
 
-	gRectTexturesSupport = Enabled;
+
+	// changing rectangular texture support, we must invalidate all textures already used before (to grab)
+	gRectTexturesInUse = Enabled;
+
+	if (gGLGroupRect.TexName > 0)
+		glDeleteTextures(1, &gGLGroupRect.TexName);
+
+	gGLGroupRect.Width = 0;
+	gGLGroupRect.Height = 0;
+	gGLGroupRect.TexWidth = 0;
+	gGLGroupRect.TexHeight = 0;
+	gGLGroupRect.TexName = 0;
+	gGLGroupRect.Target = 0;
+	gGLGroupRect.IsEmpty = G_TRUE;
+
+	if (gCompositingBuffer.TexName > 0)
+		glDeleteTextures(1, &gCompositingBuffer.TexName);
+
+	gCompositingBuffer.Width = 0;
+	gCompositingBuffer.Height = 0;
+	gCompositingBuffer.TexWidth = 0;
+	gCompositingBuffer.TexHeight = 0;
+	gCompositingBuffer.TexName = 0;
+	gCompositingBuffer.Target = 0;
+	gCompositingBuffer.IsEmpty = G_TRUE;
 }
 
 GOpenGLBoard::GOpenGLBoard(const GUInt32 LowLeftCornerX, const GUInt32 LowLeftCornerY,
@@ -548,9 +555,20 @@ GOpenGLBoard::GOpenGLBoard(const GUInt32 LowLeftCornerX, const GUInt32 LowLeftCo
 
 	// extract mirrored repeat support
 	gMirroredRepeatSupport = gExtManager->IsMirroredRepeatSupported();
+	// lets see if screen has an alpha channel
+	if (gExtManager->AlphaBits() >= 8)
+		gAlphaBufferPresent = G_TRUE;
+	else
+		gAlphaBufferPresent = G_FALSE;
 
 	// set current cache bank to NULL
 	gCacheBank = NULL;
+
+	// ask for multi texture support
+	if (gExtManager->IsMultitextureSupported() && gExtManager->TextureUnitsCount() >= 2)
+		gMultiTextureSupport = G_TRUE;
+	else
+		gMultiTextureSupport = G_FALSE;
 
 	// ask for number of multisamples
 	if (gExtManager->MultiSamples() > 0)
@@ -560,53 +578,28 @@ GOpenGLBoard::GOpenGLBoard(const GUInt32 LowLeftCornerX, const GUInt32 LowLeftCo
 
 	// fragment programs support
 	gFragmentProgramsSupport = gExtManager->IsArbProgramsSupported();
+	gFragmentProgramsInUse = gFragmentProgramsSupport;
+
 	// rectangular textures support
-	gRectTexturesSupport = G_FALSE;
+	/*gRectTexturesSupport = G_FALSE;
 	const GChar8 *vendorStr = NULL;
 	vendorStr = (const GChar8 *)glGetString(GL_VENDOR);
 	if (vendorStr) {
 		// from our tests, it seems that NVidia cards have good rectangular textures support
 		if (StrUtils::Find(vendorStr, "NVIDIA"))
 			gRectTexturesSupport = gExtManager->IsRectTextureSupported();
-	}
+	}*/
+	gRectTexturesSupport = gExtManager->IsRectTextureSupported();
+	gRectTexturesInUse = gRectTexturesSupport;
 
 	gAtan2LookupTable = NULL;
 	gAtan2LookupTableSize = 256;
-	gRadGradGLProgram = 0;
-	gConGradGLProgram = 0;
+
 	if (gFragmentProgramsSupport) {
-		// generate radial gradient fragment program
-		glGenProgramsARB(1, &gRadGradGLProgram);
-		glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, gRadGradGLProgram);
-		glProgramStringARB(GL_FRAGMENT_PROGRAM_ARB, GL_PROGRAM_FORMAT_ASCII_ARB,
-							(GLsizei)std::strlen(RadialProgram), (const GLbyte *)RadialProgram);
-		// check for errors
-		if (GL_INVALID_OPERATION == glGetError()) {
-			// find the error position
-			GLint errPos;
-			glGetIntegerv(GL_PROGRAM_ERROR_POSITION_ARB, &errPos);
-			const GLubyte *errString = glGetString(GL_PROGRAM_ERROR_STRING_ARB);
-			if (errString) {
-				G_DEBUG((const GChar8 *)errString);
-			}
-		}
 		// generate atan2 lookup table
 		GenerateAtan2LookupTable();
-		// generate conical gradient fragment program
-		glGenProgramsARB(1, &gConGradGLProgram);
-		glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, gConGradGLProgram);
-		glProgramStringARB(GL_FRAGMENT_PROGRAM_ARB, GL_PROGRAM_FORMAT_ASCII_ARB,
-							(GLsizei)std::strlen(ConicalProgram), (const GLbyte *)ConicalProgram);
-		// check for errors
-		if (GL_INVALID_OPERATION == glGetError()) {
-			// find the error position
-			GLint errPos;
-			glGetIntegerv(GL_PROGRAM_ERROR_POSITION_ARB, &errPos);
-			const GLubyte *errString = glGetString(GL_PROGRAM_ERROR_STRING_ARB);
-			if (errString) {
-				G_DEBUG((const GChar8 *)errString);
-			}
-		}
+		// generate the global table of shaders
+		GenerateShadersTable();
 	}
 
 	// build HTML validator mask (for color characters)
@@ -647,8 +640,18 @@ GOpenGLBoard::~GOpenGLBoard() {
 	DeletePatterns();
 	DeleteCacheBanks();
 
-	if (gAtan2LookupTable)
-		delete [] gAtan2LookupTable;
+	if (gFragmentProgramsSupport) {
+		DestroyShadersTable();
+		if (gAtan2LookupTable)
+			delete [] gAtan2LookupTable;
+	}
+
+	if (gGLGroupRect.TexName > 0)
+		glDeleteTextures(1, &gGLGroupRect.TexName);
+
+	if (gCompositingBuffer.TexName > 0)
+		glDeleteTextures(1, &gCompositingBuffer.TexName);
+
 	if (gExtManager)
 		delete gExtManager;
 }
@@ -663,11 +666,6 @@ void GOpenGLBoard::DeleteGradients() {
 		delete gradient;
 	}
 	gGradients.clear();
-
-	if (gFragmentProgramsSupport) {
-		glDeleteProgramsARB(1, &gRadGradGLProgram);
-		glDeleteProgramsARB(1, &gConGradGLProgram);
-	}
 }
 
 void GOpenGLBoard::DeletePatterns() {
@@ -801,8 +799,13 @@ void GOpenGLBoard::DoSetClipEnabled(const GBool Enabled) {
 
 void GOpenGLBoard::DoSetGroupOpacity(const GReal Opacity) {
 
+	CurrentContext()->gGroupOpacity = GMath::Clamp(Opacity, (GReal)0, (GReal)1);
+}
+
+void GOpenGLBoard::DoSetGroupCompOp(const GCompositingOperation CompOp) {
+
 	// just to avoid warning
-	if (Opacity) {
+	if (CompOp) {
 	}
 }
 
@@ -816,12 +819,19 @@ void GOpenGLBoard::DoFinish() {
 	glFinish();
 }
 
-void GOpenGLBoard::DoClear(const GReal Red, const GReal Green, const GReal Blue, const GBool ClearClipMasks) {
+void GOpenGLBoard::DoClear(const GReal Red, const GReal Green, const GReal Blue, const GReal Alpha, const GBool ClearClipMasks) {
+
+	GLclampf red = (GLclampf)GMath::Clamp(Red, (GReal)0, (GReal)1);
+	GLclampf green = (GLclampf)GMath::Clamp(Green, (GReal)0, (GReal)1);
+    GLclampf blue = (GLclampf)GMath::Clamp(Blue, (GReal)0, (GReal)1);
+	GLclampf alpha = (GLclampf)GMath::Clamp(Alpha, (GReal)0, (GReal)1);
 
 	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+	glDepthMask(GL_TRUE);
+	glStencilMask((GLuint)(~0));
 
 	if (gClipMasksSupport) {
-		glClearColor((GLclampf)Red, (GLclampf)Green, (GLclampf)Blue, 1.0f);
+		glClearColor(red, green, blue, alpha);
 		glClearDepth(1.0);
 		if (ClearClipMasks) {
 			glClearStencil((GLint)0);
@@ -833,7 +843,7 @@ void GOpenGLBoard::DoClear(const GReal Red, const GReal Green, const GReal Blue,
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	}
 	else {
-		glClearColor((GLclampf)Red, (GLclampf)Green, (GLclampf)Blue, 1.0f);
+		glClearColor(red, green, blue, alpha);
 		glClearDepth(1.0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	}
@@ -868,19 +878,15 @@ GBool GOpenGLBoard::SetGLClipEnabled(const GTargetMode Mode, const GClipOperatio
 		}
 		// color mode
 		else {
-			if (!InsideGroup()) {
-				StencilEnableTop();
+			if (!InsideGroup())
 				return G_FALSE;
-			}
 			else {
-				if (GroupOpacity() < 1 && GroupOpacity() > 0 && !gGLGroupRect.IsEmpty && gGroupOpacitySupport) {
+				if (!gGLGroupRect.IsEmpty && gGroupOpacitySupport) {
 					// we have to do a double-pass algorithm (first write into stencil, then into color buffer)
 					return G_TRUE;
 				}
-				else {
-					StencilEnableTop();
+				else
 					return G_FALSE;
-				}
 			}
 		}
 	}
@@ -894,29 +900,38 @@ void GOpenGLBoard::DoSetViewport(const GUInt32 LowLeftCornerX, const GUInt32 Low
 	 UpdateDeviation(RenderingQuality());
 }
 
-void GOpenGLBoard::DoSetProjection(const GReal Left, const GReal Right, const GReal Bottom, const GReal Top) {
-
-/*	
-	To better understand this is an equivalent code to glOrtho
+GMatrix44 GOpenGLBoard::GLProjectionMatrix(const GReal Left, const GReal Right, const GReal Bottom, const GReal Top,
+										   const GReal DepthOnScreen) {
 
 	GMatrix44 m;
 
-	m[0][0] = 2.0 / (Right - Left);
+	m[0][0] = (GReal)2 / (Right - Left);
 	m[0][3] = -(Right + Left) / (Right - Left);
-
-	m[1][1] = 2.0 / (Top - Bottom);
+	m[1][1] = (GReal)2 / (Top - Bottom);
 	m[1][3] = -(Top + Bottom) / (Top - Bottom);
+	m[2][3] = ((GReal)2 * DepthOnScreen) - (GReal)1;
+	return m;
+}
 
-	GReal zNear = -1;
-	GReal zFar = 0;
+GMatrix44 GOpenGLBoard::GLWindowModeMatrix(const GReal DepthOnScreen) {
 
-	m[2][2] = -2 / (zFar - zNear);
-	m[2][3] = (-(zFar + zNear) / (zFar - zNear));*/
+	GUInt32 x, y, w, h;
+	Viewport(x, y, w, h);
 
+	//static const GLdouble s = 0.0; it was 0.375, see fungus thread
+	//return GLProjectionMatrix(-s, (GLdouble)w - s, -s, (GLdouble)h - s, DepthOnScreen);
+	return GLProjectionMatrix(0.0, (GLdouble)w, 0.0, (GLdouble)h, DepthOnScreen);
+}
+
+void GOpenGLBoard::DoSetProjection(const GReal Left, const GReal Right, const GReal Bottom, const GReal Top) {
+
+	GMatrix44 m = GLProjectionMatrix(Left, Right, Bottom, Top, (GReal)1);
 	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	glOrtho((GLdouble)Left, (GLdouble)Right, (GLdouble)Bottom, (GLdouble)Top, (GLdouble)-1, (GLdouble)0);
-
+	#ifdef DOUBLE_REAL_TYPE
+		glLoadMatrixd((const GLdouble *)m.Data());
+	#else
+		glLoadMatrixf((const GLfloat *)m.Data());
+	#endif
 	UpdateDeviation(RenderingQuality());
 }
 
@@ -1113,13 +1128,36 @@ GError GOpenGLBoard::DoScreenShot(GPixelMap& Output, const GVectBase<GUInt32, 2>
 
 	GError err = Output.Create((GInt32)w, (GInt32)h, G_A8R8G8B8);
 	if (err == G_NO_ERROR) {
-		//glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
-		glPixelStorei(GL_PACK_ALIGNMENT, 4);
-
+		//glPixelStorei(GL_PACK_ALIGNMENT, 4);
 		glReadPixels((GLint)P0[G_X], (GLint)P0[G_Y], (GLsizei)w, (GLsizei)h, GL_BGRA_EXT, GL_UNSIGNED_BYTE, (GLvoid *)Output.Pixels()); 
     	err = Output.Flip(G_FALSE, G_TRUE);
 	}
 	return err;
+}
+
+void GOpenGLBoard::UpdateBox(const GAABox2& Source, const GMatrix33& Matrix, GAABox2& Result) {
+
+	GPoint2 p0 = Source.Min();
+	GPoint2 p2 = Source.Max();
+	GPoint2 p1(p2[G_X], p0[G_Y]);
+	GPoint2 p3(p0[G_X], p2[G_Y]);
+
+	GPoint2 q0 = Matrix * p0;
+	GPoint2 q1 = Matrix * p1;
+	GPoint2 q2 = Matrix * p2;
+	GPoint2 q3 = Matrix * p3;
+
+	// transform the box using model-view matrix
+	Result.SetMinMax(q0, q1);
+	Result.ExtendToInclude(q2);
+	Result.ExtendToInclude(q3);
+}
+
+void GOpenGLBoard::GLDisableShaders() {
+
+	glDisable(GL_FRAGMENT_PROGRAM_ARB);
+	if (glBindProgramARB)
+		glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, 0);
 }
 
 };	// end namespace Amanith

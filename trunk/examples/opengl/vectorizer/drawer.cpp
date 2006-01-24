@@ -34,7 +34,8 @@
 	#include <QKeyEvent>
 #endif
 
-static int timer_interval = 0;			// timer interval (millisec)
+// timer interval (millisec)
+static int timer_interval = 150;
 
 #ifdef USE_QT4
 QGLWidgetTest::QGLWidgetTest(const QGLFormat& Format, QWidget *parent) : QGLWidget(Format, parent) {

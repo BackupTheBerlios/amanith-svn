@@ -308,7 +308,10 @@ namespace Amanith {
 		GMatrix<DATA_TYPE, ROWS, COLS> postTrans;
 		GMatrix<DATA_TYPE, ROWS, COLS> scl;
 
-		ScaleToMatrix(scl, ScaleFactor);
+		GUInt32 i, j = GMath::Min(ROWS, COLS, SIZE);
+		for (i = 0; i < j; ++i)
+			scl[i][i] = ScaleFactor;
+
 		TranslationToMatrix(preTrans, -Pivot);
 		TranslationToMatrix(postTrans, Pivot);
 		Result = (postTrans * (scl * preTrans));

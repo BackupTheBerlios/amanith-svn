@@ -365,7 +365,17 @@ GBool GOpenglExt::IsOcclusionQuerySupported() const {
 	return G_FALSE;
 }
 
-GInt32 GOpenglExt::TextureUnitsCount() const {
+/*!
+	\return G_TRUE if GL_EXT_framebuffer_object extension is supported, G_FALSE otherwise.
+*/
+GBool GOpenglExt::IsFBOSupported() const {
+
+	if (glewGetExtension("GL_EXT_framebuffer_object"))
+		return G_TRUE;
+	return G_FALSE;
+}
+
+GInt32 GOpenglExt::TextureUnitsCount() {
 
 	GLint num = 1;
 	glGetIntegerv(GL_MAX_TEXTURE_UNITS_ARB, &num);
@@ -374,7 +384,7 @@ GInt32 GOpenglExt::TextureUnitsCount() const {
 	return (GInt32)num;
 }
 
-GUInt32 GOpenglExt::MaxConvolutionWidth() const {
+GUInt32 GOpenglExt::MaxConvolutionWidth() {
 
 	GLint num = 0;
 	glGetIntegerv(GL_MAX_CONVOLUTION_WIDTH, &num);
@@ -383,7 +393,7 @@ GUInt32 GOpenglExt::MaxConvolutionWidth() const {
 	return (GUInt32)num;
 }
 
-GUInt32 GOpenglExt::MaxConvolutionHeight() const {
+GUInt32 GOpenglExt::MaxConvolutionHeight() {
 
 	GLint num = 0;
 	glGetIntegerv(GL_MAX_CONVOLUTION_HEIGHT, &num);
@@ -392,7 +402,7 @@ GUInt32 GOpenglExt::MaxConvolutionHeight() const {
 	return (GUInt32)num;
 }
 
-GUInt32 GOpenglExt::MaxTextureSize() const {
+GUInt32 GOpenglExt::MaxTextureSize() {
 
 	GLint num = 0;
 	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &num);
@@ -401,53 +411,69 @@ GUInt32 GOpenglExt::MaxTextureSize() const {
 	return (GUInt32)num;
 }
 
-GUInt32 GOpenglExt::RedBits() const {
+GUInt32 GOpenglExt::MaxRenderBufferSize() {
+
+	GLint num = 0;
+	glGetIntegerv(GL_MAX_RENDERBUFFER_SIZE_EXT, &num);
+	if (num < 0)
+		num = 0;
+	return (GUInt32)num;
+}
+
+GUInt32 GOpenglExt::RedBits() {
 
 	GLint num = 0;
 	glGetIntegerv(GL_RED_BITS, &num);
 	return (GUInt32)num;
 }
 
-GUInt32 GOpenglExt::GreenBits() const {
+GUInt32 GOpenglExt::GreenBits() {
 
 	GLint num = 0;
 	glGetIntegerv(GL_GREEN_BITS, &num);
 	return (GUInt32)num;
 }
 
-GUInt32 GOpenglExt::BlueBits() const {
+GUInt32 GOpenglExt::BlueBits() {
 
 	GLint num = 0;
 	glGetIntegerv(GL_BLUE_BITS, &num);
 	return (GUInt32)num;
 }
 
-GUInt32 GOpenglExt::AlphaBits() const {
+GUInt32 GOpenglExt::AlphaBits() {
 
 	GLint num = 0;
 	glGetIntegerv(GL_ALPHA_BITS, &num);
 	return (GUInt32)num;
 }
 
-GUInt32 GOpenglExt::DepthBits() const {
+GUInt32 GOpenglExt::DepthBits() {
 
 	GLint num = 0;
 	glGetIntegerv(GL_DEPTH_BITS, &num);
 	return (GUInt32)num;
 }
 
-GUInt32 GOpenglExt::StencilBits() const {
+GUInt32 GOpenglExt::StencilBits() {
 
 	GLint num = 0;
 	glGetIntegerv(GL_STENCIL_BITS, &num);
 	return (GUInt32)num;
 }
 
-GUInt32 GOpenglExt::MultiSamples() const {
+GUInt32 GOpenglExt::MultiSamples() {
 
 	GLint num = 0;
 	glGetIntegerv(GL_SAMPLES_ARB, &num);
 	return (GUInt32)num;
+}
+
+GUInt32 GOpenglExt::FBOMaxColorAttachments() {
+
+	GLint num = 0;
+	glGetIntegerv(GL_MAX_COLOR_ATTACHMENTS_EXT, &num);
+	return num;
 }
 
 void GOpenglExt::GlewInfoFunc(const GString& Name, GBool Undefined) {

@@ -36,12 +36,14 @@
 #endif
 
 // constructor
-#ifdef USE_QT4
+/*#ifdef USE_QT4
 QGLWidgetTest::QGLWidgetTest(const QGLFormat& Format, QWidget *parent) : QGLWidget(Format, parent) {
 #else
 QGLWidgetTest::QGLWidgetTest(QWidget * parent) : QGLWidget(parent) {
 #endif
+*/
 
+QGLWidgetTest::QGLWidgetTest(const QGLFormat& Format, QWidget *parent) : QGLWidget(Format, parent) {
 #ifdef _DEBUG
 	SysUtils::RedirectIOToConsole();
 #endif
@@ -205,7 +207,8 @@ void QGLWidgetTest::initializeGL() {
 //----- paintGL ----------------------------------------------
 void QGLWidgetTest::paintGL() {
 
-	gDrawBoard->Clear(1.0, 1.0, 1.0, G_TRUE);
+	gDrawBoard->Clear(1.0, 1.0, 1.0, 1.0, G_TRUE);
+	gDrawBoard->SetModelViewMatrix(G_MATRIX_IDENTITY33);
 
 	if (gDrawBackGround) {
 
@@ -422,6 +425,13 @@ void QGLWidgetTest::keyPressEvent(QKeyEvent *e) {
 					s += "Topmost row: a round rectangle, a circle and an ellipse.\n\n";
 					s += "Amanith logo sheet description:\n";
 					s += "Here's Amanith mushroom, it's constructed directly with SVG paths.";
+					QMessageBox::information(this, "Current board description", s);
+					break;
+				case 10:
+					s = "This board shows Amanith caching system.\n\n";
+					s += "Lower row: first cache bank is filled (G_CACHE_MODE), then cached geometry is drawn (G_COLOR_MODE).\n";
+					s += "Middle row: both cache and color are written at the same time (G_COLOR_AND_CACHE_MODE).\n";
+					s += "Topmost row: cached geometry is drawn with a different paint style.\n\n";
 					QMessageBox::information(this, "Current board description", s);
 					break;
 			}

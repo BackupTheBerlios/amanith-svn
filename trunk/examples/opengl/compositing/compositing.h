@@ -22,8 +22,8 @@
 ** not clear to you.
 **********************************************************************/
 
-#ifndef DRAW_BOARD_H
-#define DRAW_BOARD_H
+#ifndef COMPOSITING_H
+#define COMPOSITING_H
 
 #include <amanith/gkernel.h>
 #include <amanith/2d/gpixelmap.h>
@@ -42,65 +42,42 @@ private:
 	GKernel *gKernel;
 	GOpenGLBoard *gDrawBoard;
 	GPixelMap *gImage;
-	GGradientDesc *gLinGrad1, *gLinGrad2, *gLinGrad3, *gLinGradLogo1, *gLinGradLogo2, *gLinGradLogo3;
-	GGradientDesc *gRadGrad1, *gRadGrad2, *gRadGrad3, *gRadGrad4;
-	GGradientDesc *gConGrad1, *gConGrad2, *gConGrad3, *gConGrad4;
-	GPatternDesc *gPattern, *gBackGround;
-	GCacheBank *gCacheBank;
+	GGradientDesc *gLinGrad;
+	GPatternDesc *gBackGround;
 	GString gDataPath;
-	GString gScreenShotFileName;
 
-	// 0 = color
-	// 1 = linear gradient
-	// 2 = radial gradient (in)
-	// 3 = radial gradient (out)
-	// 4 = conical gradient (in)
-	// 5 = conical gradient (out)
-	// 6 = pattern
-	// 7 = stroking
-	// 8 = masks and group opacity
-	// 9 = shapes
-	GUInt32 gTestSuite;
-	GUInt32 gTestIndex;
-	GBool gDrawBackGround;
-	GReal gRandAngle;
-	GReal gRandScaleX;
-	GReal gRandScaleY;
-	GRenderingQuality gRenderingQuality;
-	GBool gUseShaders;
+	GReal gRotAngle;
+	GReal gRotationVel;
+	GReal gStrokeOpacity;
+	GReal gFillOpacity;
+	GReal gZoomFactor;
+	GPoint2 gTranslation;
+	GMatrix33 gModelView;
+	GMatrix33 gGradientMatrix;
+	GBool gAnim;
+	GCompositingOperation gStrokeCompOp;
+	GCompositingOperation gFillCompOp;
 
 protected:
 	void initializeGL();					// implementation for QGLWidget.initializeGL()
     void paintGL();							// implementation for QGLWidget.paintGL()
 	void resizeGL(int width, int height);	// implementation for QGLWidget.resizeGL()
 	void keyPressEvent(QKeyEvent *e);		// keyboard event handler
+	void mousePressEvent(QMouseEvent * e);	// mouse press event handler
+	void mouseMoveEvent(QMouseEvent * e);	// mouse move event handler
+	void wheelEvent(QWheelEvent * e);		// mouse wheel event handler
 
-	void TestColor(const GUInt32 TestIndex);
-	void TestLinearGradient(const GUInt32 TestIndex, const GReal RotAngle, const GReal Scale);
-	void TestRadialGradientIn(const GUInt32 TestIndex, const GReal RotAngle, const GReal ScaleX, const GReal ScaleY);
-	void TestRadialGradientOut(const GUInt32 TestIndex, const GReal RotAngle, const GReal ScaleX, const GReal ScaleY);
-	void TestConicalGradientIn(const GUInt32 TestIndex, const GReal RotAngle, const GReal ScaleX, const GReal ScaleY);
-	void TestConicalGradientOut(const GUInt32 TestIndex, const GReal RotAngle, const GReal ScaleX, const GReal ScaleY);
-	void TestPattern(const GUInt32 TestIndex, const GReal RotAngle, const GReal ScaleX, const GReal ScaleY);
-	void TestStroke(const GUInt32 TestIndex);
-	void TestMasks(const GUInt32 TestIndex);
-	void TestGeometries(const GUInt32 TestIndex);
-	void TestCache(const GUInt32 TestIndex);
+	void BuildMatrices();
+	void DrawTitle();
+	GString CompOpToString(const GCompositingOperation CompOp);
 
 public:
 	// constructor
-/*
-#ifdef USE_QT4
 	QGLWidgetTest(const QGLFormat& Format, QWidget *parent = 0);
-#else
-	QGLWidgetTest(const QGLFormat& Format, QWidget *parent = 0);
-#endif
-*/
-	QGLWidgetTest(const QGLFormat& Format, QWidget *parent = 0);
-
 	// destructor
 	~QGLWidgetTest();
-	//void timerEvent(QTimerEvent* e);
+	// timer event
+	void timerEvent(QTimerEvent* e);
 };
 
 #endif

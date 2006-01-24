@@ -723,8 +723,8 @@ void GOpenGLBoard::DrawConicalSector(const GPoint2& Center, const GPoint2& Targe
 									const GDynArray<GKeyValue>& ColorKeys,
 									const GDynArray<GVector4>& InTangents, const GDynArray<GVector4>& OutTangents,
 									const GColorRampInterpolation Interpolation,
-									const GReal MultAlpha, const GMatrix33& GradientMatrix, const GMatrix33& InverseGradientMatrix,
-									const GMatrix33& ModelViewMatrix) const {
+									const GReal MultAlpha, const GMatrix33& GradientMatrix,
+									const GMatrix33& InverseGradientMatrix) const {
 
 	GVector2 dirCT = Target - Center;
 	GReal dirCTlen = dirCT.Length();
@@ -736,25 +736,14 @@ void GOpenGLBoard::DrawConicalSector(const GPoint2& Center, const GPoint2& Targe
 		dirCT /= dirCTlen;
 
 	GPoint2 pMin, pMax;
-	GPoint2 p0 = BoundingBox.Min();
-	GPoint2 p2 = BoundingBox.Max();
+
+	GAABox2 tmpBox;
+	UpdateBox(BoundingBox, InverseGradientMatrix, tmpBox);
+
+	GPoint2 p0 = tmpBox.Min();
+	GPoint2 p2 = tmpBox.Max();
 	GPoint2 p1(p2[G_X], p0[G_Y]);
 	GPoint2 p3(p0[G_X], p2[G_Y]);
-
-	GMatrix33 m = InverseGradientMatrix * ModelViewMatrix;
-	GPoint2 q0 = m * p0;
-	GPoint2 q1 = m * p1;
-	GPoint2 q2 = m * p2;
-	GPoint2 q3 = m * p3;
-
-	// transform the box using model-view matrix
-	GAABox2 tmpBox(q0, q1);
-	tmpBox.ExtendToInclude(q2);
-	tmpBox.ExtendToInclude(q3);
-	p0 = tmpBox.Min();
-	p2 = tmpBox.Max();
-	p1.Set(p2[G_X], p0[G_Y]);
-	p3.Set(p0[G_X], p2[G_Y]);
 
 	GReal dMax, d;
 	GBool wholeDisk = G_FALSE;
@@ -868,15 +857,16 @@ void GOpenGLBoard::DrawConicalSector(const GPoint2& Center, const GPoint2& Targe
 		pMax = (A * pMax) + Center;
 	}
 
+	
 	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
+	//glPushMatrix();
 	SetGLModelViewMatrix(GradientMatrix);
 
 	// draw the shaded sector (we have to expand by 5% radius, to avoid low quality related issues; NB: the radius
 	// DO NOT influences performances)
 	DrawGLConicalSector(Center, dirCT, dMax * (GReal)1.05, pMin, pMax, wholeDisk, ColorKeys,
 						InTangents, OutTangents, Interpolation, MultAlpha);
-	glPopMatrix();
+	//glPopMatrix();
 }
 
 };	// end namespace Amanith

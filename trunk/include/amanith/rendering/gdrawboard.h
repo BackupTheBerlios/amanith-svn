@@ -71,7 +71,6 @@ namespace Amanith {
 		G_INTERSECTION_CLIP
 	};
 
-
 	// *********************************************************************
 	//                           GRenderingContext
 	// *********************************************************************
@@ -79,7 +78,8 @@ namespace Amanith {
 	public:
 		GDrawStyle *gDrawStyle;
 		GRenderingQuality gRenderingQuality;
-		GReal gOpacity;
+		GReal gGroupOpacity;
+		GCompositingOperation gGroupCompOp;
 		GTargetMode gTargetMode;
 		GBool gClipEnabled;
 		GClipOperation gClipOperation;
@@ -117,7 +117,7 @@ namespace Amanith {
 
 			\note this method <b>MUST</b> be implemented by all derived classes.
 		*/
-		virtual GUInt32 SlotsCount() const = 0;
+		virtual GInt32 SlotsCount() const = 0;
 		/*!
 			Invalidate the whole cache bank, freeing associated memory.
 
@@ -229,6 +229,13 @@ namespace Amanith {
 		*/
 		virtual void DoSetGroupOpacity(const GReal Opacity) = 0;
 		/*!
+			Do the effective set of group compositing operation.
+
+			When this method is called, it's ensured that drawboard is not inside a GroupBegin() / GroupEnd() block.
+			\note this method <b>MUST</b> be implemented by all derived classes.
+		*/
+		virtual void DoSetGroupCompOp(const GCompositingOperation CompOp) = 0;
+		/*!
 			Do the effective opening of a group block.
 
 			When this method is called, it's ensured that drawboard is not inside a GroupBegin() / GroupEnd() block.
@@ -266,11 +273,13 @@ namespace Amanith {
 			\param Red the red component of the clear color.
 			\param Green the green component of the clear color.
 			\param Blue the blue component of the clear color.
+			\param Alpha the alpha component of the clear color.
 			\param ClearClipMasks if G_TRUE also clipbuffer will be cleared. In this case all existing masks will
 			be dropped.
 			\note this method <b>MUST</b> be implemented by all derived classes.
 		*/
-		virtual void DoClear(const GReal Red, const GReal Green, const GReal Blue, const GBool ClearClipMasks) = 0;
+		virtual void DoClear(const GReal Red, const GReal Green, const GReal Blue, const GReal Alpha,
+							 const GBool ClearClipMasks) = 0;
 		/*!
 			Do the effective set of physical viewport.
 
@@ -485,7 +494,7 @@ namespace Amanith {
 			\param LastSlotIndex last cache slot (index) to draw. It's ensured to be inside the valid range.
 			\note this method <b>MUST</b> be implemented by all derived classes.
 		*/
-		virtual void DoDrawCacheSlots(GDrawStyle& Style, const GUInt32 FirstSlotIndex, const GUInt32 LastSlotIndex) = 0;
+		virtual void DoDrawCacheSlots(GDrawStyle& Style, const GInt32 FirstSlotIndex, const GInt32 LastSlotIndex) = 0;
 		/*!
 			Do the effective screenshot.
 
@@ -504,6 +513,10 @@ namespace Amanith {
 		inline GDrawStyle *CurrentStyle() {
 			return gCurrentContext.gDrawStyle;
 		}
+		inline GRenderingContext *CurrentContext() {
+			return &gCurrentContext;
+		}
+
 		void InitDrawStyle();
 		/*!
 			Create a new draw style.
@@ -654,6 +667,10 @@ namespace Amanith {
 		GReal GroupOpacity() const;
 		//! Set group opacity.
 		void SetGroupOpacity(const GReal Opacity);
+		//! Get current group compositing operation.
+		GCompositingOperation GroupCompOp() const;
+		//! Set group compositing operation.
+		void SetGroupCompOp(const GCompositingOperation CompOp);
 		//! Get rendering quality settings.
 		GRenderingQuality RenderingQuality() const;
 		//! Set rendering quality settings.
@@ -723,6 +740,14 @@ namespace Amanith {
 		inline void SetStrokeColor(const GReal Red, const GReal Green, const GReal Blue, const GReal Alpha) {
 			SetStrokeColor(GVectBase<GReal, 4>(Red, Green, Blue, Alpha));
 		}
+		//! Set stroke color, specifying RGB color components. Alpha component won't be touched.
+		void SetStrokeColor(const GVectBase<GReal, 3>& Color);
+		//! Set stroke color, specifying RGB color components. Alpha component won't be touched.
+		inline void SetStrokeColor(const GReal Red, const GReal Green, const GReal Blue) {
+			SetStrokeColor(GVectBase<GReal, 3>(Red, Green, Blue));
+		}
+		//! Set stroke opacity. RGB components won't be touched.
+		void SetStrokeOpacity(const GReal Opacity);
 		//! Get stroke gradient (that will be used when stroke paint type is GRADIENT).
 		GGradientDesc *StrokeGradient() const;
 		//! Set stroke gradient (that will be used when stroke paint type is GRADIENT).
@@ -731,6 +756,10 @@ namespace Amanith {
 		GPatternDesc *StrokePattern() const;
 		//! Set stroke pattern (that will be used when stroke paint type is PATTERN).
 		void SetStrokePattern(GPatternDesc *Pattern);
+		//! Get current stroke compositing operation.
+		GCompositingOperation StrokeCompOp() const;
+		//! Set stroke compositing operation.
+		void SetStrokeCompOp(const GCompositingOperation CompOp);
 		//! It returns G_TRUE if stroke painting is enabled, else G_FALSE.
 		GBool StrokeEnabled() const;
 		//! Enable (G_TRUE value) or disable (G_FALSE value) stroke painting.
@@ -755,6 +784,14 @@ namespace Amanith {
 		inline void SetFillColor(const GReal Red, const GReal Green, const GReal Blue, const GReal Alpha) {
 			SetFillColor(GVectBase<GReal, 4>(Red, Green, Blue, Alpha));
 		}
+		//! Set fill color, specifying RGB color components. Alpha component won't be touched.
+		void SetFillColor(const GVectBase<GReal, 3>& Color);
+		//! Set fill color, specifying RGB color components. Alpha component won't be touched.
+		inline void SetFillColor(const GReal Red, const GReal Green, const GReal Blue) {
+			SetFillColor(GVectBase<GReal, 3>(Red, Green, Blue));
+		}
+		//! Set fill opacity. RGB components won't be touched.
+		void SetFillOpacity(const GReal Opacity);
 		//! Get fill gradient (that will be used when stroke paint type is GRADIENT).
 		GGradientDesc *FillGradient() const;
 		//! Set fill gradient (that will be used when stroke paint type is GRADIENT).
@@ -763,6 +800,10 @@ namespace Amanith {
 		GPatternDesc *FillPattern() const;
 		//! Set fill pattern (that will be used when stroke paint type is PATTERN).
 		void SetFillPattern(GPatternDesc *Pattern);
+		//! Get current fill compositing operation.
+		GCompositingOperation FillCompOp() const;
+		//! Set fill compositing operation.
+		void SetFillCompOp(const GCompositingOperation CompOp);
 		//! It returns G_TRUE if fill painting is enabled, else G_FALSE.
 		GBool FillEnabled() const;
 		//! Enable (G_TRUE value) or disable (G_FALSE value) fill painting.
@@ -1340,7 +1381,7 @@ namespace Amanith {
 			\param FirstSlotIndex first cache slot (index) to draw. It must be valid.
 			\param LastSlotIndex last cache slot (index) to draw. It must be valid.
 		*/
-		void DrawCacheSlots(const GUInt32 FirstSlotIndex, const GUInt32 LastSlotIndex);
+		void DrawCacheSlots(const GInt32 FirstSlotIndex, const GInt32 LastSlotIndex);
 		/*!
 			Draw the entire current cache bank.
 		*/
@@ -1353,8 +1394,8 @@ namespace Amanith {
 
 			\param SlotIndex cache slot (index) to draw. It must be valid.
 		*/
-		inline void DrawCacheSlot(const GUInt32 SlotIndex) {
-			if (CacheBank() && SlotIndex < CacheBank()->SlotsCount())
+		inline void DrawCacheSlot(const GInt32 SlotIndex) {
+			if (CacheBank() && (SlotIndex >= 0) && (SlotIndex < CacheBank()->SlotsCount()))
 				DrawCacheSlots(SlotIndex, SlotIndex);
 		}
 		/*!
@@ -1365,10 +1406,11 @@ namespace Amanith {
 			\param Red the red component of the clear color.
 			\param Green the green component of the clear color.
 			\param Blue the blue component of the clear color.
+			\param Alpha the alpha component of the clear color.
 			\param ClearClipMasks if G_TRUE also clipbuffer will be cleared. In this case all existing masks will
 			be dropped.
 		*/
-		void Clear(const GReal Red, const GReal Green, const GReal Blue, const GBool ClearClipMasks = G_TRUE);
+		void Clear(const GReal Red, const GReal Green, const GReal Blue, const GReal Alpha, const GBool ClearClipMasks = G_TRUE);
 		/*!
 			This function ensures that all outstanding requests on the current context will complete in finite time.
 			Flush may return prior to the actual completion of all requests.
@@ -1509,6 +1551,10 @@ namespace Amanith {
 			Get a matrix that transforms a physical point to its logical representation.
 		*/
 		GMatrix33 PhysicalToLogicalMatrix() const;
+		/*!
+			Get a matrix that transforms a logical point to its physical representation.
+		*/
+		GMatrix33 LogicalToPhysicalMatrix() const;
 		//! Returns G_TRUE if current rendering operations are inside a GroupBegin() / GroupEnd() constructor.
 		inline GBool InsideGroup() const {
 			return gInsideGroup;

@@ -411,6 +411,58 @@ namespace Amanith {
 	//                             GDrawStyle
 	// *********************************************************************
 
+	//! Compositing operations.
+	enum GCompositingOperation {
+		//! Clear Porter-Duff operation.
+		G_CLEAR_OP,
+		//! Src Porter-Duff operation.
+		G_SRC_OP,
+		//! Dst Porter-Duff operation.
+		G_DST_OP,
+		//! Src over Porter-Duff operation.
+		G_SRC_OVER_OP,
+		//! Dst over Porter-Duff operation.
+		G_DST_OVER_OP,
+		//! Src in Porter-Duff operation.
+		G_SRC_IN_OP,
+		//! Dst in Porter-Duff operation.
+		G_DST_IN_OP,
+		//! Src out Porter-Duff operation.
+		G_SRC_OUT_OP,
+		//! Dst out Porter-Duff operation.
+		G_DST_OUT_OP,
+		//! Src atop Porter-Duff operation.
+		G_SRC_ATOP_OP,
+		//! Dst atop Porter-Duff operation.
+		G_DST_ATOP_OP,
+		//! Xor Porter-Duff operation.
+		G_XOR_OP,
+		//! Plus extended Porter-Duff operation.
+		G_PLUS_OP,
+		//! Multiply extended Porter-Duff operation.
+		G_MULTIPLY_OP,
+		//! Screen extended Porter-Duff operation.
+		G_SCREEN_OP,
+		//! Overlay extended Porter-Duff operation.
+		G_OVERLAY_OP,
+		//! Darken extended Porter-Duff operation.
+		G_DARKEN_OP,
+		//! Lighten extended Porter-Duff operation.
+		G_LIGHTEN_OP,
+		//! Color dodge extended Porter-Duff operation.
+		G_COLOR_DODGE_OP,
+		//! Color burn extended Porter-Duff operation.
+		G_COLOR_BURN_OP,
+		//! Hard light extended Porter-Duff operation.
+		G_HARD_LIGHT_OP,
+		//! Soft light extended Porter-Duff operation.
+		G_SOFT_LIGHT_OP,
+		//! Difference extended Porter-Duff operation.
+		G_DIFFERENCE_OP,
+		//! Exclusion extended Porter-Duff operation.
+		G_EXCLUSION_OP
+	};
+
 	/*!
 		\class GDrawStyle
 		\brief This class maintains informations used to describe a render style.
@@ -496,6 +548,8 @@ namespace Amanith {
 		GBool gStrokeOffsettedDashPatternEmpty;
 		//! Sum of all dash entries.
 		GReal gStrokeDashPatternSum;
+		//! Stroke compositing operation.
+		GCompositingOperation gStrokeCompOp;
 		//! Stroke enable/disable flag.
 		GBool gStrokeEnabled;
 		//! Fill rule.
@@ -508,6 +562,8 @@ namespace Amanith {
 		GGradientDesc *gFillGradientDesc;
 		//! Fill pattern (pointer).
 		GPatternDesc *gFillPatternDesc;
+		//! Fill compositing operation.
+		GCompositingOperation gFillCompOp;
 		//! Fill enable/disable flag.
 		GBool gFillEnabled;
 		//! Model-view matrix.
@@ -539,6 +595,8 @@ namespace Amanith {
 		void SetStrokeDashPatternModified(const GBool Modified);
 		//! Set dash phase modified flag.
 		void SetStrokeDashPhaseModified(const GBool Modified);
+		//! Set stroke compositing operation modified flag.
+		void SetStrokeCompOpModified(const GBool Modified);
 		//! Set stroke enable/disable modified flag.
 		void SetStrokeEnabledModified(const GBool Modified);
 		//! Set fill rule modified flag.
@@ -547,6 +605,8 @@ namespace Amanith {
 		void SetFillPaintTypeModified(const GBool Modified);
 		//! Set fill color modified flag.
 		void SetFillColorModified(const GBool Modified);
+		//! Set fill compositing operation modified flag.
+		void SetFillCompOpModified(const GBool Modified);
 		//! Set fill enable/disable modified flag.
 		void SetFillEnabledModified(const GBool Modified);
 		// set model-view modified bit flag
@@ -643,6 +703,12 @@ namespace Amanith {
 		inline GBool StrokeEnabled() const {
 			return gStrokeEnabled;
 		}
+		//! Get current stroke compositing operation.
+		inline GCompositingOperation StrokeCompOp() const {
+			return gStrokeCompOp;
+		}
+		//! Set stroke compositing operation.
+		virtual void SetStrokeCompOp(const GCompositingOperation CompOp);
 		//! Set stroke enabled/disabled flag.
 		virtual void SetStrokeEnabled(const GBool Enabled);
 		//! Get fill rule.
@@ -679,6 +745,12 @@ namespace Amanith {
 		inline void SetFillPattern(GPatternDesc *Pattern) {
 			gFillPatternDesc = Pattern;
 		}
+		//! Get current fill compositing operation.
+		inline GCompositingOperation FillCompOp() const {
+			return gFillCompOp;
+		}
+		//! Set fill compositing operation.
+		virtual void SetFillCompOp(const GCompositingOperation CompOp);
 		//! Get fill enabled/disabled flag.
 		inline GBool FillEnabled() const {
 			return gFillEnabled;
@@ -741,6 +813,8 @@ namespace Amanith {
 		GBool StrokeDashPatternModified() const;
 		//! G_TRUE if stroke dash phase has been modified from last time it was used, else G_FALSE.
 		GBool StrokeDashPhaseModified() const;
+		//! G_TRUE if stroke compositing operation flag has been modified from last time it was used, else G_FALSE.
+		GBool StrokeCompOpModified() const;
 		//! G_TRUE if stroke enabled/disabled flag has been modified from last time it was used, else G_FALSE.
 		GBool StrokeEnabledModified() const;
 		//! G_TRUE if fill rule has been modified from last time it was used, else G_FALSE.
@@ -763,6 +837,8 @@ namespace Amanith {
 			else
 				return G_FALSE;
 		}
+		//! G_TRUE if fill compositing operation flag has been modified from last time it was used, else G_FALSE.
+		GBool FillCompOpModified() const;
 		//! G_TRUE if fill enabled/disabled flag has been modified from last time it was used, else G_FALSE.
 		GBool FillEnabledModified() const;
 		//! G_TRUE if model-view matrix has been modified from last time it was used, else G_FALSE.

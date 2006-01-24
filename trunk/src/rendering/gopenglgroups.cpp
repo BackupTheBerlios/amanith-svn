@@ -35,73 +35,65 @@
 
 namespace Amanith {
 
-void GOpenGLBoard::PushGLWindowMode() {
-
-	GUInt32 x, y, w, h;
-	Viewport(x, y, w, h);
-
-	static const GLdouble s = 0.375;
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glLoadIdentity();
-	glOrtho(-s, (GLdouble)w - s, -s, (GLdouble)h - s, (GLdouble)-1, (GLdouble)0);
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-	glLoadIdentity();
-}
-
-void GOpenGLBoard::PopGLWindowMode() {
-
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
-	glMatrixMode(GL_MODELVIEW);
-	glPopMatrix();
-}
-
 void GOpenGLBoard::DoGroupBegin(const GAABox2& LogicBox) {
+
 
 	gIsFirstGroupDrawing = G_TRUE;
 
-	// if group opacity is not supported by hardware or group opacity is 1, ignore group as opaque
-	if (GroupOpacity() >= 1 || GroupOpacity() <= 0 || !gGroupOpacitySupport)
+	// if group opacity is not supported by hardware or group compositing operation is DST_OP just exit; the case of
+	// CLEAR_OP is the same, a black box will be drawn inside DoGroupEnd()
+	if (!gGroupOpacitySupport || GroupCompOp() == G_DST_OP)
 		return;
+
 	// group begin affects only color buffer
 	if (TargetMode() == G_CACHE_MODE || TargetMode() == G_CLIP_MODE || TargetMode() == G_CLIP_AND_CACHE_MODE)
 		return;
 
-	if (LogicBox.Volume() <= G_EPSILON) {
-		gGLGroupRect.IsEmpty = G_TRUE;
-		return;
-	}
-	else
-		gGLGroupRect.IsEmpty = G_FALSE;
+	GrabFrameBuffer(LogicBox, gGLGroupRect);
 
-	GPoint<GInt32, 2> p0 = LogicalToPhysicalInt(LogicBox.Min());
-	GPoint<GInt32, 2> p1 = LogicalToPhysicalInt(LogicBox.Max());
+	GReal ll, rr, bb, tt;
+	Projection(ll, rr, bb, tt);
+	GMatrix44 m = GLProjectionMatrix(ll, rr, bb, tt, 1);
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+	#ifdef DOUBLE_REAL_TYPE 
+		glLoadMatrixd((const GLdouble *)m.Data());
+	#else
+		glLoadMatrixf((const GLfloat *)m.Data());
+	#endif
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
 
-	GGenericAABox<GInt32, 2> physicBox(p0, p1);
-
-	p0 = physicBox.Min();
-	p1 = physicBox.Max();
-
-	GrabFrameBuffer(p0, p1[G_X] - p0[G_X], p1[G_Y] - p0[G_Y], gGLGroupRect);
-
-	PushGLWindowMode();
+	glDepthMask(GL_FALSE);
 	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_STENCIL_TEST);
+	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+	GLDisableShaders();
+	SetGLColor(GVector4(1, 1, 1, 0));
+	// enable texture 2D
+	SELECT_AND_DISABLE_TUNIT(0)
+	glDisable(GL_BLEND);
+	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE);
+	glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_ALPHA, GL_PRIMARY_COLOR);
+	glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_ALPHA, GL_REPLACE);
+	glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_RGB, GL_PRIMARY_COLOR);
+	glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB, GL_REPLACE);
+	
+	DrawGLBox(gGLGroupRect.gExpandedLogicBox);
 
 	// now intersect bounding box with current mask(s)
 	if (ClipEnabled()) {
 		StencilPush();
-		glBegin(GL_POLYGON);
-			glVertex2i(p0[G_X], p0[G_Y]);
-			glVertex2i(p0[G_X], p1[G_Y]);
-			glVertex2i(p1[G_X], p1[G_Y]);
-			glVertex2i(p1[G_X], p0[G_Y]);
-		glEnd();
-		StencilEnableTop();
+		DrawGLBox(gGLGroupRect.gExpandedLogicBox);
+		// increment top stencil value because StencilPush checks for InsideGroup() flag; gTopStencilValue is
+		// incremented only if we are not inside e group (here we are already in a group, because we have just
+		// entered it)
+		gTopStencilValue++;
 	}
 
-	PopGLWindowMode();
+	// exit from window-mode
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
 }
 
 void GOpenGLBoard::DoGroupEnd() {
@@ -121,185 +113,281 @@ void GOpenGLBoard::DoGroupEnd() {
 			}
 		}
 	}
-
+	
 	gIsFirstGroupDrawing = G_FALSE;
 
-	// if group opacity is not supported by hardware or group opacity is 1, ignore group as opaque
-	if (GroupOpacity() >= 1 || GroupOpacity()<= 0 || gGLGroupRect.IsEmpty || !gGroupOpacitySupport)
+	// if group opacity is not supported by hardware or group compositing operation is DST_OP or group is
+	// empty just exit
+	if (gGLGroupRect.IsEmpty || !gGroupOpacitySupport || GroupCompOp() == G_DST_OP)
 		return;
-	// group end affects only color buffer
+	// DoGroupEnd() affects only color buffer
 	if (TargetMode() == G_CACHE_MODE || TargetMode() == G_CLIP_MODE || TargetMode() == G_CLIP_AND_CACHE_MODE)
 		return;
 
-	PushGLWindowMode();
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+
+	glDisable(GL_DEPTH_TEST);
+	glDepthMask(GL_FALSE);
+	glDisable(GL_STENCIL_TEST);
+
+	GrabFrameBuffer(gGLGroupRect.gNotExpandedLogicBox, gCompositingBuffer);
+
+	// use SRC_OP just to disable blend and enable all 4 channels color mask
+	ReplaceFrameBuffer(gGLGroupRect, G_SRC_OP, 0);
 
 	glEnable(GL_STENCIL_TEST);
-	glDisable(GL_DEPTH_TEST);
-	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_FALSE);
 	if (ClipEnabled()) {
 		gTopStencilValue++;
 		glStencilFunc(GL_EQUAL, gTopStencilValue, gStencilMask);
 		glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 	}
 	else {
-		glStencilFunc(GL_EQUAL, (GLint)(~0), gStencilDualMask);
+		glStencilFunc(GL_EQUAL, (GLint)(0x7FFFFFFF), gStencilDualMask);
 		glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 	}
 
-	glEnable(GL_BLEND);
-	glDisable(GL_FRAGMENT_PROGRAM_ARB);
-	glBlendFunc(GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA);
+	if (GroupCompOp() == G_CLEAR_OP) {
 
-	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE);
-	glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_RGB, GL_TEXTURE);
-	glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB, GL_REPLACE);
-	glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_ALPHA, GL_PRIMARY_COLOR);
-	glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_ALPHA, GL_REPLACE);
-
-	#if DOUBLE_REAL_TYPE
-		glColor4d(1.0, 1.0, 1.0, GroupOpacity());
-	#else
-		glColor4f(1.0f, 1.0f, 1.0f, GroupOpacity());
-	#endif
-
-	ReplaceFrameBuffer(gGLGroupRect);
-	glDisable(GL_BLEND);
-
-	if (ClipEnabled()) {
-		// delete stencil bounding box mask and drawn pixels
-		StencilPop();
-		glBegin(GL_POLYGON);
-			glVertex2i(gGLGroupRect.X, gGLGroupRect.Y);
-			glVertex2i(gGLGroupRect.X, gGLGroupRect.Y + gGLGroupRect.Height);
-			glVertex2i(gGLGroupRect.X + gGLGroupRect.Width, gGLGroupRect.Y + gGLGroupRect.Height);
-			glVertex2i(gGLGroupRect.X + gGLGroupRect.Width, gGLGroupRect.Y);
-		glEnd();
+		SELECT_AND_DISABLE_TUNIT(0)
+		GLDisableShaders();
+		glDisable(GL_BLEND);
+		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+		glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE);
+		glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_ALPHA, GL_PRIMARY_COLOR);
+		glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_ALPHA, GL_REPLACE);
+		glTexEnvi(GL_TEXTURE_ENV, GL_SOURCE0_RGB, GL_PRIMARY_COLOR);
+		glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB, GL_REPLACE);
+		SetGLColor(GVector4(0, 0, 0, 0));
+		DrawGLBox(gGLGroupRect.gExpandedLogicBox);
 	}
 	else {
-		glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-		glStencilFunc(GL_EQUAL, (GLint)(~0), gStencilDualMask);
-		glStencilOp(GL_KEEP, GL_ZERO, GL_ZERO);
-		glBegin(GL_POLYGON);
-			glVertex2i(gGLGroupRect.X, gGLGroupRect.Y);
-			glVertex2i(gGLGroupRect.X, gGLGroupRect.Y + gGLGroupRect.Height);
-			glVertex2i(gGLGroupRect.X + gGLGroupRect.Width, gGLGroupRect.Y + gGLGroupRect.Height);
-			glVertex2i(gGLGroupRect.X + gGLGroupRect.Width, gGLGroupRect.Y);
-		glEnd();
+		// simulate the drawing of a rectangle with GroupCompOp() and only fill
+		GUInt32 stylePassesCount = 0;
+		GUInt32 fbPassesCount = 0;
+		CompOpPassesCount(GroupCompOp(), stylePassesCount, fbPassesCount);
+
+		for (GUInt32 ii = 0; ii < stylePassesCount; ++ii) {
+			UseGroupStyle(ii, gCompositingBuffer, gGLGroupRect);
+			G_ASSERT(gCompositingBuffer.Width == gGLGroupRect.Width);
+			G_ASSERT(gCompositingBuffer.Height == gGLGroupRect.Height);
+			G_ASSERT(gCompositingBuffer.Target == gGLGroupRect.Target);
+			DrawGrabbedRect(gCompositingBuffer, G_TRUE, G_TRUE, G_TRUE, G_FALSE);
+		}
+		for (GUInt32 ii = 0; ii < fbPassesCount; ++ii)
+			ReplaceFrameBuffer(gGLGroupRect, GroupCompOp(), ii);
 	}
 
-	PopGLWindowMode();
-}
 
-void GOpenGLBoard::GroupFirstPass() {
-
-	// we must write only on stencil buffer
+	GLDisableShaders();
 	glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+
 	if (ClipEnabled()) {
-		glStencilOp(GL_KEEP, GL_INCR, GL_INCR);
-		glStencilFunc(GL_EQUAL, gTopStencilValue, gStencilMask);
+		// delete stencil drawn pixels mask
+		StencilPop();
+		DrawGLBox(gGLGroupRect.gExpandedLogicBox);
+		// delete stencil bounding box mask
+		StencilPop();
+		DrawGLBox(gGLGroupRect.gExpandedLogicBox);
 	}
 	else {
-		glStencilOp(GL_KEEP, GL_REPLACE, GL_REPLACE);
-		glStencilFunc(GL_ALWAYS, (GLint)(~0), gStencilDualMask);
+		glStencilFunc(GL_EQUAL, (GLint)(0x7FFFFFFF), gStencilDualMask);
+		glStencilOp(GL_KEEP, GL_ZERO, GL_ZERO);
+		glStencilMask(gStencilDualMask);
+		DrawGLBox(gGLGroupRect.gExpandedLogicBox);
 	}
-	glEnable(GL_STENCIL_TEST);
-	glDisable(GL_DEPTH_TEST);
 }
 
-void GOpenGLBoard::GrabFrameBuffer(const GPoint<GInt32, 2>& LowLeft, const GUInt32 Width, const GUInt32 Height,
-								   GLGrabbedRect& Shot) {
+void GOpenGLBoard::UpdateGrabBuffer(const GUInt32 Width, const GUInt32 Height, GLGrabbedRect& GrabRect) {
 
-	if (gRectTexturesSupport) {
-		Shot.Target = GL_TEXTURE_RECTANGLE_EXT;
-		Shot.TexWidth = Width;
-		Shot.TexHeight = Height;
-	}
-	else {
-		Shot.Target = GL_TEXTURE_2D;
-		Shot.TexWidth = GOpenglExt::PowerOfTwo(Width);
-		Shot.TexHeight = GOpenglExt::PowerOfTwo(Height);
-	}
-	//we must ensure that texture must not be larger than the maximum (hw)permitted size
-	GUInt32 maxTexSize = gExtManager->MaxTextureSize();
-	if (Shot.TexWidth > maxTexSize)
-		Shot.TexWidth = maxTexSize;
-	if (Shot.TexHeight > maxTexSize)
-		Shot.TexHeight = maxTexSize;
+	G_ASSERT(Width > 0 && Height > 0);
 
-	glDisable(GL_TEXTURE_RECTANGLE_EXT);
-	glDisable(GL_TEXTURE_1D);
-	glDisable(GL_TEXTURE_2D);
-	glDisable(GL_TEXTURE_GEN_S);
-	glDisable(GL_TEXTURE_GEN_T);
-	glEnable(Shot.Target);
+	// check if we have to expand grabbing buffer
+	if (Width > GrabRect.TexWidth || Height > GrabRect.TexHeight) {
+
+		// check if we have to create OpenGL texture
+		if (GrabRect.TexName == 0) {
+			glGenTextures(1, &GrabRect.TexName);
+			G_ASSERT(GrabRect.TexName > 0);
+			if (gRectTexturesInUse)
+				GrabRect.Target = GL_TEXTURE_RECTANGLE_EXT;
+			else
+				GrabRect.Target = GL_TEXTURE_2D;
+		}
+
+		// bind texture and calculate new dimensions
+		SELECT_AND_DISABLE_TUNIT(1)
+		SELECT_AND_DISABLE_TUNIT(0)
+		glEnable(GrabRect.Target);
+		glBindTexture(GrabRect.Target, GrabRect.TexName);
+		if (GrabRect.Target == GL_TEXTURE_RECTANGLE_EXT) {
+			GrabRect.TexWidth = Width;
+			GrabRect.TexHeight = Height;
+		}
+		else {
+			GrabRect.TexWidth = GOpenglExt::PowerOfTwo(Width);
+			GrabRect.TexHeight = GOpenglExt::PowerOfTwo(Height);
+		}
+		// we must ensure that texture must not be larger than the maximum (hw)permitted size
+		GUInt32 maxTexSize = gExtManager->MaxTextureSize();
+		if (GrabRect.TexWidth > maxTexSize)
+			GrabRect.TexWidth = maxTexSize;
+		if (GrabRect.TexHeight > maxTexSize)
+			GrabRect.TexHeight = maxTexSize;
+
+		// set texture parameters
+		glTexParameteri(GrabRect.Target, GL_TEXTURE_MAG_FILTER, GL_NEAREST); 
+		glTexParameteri(GrabRect.Target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GrabRect.Target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GrabRect.Target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		// create/enlarge texture
+		glTexImage2D(GrabRect.Target, 0, GL_RGBA8, GrabRect.TexWidth, GrabRect.TexHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+		GrabRect.Format = GL_RGBA8;
+	}
+}
+
+void GOpenGLBoard::GrabFrameBuffer(const GAABox2& LogicBox, GLGrabbedRect& Shot) {
+
+	GLDisableShaders();
+
+	GReal left, right, bottom, top;
+	Projection(left, right, bottom, top);
+
+	if (LogicBox.Min()[G_X] > left)
+		left = LogicBox.Min()[G_X];
+	if (LogicBox.Max()[G_X] < right)
+		right = LogicBox.Max()[G_X];
+	if (LogicBox.Min()[G_Y] > bottom)
+		bottom = LogicBox.Min()[G_Y];
+	if (LogicBox.Max()[G_Y] < top)
+		top = LogicBox.Max()[G_Y];
+
+	GAABox2 tmpBox(GPoint2(left, bottom), GPoint2(right, top));
+
+	GPoint<GInt32, 2> p0 = LogicalToPhysicalInt(tmpBox.Min());
+	GPoint<GInt32, 2> p1 = LogicalToPhysicalInt(tmpBox.Max());
+	p0[G_X] -= 1;
+	p0[G_Y] -= 1;
+	p1[G_X] += 1;
+	p1[G_Y] += 1;
+	GGenericAABox<GInt32, 2> intBox(p0, p1);
+
+	GUInt32 width = (GUInt32)GMath::Abs(p1[G_X] - p0[G_X]);
+	GUInt32 height = (GUInt32)GMath::Abs(p1[G_Y] - p0[G_Y]);
 
 	glPixelStorei(GL_PACK_ALIGNMENT, 1);
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-	glGenTextures(1, &Shot.TexName);
-	glBindTexture(Shot.Target, Shot.TexName);
-	glTexParameteri(Shot.Target, GL_TEXTURE_MAG_FILTER, GL_NEAREST); 
-	glTexParameteri(Shot.Target, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	//glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-	glTexParameteri(Shot.Target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(Shot.Target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	UpdateGrabBuffer(width, height, Shot);
 
-	glCopyTexImage2D(Shot.Target, 0, GL_RGBA, LowLeft[G_X], LowLeft[G_Y], Shot.TexWidth, Shot.TexHeight, 0);
+	G_ASSERT(Shot.TexName > 0);
+	G_ASSERT(Shot.TexWidth > 0 && Shot.TexHeight > 0);
+	G_ASSERT(Shot.TexWidth >= width && Shot.TexHeight >= height);
 
-	Shot.X = LowLeft[G_X];
-	Shot.Y = LowLeft[G_Y];
-	Shot.Width = Width;
-	Shot.Height = Height;
-}
-
-void GOpenGLBoard::ReplaceFrameBuffer(const GLGrabbedRect& Shot) {
-
-	glDisable(GL_TEXTURE_1D);
-	glDisable(GL_TEXTURE_2D);
-	glDisable(GL_TEXTURE_GEN_S);
-	glDisable(GL_TEXTURE_GEN_T);
-	glDisable(GL_TEXTURE_RECTANGLE_EXT);
-
-	glMatrixMode(GL_TEXTURE);
-	glPushMatrix();
-	glLoadIdentity();
-
+	SELECT_AND_DISABLE_TUNIT(1)
+	SELECT_AND_DISABLE_TUNIT(0)
 	glEnable(Shot.Target);
 	glBindTexture(Shot.Target, Shot.TexName);
+	glCopyTexSubImage2D(Shot.Target, 0, 0, 0, (GLint)intBox.Min()[G_X], (GLint)intBox.Min()[G_Y], (GLsizei)width, (GLsizei)height);
 
-	if (Shot.Target == GL_TEXTURE_2D) {
+	Shot.Width = width;
+	Shot.Height = height;
+	Shot.IsEmpty = G_FALSE;
 
-		GDouble u = (GDouble)Shot.Width / (GDouble)Shot.TexWidth;
-		GDouble v = (GDouble)Shot.Height / (GDouble)Shot.TexHeight;
+	Shot.gNotExpandedLogicBox = tmpBox;
 
-		glBegin(GL_POLYGON);
-			glTexCoord2d(0, v);
-			glVertex2i(Shot.X, Shot.Y + Shot.Height);
-			glTexCoord2d(u, v);
-			glVertex2i(Shot.X + Shot.Width, Shot.Y + Shot.Height);
-			glTexCoord2d(u, 0);
-			glVertex2i(Shot.X + Shot.Width, Shot.Y);
-			glTexCoord2d(0, 0);
-			glVertex2i(Shot.X, Shot.Y);
-		glEnd();
+	GPoint2 q0 = PhysicalToLogical(p0);
+	GPoint2 q1 = PhysicalToLogical(p1);
+	Shot.gExpandedLogicBox.SetMinMax(q0, q1);
+
+	SELECT_AND_DISABLE_TUNIT(0)
+	glPixelStorei(GL_PACK_ALIGNMENT, 4);
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
+}
+
+void GOpenGLBoard::DrawGrabbedRect(const GLGrabbedRect& GrabbedRect, const GBool TexUnit0, const GBool SubPixel0,
+								   const GBool TexUnit1, const GBool SubPixel1) {
+
+	GReal u, v;
+	GReal subX0 = 0, subY0 = 0, subX1 = 0, subY1 = 0;
+
+	#define ENLARGE_OFFSET (GReal)0.5
+
+	if (GrabbedRect.Target == GL_TEXTURE_2D) {
+		u = (GReal)((GDouble)GrabbedRect.Width / (GDouble)GrabbedRect.TexWidth);
+		v = (GReal)((GDouble)GrabbedRect.Height / (GDouble)GrabbedRect.TexHeight);
+		if (SubPixel0) {
+			subX0 = ENLARGE_OFFSET / (GrabbedRect.TexWidth);
+			subY0 = ENLARGE_OFFSET / (GrabbedRect.TexHeight);
+		}
+		if (SubPixel1) {
+			subX1 = ENLARGE_OFFSET / (GrabbedRect.TexWidth);
+			subY1 = ENLARGE_OFFSET / (GrabbedRect.TexHeight);
+		}
 	}
 	else {
-		glBegin(GL_POLYGON);
-			glTexCoord2i(0, (GLint)Shot.TexHeight);
-			glVertex2i(Shot.X, Shot.Y + Shot.Height);
-			glTexCoord2i((GLint)Shot.TexWidth, (GLint)Shot.TexHeight);
-			glVertex2i(Shot.X + Shot.Width, Shot.Y + Shot.Height);
-			glTexCoord2i((GLint)Shot.TexWidth, 0);
-			glVertex2i(Shot.X + Shot.Width, Shot.Y);
-			glTexCoord2i(0, 0);
-			glVertex2i(Shot.X, Shot.Y);
-		glEnd();
+		u = (GReal)GrabbedRect.Width;
+		v = (GReal)GrabbedRect.Height;
+		if (SubPixel0) {
+			subX0 = ENLARGE_OFFSET;
+			subY0 = ENLARGE_OFFSET;
+		}
+		if (SubPixel1) {
+			subX1 = ENLARGE_OFFSET;
+			subY1 = ENLARGE_OFFSET;
+		}
 	}
 
-	glMatrixMode(GL_TEXTURE);
-	glPopMatrix();
-	glDisable(Shot.Target);
-	glDeleteTextures(1, &Shot.TexName);
+	GPoint2 p0(GrabbedRect.gExpandedLogicBox.Min());
+	GPoint2 p2(GrabbedRect.gExpandedLogicBox.Max());
+	GPoint2 p1(p0[G_X], p2[G_Y]);
+	GPoint2 p3(p2[G_X], p0[G_Y]);
+
+	glBegin(GL_POLYGON);
+		if (TexUnit0)
+			SetTextureVertex(0, 0 + subX0, v - subY0);
+		if (TexUnit1)
+			SetTextureVertex(1, 0 + subX1, v - subY1);
+		//glVertex2i(GrabbedRect.X, GrabbedRect.Y + GrabbedRect.Height);
+		#ifdef DOUBLE_REAL_TYPE
+			glVertex2dv(p1.Data());
+		#else
+			glVertex2fv(p1.Data());
+		#endif
+
+		if (TexUnit0)
+			SetTextureVertex(0, u - subX0, v - subY0);
+		if (TexUnit1)
+			SetTextureVertex(1, u - subX1, v - subY1);
+		//glVertex2i(GrabbedRect.X + GrabbedRect.Width, GrabbedRect.Y + GrabbedRect.Height);
+		#ifdef DOUBLE_REAL_TYPE
+			glVertex2dv(p2.Data());
+		#else
+			glVertex2fv(p2.Data());
+		#endif
+
+		if (TexUnit0)
+			SetTextureVertex(0, u - subX0, 0 + subY0);
+		if (TexUnit1)
+			SetTextureVertex(1, u - subX1, 0 + subY1);
+		//glVertex2i(GrabbedRect.X + GrabbedRect.Width, GrabbedRect.Y);
+		#ifdef DOUBLE_REAL_TYPE
+			glVertex2dv(p3.Data());
+		#else
+			glVertex2fv(p3.Data());
+		#endif
+
+		if (TexUnit0)
+			SetTextureVertex(0, 0 + subX0, 0 + subY0);
+		if (TexUnit1)
+			SetTextureVertex(1, 0 + subX1, 0 + subY1);
+		//glVertex2i(GrabbedRect.X, GrabbedRect.Y);
+		#ifdef DOUBLE_REAL_TYPE
+			glVertex2dv(p0.Data());
+		#else
+			glVertex2fv(p0.Data());
+		#endif
+	glEnd();
 }
 
 };	// end namespace Amanith

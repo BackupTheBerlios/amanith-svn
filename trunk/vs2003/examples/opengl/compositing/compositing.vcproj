@@ -2,8 +2,8 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="7.10"
-	Name="drawboard"
-	ProjectGUID="{75991F96-04F2-4D65-94DA-6413E3A41A2C}"
+	Name="compositing"
+	ProjectGUID="{010CA70F-E74E-4AE0-A03E-081BD2548BAD}"
 	Keyword="Win32Proj">
 	<Platforms>
 		<Platform
@@ -33,10 +33,10 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="opengl32.lib glu32.lib $(AMANITHDIR)/lib/amanith.lib"
-				OutputFile="./drawboard.exe"
+				OutputFile="./compositing.exe"
 				LinkIncremental="2"
 				GenerateDebugInformation="TRUE"
-				ProgramDatabaseFile="$(OutDir)/drawboard.pdb"
+				ProgramDatabaseFile="$(OutDir)/compositing.pdb"
 				SubSystem="2"
 				TargetMachine="1"/>
 			<Tool
@@ -80,9 +80,9 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="opengl32.lib glu32.lib $(AMANITHDIR)/lib/amanith.lib"
-				OutputFile="./drawboard.exe"
+				OutputFile="./compositing.exe"
 				LinkIncremental="1"
-				GenerateDebugInformation="FALSE"
+				GenerateDebugInformation="TRUE"
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
@@ -117,46 +117,13 @@
 			Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx"
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}">
 			<File
-				RelativePath=".\drawboard.cpp">
+				RelativePath=".\compositing.cpp">
 			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}">
-			<File
-				RelativePath=".\test_cache.h">
-			</File>
-			<File
-				RelativePath=".\test_color.h">
-			</File>
-			<File
-				RelativePath=".\test_conicalgradientin.h">
-			</File>
-			<File
-				RelativePath=".\test_conicalgradientout.h">
-			</File>
-			<File
-				RelativePath=".\test_geometries.h">
-			</File>
-			<File
-				RelativePath=".\test_lineargradient.h">
-			</File>
-			<File
-				RelativePath=".\test_masks.h">
-			</File>
-			<File
-				RelativePath=".\test_pattern.h">
-			</File>
-			<File
-				RelativePath=".\test_radialgradientin.h">
-			</File>
-			<File
-				RelativePath=".\test_radialgradientout.h">
-			</File>
-			<File
-				RelativePath=".\test_stroking.h">
-			</File>
 		</Filter>
 		<Filter
 			Name="Resource Files"

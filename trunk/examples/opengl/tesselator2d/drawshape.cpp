@@ -34,7 +34,8 @@
 	#include <QKeyEvent>
 #endif
 
-static int timer_interval = 0;			// timer interval (millisec)
+// timer interval (millisec)
+static int timer_interval = 0;
 static GLuint texture = 0;
 
 #if defined(G_OS_WIN) && !defined(__CYGWIN__) && !defined(__GNUC__)

@@ -429,12 +429,14 @@ void GPatternDesc::SetMatrixModified(const GBool Modified) {
 #define G_DRAWSTYLE_STROKECOLOR_MODIFIED			128
 #define G_DRAWSTYLE_STROKEDASHPHASE_MODIFIED		256
 #define G_DRAWSTYLE_STROKEDASHPATTERN_MODIFIED		512
-#define G_DRAWSTYLE_STROKEENABLED_MODIFIED			1024
-#define G_DRAWSTYLE_FILLRULE_MODIFIED				2048
-#define G_DRAWSTYLE_FILLPAINTTYPE_MODIFIED			4096
-#define G_DRAWSTYLE_FILLCOLOR_MODIFIED				8192
-#define G_DRAWSTYLE_FILLENABLED_MODIFIED			16384
-#define G_DRAWSTYLE_MODELVIEW_MODIFIED				32768
+#define G_DRAWSTYLE_STROKECOMPOP_MODIFIED			1024
+#define G_DRAWSTYLE_STROKEENABLED_MODIFIED			2048
+#define G_DRAWSTYLE_FILLRULE_MODIFIED				4096
+#define G_DRAWSTYLE_FILLPAINTTYPE_MODIFIED			8192
+#define G_DRAWSTYLE_FILLCOLOR_MODIFIED				16384
+#define G_DRAWSTYLE_FILLCOMPOP_MODIFIED				32768
+#define G_DRAWSTYLE_FILLENABLED_MODIFIED			65536
+#define G_DRAWSTYLE_MODELVIEW_MODIFIED				131072
 
 GDrawStyle::GDrawStyle() {
 
@@ -442,8 +444,10 @@ GDrawStyle::GDrawStyle() {
 	gModified |= G_DRAWSTYLE_STROKESTARTCAPSTYLE_MODIFIED | G_DRAWSTYLE_STROKEENDCAPSTYLE_MODIFIED;
 	gModified |= G_DRAWSTYLE_STROKEJOINSTYLE_MODIFIED | G_DRAWSTYLE_STROKEPAINTTYPE_MODIFIED;
 	gModified |= G_DRAWSTYLE_STROKECOLOR_MODIFIED | G_DRAWSTYLE_STROKEDASHPHASE_MODIFIED;
+	gModified |= G_DRAWSTYLE_STROKECOMPOP_MODIFIED;
 	gModified |= G_DRAWSTYLE_STROKEDASHPATTERN_MODIFIED | G_DRAWSTYLE_STROKEENABLED_MODIFIED;
 	gModified |= G_DRAWSTYLE_FILLRULE_MODIFIED | G_DRAWSTYLE_FILLPAINTTYPE_MODIFIED;
+	gModified |= G_DRAWSTYLE_FILLCOMPOP_MODIFIED;
 	gModified |= G_DRAWSTYLE_FILLCOLOR_MODIFIED | G_DRAWSTYLE_FILLENABLED_MODIFIED | G_DRAWSTYLE_MODELVIEW_MODIFIED;
 
 	gStrokeWidth = (GReal)1;
@@ -461,6 +465,7 @@ GDrawStyle::GDrawStyle() {
 	gStrokeDashPatternSum = 0;
 	gStrokeGradientDesc = NULL;
 	gStrokePatternDesc = NULL;
+	gStrokeCompOp = G_SRC_OVER_OP;
 	gStrokeEnabled = G_TRUE;
 	// fill parameters
 	gFillRule = G_ODD_EVEN_FILLRULE;
@@ -468,6 +473,7 @@ GDrawStyle::GDrawStyle() {
 	gFillColor.Set(0, 0, 0, 1);
 	gFillGradientDesc = NULL;
 	gFillPatternDesc = NULL;
+	gFillCompOp = G_SRC_OVER_OP;
 	gFillEnabled = G_TRUE;
 	// model-view matrix (and its inverse) will start as identities
 }
@@ -672,6 +678,15 @@ void GDrawStyle::SetStrokeDashPhase(const GReal DashPhase) {
 	}
 }
 
+// set stroke compositing operation
+void GDrawStyle::SetStrokeCompOp(const GCompositingOperation CompOp) {
+
+	if (CompOp != gStrokeCompOp) {
+		gModified |= G_DRAWSTYLE_STROKECOMPOP_MODIFIED;
+		gStrokeCompOp = CompOp;
+	}
+}
+
 // set stroke enabled
 void GDrawStyle::SetStrokeEnabled(const GBool Enabled) {
 
@@ -705,6 +720,15 @@ void GDrawStyle::SetFillColor(const GVectBase<GReal, 4>& Color) {
 	if (Color != gFillColor) {
 		gModified |= G_DRAWSTYLE_FILLCOLOR_MODIFIED;
 		gFillColor = Color;
+	}
+}
+
+// set fill compositing operation
+void GDrawStyle::SetFillCompOp(const GCompositingOperation CompOp) {
+
+	if (CompOp != gFillCompOp) {
+		gModified |= G_DRAWSTYLE_FILLCOMPOP_MODIFIED;
+		gFillCompOp = CompOp;
 	}
 }
 
@@ -822,6 +846,13 @@ GBool GDrawStyle::StrokeDashPhaseModified() const {
 	return G_FALSE;
 }
 
+GBool GDrawStyle::StrokeCompOpModified() const {
+
+	if (gModified & G_DRAWSTYLE_STROKECOMPOP_MODIFIED)
+		return G_TRUE;
+	return G_FALSE;
+}
+
 GBool GDrawStyle::StrokeEnabledModified() const {
 
 	if (gModified & G_DRAWSTYLE_STROKEENABLED_MODIFIED)
@@ -846,6 +877,13 @@ GBool GDrawStyle::FillPaintTypeModified() const {
 GBool GDrawStyle::FillColorModified() const {
 
 	if (gModified & G_DRAWSTYLE_FILLCOLOR_MODIFIED)
+		return G_TRUE;
+	return G_FALSE;
+}
+
+GBool GDrawStyle::FillCompOpModified() const {
+
+	if (gModified & G_DRAWSTYLE_FILLCOMPOP_MODIFIED)
 		return G_TRUE;
 	return G_FALSE;
 }
@@ -944,6 +982,14 @@ void GDrawStyle::SetStrokeDashPhaseModified(const GBool Modified) {
 		gModified &= ((GUInt32)(~0) - G_DRAWSTYLE_STROKEDASHPHASE_MODIFIED);
 }
 
+void GDrawStyle::SetStrokeCompOpModified(const GBool Modified) {
+
+	if (Modified)
+		gModified |= G_DRAWSTYLE_STROKECOMPOP_MODIFIED;
+	else
+		gModified &= ((GUInt32)(~0) - G_DRAWSTYLE_STROKECOMPOP_MODIFIED);
+}
+
 void GDrawStyle::SetStrokeEnabledModified(const GBool Modified) {
 
 	if (Modified)
@@ -976,6 +1022,14 @@ void GDrawStyle::SetFillColorModified(const GBool Modified) {
 		gModified &= ((GUInt32)(~0) - G_DRAWSTYLE_FILLCOLOR_MODIFIED);
 }
 
+void GDrawStyle::SetFillCompOpModified(const GBool Modified) {
+
+	if (Modified)
+		gModified |= G_DRAWSTYLE_FILLCOMPOP_MODIFIED;
+	else
+		gModified &= ((GUInt32)(~0) - G_DRAWSTYLE_FILLCOMPOP_MODIFIED);
+}
+
 void GDrawStyle::SetFillEnabledModified(const GBool Modified) {
 
 	if (Modified)
@@ -1001,10 +1055,12 @@ void GDrawStyle::SetModelViewModified(const GBool Modified) {
 #undef G_DRAWSTYLE_STROKECOLOR_MODIFIED
 #undef G_DRAWSTYLE_STROKEDASHPHASE_MODIFIED
 #undef G_DRAWSTYLE_STROKEDASHPATTERN_MODIFIED
+#undef G_DRAWSTYLE_STROKECOMPOP_MODIFIED
 #undef G_DRAWSTYLE_STROKEENABLED_MODIFIED
 #undef G_DRAWSTYLE_FILLRULE_MODIFIED
 #undef G_DRAWSTYLE_FILLPAINTTYPE_MODIFIED
 #undef G_DRAWSTYLE_FILLCOLOR_MODIFIED
+#undef G_DRAWSTYLE_FILLCOMPOP_MODIFIED
 #undef G_DRAWSTYLE_FILLENABLED_MODIFIED
 #undef G_DRAWSTYLE_MODELVIEW_MODIFIED
 

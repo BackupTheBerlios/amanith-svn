@@ -34,7 +34,8 @@
 	#include <QKeyEvent>
 #endif
 
-static int timer_interval = 0;			// timer interval (millisec)
+// timer interval (millisec)
+static int timer_interval = 150;
 
 // constructor
 #ifdef USE_QT4
