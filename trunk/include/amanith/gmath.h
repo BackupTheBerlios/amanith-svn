@@ -1175,6 +1175,7 @@ namespace Amanith {
 				default:
 					return tmpValue;
 			}
+			return tmpValue;
 		}
 
 		/*!
@@ -1292,6 +1293,7 @@ namespace Amanith {
 				default:
 					return tmpValue;
 			}
+			return tmpValue;
 		}
 
 		/*!

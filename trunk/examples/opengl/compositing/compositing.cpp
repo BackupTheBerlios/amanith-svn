@@ -111,7 +111,6 @@ void QGLWidgetTest::initializeGL() {
 	else
 		gBackGround = NULL;
 
-
 	gDrawBoard->SetStrokeWidth(10);
 	gDrawBoard->SetStrokeGradient(gLinGrad);
 	gDrawBoard->SetFillGradient(gLinGrad);
@@ -163,8 +162,7 @@ void QGLWidgetTest::paintGL() {
 	gDrawBoard->SetStrokeCompOp(gStrokeCompOp);
 	gDrawBoard->SetFillCompOp(gFillCompOp);
 
-	gDrawBoard->DrawRoundRectangle(GPoint2(-64, -48), GPoint2(64, 48), 16, 16);
-
+	gDrawBoard->DrawRoundRectangle(GPoint2(-64, -48), GPoint2(64, 48), 6, 6);
 	gDrawBoard->Flush();
 }
 //------------------------------------------------------------
@@ -220,23 +218,27 @@ void QGLWidgetTest::keyPressEvent(QKeyEvent *e) {
 			break;
 
 		case Qt::Key_S:
-			if (gStrokeOpacity >= (GReal)0.1)
-				gStrokeOpacity -= (GReal)0.1;
+			gStrokeOpacity -= (GReal)0.1;
+			if (gStrokeOpacity < 0)
+				gStrokeOpacity = 0;
 			DrawTitle();
 			break;
 		case Qt::Key_D:
-			if (gStrokeOpacity < (GReal)1.0)
-				gStrokeOpacity += (GReal)0.1;
+			gStrokeOpacity += (GReal)0.1;
+			if (gStrokeOpacity > 1)
+				gStrokeOpacity = 1;
 			DrawTitle();
 			break;
 		case Qt::Key_F:
-			if (gFillOpacity >= (GReal)0.1)
-				gFillOpacity -= (GReal)0.1;
+			gFillOpacity -= (GReal)0.1;
+			if (gFillOpacity < 0)
+				gFillOpacity = 0;
 			DrawTitle();
 			break;
 		case Qt::Key_G:
-			if (gFillOpacity < (GReal)1.0)
-				gFillOpacity += (GReal)0.1;
+			gFillOpacity += (GReal)0.1;
+			if (gFillOpacity > 1)
+				gFillOpacity = 1;
 			DrawTitle();
 			break;
 		case Qt::Key_A:

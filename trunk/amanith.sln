@@ -125,6 +125,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "compositing", "vs2003\examp
 		{7354B510-34EB-4747-AF1C-617A0B1903FB} = {7354B510-34EB-4747-AF1C-617A0B1903FB}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "clock", "vs2003\examples\opengl\clock\clock.vcproj", "{DDC5C656-A7B7-4366-B7B7-F430BD86CE6A}"
+	ProjectSection(ProjectDependencies) = postProject
+		{7354B510-34EB-4747-AF1C-617A0B1903FB} = {7354B510-34EB-4747-AF1C-617A0B1903FB}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfiguration) = preSolution
 		Debug = Debug
@@ -227,6 +232,10 @@ Global
 		{010CA70F-E74E-4AE0-A03E-081BD2548BAD}.Debug.Build.0 = Debug|Win32
 		{010CA70F-E74E-4AE0-A03E-081BD2548BAD}.Release.ActiveCfg = Release|Win32
 		{010CA70F-E74E-4AE0-A03E-081BD2548BAD}.Release.Build.0 = Release|Win32
+		{DDC5C656-A7B7-4366-B7B7-F430BD86CE6A}.Debug.ActiveCfg = Debug|Win32
+		{DDC5C656-A7B7-4366-B7B7-F430BD86CE6A}.Debug.Build.0 = Debug|Win32
+		{DDC5C656-A7B7-4366-B7B7-F430BD86CE6A}.Release.ActiveCfg = Release|Win32
+		{DDC5C656-A7B7-4366-B7B7-F430BD86CE6A}.Release.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 	EndGlobalSection

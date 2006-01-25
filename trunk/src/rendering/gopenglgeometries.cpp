@@ -370,14 +370,8 @@ GInt32 GOpenGLBoard::DrawGLPolygon(const GOpenGLDrawStyle& Style, const GBool Cl
 		GBool needGrab = CompOpPassesCount(Style.StrokeCompOp(), stylePassesCount, fbPassesCount);
 
 		// grab frame buffer to do compositing, if needed
-		//GGenericAABox<GInt32, 2> physicBox;
-		if (needGrab) {
-			//physicBox.SetMinMax(LogicalToPhysicalInt(mvBox.Min()), LogicalToPhysicalInt(mvBox.Max()));
-			// we must add a 1pixel of border just to avoid visual artifacts
-			//GrabFrameBuffer(physicBox.Min() + GVect<GInt32, 2>(-1, -1),
-			//				physicBox.Dimension(G_X) + 2, physicBox.Dimension(G_Y) + 2, gCompositingBuffer);
+		if (needGrab)
 			GrabFrameBuffer(mvBox, gCompositingBuffer);
-		}
 
 		// set stroke style using OpenGL
 		GBool useDepthForStroke = NeedDepthMask(Style, G_FALSE);

@@ -739,9 +739,9 @@ GUInt32 GOpenGLBoard::MaxImageBytes() const {
 
 void GOpenGLBoard::UpdateDeviation(const GRenderingQuality Quality) {
 
-	#define LOW_QUALITY_PIXEL_DEVIATION (1.4 * 1.4)
-	#define NORMAL_QUALITY_PIXEL_DEVIATION (0.5 * 0.5)
-	#define HIGH_QUALITY_PIXEL_DEVIATION (0.2 * 0.2)
+	#define LOW_QUALITY_PIXEL_DEVIATION (GReal)(1.4 * 1.4)
+	#define NORMAL_QUALITY_PIXEL_DEVIATION (GReal)(0.5 * 0.5)
+	#define HIGH_QUALITY_PIXEL_DEVIATION (GReal)(0.2 * 0.2)
 
 	switch (Quality) {
 
@@ -920,7 +920,7 @@ GMatrix44 GOpenGLBoard::GLWindowModeMatrix(const GReal DepthOnScreen) {
 
 	//static const GLdouble s = 0.0; it was 0.375, see fungus thread
 	//return GLProjectionMatrix(-s, (GLdouble)w - s, -s, (GLdouble)h - s, DepthOnScreen);
-	return GLProjectionMatrix(0.0, (GLdouble)w, 0.0, (GLdouble)h, DepthOnScreen);
+	return GLProjectionMatrix((GReal)0, (GReal)w, (GReal)0, (GReal)h, DepthOnScreen);
 }
 
 void GOpenGLBoard::DoSetProjection(const GReal Left, const GReal Right, const GReal Bottom, const GReal Top) {

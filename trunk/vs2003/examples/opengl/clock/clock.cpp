@@ -21,11 +21,11 @@
 ** Contact info@mazatech.com if any conditions of this licensing are
 ** not clear to you.
 **********************************************************************/
+#include <windows.h>
 #include <amanith/gkernel.h>
 #include <amanith/2d/gpixelmap.h>
 #include <amanith/rendering/gopenglboard.h>
 #include <amanith/geometry/gxformconv.h>
-#include <windows.h>
 #include "resource.h"
 
 using namespace Amanith;
@@ -38,7 +38,6 @@ HINSTANCE	hInstance;		// Holds The Instance Of The Application
 bool keys[256];			// Array Used For The Keyboard Routine
 bool active = TRUE;		// Window Active Flag Set To TRUE By Default
 bool fullscreen = TRUE;	// Fullscreen Flag Set To Fullscreen Mode By Default
-bool doDraw = TRUE;
 
 LRESULT	CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);	// Declaration For WndProc
 
@@ -46,21 +45,11 @@ LRESULT	CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);	// Declaration For WndProc
 GKernel *gKernel = NULL;
 GOpenglExt *gExtManager = NULL;	// OpenGL extensions manager
 GOpenGLBoard *gDrawBoard = NULL;
-GPixelMap *gImage = NULL;
-GGradientDesc *gLinGrad = NULL;
-GPatternDesc *gBackGround = NULL;
-GString gDataPath;
-GReal gRotAngle;
-GReal gRotationVel;
-GReal gStrokeOpacity;
-GReal gFillOpacity;
-GReal gZoomFactor;
-GPoint2 gTranslation;
-GMatrix33 gModelView;
-GMatrix33 gGradientMatrix;
-GBool gAnim;
-GCompositingOperation gStrokeCompOp;
-GCompositingOperation gFillCompOp;
+
+GGradientDesc *gRadGrad1 = NULL, *gRadGrad2 = NULL, *gRadGrad3 = NULL, *gShadowGrad = NULL;
+GCacheBank *gCacheBank = NULL;
+GInt32 gClockSlots[100];
+GInt32 gSlotsIndex;
 
 bool arbMultisampleSupported = false;
 int arbMultisampleFormat = 0;
@@ -118,194 +107,320 @@ bool InitMultisample(HINSTANCE hInstance, HWND hWnd, PIXELFORMATDESCRIPTOR pfd) 
 	return arbMultisampleSupported;
 }
 
+void CacheBack() {
+
+	gDrawBoard->SetStrokeStyle(G_SOLID_STROKE);
+	gDrawBoard->SetStrokeJoinStyle(G_ROUND_JOIN);
+	gDrawBoard->SetStrokeStartCapStyle(G_ROUND_CAP);
+	gDrawBoard->SetStrokeEndCapStyle(G_BUTT_CAP);
+	gDrawBoard->SetStrokeWidth(5);
+
+	// shadow
+	gClockSlots[gSlotsIndex++] = gDrawBoard->DrawCircle(270, 242, 270);
+	// clock background
+	gClockSlots[gSlotsIndex++] = gDrawBoard->DrawCircle(256, 256, 240);
+	// milliseconds quadrant
+	gDrawBoard->SetStrokeWidth(3);
+	gClockSlots[gSlotsIndex++] = gDrawBoard->DrawCircle(356, 256, 26);
+	// inner bevel ring
+	gDrawBoard->SetStrokeWidth(10);
+	gClockSlots[gSlotsIndex++] = gDrawBoard->DrawCircle(256, 256, 208);
+	// outer bevel ring
+	gDrawBoard->SetStrokeWidth(35);
+	gClockSlots[gSlotsIndex++] = gDrawBoard->DrawCircle(256, 256, 230);
+	// seconds tag
+	gDrawBoard->SetStrokeWidth(1);
+	gClockSlots[gSlotsIndex++] = gDrawBoard->DrawLine(256, 442, 256, 446);
+	// hours tag
+	gDrawBoard->SetStrokeEndCapStyle(G_ROUND_CAP);
+	gDrawBoard->SetStrokeWidth(8);
+	gClockSlots[gSlotsIndex++] = gDrawBoard->DrawLine(256, 434, 256, 446);
+	// 1000 / 12 milliseconds tag
+	gDrawBoard->SetStrokeWidth(1);
+	gClockSlots[gSlotsIndex++] = gDrawBoard->DrawLine(356, 274, 356, 276);
+}
+
+void CacheCursors() {
+
+	gDrawBoard->SetStrokeEndCapStyle(G_BUTT_CAP);
+
+	// milliseconds	
+	gDrawBoard->SetStrokeWidth(1);
+	gClockSlots[gSlotsIndex++] = gDrawBoard->DrawLine(356, 250, 356, 254);
+	gClockSlots[gSlotsIndex++] = gDrawBoard->DrawCircle(356, 256, 2);
+	gClockSlots[gSlotsIndex++] = gDrawBoard->DrawLine(356, 258, 356, 270);
+	// seconds	
+	gDrawBoard->SetStrokeWidth(2);
+	gClockSlots[gSlotsIndex++] = gDrawBoard->DrawLine(256, 223, 256, 248);
+	gClockSlots[gSlotsIndex++] = gDrawBoard->DrawCircle(256, 256, 8);
+	gClockSlots[gSlotsIndex++] = gDrawBoard->DrawLine(256, 264, 256, 410);
+	gClockSlots[gSlotsIndex++] = gDrawBoard->DrawCircle(256, 415, 5);
+	gClockSlots[gSlotsIndex++] = gDrawBoard->DrawLine(256, 420, 256, 443);
+	// minutes
+	gDrawBoard->SetStrokeWidth(4);
+	gClockSlots[gSlotsIndex++] = gDrawBoard->DrawLine(256, 240, 256, 420);
+	// hours
+	gDrawBoard->SetStrokeWidth(8);
+	gClockSlots[gSlotsIndex++] = gDrawBoard->DrawLine(256, 246, 256, 380);
+	// cursors screw
+	gClockSlots[gSlotsIndex++] = gDrawBoard->DrawCircle(256, 256, 6);
+}
+
+void CacheGlass() {
+
+	gDrawBoard->SetStrokeEndCapStyle(G_BUTT_CAP);
+	gDrawBoard->SetStrokeWidth(1);
+	gClockSlots[gSlotsIndex++] = gDrawBoard->DrawPaths("M 162,447 C 365,540 564,309 419,118 Q 400,350 162,447 z");
+	gClockSlots[gSlotsIndex++] = gDrawBoard->DrawPaths("M 256,43 C 83,45 4,231 62,340 Q 80,110 256,43 z");
+}
+
+void CacheClock() {
+
+	gSlotsIndex = 0;
+	gDrawBoard->SetTargetMode(G_CACHE_MODE);
+	gDrawBoard->SetCacheBank(gCacheBank);
+	gDrawBoard->SetRenderingQualityDeviation(0.01);
+	CacheBack();
+	CacheCursors();
+	CacheGlass();
+}
 
 void KillApp() {
 
-	if (gKernel) {
+	if (gKernel)
 		delete gKernel;
-		gKernel = NULL;
-	}
-	if (gExtManager) {
+	if (gExtManager)
 		delete gExtManager;
-		gExtManager = NULL;
-	}
-	if (gDrawBoard) {
+	if (gDrawBoard)
 		delete gDrawBoard;
-		gDrawBoard = NULL;
-	}
-}
-
-void BuildMatrices() {
-
-	GMatrix33 scl, rot, trans;
-
-	ScaleToMatrix(scl, gZoomFactor, GPoint2(0, 0));
-	RotationToMatrix(rot, gRotAngle, GPoint2(0, 0));
-	TranslationToMatrix(trans, gTranslation);
-
-	gModelView = trans * (rot * scl);
-	gGradientMatrix = gModelView;
-}
-
-GString CompOpToString(const GCompositingOperation CompOp) {
-
-	switch(CompOp) {
-
-		case G_CLEAR_OP:
-			return("Clear");
-		case G_SRC_OP:
-			return("Src");
-		case G_DST_OP:
-			return("Dst");
-		case G_SRC_OVER_OP:
-			return("SrcOver");
-		case G_DST_OVER_OP:
-			return("DstOver");
-		case G_SRC_IN_OP:
-			return("SrcIn");
-		case G_DST_IN_OP:
-			return("DstIn");
-		case G_SRC_OUT_OP:
-			return("SrcOut");
-		case G_DST_OUT_OP:
-			return("DstOut");
-		case G_SRC_ATOP_OP:
-			return("SrcATop");
-		case G_DST_ATOP_OP:
-			return("DstATop");
-		case G_XOR_OP:
-			return("Xor");
-		case G_PLUS_OP:
-			return("Plus");
-		case G_MULTIPLY_OP:
-			return("Multiply");
-		case G_SCREEN_OP:
-			return("Screen");
-		case G_OVERLAY_OP:
-			return("Overlay");
-		case G_DARKEN_OP:
-			return("Darken");
-		case G_LIGHTEN_OP:
-			return("Lighten");
-		case G_COLOR_DODGE_OP:
-			return("ColorDodge");
-		case G_COLOR_BURN_OP:
-			return("ColorBurn");
-		case G_HARD_LIGHT_OP:
-			return("HardLight");
-		case G_SOFT_LIGHT_OP:
-			return("SoftLight");
-		case G_DIFFERENCE_OP:
-			return("Difference");
-		case G_EXCLUSION_OP:
-			return("Exclusion");
-		default:
-			return("SrcOver");
-	}
-}
-
-void DrawTitle() {
-
-	GString s;
-
-	s = "FILL: " + CompOpToString(gFillCompOp) + " (" + StrUtils::ToString(gFillOpacity * 100, "%3.0f") + "%)";
-	s += " - STROKE: " +CompOpToString(gStrokeCompOp) + " (" + StrUtils::ToString(gStrokeOpacity * 100, "%3.0f") + "%)";
-	s += " [F1 help]";
-
-	SetWindowText(hWnd, StrUtils::ToAscii(s));
 }
 
 int InitGL(GLvoid) {
 
-#ifdef _DEBUG
-	SysUtils::RedirectIOToConsole();
-#endif
-
-	gKernel = new GKernel();
-	gImage = (GPixelMap *)gKernel->CreateNew(G_PIXELMAP_CLASSID);
-
-	// build path for data (textures)
-	gDataPath = SysUtils::AmanithPath();
-	if (gDataPath.length() > 0)
-		gDataPath += "data/";
-
-	gRotAngle = 0;
-	gRotationVel = (GReal)0.05;
-	gStrokeOpacity = 1;
-	gFillOpacity = 1;
-	gZoomFactor = 2;
-	gAnim = G_FALSE;
-	gTranslation.Set(256, 256);
-	gStrokeCompOp = G_SRC_OVER_OP;
-	gFillCompOp = G_SRC_OVER_OP;
-
-	gDrawBoard->SetRenderingQuality(G_HIGH_RENDERING_QUALITY);
-
-	GString s;
-	GError err;
 	GDynArray<GKeyValue> colKeys;
+	gKernel = new GKernel();
 
-	// color gradient
+	// shadow gradient
 	colKeys.clear();
-	colKeys.push_back(GKeyValue((GReal)0.00, GVector4((GReal)0.95, (GReal)0.92, (GReal)0.0, (GReal)1.0)));
-	colKeys.push_back(GKeyValue((GReal)1.00, GVector4((GReal)0.1, (GReal)0.3, (GReal)0.8, (GReal)0.7)));
-	gLinGrad = gDrawBoard->CreateLinearGradient(GPoint2(-60, -44), GPoint2(60, 44), colKeys, G_HERMITE_COLOR_INTERPOLATION, G_PAD_COLOR_RAMP_SPREAD);
+	colKeys.push_back(GKeyValue((GReal)0.00, GVector4((GReal)0.3, (GReal)0.3, (GReal)0.3, (GReal)1.0)));
+	colKeys.push_back(GKeyValue((GReal)0.85, GVector4((GReal)0.3, (GReal)0.3, (GReal)0.3, (GReal)1.0)));
+	colKeys.push_back(GKeyValue((GReal)0.95, GVector4((GReal)0.3, (GReal)0.3, (GReal)0.3, (GReal)0.0)));
+	colKeys.push_back(GKeyValue((GReal)1.00, GVector4((GReal)0.3, (GReal)0.3, (GReal)0.3, (GReal)0.0)));
+	gShadowGrad = gDrawBoard->CreateRadialGradient(GPoint2(260, 250), GPoint2(260, 250), 270, colKeys, G_HERMITE_COLOR_INTERPOLATION, G_PAD_COLOR_RAMP_SPREAD);
 
-	// background
-	s = gDataPath + "compground.png";
-	err = gImage->Load(StrUtils::ToAscii(s), "expandpalette=true");
-	if (err == G_NO_ERROR) {
-		gBackGround = gDrawBoard->CreatePattern(gImage, G_LOW_IMAGE_QUALITY, G_REPEAT_TILE);
-		gBackGround->SetLogicalWindow(GPoint2(0, 0), GPoint2(512, 512));
-	}
-	else
-		gBackGround = NULL;
-
-	gDrawBoard->SetStrokeWidth(10);
-	gDrawBoard->SetStrokeGradient(gLinGrad);
-	gDrawBoard->SetFillGradient(gLinGrad);
-	gDrawBoard->SetFillPattern(gBackGround);
-	DrawTitle();
-
+	// quadrant background gradient
+	colKeys.clear();
+	colKeys.push_back(GKeyValue((GReal)0.00, GVector4((GReal)0.86, (GReal)0.87, (GReal)0.88, (GReal)1.0)));
+	colKeys.push_back(GKeyValue((GReal)0.60, GVector4((GReal)0.76, (GReal)0.77, (GReal)0.78, (GReal)1.0)));
+	colKeys.push_back(GKeyValue((GReal)1.00, GVector4((GReal)0.36, (GReal)0.36, (GReal)0.40, (GReal)1.0)));
+	gRadGrad1 = gDrawBoard->CreateRadialGradient(GPoint2(236, 276), GPoint2(235, 275), 256, colKeys, G_HERMITE_COLOR_INTERPOLATION, G_PAD_COLOR_RAMP_SPREAD);
+	
+	// outer/inner bevel ring gradient
+	colKeys.clear();
+	colKeys.push_back(GKeyValue((GReal)0.00, GVector4((GReal)1.0, (GReal)1.00, (GReal)1.0, (GReal)1.0)));
+	colKeys.push_back(GKeyValue((GReal)0.40, GVector4((GReal)0.9, (GReal)0.90, (GReal)0.92, (GReal)1.0)));
+	colKeys.push_back(GKeyValue((GReal)0.80, GVector4((GReal)0.46, (GReal)0.47, (GReal)0.50, (GReal)1.0)));
+	colKeys.push_back(GKeyValue((GReal)1.00, GVector4((GReal)0.26, (GReal)0.27, (GReal)0.30, (GReal)1.0)));
+	gRadGrad2 = gDrawBoard->CreateRadialGradient(GPoint2(120, 390), GPoint2(-121, 591), 400, colKeys, G_HERMITE_COLOR_INTERPOLATION, G_PAD_COLOR_RAMP_SPREAD);
+	
+	// milliseconds quadrant background gradient
+	colKeys.clear();
+	colKeys.push_back(GKeyValue((GReal)0.00, GVector4((GReal)0.9, (GReal)0.95, (GReal)0.95, (GReal)1.0)));
+	colKeys.push_back(GKeyValue((GReal)1.00, GVector4((GReal)0.85, (GReal)0.85, (GReal)0.9, (GReal)0.5)));
+	gRadGrad3 = gDrawBoard->CreateRadialGradient(GPoint2(340, 270), GPoint2(324, 280), 60, colKeys, G_HERMITE_COLOR_INTERPOLATION, G_PAD_COLOR_RAMP_SPREAD);
+	
+	
+	gCacheBank = gDrawBoard->CreateCacheBank();
+	CacheClock();
 	return TRUE;
 }
 
+void DrawBack() {
+
+	GUInt32 i;
+	GReal kk;
+	GMatrix33 rot, ks_rot;
+
+	gDrawBoard->SetStrokeCompOp(G_SRC_OVER_OP);
+	gDrawBoard->SetFillCompOp(G_SRC_OVER_OP);
+
+	gDrawBoard->SetStrokeEnabled(G_FALSE);
+	gDrawBoard->SetFillEnabled(G_TRUE);
+	gDrawBoard->SetFillPaintType(G_GRADIENT_PAINT_TYPE);
+	gDrawBoard->SetStrokePaintType(G_GRADIENT_PAINT_TYPE);
+	
+	gDrawBoard->SetFillEnabled(G_TRUE);
+	gDrawBoard->SetStrokeEnabled(G_FALSE);
+	gDrawBoard->SetFillGradient(gShadowGrad);
+	gDrawBoard->DrawCacheSlot(gClockSlots[gSlotsIndex++]);
+	
+
+	gDrawBoard->SetFillGradient(gRadGrad1);
+	gDrawBoard->SetStrokeGradient(gRadGrad1);
+	gRadGrad1->SetMatrix(rot);
+	gDrawBoard->DrawCacheSlot(gClockSlots[gSlotsIndex++]);
+	
+	gDrawBoard->SetStrokeEnabled(G_TRUE);
+	gDrawBoard->SetStrokeWidth(3);
+	gDrawBoard->SetStrokeGradient(gRadGrad2);
+	gDrawBoard->SetFillGradient(gRadGrad3);
+	gDrawBoard->DrawCacheSlot(gClockSlots[gSlotsIndex++]);
+
+	gDrawBoard->SetFillEnabled(G_FALSE);
+	
+	gDrawBoard->SetStrokeOpacity(1.0);
+	gDrawBoard->SetStrokeGradient(gRadGrad2);
+	gRadGrad2->SetMatrix(rot);
+	gDrawBoard->SetStrokeWidth(10);
+	gDrawBoard->SetStrokeCompOp(G_SRC_OP);
+	gDrawBoard->DrawCacheSlot(gClockSlots[gSlotsIndex++]);
+	RotationToMatrix(rot, (GReal)G_PI, GPoint2(256, 256));
+	gRadGrad2->SetMatrix(rot);
+	gDrawBoard->SetStrokeWidth(35);
+	gDrawBoard->SetStrokeCompOp(G_SRC_OP);
+	gDrawBoard->DrawCacheSlot(gClockSlots[gSlotsIndex++]);
+
+
+	gDrawBoard->SetStrokeCompOp(G_SRC_OVER_OP);
+	gDrawBoard->SetFillPaintType(G_COLOR_PAINT_TYPE);
+	gDrawBoard->SetStrokePaintType(G_COLOR_PAINT_TYPE);
+	Identity(rot);
+	gDrawBoard->SetStrokeEndCapStyle(G_ROUND_CAP);
+	gDrawBoard->SetStrokeColor(0.11, 0.12, 0.13, 0.5);
+	gDrawBoard->SetStrokeWidth(1);
+	for (i = 0; i < 60; ++i) {
+		if ((i % 5) != 0) {
+			kk = (GReal)G_2PI - (((GReal)i / 60) * G_2PI);
+			RotationToMatrix(rot, kk, GPoint2(256, 256));
+			gDrawBoard->SetModelViewMatrix(rot);
+			gDrawBoard->DrawCacheSlot(gClockSlots[gSlotsIndex]);
+			Identity(rot);
+		}
+	}
+	gSlotsIndex++;
+	
+	for (i = 0; i < 12; ++i) {
+		kk = (GReal)G_2PI - (((GReal)i / 12) * G_2PI);
+		RotationToMatrix(rot, kk, GPoint2(256, 256));
+		RotationToMatrix(ks_rot, kk, GPoint2(356, 256));
+		gDrawBoard->SetModelViewMatrix(rot);
+		gDrawBoard->SetStrokeWidth(10);
+		gDrawBoard->DrawCacheSlot(gClockSlots[gSlotsIndex]);
+		gDrawBoard->SetModelViewMatrix(ks_rot);
+		gDrawBoard->SetStrokeWidth(1);
+		gDrawBoard->DrawCacheSlot(gClockSlots[gSlotsIndex + 1]);
+		Identity(rot);
+	}
+	gSlotsIndex += 2;
+	gDrawBoard->SetStrokeEndCapStyle(G_BUTT_CAP);
+}
+
+void DrawCursors(const GUInt32 Hours, const GUInt32 Minutes, const GUInt32 Seconds, const GUInt32 Milliseconds) {
+
+	GReal hh, mm, ss, ks;
+	GMatrix33 rot, ks_rot;
+
+	if (Hours < 13)
+		hh = G_2PI - ( ((GReal)Hours / 12 + (GReal)Minutes / 720) * G_2PI);
+	else 
+		hh = G_2PI - ( ((GReal)(Hours - 12) / 12 + (GReal)Minutes / 720) * G_2PI);
+	mm = G_2PI - (((GReal)Minutes / 60 + (GReal)Seconds / 3600) * G_2PI);
+	ss = G_2PI - (((GReal)Seconds / 60 + (GReal)Milliseconds / 60000) * G_2PI);
+	ks = G_2PI - (((GReal)Milliseconds / 1000) * G_2PI);
+
+	gDrawBoard->SetStrokePaintType(G_COLOR_PAINT_TYPE);
+	gDrawBoard->SetFillPaintType(G_COLOR_PAINT_TYPE);
+
+	gDrawBoard->SetStrokeEnabled(G_TRUE);
+	gDrawBoard->SetFillColor(1.0, 1.0, 1.0, 1.0);
+	gDrawBoard->SetFillEnabled(G_FALSE);
+
+
+	// milliseconds	
+	gDrawBoard->SetStrokeWidth(1);
+	gDrawBoard->SetStrokeCompOp(G_SRC_OVER_OP);
+	gDrawBoard->SetStrokeColor(0.2, 0.4, 0.8, 1.0);
+	RotationToMatrix(ks_rot, ks, GPoint2(356,256));
+	gDrawBoard->SetModelViewMatrix(ks_rot);
+	gDrawBoard->DrawCacheSlot(gClockSlots[gSlotsIndex++]);
+	gDrawBoard->DrawCacheSlot(gClockSlots[gSlotsIndex++]);
+	gDrawBoard->DrawCacheSlot(gClockSlots[gSlotsIndex++]);
+	gDrawBoard->SetFillEnabled(G_FALSE);
+
+
+	// seconds	
+	gDrawBoard->SetStrokeWidth(2);
+	gDrawBoard->SetStrokeCompOp(G_SRC_OVER_OP);
+	gDrawBoard->SetStrokeColor(0.8, 0.2, 0.1, 1.0);
+	RotationToMatrix(rot, ss, GPoint2(256,256));
+	gDrawBoard->SetModelViewMatrix(rot);
+	gDrawBoard->DrawCacheSlot(gClockSlots[gSlotsIndex++]);
+	gDrawBoard->DrawCacheSlot(gClockSlots[gSlotsIndex++]);
+	gDrawBoard->DrawCacheSlot(gClockSlots[gSlotsIndex++]);
+	gDrawBoard->DrawCacheSlot(gClockSlots[gSlotsIndex++]);
+	gDrawBoard->DrawCacheSlot(gClockSlots[gSlotsIndex++]);
+	gDrawBoard->SetFillEnabled(G_FALSE);
+	Identity(rot);
+
+	// minutes
+	gDrawBoard->SetStrokeWidth(4);
+	gDrawBoard->SetStrokeCompOp(G_SRC_OVER_OP);
+	gDrawBoard->SetStrokeColor(0.3, 0.3, 0.3, 1.0);
+	RotationToMatrix(rot, mm, GPoint2(256,256));
+	gDrawBoard->SetModelViewMatrix(rot);
+	gDrawBoard->DrawCacheSlot(gClockSlots[gSlotsIndex++]);
+	Identity(rot);
+
+	// hours
+	gDrawBoard->SetStrokeWidth(8);
+	gDrawBoard->SetStrokeCompOp(G_SRC_OVER_OP);
+	gDrawBoard->SetStrokeColor(0.25, 0.25, 0.25, 1.0);
+	RotationToMatrix(rot, hh, GPoint2(256,256));
+	gDrawBoard->SetModelViewMatrix(rot);
+	gDrawBoard->DrawCacheSlot(gClockSlots[gSlotsIndex++]);
+	Identity(rot);
+
+	gDrawBoard->SetFillEnabled(G_TRUE);
+	gDrawBoard->SetStrokeEnabled(G_FALSE);
+	gDrawBoard->SetFillColor(0.25, 0.25, 0.25, 1.0);
+	gDrawBoard->DrawCacheSlot(gClockSlots[gSlotsIndex++]);
+}
+
+void DrawGlass() {
+
+	gDrawBoard->SetFillEnabled(G_TRUE);
+	gDrawBoard->SetStrokeEnabled(G_FALSE);
+	gDrawBoard->SetModelViewMatrix(G_MATRIX_IDENTITY33);
+	gDrawBoard->SetFillCompOp(G_PLUS_OP);
+	gDrawBoard->SetFillPaintType(G_COLOR_PAINT_TYPE);
+	gDrawBoard->SetFillColor(0.05, 0.05, 0.05, 1.0);
+	gDrawBoard->DrawCacheSlot(gClockSlots[gSlotsIndex++]);
+	gDrawBoard->DrawCacheSlot(gClockSlots[gSlotsIndex++]);
+}
+
+void DrawClock() {
+
+	gDrawBoard->SetTargetMode(G_COLOR_MODE);
+	gDrawBoard->SetStrokeStyle(G_SOLID_STROKE);
+	gDrawBoard->SetStrokeJoinStyle(G_ROUND_JOIN);
+	gDrawBoard->SetStrokeStartCapStyle(G_ROUND_CAP);
+	gDrawBoard->SetStrokeEndCapStyle(G_BUTT_CAP);
+	gDrawBoard->SetModelViewMatrix(G_MATRIX_IDENTITY33);
+
+	gSlotsIndex = 0;
+	DrawBack();
+
+	SYSTEMTIME st;
+	GetLocalTime(&st);
+
+	DrawCursors(st.wHour, st.wMinute, st.wSecond, st.wMilliseconds);
+	DrawGlass();
+}
 
 int DrawGLScene(GLvoid)	{
 
-	if (gAnim)
-		gRotAngle += gRotationVel;
-
 	gDrawBoard->Clear(1.0, 1.0, 1.0, 0.0, G_TRUE);
-	gDrawBoard->SetTargetMode(G_COLOR_MODE);
-	BuildMatrices();
-
-	// draw background
-	gDrawBoard->SetModelViewMatrix(G_MATRIX_IDENTITY33);
-	gDrawBoard->SetStrokeEnabled(G_FALSE);
-	gDrawBoard->SetFillEnabled(G_TRUE);
-	gDrawBoard->SetFillPaintType(G_PATTERN_PAINT_TYPE);
-	gDrawBoard->SetFillOpacity(1.0);
-	gDrawBoard->SetFillCompOp(G_SRC_OP);
-	gDrawBoard->DrawRectangle(GPoint2(0, 0), GPoint2(512, 512));
-
-	// draw path
-	gDrawBoard->SetStrokeOpacity(gStrokeOpacity);
-	gDrawBoard->SetStrokeEnabled(G_TRUE);
-	gDrawBoard->SetStrokePaintType(G_GRADIENT_PAINT_TYPE);
-
-	gDrawBoard->SetFillOpacity(gFillOpacity);
-	gDrawBoard->SetFillEnabled(G_TRUE);
-	gDrawBoard->SetFillPaintType(G_GRADIENT_PAINT_TYPE);
-
-	gDrawBoard->SetModelViewMatrix(gModelView);
-	gLinGrad->SetMatrix(gGradientMatrix);
-
-	gDrawBoard->SetStrokeCompOp(gStrokeCompOp);
-	gDrawBoard->SetFillCompOp(gFillCompOp);
-
-	gDrawBoard->DrawRoundRectangle(GPoint2(-64, -48), GPoint2(64, 48), 6, 6);
-
+	DrawClock();
 	gDrawBoard->Flush();
 	return TRUE;
 }
@@ -316,7 +431,6 @@ GLvoid ReSizeGLScene(GLsizei width, GLsizei height) {
 
 	gDrawBoard->Viewport(x, y, w, h);
 	gDrawBoard->SetViewport(x, y, width, height);
-	doDraw = TRUE;
 }
 
 GLvoid KillGLWindow(GLvoid)	{
@@ -374,9 +488,8 @@ BOOL CreateGLWindow(char* title, int width, int height, int bits, bool fullscree
 		return FALSE;											// Return FALSE
 	}
 	
-	// Window Extended Style
-	dwExStyle = WS_EX_APPWINDOW | WS_EX_WINDOWEDGE;
-	dwStyle = WS_OVERLAPPED | WS_SYSMENU;// Windows Style
+	dwExStyle = WS_EX_APPWINDOW | WS_EX_WINDOWEDGE;			// Window Extended Style
+	dwStyle = WS_OVERLAPPEDWINDOW;							// Windows Style
 
 	AdjustWindowRectEx(&WindowRect, dwStyle, FALSE, dwExStyle);		// Adjust Window To True Requested Size
 
@@ -393,7 +506,7 @@ BOOL CreateGLWindow(char* title, int width, int height, int bits, bool fullscree
 								NULL,								// No Parent Window
 								NULL,								// No Menu
 								hInstance,							// Instance
-								NULL)))								// Don't Pass Anything To WM_CREATE
+								NULL)))								// Dont Pass Anything To WM_CREATE
 	{
 		KillGLWindow();								// Reset The Display
 		MessageBox(NULL, "Window Creation Error.", "ERROR", MB_OK | MB_ICONEXCLAMATION);
@@ -467,7 +580,11 @@ BOOL CreateGLWindow(char* title, int width, int height, int bits, bool fullscree
 		}
 	}
 
+#ifdef _DEBUG
+	SysUtils::RedirectIOToConsole();
+#endif
 	gDrawBoard = new GOpenGLBoard(0, 0, width, height);
+	gDrawBoard->SetProjection(0, 512, 0, 512);
 
 	ShowWindow(hWnd, SW_SHOW);						// Show The Window
 	SetForegroundWindow(hWnd);						// Slightly Higher Priority
@@ -533,49 +650,6 @@ LRESULT CALLBACK WndProc(	HWND	hWnd,			// Handle For This Window
 			ReSizeGLScene(LOWORD(lParam), HIWORD(lParam));  // LoWord=Width, HiWord=Height
 			return 0;								// Jump Back
 		}
-		case WM_LBUTTONDOWN: {
-
-			GInt32 i = gFillCompOp;
-			i++;
-			if (i > G_EXCLUSION_OP)
-				i = G_CLEAR_OP;
-			gFillCompOp = (GCompositingOperation)i;
-			DrawTitle();
-			return 0;								// Jump Back
-		}
-		case WM_RBUTTONDOWN: {
-
-			GInt32 i = gStrokeCompOp;
-			i++;
-			if (i > G_EXCLUSION_OP)
-				i = G_CLEAR_OP;
-			gStrokeCompOp = (GCompositingOperation)i;
-			DrawTitle();
-			return 0;								// Jump Back
-		}
-		case WM_MOUSEWHEEL: {
-
-			int zDelta = GET_WHEEL_DELTA_WPARAM(wParam);
-			if (zDelta > 0) {
-				if (gZoomFactor > (GReal)0.1)
-					gZoomFactor *= (GReal)0.95;
-			}
-			else {
-				if (gZoomFactor < (GReal)5.0)
-					gZoomFactor /= (GReal)0.95;
-			}
-			return 0;								// Jump Back
-		}
-		case WM_MOUSEMOVE: {
-
-			int xPos = ((int)(short)LOWORD(lParam)); 
-			int yPos = ((int)(short)HIWORD(lParam)); 
-
-			GPoint<GInt32, 2> p(xPos, 512 - 20 - yPos);
-			gTranslation = gDrawBoard->PhysicalToLogical(p);
-
-			return 0;								// Jump Back
-		}
 	}
 	// Pass All Unhandled Messages To DefWindowProc
 	return DefWindowProc(hWnd,uMsg,wParam,lParam);
@@ -593,7 +667,7 @@ int WINAPI WinMain(	HINSTANCE	hInstance,			// Instance
 	fullscreen = FALSE;							// Windowed Mode
 
 	// Create Our OpenGL Window
-	if (!CreateGLWindow("Amanith compositing example - Press F1 for help", 512, 512, 16, fullscreen))
+	if (!CreateGLWindow("Amanith Clock", 256, 256, 16, fullscreen))
 		return 0;									// Quit If Window Was Not Created
 
 	while(!done)									// Loop That Runs While done=FALSE
@@ -619,87 +693,10 @@ int WINAPI WinMain(	HINSTANCE	hInstance,			// Instance
 				DrawGLScene();
 				SwapBuffers(hDC);
 			}
-
-			if (keys[VK_F1]) {						// Is F1 Being Pressed?
-				keys[VK_F1] = FALSE;
-				s = "B: Toggle rotation.\n";
-				s += "N/M: Decrease/Increation rotation velocity.\n";			
-				s += "F/G: Decrease/Increase global fill opacity.\n";
-				s += "S/D: Decrease/Increase global stroke opacity.\n";
-				s += "Mouse left button: change fill compositing operation.\n";
-				s += "Mouse right button: change stroke compositing operation.\n";
-				s += "Mouse wheel or A/Z: change zoom factor.\n\n";
-				s += "All 24 compositing operations are fully supported on gfx board with fragment programs.\n";
-				s += "If they are absent, there are 9 unsupported compositing operations:\n";
-				s += "Multiply, Overlay, Darken, Lighten, Color dodge, Color burn, Hard light, Soft light, Difference";
-				MessageBox(NULL, StrUtils::ToAscii(s), "Command keys", MB_OK | MB_ICONINFORMATION | MB_APPLMODAL);
-			}
-			// A key
-			if (keys[65]) {
-				keys[65] = FALSE;
-				if (gZoomFactor > (GReal)0.1)
-					gZoomFactor *= (GReal)0.95;
-			}
-			// Z key
-			if (keys[90]) {
-				keys[90] = FALSE;
-				if (gZoomFactor < (GReal)5.0)
-					gZoomFactor /= (GReal)0.95;
-			}
-			// B key
-			if (keys[66]) {
-				keys[66] = FALSE;
-				if (gAnim)
-					gAnim = G_FALSE;
-				else
-					gAnim = G_TRUE;
-			}
-			// S key
-			if (keys[83]) {
-				keys[83] = FALSE;
-				gStrokeOpacity -= (GReal)0.1;
-				if (gStrokeOpacity < 0)
-					gStrokeOpacity = 0;
-				DrawTitle();
-			}
-			// D key
-			if (keys[68]) {
-				keys[68] = FALSE;
-				gStrokeOpacity += (GReal)0.1;
-				if (gStrokeOpacity > 1)
-					gStrokeOpacity = 1;
-				DrawTitle();
-			}
-			// F key
-			if (keys[70]) {
-				keys[70] = FALSE;
-				gFillOpacity -= (GReal)0.1;
-				if (gFillOpacity < 0)
-					gFillOpacity = 0;
-				DrawTitle();
-			}
-			// G key
-			if (keys[71]) {
-				keys[71] = FALSE;
-				gFillOpacity += (GReal)0.1;
-				if (gFillOpacity > 1)
-					gFillOpacity = 1;
-				DrawTitle();
-			}
-			// N key
-			if (keys[78]) {
-				keys[78] = FALSE;
-				gRotationVel /= (GReal)1.2;
-			}
-			// M key
-			if (keys[77]) {
-				keys[77] = FALSE;
-				gRotationVel *= (GReal)1.2;
-			}
 		}
 	}
 	// Shutdown
 	KillApp();
-	KillGLWindow();									// Kill The Window
-	return (int)(msg.wParam);							// Exit The Program
+	KillGLWindow();				// Kill The Window
+	return (int)(msg.wParam);	// Exit The Program
 }

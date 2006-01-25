@@ -159,7 +159,11 @@ void glMyPrint(const char *fmt, ...) {
 
 	if (fmt == NULL) return;											// Do Nothing
 	va_start(ap, fmt);	// Parses The String For Variables
+#if defined(G_OS_WIN) && _MSC_VER >= 1400
+	vsprintf_s(text, 256, fmt, ap);  // And Converts Symbols To Actual Numbers
+#else
 	vsprintf(text, fmt, ap);  // And Converts Symbols To Actual Numbers
+#endif
 	va_end(ap); // Results Are Stored In Text
 	glPushAttrib(GL_LIST_BIT);  // Pushes The Display List Bits
 	glListBase(base - 32); // Sets The Base Character to 32

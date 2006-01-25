@@ -990,7 +990,7 @@ GBool GOpenGLBoard::NeedDepthMask(const GOpenGLDrawStyle& Style, const GBool Fil
 	if (TargetMode() == G_CLIP_MODE || TargetMode() == G_CLIP_AND_CACHE_MODE || TargetMode() == G_CACHE_MODE)
 		return G_FALSE;
 
-	GBool useDepthBuffer;
+	GBool useDepthBuffer = G_FALSE;
 
 	GPaintType paintType;
 	GReal colorAlpha;
@@ -2141,7 +2141,7 @@ void GOpenGLBoard::DrawAndPopDepthMask(const GAABox2& Box, const GDrawStyle& Sty
 	GBool drawGeometricRadGrad = G_FALSE;
 	GBool drawGeometricConGrad = G_FALSE;
 	GOpenGLGradientDesc *g = NULL;
-	GUInt32 tUnit;
+	GUInt32 tUnit = 0;
 
 	if (DrawFill) {
 		if (Style.FillPaintType() == G_GRADIENT_PAINT_TYPE && Style.FillGradient()) {
@@ -2211,6 +2211,9 @@ void GOpenGLBoard::DrawAndPopDepthMask(const GAABox2& Box, const GDrawStyle& Sty
 		glMatrixMode(GL_MODELVIEW);
 		glLoadIdentity();
 
+		GMatrix33 tmpMatrix = ModelViewMatrix();
+		SetModelViewMatrix(G_MATRIX_IDENTITY33);
+
 		// here we are in one of these cases:
 		// no pixel shaders (color, lingrad, pattern)
 		// pixel shaders (color, lingrad, radgrad, congrad, pattern)
@@ -2247,6 +2250,7 @@ void GOpenGLBoard::DrawAndPopDepthMask(const GAABox2& Box, const GDrawStyle& Sty
 					DrawGrabbedRect(gCompositingBuffer, G_FALSE, G_FALSE, G_TRUE, G_FALSE);
 			}
 		}
+		SetModelViewMatrix(tmpMatrix);
 	}
 
 	// unbind texture on tUnit (tUnit is always used to store grabbed rect for compositing)

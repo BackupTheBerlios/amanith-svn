@@ -934,6 +934,20 @@ namespace Amanith {
 		*/
 		void SetRectTextureEnabled(const GBool Enabled);
 		/*!
+			Set a rendering quality, specifying deviation used to flatten curves.
+			The more the Deviation parameter is, the worst is the rendering quality.
+			\note Deviation is the maximum squared chordal distance threshold, and it must be positive.
+		*/
+		inline void SetRenderingQualityDeviation(const GReal Deviation) {
+			if (Deviation > 0) {
+				gDeviation = Deviation;
+				gFlateness = GMath::Sqrt(gDeviation);
+			}
+			else {
+				G_DEBUG("SetRenderingQuality: Deviation parameter is negative");
+			}
+		}
+		/*!
 			Create a linear gradient.
 
 			\param StartPoint the point corresponding to the first color key.

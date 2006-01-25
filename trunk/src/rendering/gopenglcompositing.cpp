@@ -473,7 +473,11 @@ GLuint GOpenGLBoard::GLGenerateProgram(const GChar8 *ProgramString) {
 		glGetProgramivARB(GL_FRAGMENT_PROGRAM_ARB, GL_PROGRAM_ALU_INSTRUCTIONS_ARB, &aluInstructions);
 		glGetProgramivARB(GL_FRAGMENT_PROGRAM_ARB, GL_MAX_PROGRAM_ALU_INSTRUCTIONS_ARB, &maxAluInstructions);
 		if (aluInstructions > maxAluInstructions) {
-			sprintf(errStr, " - Compiles to too many ALU instructions (%d, limit is %d)\n", aluInstructions, maxAluInstructions);
+			#if defined(G_OS_WIN) && _MSC_VER >= 1400
+				sprintf_s(errStr, 1024, " - Compiles to too many ALU instructions (%d, limit is %d)\n", aluInstructions, maxAluInstructions);
+			#else
+				sprintf(errStr, " - Compiles to too many ALU instructions (%d, limit is %d)\n", aluInstructions, maxAluInstructions);
+			#endif
 			G_DEBUG(errStr);
 		}
 
@@ -481,7 +485,11 @@ GLuint GOpenGLBoard::GLGenerateProgram(const GChar8 *ProgramString) {
 		glGetProgramivARB(GL_FRAGMENT_PROGRAM_ARB, GL_PROGRAM_TEX_INSTRUCTIONS_ARB, &textureInstructions);
 		glGetProgramivARB(GL_FRAGMENT_PROGRAM_ARB, GL_MAX_PROGRAM_TEX_INSTRUCTIONS_ARB, &maxTextureInstructions);
 		if (textureInstructions > maxTextureInstructions) {
-			sprintf(errStr, " - Compiles to too many texture instructions (%d, limit is %d)\n", textureInstructions, maxTextureInstructions);
+			#if defined(G_OS_WIN) && _MSC_VER >= 1400
+				sprintf_s(errStr, 1024, " - Compiles to too many texture instructions (%d, limit is %d)\n", textureInstructions, maxTextureInstructions);
+			#else
+				sprintf(errStr, " - Compiles to too many texture instructions (%d, limit is %d)\n", textureInstructions, maxTextureInstructions);
+			#endif
 			G_DEBUG(errStr);
 		}
 
@@ -489,7 +497,11 @@ GLuint GOpenGLBoard::GLGenerateProgram(const GChar8 *ProgramString) {
 		glGetProgramivARB(GL_FRAGMENT_PROGRAM_ARB, GL_PROGRAM_TEX_INDIRECTIONS_ARB, &textureIndirections);
 		glGetProgramivARB(GL_FRAGMENT_PROGRAM_ARB, GL_MAX_PROGRAM_TEX_INDIRECTIONS_ARB, &maxTextureIndirections);
 		if (textureIndirections > maxTextureIndirections) {
-			sprintf(errStr, " - Compiles to too many texture indirections (%d, limit is %d)\n", textureIndirections, maxTextureIndirections);
+			#if defined(G_OS_WIN) && _MSC_VER >= 1400
+				sprintf_s(errStr, 1024, " - Compiles to too many texture indirections (%d, limit is %d)\n", textureIndirections, maxTextureIndirections);
+			#else
+				sprintf(errStr, " - Compiles to too many texture indirections (%d, limit is %d)\n", textureIndirections, maxTextureIndirections);
+			#endif
 			G_DEBUG(errStr);
 		}
 
@@ -497,7 +509,11 @@ GLuint GOpenGLBoard::GLGenerateProgram(const GChar8 *ProgramString) {
 		glGetProgramivARB(GL_FRAGMENT_PROGRAM_ARB, GL_PROGRAM_NATIVE_TEX_INDIRECTIONS_ARB, &nativeTextureIndirections);
 		glGetProgramivARB(GL_FRAGMENT_PROGRAM_ARB, GL_MAX_PROGRAM_NATIVE_TEX_INDIRECTIONS_ARB, &maxNativeTextureIndirections);
 		if (nativeTextureIndirections > maxNativeTextureIndirections) {
-			sprintf(errStr, " - Compiles to too many native texture indirections (%d, limit is %d)\n", nativeTextureIndirections, maxNativeTextureIndirections);
+			#if defined(G_OS_WIN) && _MSC_VER >= 1400
+				sprintf_s(errStr, 1024, " - Compiles to too many native texture indirections (%d, limit is %d)\n", nativeTextureIndirections, maxNativeTextureIndirections);
+			#else
+				sprintf(errStr, " - Compiles to too many native texture indirections (%d, limit is %d)\n", nativeTextureIndirections, maxNativeTextureIndirections);
+			#endif
 			G_DEBUG(errStr);
 		}
 
@@ -505,7 +521,11 @@ GLuint GOpenGLBoard::GLGenerateProgram(const GChar8 *ProgramString) {
 		glGetProgramivARB(GL_FRAGMENT_PROGRAM_ARB, GL_PROGRAM_NATIVE_ALU_INSTRUCTIONS_ARB, &nativeAluInstructions);
 		glGetProgramivARB(GL_FRAGMENT_PROGRAM_ARB, GL_MAX_PROGRAM_NATIVE_ALU_INSTRUCTIONS_ARB, &maxNativeAluInstructions);
 		if (nativeAluInstructions > maxNativeAluInstructions) {
-			sprintf(errStr, "Compiles to too many native ALU instructions (%d, limit is %d)\n", nativeAluInstructions, maxNativeAluInstructions);
+			#if defined(G_OS_WIN) && _MSC_VER >= 1400
+				sprintf_s(errStr, 1024, "Compiles to too many native ALU instructions (%d, limit is %d)\n", nativeAluInstructions, maxNativeAluInstructions);
+			#else
+				sprintf(errStr, "Compiles to too many native ALU instructions (%d, limit is %d)\n", nativeAluInstructions, maxNativeAluInstructions);
+			#endif
 			G_DEBUG(errStr);
 		}
 		glDeleteProgramsARB(1, &progID);
@@ -541,6 +561,18 @@ GLuint GOpenGLBoard::GenerateGroupProgram(const GUInt32 TextureTarget, const GCh
 	// clear program string
 	std::memset((void *)prg, 0, 4096);
 
+#if defined(G_OS_WIN) && _MSC_VER >= 1400
+	if (TextureTarget == TEXTURE_POW2)
+		strcpy_s(prg, 4096, PutTextureProgram_POW2);
+	else
+		strcpy_s(prg, 4096, PutTextureProgram_RECT);
+
+	if (TexString)
+		strcat_s(prg, 4096, TexString);
+	if (OpString)
+		strcat_s(prg, 4096, OpString);
+	strcat_s(prg, 4096, END_PROGRAM_RGBA);
+#else
 	if (TextureTarget == TEXTURE_POW2)
 		std::strcpy(prg, PutTextureProgram_POW2);
 	else
@@ -551,6 +583,7 @@ GLuint GOpenGLBoard::GenerateGroupProgram(const GUInt32 TextureTarget, const GCh
 	if (OpString)
 		std::strcat(prg, OpString);
 	std::strcat(prg, END_PROGRAM_RGBA);
+#endif
 
 	// generate and bind the program
 	GLuint progID = GLGenerateProgram(prg);
@@ -577,6 +610,33 @@ GLuint GOpenGLBoard::GenerateProgram(const GUInt32 PaintType, const GChar8 *TexS
 	// clear program string
 	std::memset((void *)prg, 0, 4096);
 
+#if defined(G_OS_WIN) && _MSC_VER >= 1400
+	switch (PaintType) {
+		case COLOR:
+			strcpy_s(prg, 4096, ColorProgram);
+			break;
+		case LINGRAD:
+			strcpy_s(prg, 4096, LinearProgram);
+			break;
+		case RADGRAD:
+			strcpy_s(prg, 4096, RadialProgram);
+			break;
+		case CONGRAD:
+			strcpy_s(prg, 4096, ConicalProgram);
+			break;
+		case PATTERN:
+			strcpy_s(prg, 4096, PatternProgram);
+			break;
+		default:
+			strcpy_s(prg, 4096, ColorProgram);
+			break;
+	}
+	if (TexString)
+		strcat_s(prg, 4096, TexString);
+	if (OpString)
+		strcat_s(prg, 4096, OpString);
+	strcat_s(prg, 4096, END_PROGRAM_RGBA);
+#else
 	switch (PaintType) {
 		case COLOR:
 			std::strcpy(prg, ColorProgram);
@@ -597,12 +657,13 @@ GLuint GOpenGLBoard::GenerateProgram(const GUInt32 PaintType, const GChar8 *TexS
 			std::strcpy(prg, ColorProgram);
 			break;
 	}
-
 	if (TexString)
 		std::strcat(prg, TexString);
 	if (OpString)
 		std::strcat(prg, OpString);
 	std::strcat(prg, END_PROGRAM_RGBA);
+#endif
+
 
 	// generate and bind the program
 	GLuint progID = GLGenerateProgram(prg);
