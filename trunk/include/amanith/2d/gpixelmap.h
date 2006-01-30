@@ -1,10 +1,10 @@
 /****************************************************************************
-** $file: amanith/2d/gpixelmap.h   0.2.0.0   edited Dec, 12 2005
+** $file: amanith/2d/gpixelmap.h   0.3.0.0   edited Jan, 30 2006
 **
 ** 2D Pixelmap definition.
 **
 **
-** Copyright (C) 2004-2005 Mazatech Inc. All rights reserved.
+** Copyright (C) 2004-2006 Mazatech Inc. All rights reserved.
 **
 ** This file is part of Amanith Framework.
 **

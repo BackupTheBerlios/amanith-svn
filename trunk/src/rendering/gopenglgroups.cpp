@@ -1,10 +1,10 @@
 /****************************************************************************
-** $file: amanith/src/rendering/gopenglgroups.cpp   0.2.0.0   edited Dec, 12 2005
+** $file: amanith/src/rendering/gopenglgroups.cpp   0.3.0.0   edited Jan, 30 2006
 **
 ** OpenGL based draw board group functions implementation.
 **
 **
-** Copyright (C) 2004-2005 Mazatech Inc. All rights reserved.
+** Copyright (C) 2004-2006 Mazatech Inc. All rights reserved.
 **
 ** This file is part of Amanith Framework.
 **
@@ -348,7 +348,6 @@ void GOpenGLBoard::DrawGrabbedRect(const GLGrabbedRect& GrabbedRect, const GBool
 			SetTextureVertex(0, 0 + subX0, v - subY0);
 		if (TexUnit1)
 			SetTextureVertex(1, 0 + subX1, v - subY1);
-		//glVertex2i(GrabbedRect.X, GrabbedRect.Y + GrabbedRect.Height);
 		#ifdef DOUBLE_REAL_TYPE
 			glVertex2dv(p1.Data());
 		#else
@@ -359,7 +358,6 @@ void GOpenGLBoard::DrawGrabbedRect(const GLGrabbedRect& GrabbedRect, const GBool
 			SetTextureVertex(0, u - subX0, v - subY0);
 		if (TexUnit1)
 			SetTextureVertex(1, u - subX1, v - subY1);
-		//glVertex2i(GrabbedRect.X + GrabbedRect.Width, GrabbedRect.Y + GrabbedRect.Height);
 		#ifdef DOUBLE_REAL_TYPE
 			glVertex2dv(p2.Data());
 		#else
@@ -370,7 +368,6 @@ void GOpenGLBoard::DrawGrabbedRect(const GLGrabbedRect& GrabbedRect, const GBool
 			SetTextureVertex(0, u - subX0, 0 + subY0);
 		if (TexUnit1)
 			SetTextureVertex(1, u - subX1, 0 + subY1);
-		//glVertex2i(GrabbedRect.X + GrabbedRect.Width, GrabbedRect.Y);
 		#ifdef DOUBLE_REAL_TYPE
 			glVertex2dv(p3.Data());
 		#else
@@ -381,7 +378,6 @@ void GOpenGLBoard::DrawGrabbedRect(const GLGrabbedRect& GrabbedRect, const GBool
 			SetTextureVertex(0, 0 + subX0, 0 + subY0);
 		if (TexUnit1)
 			SetTextureVertex(1, 0 + subX1, 0 + subY1);
-		//glVertex2i(GrabbedRect.X, GrabbedRect.Y);
 		#ifdef DOUBLE_REAL_TYPE
 			glVertex2dv(p0.Data());
 		#else

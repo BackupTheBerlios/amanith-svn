@@ -1,10 +1,10 @@
 /****************************************************************************
-** $file: amanith/src/rendering/gopenglconicalgrad.cpp   0.2.0.0   edited Dec, 12 2005
+** $file: amanith/src/rendering/gopenglconicalgrad.cpp   0.3.0.0   edited Jan, 30 2006
 **
 ** OpenGL based draw board conical gradient functions implementation.
 **
 **
-** Copyright (C) 2004-2005 Mazatech Inc. All rights reserved.
+** Copyright (C) 2004-2006 Mazatech Inc. All rights reserved.
 **
 ** This file is part of Amanith Framework.
 **
@@ -234,7 +234,6 @@ void GOpenGLBoard::DrawGLConicalSector(const GPoint2& Center, const GVector2& Di
 
 					for (i = 0; i < n; ++i) {
 						q.Set(p[G_X] * cosDelta - p[G_Y] * sinDelta, p[G_Y] * cosDelta + p[G_X] * sinDelta);
-						//mp = p + Center;
 						mq = q + Center;
 						#ifdef DOUBLE_REAL_TYPE
 							glVertex2dv(Center.Data());
@@ -250,7 +249,6 @@ void GOpenGLBoard::DrawGLConicalSector(const GPoint2& Center, const GVector2& Di
 					}
 					// just to avoid numerical imprecision
 					if (k == j - 2) {
-						//mp = p + Center;
 						q = Radius * DirCenterTarget;
 						mq = q + Center;
 						#ifdef DOUBLE_REAL_TYPE
@@ -276,7 +274,6 @@ void GOpenGLBoard::DrawGLConicalSector(const GPoint2& Center, const GVector2& Di
 
 					for (i = 0; i < n; ++i) {
 						q.Set(p[G_X] * cosDelta - p[G_Y] * sinDelta, p[G_Y] * cosDelta + p[G_X] * sinDelta);
-						//mp = p + Center;
 						mq = q + Center;
 						col = col0 + t * col01;
 
@@ -300,7 +297,6 @@ void GOpenGLBoard::DrawGLConicalSector(const GPoint2& Center, const GVector2& Di
 					}
 					// just to avoid numerical imprecision
 					if (k == j - 2) {
-						//mp = p + Center;
 						q = Radius * DirCenterTarget;
 						mq = q + Center;
 						#ifdef DOUBLE_REAL_TYPE
@@ -330,7 +326,6 @@ void GOpenGLBoard::DrawGLConicalSector(const GPoint2& Center, const GVector2& Di
 
 					for (i = 0; i < n; ++i) {
 						q.Set(p[G_X] * cosDelta - p[G_Y] * sinDelta, p[G_Y] * cosDelta + p[G_X] * sinDelta);
-						//mp = p + Center;
 						mq = q + Center;
 
 						t2 = t * t;
@@ -360,7 +355,6 @@ void GOpenGLBoard::DrawGLConicalSector(const GPoint2& Center, const GVector2& Di
 					}
 					// just to avoid numerical imprecision
 					if (k == j - 2) {
-						//mp = p + Center;
 						q = Radius * DirCenterTarget;
 						mq = q + Center;
 						#ifdef DOUBLE_REAL_TYPE
@@ -859,14 +853,12 @@ void GOpenGLBoard::DrawConicalSector(const GPoint2& Center, const GPoint2& Targe
 
 	
 	glMatrixMode(GL_MODELVIEW);
-	//glPushMatrix();
 	SetGLModelViewMatrix(GradientMatrix);
 
 	// draw the shaded sector (we have to expand by 5% radius, to avoid low quality related issues; NB: the radius
 	// DO NOT influences performances)
 	DrawGLConicalSector(Center, dirCT, dMax * (GReal)1.05, pMin, pMax, wholeDisk, ColorKeys,
 						InTangents, OutTangents, Interpolation, MultAlpha);
-	//glPopMatrix();
 }
 
 };	// end namespace Amanith

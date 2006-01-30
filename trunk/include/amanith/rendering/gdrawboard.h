@@ -1,10 +1,10 @@
 /****************************************************************************
-** $file: amanith/rendering/gdrawboard.h   0.2.0.0   edited Dec, 12 2005
+** $file: amanith/rendering/gdrawboard.h   0.3.0.0   edited Jan, 30 2006
 **
 ** Abstract draw board.
 **
 **
-** Copyright (C) 2004-2005 Mazatech Inc. All rights reserved.
+** Copyright (C) 2004-2006 Mazatech Inc. All rights reserved.
 **
 ** This file is part of Amanith Framework.
 **
@@ -165,15 +165,21 @@ namespace Amanith {
 		Clip paths can be defined using the same set of drawing functions, because the drawboard has 2
 		target buffers: color buffer and clip buffer. The user can switch between them using the function SetTargetMode().\n\n
 
-		Shapes can be stroked and/or filled, independently.\n
-		There are methods to change stroke attributes, like
+		Shapes can be stroked and/or filled, independently.	There are methods to change stroke attributes, like
 		SetStrokeStartCapStyle(), SetStrokeEndCapStyle(), SetStrokeJoinStyle(), SetStrokeWidth(), SetStrokeMiterLimit(),
 		SetStrokeStyle(), SetStrokeDashPattern(), SetStrokeDashPhase(), SetStrokePaintType(), SetStrokeColor(),
-		SetStrokeGradient(), SetStrokePattern().\n
-		Of course there are similar methods for fill: SetFillRule(), SetFillPaintType(), SetFillColor(),
-		SetFillGradient(), SetFillPattern().\n
-		Another important style feature is group opacity: using SetGroupOpacity() function the user can set
-		group opacity, and then he can draw a group of shapes between the calls GroupBegin() and GroupEnd().\n
+		SetStrokeGradient(), SetStrokePattern(). Of course there are similar methods for fill: SetFillRule(), SetFillPaintType(), SetFillColor(),
+		SetFillGradient(), SetFillPattern().\n\n
+		Another important style feature is group opacity, coupled with a compositing operation for the whole
+		group: using SetGroupOpacity() and SetGroupCompOp() functions the user can set
+		group opacity and compositing operation, and then he can draw a group of shapes between the calls GroupBegin() and GroupEnd().\n
+		All drawn shapes inside the group will be composited on the background using the specified compositing operation
+		and its associated opacity.\n
+		To optimize rendering speed, users can use the caching system. Through the function CreateCacheBank(), a new
+		"container" (like a sort of memory bank) of cached primitives is first created. Then to draw geometries onto
+		cache bank it's a simple matter to set G_CACHE_MODE as target mode. Each drawing operation will append a new
+		slot to the bank. After caching, the user can draw each slot using DrawCacheSlot() function.
+		The users can invalidate a cache bank using the function Invalidate().
 	*/
 	class G_EXPORT GDrawBoard {
 	private:

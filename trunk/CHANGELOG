@@ -1,3 +1,84 @@
+2006-30-01
+
+	* Version 0.3
+	==========================
+
+	* Added extended Porter-Duff compositing model to the drawboard class. Supported operations are:
+
+		- Porter-Duff: CLEAR, SRC, DST, SRC_OVER, DST_OVER, SRC_IN, DST_IN, SRC_OUT, DST_OUT, SRC_ATOP, DST_ATOP, XOR
+		- Extended: PLUS, MULTIPLY, SCREEN, OVERLAY, DARKEN, LIGHTEN, COLOR_DODGE, COLOR_BURN, HARD_LIGHT, SOFT_LIGHT, DIFFERENCE, EXCLUSION
+	
+	All operations works, independently, on stroke and fill, so each drawing operation will be affected by the current settings.
+	A separate, orthogonal group compositing operation can be also specified (coupled to the already existing group opacity feature). This
+	operation tells how the entire group is composite over the background.
+	In the OpenGL implementation, all 24 compositing operation are available on those boards equipped with fragment programs. When they are
+	not supported, only 15 compositing operations can be used (CLEAR, SRC, DST, SRC_OVER, DST_OVER, SRC_IN, DST_IN, SRC_OUT, DST_OUT,
+	SRC_ATOP, DST_ATOP, XOR, PLUS, SCREEN, EXCLUSION).
+
+	* Added caching API, now three new target modes are available: CACHE, COLOR_AND_CACHE, CLIP_AND_CACHE. When one of them is specified
+	all drawing operations return the cache slot index into the current cache bank. Only the geometry is cached, so the users can redraw
+	cached primitives changing paint types, colors/opacity, gradients, patterns and matrices.
+
+	* Extended GroupBegin/GroupEnd semantic also for clip paths. So with the same API, users can draw complex clip shapes in union.
+
+	* Added support for REFLECT color-ramp spread mode and REFLECT pattern tiling mode for those graphic boards where "mirrored repeat" OpenGL
+	extension is not available (OpenGL drawboard class).
+
+	* Added SetRectTextureEnabled function into OpenGL drawboard, to enable/disable the use of rectangular textures (for group compositing).
+
+	* Modified the screen grabbing management, so textures are created once and only expanded when necessary (OpenGL drawboard class).
+
+	* Added ScreenShot method to drawboard class, it permits to take a portion of screen and put it into a GPixelMap.
+
+	* Added SetStrokeColor(R, G, B) and SetStrokeOpacity(A) functions, so the user can separate RGB components from the alpha one.
+
+	* Added SetFillColor(R, G, B) and SetFillOpacity(A) functions, so the user can separate RGB components from the alpha one.
+
+	* Renamed DisableShaders method in SetShadersEnabled (OpenGL drawboard class).
+
+	* Added GAnglesMeasureUnit type and AngleConversion function that converts angles from and to different measure units.
+	It supports radians, degrees, grads, mils, minutes, seconds, sextants, octants, quadrants, signs, turns, revolutions, circles, right angles.
+
+	* Added angle measure unit specification inside SVG-like DrawPaths function (the one that takes 'd' attribute).
+
+	* Added a color string conversion function inside GOpenGLBoard class. It supports HTML format and SVG color keywords.
+
+	* Added primitives drawing functions that take geometric points expressed as a couple (abscissa, ordinate) instead of a GPoint2.
+
+	* Added the construction of rotation and scaling matrix with pivot (the center of transformation).
+
+	* Added a new example, it shows Amanith compositing.
+
+	* Added a new drawboard example, a simple GL clock to show caching API.
+
+	* Added a caching test sheet to the drawboard example.
+
+	* Added to drawboard example a key to take a screenshot in png/jpeg format.
+
+	* Added a debug console for Windows examples.
+
+	* Fixed a bug regarding stencil writing when clip paths were disbale (through SetClipEnable()).
+
+	* Fixed a bug with linear gradient.
+
+	* Fixed a bug regarding the use of rectangular textures on some ATI boards.
+
+	* Fixed some bugs in the gradient matrix and modelview matrix.
+
+	* Fixed a bug on dashed stroke (it didn't draw some caps in some rare situations).
+
+	* Fixed a bug related to group opacity on ATI boards.
+
+	* Fixed a bug in group opacity (stencil related underflow).
+
+	* Fixed some documentation stuff.
+
+	* Modified timer settings in Qt example, so now, in the most "static" examples, CPU will not take 100% of usage.
+
+	* Modified drawboard-based examples: now they open the OpenGL context with alpha buffer.
+
+
+
 2005-12-12
 
 	* Version 0.2

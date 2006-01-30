@@ -1,10 +1,10 @@
 /****************************************************************************
-** $file: amanith/src/rendering/gopenglstyles.cpp   0.2.0.0   edited Dec, 12 2005
+** $file: amanith/src/rendering/gopenglstyles.cpp   0.3.0.0   edited Jan, 30 2006
 **
 ** OpenGL based draw board styles functions implementation.
 **
 **
-** Copyright (C) 2004-2005 Mazatech Inc. All rights reserved.
+** Copyright (C) 2004-2006 Mazatech Inc. All rights reserved.
 **
 ** This file is part of Amanith Framework.
 **
@@ -211,8 +211,6 @@ void GOpenGLGradientDesc::GenerateTexture1D(const GInt32 Size, GPixelMap& Bitmap
 			blueKeys.push_back(GKeyValue(keys[i].TimePosition(), v[G_Z]));
 			alphaKeys.push_back(GKeyValue(keys[i].TimePosition(), v[G_W]));
 		}
-
-		//if (SpreadMode() == G_REFLECT_COLOR_RAMP_SPREAD) {
 		// reflect keys, is specified
 		if (ReflectKeys) {
 
@@ -2231,9 +2229,6 @@ void GOpenGLBoard::DrawAndPopDepthMask(const GAABox2& Box, const GDrawStyle& Sty
 				if ((DrawFill && Style.FillPaintType() == G_COLOR_PAINT_TYPE) ||
 					(!DrawFill && Style.StrokePaintType() == G_COLOR_PAINT_TYPE))
 					tUnit = 0;
-
-				// to place grabbed screen portion we have to enter in window-mode
-				//m = GLWindowModeMatrix((GReal)1e-7);
 
 				Projection(ll, rr, bb, tt);
 				m = GLProjectionMatrix(ll, rr, bb, tt, (GReal)1e-7);

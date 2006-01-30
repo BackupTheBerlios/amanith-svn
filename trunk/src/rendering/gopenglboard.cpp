@@ -1,10 +1,10 @@
 /****************************************************************************
-** $file: amanith/src/rendering/gopenglboard.cpp   0.2.0.0   edited Dec, 12 2005
+** $file: amanith/src/rendering/gopenglboard.cpp   0.3.0.0   edited Jan, 30 2006
 **
 ** OpenGL based draw board implementation.
 **
 **
-** Copyright (C) 2004-2005 Mazatech Inc. All rights reserved.
+** Copyright (C) 2004-2006 Mazatech Inc. All rights reserved.
 **
 ** This file is part of Amanith Framework.
 **
@@ -581,14 +581,6 @@ GOpenGLBoard::GOpenGLBoard(const GUInt32 LowLeftCornerX, const GUInt32 LowLeftCo
 	gFragmentProgramsInUse = gFragmentProgramsSupport;
 
 	// rectangular textures support
-	/*gRectTexturesSupport = G_FALSE;
-	const GChar8 *vendorStr = NULL;
-	vendorStr = (const GChar8 *)glGetString(GL_VENDOR);
-	if (vendorStr) {
-		// from our tests, it seems that NVidia cards have good rectangular textures support
-		if (StrUtils::Find(vendorStr, "NVIDIA"))
-			gRectTexturesSupport = gExtManager->IsRectTextureSupported();
-	}*/
 	gRectTexturesSupport = gExtManager->IsRectTextureSupported();
 	gRectTexturesInUse = gRectTexturesSupport;
 
@@ -697,19 +689,6 @@ GUInt32 GOpenGLBoard::MaxDashCount() const {
 
 	return G_MAX_UINT16;
 }
-
-/*GUInt32 GOpenGLBoard::MaxKernelSize() const {
-
-	if (gExtManager)
-		return GMath::Min(gExtManager->MaxConvolutionWidth(), gExtManager->MaxConvolutionHeight());
-	else
-		return 0;
-}
-
-GUInt32 GOpenGLBoard::MaxSeparableKernelSize() const {
-
-	return MaxKernelSize();
-}*/
 
 GUInt32 GOpenGLBoard::MaxColorKeys() const {
 
@@ -1115,6 +1094,8 @@ GVector4 GOpenGLBoard::ColorFromString(const GString& Color) {
 			return foundCol->RGBA;
 
 	}
+	// just to avoid gcc warnings
+	return GVector4(0, 0, 0, 1);
 	#undef HEX1REAL
 	#undef HEX2REAL
 	#undef HEX1REAL_VS2005

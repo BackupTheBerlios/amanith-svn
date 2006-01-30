@@ -1,6 +1,6 @@
 /****************************************************************************
 **
-** Copyright (C) 2004-2005 Mazatech Inc. All rights reserved.
+** Copyright (C) 2004-2006 Mazatech Inc. All rights reserved.
 **
 ** This file is part of Amanith Framework.
 **
@@ -181,7 +181,7 @@ void QGLWidgetTest::CacheClock() {
 	gSlotsIndex = 0;
 	gDrawBoard->SetTargetMode(G_CACHE_MODE);
 	gDrawBoard->SetCacheBank(gCacheBank);
-	gDrawBoard->SetRenderingQualityDeviation((GReal)0.01);
+	gDrawBoard->SetCustomRenderingQuality((GReal)0.01);
 	CacheBack();
 	CacheCursors();
 	CacheGlass();

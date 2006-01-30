@@ -1,10 +1,10 @@
 /****************************************************************************
-** $file: amanith/src/rendering/gopenglgeometries.cpp   0.2.0.0   edited Dec, 12 2005
+** $file: amanith/src/rendering/gopenglgeometries.cpp   0.3.0.0   edited Jan, 30 2006
 **
 ** OpenGL based draw board geometries functions implementation.
 **
 **
-** Copyright (C) 2004-2005 Mazatech Inc. All rights reserved.
+** Copyright (C) 2004-2006 Mazatech Inc. All rights reserved.
 **
 ** This file is part of Amanith Framework.
 **
@@ -274,14 +274,8 @@ GInt32 GOpenGLBoard::DrawGLPolygon(const GOpenGLDrawStyle& Style, const GBool Cl
 		GBool needGrab = CompOpPassesCount(Style.FillCompOp(), stylePassesCount, fbPassesCount);
 
 		// grab frame buffer to do compositing, if needed
-		//GGenericAABox<GInt32, 2> physicBox;
-		if (needGrab) {
-			//physicBox.SetMinMax(LogicalToPhysicalInt(mvBox.Min()), LogicalToPhysicalInt(mvBox.Max()));
-			// we must add a 1pixel of border just to avoid visual artifacts
-			//GrabFrameBuffer(physicBox.Min() + GVect<GInt32, 2>(-1, -1),
-			//				physicBox.Dimension(G_X) + 2, physicBox.Dimension(G_Y) + 2, gCompositingBuffer);
+		if (needGrab)
 			GrabFrameBuffer(mvBox, gCompositingBuffer);
-		}
 
 		// set fill style using OpenGL
 		GBool useDepthForFill = NeedDepthMask(Style, G_TRUE);
@@ -877,14 +871,8 @@ GInt32 GOpenGLBoard::DoDrawLine(GDrawStyle& Style, const GPoint2& P0, const GPoi
 	GBool needGrab = CompOpPassesCount(Style.StrokeCompOp(), stylePassesCount, fbPassesCount);
 
 	// grab frame buffer to do compositing, if needed
-	//GGenericAABox<GInt32, 2> physicBox;
-	if (needGrab) {
-		//physicBox.SetMinMax(LogicalToPhysicalInt(mvBox.Min()), LogicalToPhysicalInt(mvBox.Max()));
-		// we must add a 1pixel of border just to avoid visual artifacts
-		//GrabFrameBuffer(physicBox.Min() + GVect<GInt32, 2>(-1, -1),
-		//				physicBox.Dimension(G_X) + 2, physicBox.Dimension(G_Y) + 2, gCompositingBuffer);
+	if (needGrab)
 		GrabFrameBuffer(mvBox, gCompositingBuffer);
-	}
 
 	// set stroke style using OpenGL
 	GBool useDepthForStroke = NeedDepthMask(s, G_FALSE);

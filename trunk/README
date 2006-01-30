@@ -3,8 +3,8 @@ AMANITH FRAMEWORK README
 Crossplatform, Opensource, Ansi C++, Framework aimed to handle 2d and 3d Vector Graphic.
 
  =-----------------------------=
- | Version: 0.2.0              |
- | Released: 15 December 2005  |
+ | Version: 0.3.0              |
+ | Released: 30 January 2006   |
  | Licence: QPL                |
  | Url: www.amanith.org        |
  =-----------------------------=
@@ -29,6 +29,8 @@ Content of the package
  |       |       |-----> animshape2d
  |       |       |-----> bezier2d
  |       |       |-----> bspline2d
+ |       |       |-----> clock
+ |       |       |-----> compositing
  |       |       |-----> delaunay2d
  |       |       |-----> drawboard
  |       |       |-----> font2d
@@ -75,6 +77,8 @@ Content of the package
  |       |       |       |-----> animshape2d
  |       |       |       |-----> bezier2d
  |       |       |       |-----> bspline2d
+ |       |       |       |-----> clock
+ |       |       |       |-----> compositing
  |       |       |       |-----> delaunay2d
  |       |       |       |-----> drawboard
  |       |       |       |-----> font2d

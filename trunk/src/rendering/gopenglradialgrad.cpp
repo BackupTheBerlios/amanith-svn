@@ -1,10 +1,10 @@
 /****************************************************************************
-** $file: amanith/src/rendering/gopenglradialgrad.cpp   0.2.0.0   edited Dec, 12 2005
+** $file: amanith/src/rendering/gopenglradialgrad.cpp   0.3.0.0   edited Jan, 30 2006
 **
 ** OpenGL based draw board radial gradient functions implementation.
 **
 **
-** Copyright (C) 2004-2005 Mazatech Inc. All rights reserved.
+** Copyright (C) 2004-2006 Mazatech Inc. All rights reserved.
 **
 ** This file is part of Amanith Framework.
 **
@@ -811,13 +811,9 @@ void GOpenGLBoard::DrawRadialSector(const GPoint2& Center, const GPoint2& Focus,
 	}
 
 	glMatrixMode(GL_MODELVIEW);
-	//glPushMatrix();
 	SetGLModelViewMatrix(GradientMatrix);
-
 	DrawGLRadialSector(transfCenter, realFocus, transfRadius, tMin, tMax, pMin, pMax, wholeDisk, ColorKeys,
 					   Interpolation, SpreadMode, MultAlpha);
-
-	//glPopMatrix();
 }
 
 };	// end namespace Amanith

@@ -1,10 +1,10 @@
 /****************************************************************************
-** $file: amanith/rendering/gdrawstyle.h   0.2.0.0   edited Dec, 12 2005
+** $file: amanith/rendering/gdrawstyle.h   0.3.0.0   edited Jan, 30 2006
 **
 ** Draw style.
 **
 **
-** Copyright (C) 2004-2005 Mazatech Inc. All rights reserved.
+** Copyright (C) 2004-2006 Mazatech Inc. All rights reserved.
 **
 ** This file is part of Amanith Framework.
 **
@@ -411,7 +411,7 @@ namespace Amanith {
 	//                             GDrawStyle
 	// *********************************************************************
 
-	//! Compositing operations.
+	//! Compositing operations, for mathematical details, please refer to http://www.w3.org/TR/2004/WD-SVG12-20041027/rendering.html.
 	enum GCompositingOperation {
 		//! Clear Porter-Duff operation.
 		G_CLEAR_OP,
@@ -500,6 +500,7 @@ namespace Amanith {
 		used just when the stroke paint type is GRADIENT).\n
 		- Stroke pattern: an associated GPatternDesc instance, that describes the pattern to use (it will be
 		used just when the stroke paint type is PATTERN).\n
+		- Stroke compositing operation: the compositing operation to use during stroke drawing (see the picture below).
 		- Stroke enable/disable flag: it is used to enable or disable stroke painting.\n
 		- Fill rule: the fill rule to use for shapes, it can be ODDEVEN or EVENODD.\n
 		- Fill paint type: it can be COLOR (fill is drawn using a single constant color), GRADIENT (the fill
@@ -510,8 +511,13 @@ namespace Amanith {
 		used just when the fill paint type is GRADIENT).\n
 		- Fill pattern: an associated GPatternDesc instance, that describes the pattern to use (it will be
 		used just when the fill paint type is PATTERN).\n
+		- Fill compositing operation: the compositing operation to use during fill drawing (see the picture below).
 		- Fill enable/disable flag: it is used to enable or disable fill painting.\n
 		- Model-view matrix: an optional 3x3 matrix, used to transform geometric entities before drawing.
+
+		Here are all 24 compositing operations supported by Amanith (for mathematical details please refer to
+		http://www.w3.org/TR/2004/WD-SVG12-20041027/rendering.html \n
+		\image html comp_operations.png
 	*/
 	class G_EXPORT GDrawStyle {
 

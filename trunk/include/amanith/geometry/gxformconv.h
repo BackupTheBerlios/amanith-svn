@@ -1,10 +1,10 @@
 /****************************************************************************
-** $file: amanith/geometry/gxformconv.h   0.2.0.0   edited Dec, 12 2005
+** $file: amanith/geometry/gxformconv.h   0.3.0.0   edited Jan, 30 2006
 **
 ** Conversion between transformation representations (quaternions, matrix and vectors)
 **
 **
-** Copyright (C) 2004-2005 Mazatech Inc. All rights reserved.
+** Copyright (C) 2004-2006 Mazatech Inc. All rights reserved.
 **
 ** This file is part of Amanith Framework.
 **
@@ -224,7 +224,12 @@ namespace Amanith {
 		#undef EulParOdd
 	}
 
-	//! Build a 2D rotation matrix, specifying the ccw rotation amount (in radians).
+	/*!
+		Build a 2D rotation matrix, specifying the ccw rotation amount (in radians).
+
+		\param Result the output matrix.
+		\param RadAngle the amount of ccw rotation, in radians.
+	*/
 	template <typename DATA_TYPE, GUInt32 ROWS, GUInt32 COLS>
 	void RotationToMatrix(GMatrix<DATA_TYPE, ROWS, COLS>& Result, const DATA_TYPE RadAngle) {
 
@@ -241,7 +246,13 @@ namespace Amanith {
 		Result[1][1] = c;
 	}
 
-	//! Build a 2D rotation matrix, specifying the ccw rotation amount (in radians) and a pivot point (the center of rotation).
+	/*!
+		Build a 2D rotation matrix, specifying the ccw rotation amount (in radians) and a pivot point (the center of rotation).
+
+		\param Result the output matrix.
+		\param RadAngle the amount of ccw rotation, in radians.
+		\param Pivot the center of rotation.
+	*/
 	template <typename DATA_TYPE, GUInt32 ROWS, GUInt32 COLS>
 	void RotationToMatrix(GMatrix<DATA_TYPE, ROWS, COLS>& Result, const DATA_TYPE RadAngle, const GVectBase<DATA_TYPE, 2>& Pivot) {
 
@@ -260,6 +271,8 @@ namespace Amanith {
 	/*!
 		Build a scale matrix, specifying scaling factors.
 
+		\param Result the output matrix.
+		\param ScaleFactors the scale factors.
 		\note Each scale factor is inserted respectively into a diagonal matrix position.
 	*/
 	template <typename DATA_TYPE, GUInt32 ROWS, GUInt32 COLS, GUInt32 SIZE>
@@ -273,7 +286,11 @@ namespace Amanith {
 	}
 
 	/*!
-		Build a scale matrix, specifying scaling factors and a pivot point (the center of scale).
+		Build a scale matrix, specifying scaling factors and a pivot point (the center of scaling).
+
+		\param Result the output matrix.
+		\param ScaleFactors the scale factors.
+		\param Pivot the center of scaling.
 	*/
 	template <typename DATA_TYPE, GUInt32 ROWS, GUInt32 COLS, GUInt32 SIZE>
 	void ScaleToMatrix(GMatrix<DATA_TYPE, ROWS, COLS>& Result, const GVectBase<DATA_TYPE, SIZE>& ScaleFactors, const GVectBase<DATA_TYPE, SIZE>& Pivot) {
@@ -288,7 +305,12 @@ namespace Amanith {
 		Result = (postTrans * (scl * preTrans));
 	}
 
-	//! Build a uniform scale matrix.
+	/*!
+		Build a uniform scale matrix.
+
+		\param Result the output matrix.
+		\param ScaleFactor the uniform scale factor.
+	*/
 	template <typename DATA_TYPE, GUInt32 ROWS, GUInt32 COLS>
 	void ScaleToMatrix(GMatrix<DATA_TYPE, ROWS, COLS>& Result, const DATA_TYPE ScaleFactor) {
 
@@ -300,7 +322,13 @@ namespace Amanith {
 	}
 
 
-	//! Build a uniform scale matrix, specifying a pivot (the center of scaling).
+	/*!
+		Build a uniform scale matrix, specifying a pivot (the center of scaling).
+
+		\param Result the output matrix.
+		\param ScaleFactor the uniform scale factor.
+		\param Pivot the center of scale.
+	*/
 	template <typename DATA_TYPE, GUInt32 ROWS, GUInt32 COLS, GUInt32 SIZE>
 	void ScaleToMatrix(GMatrix<DATA_TYPE, ROWS, COLS>& Result, const DATA_TYPE ScaleFactor, const GVectBase<DATA_TYPE, SIZE>& Pivot) {
 

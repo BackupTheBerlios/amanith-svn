@@ -1,6 +1,6 @@
 /****************************************************************************
 **
-** Copyright (C) 2004-2005 Mazatech Inc. All rights reserved.
+** Copyright (C) 2004-2006 Mazatech Inc. All rights reserved.
 **
 ** This file is part of Amanith Framework.
 **
@@ -216,10 +216,6 @@ void DrawTitle() {
 }
 
 int InitGL(GLvoid) {
-
-#ifdef _DEBUG
-	SysUtils::RedirectIOToConsole();
-#endif
 
 	gKernel = new GKernel();
 	gImage = (GPixelMap *)gKernel->CreateNew(G_PIXELMAP_CLASSID);
@@ -467,6 +463,9 @@ BOOL CreateGLWindow(char* title, int width, int height, int bits, bool fullscree
 		}
 	}
 
+#ifdef _DEBUG
+	SysUtils::RedirectIOToConsole();
+#endif
 	gDrawBoard = new GOpenGLBoard(0, 0, width, height);
 
 	ShowWindow(hWnd, SW_SHOW);						// Show The Window

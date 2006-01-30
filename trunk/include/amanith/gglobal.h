@@ -1,10 +1,10 @@
 /****************************************************************************
-** $file: amanith/gglobal.h   0.2.0.0   edited Dec, 12 2005
+** $file: amanith/gglobal.h   0.3.0.0   edited Jan, 30 2006
 **
 ** Global types and constants.
 **
 **
-** Copyright (C) 2004-2005 Mazatech Inc. All rights reserved.
+** Copyright (C) 2004-2006 Mazatech Inc. All rights reserved.
 **
 ** This file is part of Amanith Framework.
 **
@@ -67,8 +67,8 @@
 namespace Amanith {
 
 	// G_VERSION is (major << 24) + (minor << 16) + (patch << 8) + build.
-	#define G_AMANITH_VERSION 0x00020000
-	#define G_VERSION_STR "0.2.0.0"
+	#define G_AMANITH_VERSION 0x00030000
+	#define G_VERSION_STR "0.3.0.0"
 
 	//! English language option.
 	#define G_LANG_EN     0

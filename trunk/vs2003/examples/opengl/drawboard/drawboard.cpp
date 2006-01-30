@@ -1,6 +1,6 @@
 /****************************************************************************
 **
-** Copyright (C) 2004-2005 Mazatech Inc. All rights reserved.
+** Copyright (C) 2004-2006 Mazatech Inc. All rights reserved.
 **
 ** This file is part of Amanith Framework.
 **
@@ -166,10 +166,6 @@ void KillApp() {
 
 int InitGL(GLvoid) {
 
-#ifdef _DEBUG
-	SysUtils::RedirectIOToConsole();
-#endif
-
 	gKernel = new GKernel();
 	gImage = (GPixelMap *)gKernel->CreateNew(G_PIXELMAP_CLASSID);
 
@@ -302,119 +298,6 @@ int InitGL(GLvoid) {
 	return TRUE;
 }
 
-void TestDebug() {
-
-	//gDrawBoard->SetShadersEnabled(G_FALSE);
-	//gDrawBoard->SetRectTextureEnabled(G_FALSE);
-	GInt32 cacheSlot;
-	GMatrix33 matrix;
-
-	gDrawBoard->SetTargetMode(G_COLOR_MODE);
-	gDrawBoard->SetStrokeStyle(G_SOLID_STROKE);
-	gDrawBoard->SetStrokeJoinStyle(G_ROUND_JOIN);
-	gDrawBoard->SetStrokeStartCapStyle(G_ROUND_CAP);
-	gDrawBoard->SetStrokeEndCapStyle(G_ROUND_CAP);
-	gDrawBoard->SetStrokeEnabled(G_TRUE);
-	gDrawBoard->SetFillEnabled(G_TRUE);
-	gDrawBoard->SetModelViewMatrix(G_MATRIX_IDENTITY33);
-
-
-	gDrawBoard->SetStrokeWidth(20);
-	gDrawBoard->SetStrokeCompOp(G_SRC_OVER_OP);
-	gDrawBoard->SetStrokePaintType(G_COLOR_PAINT_TYPE);
-	gDrawBoard->SetStrokeColor(0.8, 0, 0.3, 0.8);
-
-	gDrawBoard->SetFillCompOp(G_SRC_OVER_OP);
-	gDrawBoard->SetFillPaintType(G_GRADIENT_PAINT_TYPE);
-	gDrawBoard->SetFillOpacity(0.9);
-	gDrawBoard->SetFillGradient(gConGrad1);
-
-	gDrawBoard->SetTargetMode(G_COLOR_AND_CACHE_MODE);
-	gCacheBank->Invalidate();
-	gDrawBoard->SetCacheBank(gCacheBank);
-	gDrawBoard->SetStrokeStyle(G_DASHED_STROKE);
-	cacheSlot = gDrawBoard->DrawPaths("M 200,300 L 300,400 C 400,500 500,500 600,200 Q 450,300 200,300 M 250,150 L 300,250 C 500,800 550,450 250,150 z");
-
-	gDrawBoard->SetTargetMode(G_COLOR_MODE);
-	gDrawBoard->SetStrokeStyle(G_SOLID_STROKE);
-
-	gDrawBoard->SetStrokeWidth(60);
-	gDrawBoard->SetTargetMode(G_CLIP_MODE);
-	gDrawBoard->DrawEllipse(300, 300, 100, 80);
-	gDrawBoard->SetTargetMode(G_COLOR_MODE);
-	gDrawBoard->SetClipEnabled(G_TRUE);
-
-	gDrawBoard->SetStrokeWidth(80);
-	gDrawBoard->SetStrokeCompOp(G_SRC_OP);
-	gDrawBoard->SetStrokePaintType(G_PATTERN_PAINT_TYPE);
-	gPattern->SetTilingMode(G_REFLECT_TILE);
-	gDrawBoard->SetStrokePattern(gPattern);
-	gDrawBoard->SetStrokeOpacity(0.9);
-	gDrawBoard->DrawLine(GPoint2(100, 100), GPoint2(500, 500));
-
-
-	gDrawBoard->SetClipEnabled(G_FALSE);
-
-	gDrawBoard->SetGroupCompOp(G_DST_ATOP_OP);
-	gDrawBoard->SetGroupOpacity(0.7);
-	gDrawBoard->GroupBegin(GAABox2(GPoint2(100, 100), GPoint2(500, 500)));
-
-		gDrawBoard->SetStrokePaintType(G_GRADIENT_PAINT_TYPE);
-		gDrawBoard->SetStrokeGradient(gLinGrad2);
-
-		RotationToMatrix(matrix, G_PI_OVER4);
-		gLinGrad2->SetMatrix(matrix);
-		gLinGrad2->SetSpreadMode(G_REPEAT_COLOR_RAMP_SPREAD);
-		gDrawBoard->SetStrokeWidth(40);
-		gDrawBoard->SetStrokeOpacity(0.8);
-		gDrawBoard->SetStrokeCompOp(G_SRC_OVER_OP);
-		gDrawBoard->DrawLine(GPoint2(200, 200), GPoint2(400, 200));
-
-		// -------------------
-
-		gDrawBoard->SetStrokeWidth(20);
-		gDrawBoard->SetStrokePaintType(G_GRADIENT_PAINT_TYPE);
-
-		TranslationToMatrix(matrix, GVector2(120, 100));
-		gRadGrad2->SetMatrix(matrix);
-
-		gDrawBoard->SetStrokeGradient(gRadGrad2);
-		gRadGrad2->SetSpreadMode(G_REFLECT_COLOR_RAMP_SPREAD);
-		gRadGrad2->SetColorInterpolation(G_LINEAR_COLOR_INTERPOLATION);
-
-		gDrawBoard->SetStrokeOpacity(0.6);
-		gDrawBoard->SetStrokeCompOp(G_XOR_OP);
-		gDrawBoard->DrawLine(GPoint2(300, 150), GPoint2(300, 350));
-
-	gDrawBoard->GroupEnd();
-
-	gDrawBoard->SetStrokeOpacity(0.9);
-	gDrawBoard->SetStrokeWidth(20);
-	gDrawBoard->SetStrokePaintType(G_COLOR_PAINT_TYPE);
-	gDrawBoard->SetStrokeColor(0.0, 0.2, 0.6, 1.0);
-
-	gDrawBoard->SetFillPaintType(G_GRADIENT_PAINT_TYPE);
-	gDrawBoard->SetFillGradient(gConGrad2);
-	gDrawBoard->SetFillOpacity(0.9);
-	gConGrad2->SetColorInterpolation(G_LINEAR_COLOR_INTERPOLATION);
-
-	gDrawBoard->SetStrokeCompOp(G_SCREEN_OP);
-	gDrawBoard->SetFillCompOp(G_EXCLUSION_OP);
-
-	gDrawBoard->DrawCircle(300, 300, 100);
-
-
-	ScaleToMatrix(matrix, 0.5, GPoint2(300, 200));
-	gDrawBoard->SetStrokeCompOp(G_SRC_IN_OP);
-	gDrawBoard->SetFillCompOp(G_PLUS_OP);
-	gDrawBoard->SetStrokePaintType(G_COLOR_PAINT_TYPE);
-	gDrawBoard->SetStrokeColor(0.1, 0.8, 0.4, 0.8);
-	gDrawBoard->SetFillPaintType(G_COLOR_PAINT_TYPE);
-	gDrawBoard->SetFillColor(0.01, 0.4, 0.03, 0.8);
-	gDrawBoard->SetModelViewMatrix(matrix);
-	gDrawBoard->DrawCacheSlot(cacheSlot);
-}
-
 int DrawGLScene(GLvoid)	{
 
 	gDrawBoard->Clear(1.0, 1.0, 1.0, 0.0, G_TRUE);
@@ -468,8 +351,6 @@ int DrawGLScene(GLvoid)	{
 		default:
 			TestColor(gTestIndex);
 	}
-
-	//TestDebug();
 
 	gDrawBoard->Flush();
 	return TRUE;
@@ -631,6 +512,9 @@ BOOL CreateGLWindow(char* title, int width, int height, int bits, bool fullscree
 		}
 	}
 
+#ifdef _DEBUG
+	SysUtils::RedirectIOToConsole();
+#endif
 	gDrawBoard = new GOpenGLBoard(0, 0, width, height);
 
 	ShowWindow(hWnd, SW_SHOW);						// Show The Window
